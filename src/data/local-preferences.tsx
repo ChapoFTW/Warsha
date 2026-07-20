@@ -1,5 +1,8 @@
 import Storage from 'expo-sqlite/kv-store';
 import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { useAuth } from '@/src/auth/auth-context';
+import { supabaseFavouriteRepository } from '@/src/repositories/supabase-user-repositories';
+import { logDataError } from './data-errors';
 
 const FAVOURITES_KEY = 'warsha:favourites:v1';
 const SEARCHES_KEY = 'warsha:recent-searches:v1';
@@ -17,29 +20,25 @@ type Value = {
 const Context = createContext<Value | null>(null);
 
 export function LocalPreferencesProvider({ children }: PropsWithChildren) {
+  const { mode, user } = useAuth();
   const [ready, setReady] = useState(false);
   const [favouriteIds, setFavouriteIds] = useState<string[]>([]);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
 
   useEffect(() => {
-    Promise.all([Storage.getItem(FAVOURITES_KEY), Storage.getItem(SEARCHES_KEY)])
+    let active=true;
+    Promise.all([mode==='supabase'&&user?supabaseFavouriteRepository.list():Storage.getItem(FAVOURITES_KEY).then(value=>value?JSON.parse(value) as string[]:[]), Storage.getItem(SEARCHES_KEY)])
       .then(([favourites, searches]) => {
-        if (favourites) setFavouriteIds(JSON.parse(favourites));
+        if (!active) return;
+        setFavouriteIds(favourites);
         if (searches) setRecentSearches(JSON.parse(searches));
       })
-      .catch(() => {})
-      .finally(() => setReady(true));
-  }, []);
+      .catch(reason => logDataError('favourites',reason))
+      .finally(() => {if(active)setReady(true)});
+    return()=>{active=false};
+  }, [mode,user]);
 
-  const persistFavourites = useCallback((next: string[]) => {
-    setFavouriteIds(next);
-    void Storage.setItem(FAVOURITES_KEY, JSON.stringify(next));
-  }, []);
-
-  const toggleFavourite = useCallback(
-    (id: string) => persistFavourites(favouriteIds.includes(id) ? favouriteIds.filter((item) => item !== id) : [...favouriteIds, id]),
-    [favouriteIds, persistFavourites],
-  );
+  const toggleFavourite = useCallback((id: string) => {const existed=favouriteIds.includes(id);const previous=favouriteIds;const next=existed?previous.filter(item=>item!==id):[...previous,id];setFavouriteIds(next);if(mode==='mock'){void Storage.setItem(FAVOURITES_KEY,JSON.stringify(next));return}if(!user){setFavouriteIds(previous);return}void (existed?supabaseFavouriteRepository.remove(id):supabaseFavouriteRepository.add(id)).catch(reason=>{logDataError('favourite mutation',reason);setFavouriteIds(current=>current===next?previous:current)})},[favouriteIds,mode,user]);
 
   const addRecentSearch = useCallback((query: string) => {
     const value = query.trim();

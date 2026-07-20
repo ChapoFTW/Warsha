@@ -1,5 +1,5 @@
 begin;
-select plan(8);
+select plan(12);
 select has_table('public','profiles','profiles exists');
 select has_table('public','bookings','bookings exists');
 select has_table('public','provider_verification_documents','verification documents exist');
@@ -8,5 +8,9 @@ select is((select relrowsecurity from pg_class where oid='public.bookings'::regc
 select is((select relrowsecurity from pg_class where oid='public.provider_verification_documents'::regclass),true,'verification RLS enabled');
 select is((select relrowsecurity from pg_class where oid='public.messages'::regclass),true,'messages RLS enabled');
 select has_function('public','cancel_own_booking',array['uuid'],'controlled booking cancellation function exists');
+select has_function('public','ensure_customer_profile',array[]::text[],'customer bootstrap recovery exists');
+select has_function('public','set_default_address',array['uuid'],'default address function exists');
+select has_function('public','cancel_customer_booking',array['uuid','text'],'secure customer cancellation exists');
+select has_function('public','reschedule_customer_booking',array['uuid','date','time without time zone'],'secure rescheduling exists');
 select * from finish();
 rollback;
