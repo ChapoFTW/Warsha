@@ -1,15 +1,15 @@
 import { Platform } from 'react-native';
 
 export const colors = {
-  background: '#050505',
-  surface: '#0E0E0E',
-  surfaceElevated: '#171717',
-  surfaceSoft: '#212121',
-  border: '#262626',
-  borderSoft: '#1C1C1C',
-  textPrimary: '#F7F7F7',
-  textSecondary: '#A4A4A4',
-  textMuted: '#6E6E6E',
+  background: '#000000',
+  surface: '#0B0B0B',
+  surfaceElevated: '#151515',
+  surfaceSoft: '#1B1B1B',
+  border: '#232323',
+  borderSoft: '#171717',
+  textPrimary: '#F5F5F5',
+  textSecondary: '#A1A1A1',
+  textMuted: '#707070',
   white: '#FFFFFF',
   success: '#7FC89A',
   warning: '#D8BA72',
@@ -31,9 +31,9 @@ export const shadows = {
   card: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.28,
-    shadowRadius: 18,
-    elevation: 7,
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    elevation: 3,
   },
 };
 

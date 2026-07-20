@@ -1,3 +1,4 @@
+import type { TranslationKey } from '@/src/i18n/translations';
 export type BookingStatus='pending_provider_approval'|'accepted'|'rejected'|'confirmed'|'provider_on_the_way'|'provider_arrived'|'job_started'|'work_in_progress'|'completed'|'disputed'|'cancelled'|'refunded'|'no_show';
 export type BookingType='scheduled'|'emergency';
 export type BookingStatusHistory={status:BookingStatus;at:string;note?:string};
@@ -13,6 +14,7 @@ export const bookingTransitions:Readonly<Record<BookingStatus,readonly BookingSt
 export const terminalStatuses:BookingStatus[]=['rejected','cancelled','refunded','no_show'];
 export const cancellableStatuses:BookingStatus[]=['pending_provider_approval','accepted','confirmed','provider_on_the_way','provider_arrived'];
 export const timelineLabels:Record<BookingStatus,string>={pending_provider_approval:'Booking submitted — waiting for provider',accepted:'Provider accepted',rejected:'Provider rejected',confirmed:'Booking confirmed',provider_on_the_way:'Provider on the way',provider_arrived:'Provider arrived',job_started:'Work started',work_in_progress:'Work in progress',completed:'Job completed',disputed:'Dispute opened',cancelled:'Booking cancelled',refunded:'Booking refunded',no_show:'No show'};
+export const bookingStatusTranslationKeys:Record<BookingStatus,TranslationKey>={pending_provider_approval:'bookingSubmittedStatus',accepted:'providerAccepted',rejected:'providerRejected',confirmed:'confirmBookingStatus',provider_on_the_way:'providerOnWay',provider_arrived:'providerArrived',job_started:'workStarted',work_in_progress:'workInProgress',completed:'jobCompleted',disputed:'disputeOpened',cancelled:'bookingCancelled',refunded:'bookingRefunded',no_show:'noShow'};
 export function canTransition(from:BookingStatus,to:BookingStatus){return from!==to&&bookingTransitions[from].includes(to)}
 export function getAllowedTransitions(status:BookingStatus){return bookingTransitions[status]}
 export function normalizeHistory(history:BookingStatusHistory[]){const seen=new Set<string>();return [...history].filter((event)=>{const key=`${event.status}|${event.at}|${event.note??''}`;if(seen.has(key))return false;seen.add(key);return true}).sort((a,b)=>Date.parse(a.at)-Date.parse(b.at))}
