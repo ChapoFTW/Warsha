@@ -1,5 +1,5 @@
 begin;
-select plan(12);
+select plan(16);
 select has_table('public','profiles','profiles exists');
 select has_table('public','bookings','bookings exists');
 select has_table('public','provider_verification_documents','verification documents exist');
@@ -12,5 +12,9 @@ select has_function('public','ensure_customer_profile',array[]::text[],'customer
 select has_function('public','set_default_address',array['uuid'],'default address function exists');
 select has_function('public','cancel_customer_booking',array['uuid','text'],'secure customer cancellation exists');
 select has_function('public','reschedule_customer_booking',array['uuid','date','time without time zone'],'secure rescheduling exists');
+select has_function('public','activate_provider_role',array['text'],'provider activation is server controlled');
+select has_function('public','save_provider_foundation',array['jsonb','boolean'],'provider foundation save is transactional');
+select has_column('public','provider_profiles','onboarding_status','provider onboarding status exists');
+select has_column('public','provider_services','pricing_type','provider pricing model exists');
 select * from finish();
 rollback;
