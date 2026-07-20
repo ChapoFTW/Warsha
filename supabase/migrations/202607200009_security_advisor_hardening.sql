@@ -39,7 +39,7 @@ begin
     raise exception 'Authentication required' using errcode = '42501';
   end if;
   insert into public.profiles(id,display_name,phone,preferred_language)
-  values(uid,pg_catalog.coalesce(pg_catalog.nullif(pg_catalog.btrim(auth_user.raw_user_meta_data->>'display_name'),''),pg_catalog.split_part(pg_catalog.coalesce(auth_user.email,auth_user.phone,'Warsha user'),'@',1)),auth_user.phone,case when auth_user.raw_user_meta_data->>'preferred_language'='ar' then 'ar' else 'en' end)
+  values(uid,coalesce(nullif(pg_catalog.btrim(auth_user.raw_user_meta_data->>'display_name'),''),pg_catalog.split_part(coalesce(auth_user.email,auth_user.phone,'Warsha user'),'@',1)),auth_user.phone,case when auth_user.raw_user_meta_data->>'preferred_language'='ar' then 'ar' else 'en' end)
   on conflict(id) do nothing;
   insert into public.customer_profiles(id) values(uid) on conflict(id) do nothing;
   insert into public.user_roles(user_id,role) values(uid,'customer') on conflict(user_id,role) do nothing;
@@ -66,13 +66,13 @@ begin
   perform public.ensure_customer_profile();
   if pg_catalog.length(pg_catalog.btrim(p_issue_description))<8 then raise exception 'Invalid issue description' using errcode='22023'; end if;
   if p_booking_type not in ('scheduled','emergency') then raise exception 'Invalid booking type' using errcode='22023'; end if;
-  select s.*,pg_catalog.coalesce(ps.custom_price_egp,s.price_egp) price into service_row from public.provider_services ps join public.services s on s.id=ps.service_id where ps.provider_id=p_provider_id and ps.service_id=p_service_id and ps.is_active and s.is_active and s.deleted_at is null and exists(select 1 from public.provider_profiles p where p.id=p_provider_id and p.is_published and p.deleted_at is null);
+  select s.*,coalesce(ps.custom_price_egp,s.price_egp) price into service_row from public.provider_services ps join public.services s on s.id=ps.service_id where ps.provider_id=p_provider_id and ps.service_id=p_service_id and ps.is_active and s.is_active and s.deleted_at is null and exists(select 1 from public.provider_profiles p where p.id=p_provider_id and p.is_published and p.deleted_at is null);
   if service_row.id is null then raise exception 'Service unavailable' using errcode='22023'; end if;
   select * into address_row from public.addresses where id=p_address_id and customer_id=uid and deleted_at is null;
   if address_row.id is null then raise exception 'Address not found' using errcode='42501'; end if;
   service_price:=service_row.price;
   insert into public.bookings(customer_id,provider_id,service_id,status,service_name_snapshot,pricing_type,estimated_price_egp,issue_description,notes,scheduled_date,scheduled_time,address_id,address_snapshot,booking_type,price_breakdown,idempotency_key)
-  values(uid,p_provider_id,p_service_id,'pending_provider_approval',service_row.name,service_row.pricing_type,service_price+transport+emergency,p_issue_description,pg_catalog.coalesce(p_notes,''),p_scheduled_date,p_scheduled_time,p_address_id,pg_catalog.concat_ws(', ',address_row.building,address_row.street,address_row.district,address_row.governorate),p_booking_type,pg_catalog.jsonb_build_object('servicePrice',service_price,'inspectionFee',case when service_row.pricing_type='inspection' then service_price else 0 end,'transportationFee',transport,'emergencySurcharge',emergency,'discount',0,'estimatedTotal',service_price+transport+emergency,'pricingType',service_row.pricing_type),p_idempotency_key)
+  values(uid,p_provider_id,p_service_id,'pending_provider_approval',service_row.name,service_row.pricing_type,service_price+transport+emergency,p_issue_description,coalesce(p_notes,''),p_scheduled_date,p_scheduled_time,p_address_id,pg_catalog.concat_ws(', ',address_row.building,address_row.street,address_row.district,address_row.governorate),p_booking_type,pg_catalog.jsonb_build_object('servicePrice',service_price,'inspectionFee',case when service_row.pricing_type='inspection' then service_price else 0 end,'transportationFee',transport,'emergencySurcharge',emergency,'discount',0,'estimatedTotal',service_price+transport+emergency,'pricingType',service_row.pricing_type),p_idempotency_key)
   on conflict(idempotency_key) do update set idempotency_key=excluded.idempotency_key where public.bookings.customer_id=uid returning id into booking_id;
   return booking_id;
 end;
@@ -83,7 +83,7 @@ returns void language plpgsql security definer set search_path = '' as $$
 declare uid uuid := (select auth.uid());
 begin
   if uid is null then raise exception 'Authentication required' using errcode='42501'; end if;
-  update public.bookings set status='cancelled',cancellation_reason=pg_catalog.left(pg_catalog.coalesce(p_reason,'other'),120),cancelled_at=pg_catalog.now(),updated_at=pg_catalog.now() where id=p_booking_id and customer_id=uid and status in ('pending_provider_approval','accepted','confirmed','provider_on_the_way','provider_arrived');
+  update public.bookings set status='cancelled',cancellation_reason=pg_catalog.left(coalesce(p_reason,'other'),120),cancelled_at=pg_catalog.now(),updated_at=pg_catalog.now() where id=p_booking_id and customer_id=uid and status in ('pending_provider_approval','accepted','confirmed','provider_on_the_way','provider_arrived');
   if not found then raise exception 'Booking cannot be cancelled' using errcode='22023'; end if;
 end;
 $$;

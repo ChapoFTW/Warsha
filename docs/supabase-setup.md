@@ -25,7 +25,7 @@ Do not copy the Supabase `service_role` secret, secret key, database password, a
 
 1. In **Authentication → Providers → Email**, enable Email authentication.
 2. Choose whether **Confirm email** is enabled. When enabled, new users must click the emailed confirmation link before signing in.
-3. In **Authentication → URL Configuration**, set the Site URL for development as appropriate for your Expo environment. Password signup/sign-in works without a mobile redirect; magic links require a configured `warsha://` redirect later.
+3. Configure the mobile authentication redirect URLs as described below. Password signup/sign-in works without a redirect, but password recovery must explicitly redirect back into the app.
 4. Apply migrations with `npx supabase login`, `npx supabase link --project-ref YOUR_PROJECT_REF`, then `npx supabase db push`.
 5. Load the idempotent fictional development seed with `npx supabase db reset` locally, or `npx supabase db execute --file supabase/seed.sql --linked` against a disposable development project.
 5. Populate approved providers and their services. Only provider rows with `is_published = true` are visible in Supabase mode.
@@ -69,3 +69,27 @@ npm.cmd run auth:cleanup-seed
 ```
 
 The cleanup script verifies both the exact fictional email and its deterministic seed UUID before deletion. It does not match normally registered users.
+
+## Mobile password-recovery redirects
+
+Open **Supabase Dashboard → Authentication → URL Configuration → Redirect URLs**.
+
+For Expo Go development, add:
+
+```text
+exp://**
+```
+
+This wildcard is development-only. `Linking.createURL('reset-password')` generates the active Expo Go development address, such as `exp://192.168.x.x:8081/--/reset-password`. The address varies with the development machine and network.
+
+For Warsha development builds and production native builds, add:
+
+```text
+warsha://**
+```
+
+The Expo configuration already declares `"scheme": "warsha"` in `app.json`. A custom-scheme change requires a new development/native build because schemes are compiled into the native application. Expo Go continues to use its generated `exp://` address and does not require a custom Warsha build.
+
+The app always supplies the generated callback as `redirectTo` when requesting a reset. Do not rely on `http://localhost:3000`: the hosted Supabase Site URL is not changed by the mobile app, and localhost is only an unsuitable fallback when a mobile reset request omits its explicit redirect. Configure the hosted Site URL separately for any real website that may be added later.
+
+After changing the dashboard allow-list, restart Expo, request a new password-reset email, and use only the newest link. Previously issued or already-used recovery links can be rejected as expired.
