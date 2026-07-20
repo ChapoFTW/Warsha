@@ -21,7 +21,8 @@ begin
   insert into public.customer_profiles(id) values(u.id) on conflict do nothing;
   insert into public.user_roles(user_id,role) values(u.id,'customer') on conflict do nothing;
   insert into public.notification_preferences(user_id) values(u.id) on conflict do nothing;
-end $$;
+end;
+$$;
 revoke all on function public.ensure_customer_profile() from public;
 grant execute on function public.ensure_customer_profile() to authenticated;
 
@@ -30,25 +31,51 @@ begin
   if not exists(select 1 from public.addresses where id=address_id and customer_id=(select auth.uid()) and deleted_at is null) then raise exception 'Address not found' using errcode='42501'; end if;
   update public.addresses set is_default=false where customer_id=(select auth.uid()) and deleted_at is null and is_default;
   update public.addresses set is_default=true where id=address_id;
-end $$;
+end;
+$$;
 revoke all on function public.set_default_address(uuid) from public;
 grant execute on function public.set_default_address(uuid) to authenticated;
 
-create or replace function private.enforce_booking_transition() returns trigger language plpgsql set search_path='' as $$
+create or replace function private.enforce_booking_transition()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+declare
+  transition_is_valid boolean := false;
 begin
-  if old.status is distinct from new.status and not case old.status
-    when 'pending_provider_approval' then new.status in ('accepted','rejected','cancelled')
-    when 'accepted' then new.status in ('confirmed','cancelled')
-    when 'confirmed' then new.status in ('provider_on_the_way','cancelled')
-    when 'provider_on_the_way' then new.status in ('provider_arrived','cancelled')
-    when 'provider_arrived' then new.status in ('job_started','cancelled')
-    when 'job_started' then new.status in ('work_in_progress','completed','disputed')
-    when 'work_in_progress' then new.status in ('completed','disputed')
-    when 'completed' then new.status='disputed'
-    when 'disputed' then new.status='refunded'
-    else false end then raise exception 'Invalid booking transition' using errcode='22023'; end if;
+  if old.status is not distinct from new.status then
+    return new;
+  end if;
+
+  if old.status = 'pending_provider_approval' then
+    transition_is_valid := new.status in ('accepted', 'rejected', 'cancelled');
+  elsif old.status = 'accepted' then
+    transition_is_valid := new.status in ('confirmed', 'cancelled');
+  elsif old.status = 'confirmed' then
+    transition_is_valid := new.status in ('provider_on_the_way', 'cancelled');
+  elsif old.status = 'provider_on_the_way' then
+    transition_is_valid := new.status in ('provider_arrived', 'cancelled');
+  elsif old.status = 'provider_arrived' then
+    transition_is_valid := new.status in ('job_started', 'cancelled');
+  elsif old.status = 'job_started' then
+    transition_is_valid := new.status in ('work_in_progress', 'completed', 'disputed');
+  elsif old.status = 'work_in_progress' then
+    transition_is_valid := new.status in ('completed', 'disputed');
+  elsif old.status = 'completed' then
+    transition_is_valid := new.status = 'disputed';
+  elsif old.status = 'disputed' then
+    transition_is_valid := new.status = 'refunded';
+  end if;
+
+  if not transition_is_valid then
+    raise exception 'Invalid booking transition: % -> %', old.status, new.status
+      using errcode = '22023';
+  end if;
+
   return new;
-end $$;
+end;
+$$;
 drop trigger if exists enforce_booking_transition on public.bookings;
 create trigger enforce_booking_transition before update of status on public.bookings for each row execute function private.enforce_booking_transition();
 
@@ -68,7 +95,8 @@ begin
   values(uid,p_provider_id,p_service_id,'pending_provider_approval',service_row.name,service_row.pricing_type,service_price+transport+emergency,p_issue_description,coalesce(p_notes,''),p_scheduled_date,p_scheduled_time,p_address_id,concat_ws(', ',address_row.building,address_row.street,address_row.district,address_row.governorate),p_booking_type,jsonb_build_object('servicePrice',service_price,'inspectionFee',case when service_row.pricing_type='inspection' then service_price else 0 end,'transportationFee',transport,'emergencySurcharge',emergency,'discount',0,'estimatedTotal',service_price+transport+emergency,'pricingType',service_row.pricing_type),p_idempotency_key)
   on conflict(idempotency_key) do update set idempotency_key=excluded.idempotency_key where public.bookings.customer_id=uid returning id into booking_id;
   return booking_id;
-end $$;
+end;
+$$;
 revoke all on function public.create_customer_booking(uuid,uuid,text,text,uuid,date,time,text,text) from public;
 grant execute on function public.create_customer_booking(uuid,uuid,text,text,uuid,date,time,text,text) to authenticated;
 
@@ -76,7 +104,8 @@ create or replace function public.cancel_customer_booking(p_booking_id uuid,p_re
 begin
   update public.bookings set status='cancelled',cancellation_reason=left(coalesce(p_reason,'other'),120),cancelled_at=now(),updated_at=now() where id=p_booking_id and customer_id=(select auth.uid()) and status in ('pending_provider_approval','accepted','confirmed','provider_on_the_way','provider_arrived');
   if not found then raise exception 'Booking cannot be cancelled' using errcode='22023'; end if;
-end $$;
+end;
+$$;
 revoke all on function public.cancel_customer_booking(uuid,text) from public; grant execute on function public.cancel_customer_booking(uuid,text) to authenticated;
 
 create or replace function public.reschedule_customer_booking(p_booking_id uuid,p_scheduled_date date,p_scheduled_time time) returns void language plpgsql security definer set search_path='' as $$
@@ -85,7 +114,8 @@ begin
   update public.bookings set scheduled_date=p_scheduled_date,scheduled_time=p_scheduled_time,updated_at=now() where id=p_booking_id and customer_id=(select auth.uid()) and status in ('pending_provider_approval','accepted','confirmed') and p_scheduled_date>=current_date returning status into current_status;
   if current_status is null then raise exception 'Booking cannot be rescheduled' using errcode='22023'; end if;
   insert into public.booking_status_history(booking_id,status,actor_id,metadata) values(p_booking_id,current_status,(select auth.uid()),jsonb_build_object('note','rescheduled','scheduled_date',p_scheduled_date,'scheduled_time',p_scheduled_time));
-end $$;
+end;
+$$;
 revoke all on function public.reschedule_customer_booking(uuid,date,time) from public; grant execute on function public.reschedule_customer_booking(uuid,date,time) to authenticated;
 
 drop policy if exists booking_attachments_insert_participant on public.booking_attachments;
