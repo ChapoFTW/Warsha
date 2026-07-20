@@ -1,5 +1,5 @@
 begin;
-select plan(51);
+select plan(63);
 select has_table('public','profiles','profiles exists');
 select has_table('public','bookings','bookings exists');
 select has_table('public','provider_verification_documents','verification documents exist');
@@ -51,5 +51,17 @@ select is(has_function_privilege('authenticated','public.cancel_customer_booking
 select is((select not exists(select 1 from pg_catalog.aclexplode(coalesce(p.proacl,pg_catalog.acldefault('f',p.proowner))) a where a.grantee=0 and a.privilege_type='EXECUTE') from pg_catalog.pg_proc p where p.oid='public.cancel_customer_booking(uuid,text)'::regprocedure),true,'PUBLIC cannot cancel customer bookings');
 select is((select count(*)::integer from pg_policies where schemaname='storage' and tablename='objects' and policyname='booking_attachment_participant_upload'),1,'scoped booking upload policy exists');
 select is((select count(*)::integer from pg_policies where schemaname='public' and tablename='bookings' and policyname='bookings_participant_read'),1,'booking participant read remains singular');
+select has_function('public','mark_notification_read',array['uuid'],'single notification read RPC exists');
+select has_function('public','mark_all_notifications_read',array[]::text[],'mark-all notification RPC exists');
+select has_function('public','dismiss_notification',array['uuid'],'notification dismissal RPC exists');
+select is(has_function_privilege('anon','public.mark_notification_read(uuid)','EXECUTE'),false,'anon cannot mark notifications read');
+select is(has_function_privilege('anon','public.mark_all_notifications_read()','EXECUTE'),false,'anon cannot mark all notifications read');
+select is(has_function_privilege('anon','public.dismiss_notification(uuid)','EXECUTE'),false,'anon cannot dismiss notifications');
+select is(has_function_privilege('authenticated','public.mark_notification_read(uuid)','EXECUTE'),true,'authenticated can invoke owned notification read mutation');
+select is(has_function_privilege('authenticated','public.mark_all_notifications_read()','EXECUTE'),true,'authenticated can invoke owned mark-all mutation');
+select is(has_function_privilege('authenticated','public.dismiss_notification(uuid)','EXECUTE'),true,'authenticated can invoke owned notification dismissal');
+select is((select not exists(select 1 from pg_catalog.aclexplode(coalesce(p.proacl,pg_catalog.acldefault('f',p.proowner))) a where a.grantee=0 and a.privilege_type='EXECUTE') from pg_catalog.pg_proc p where p.oid='public.mark_notification_read(uuid)'::regprocedure),true,'PUBLIC cannot mark notifications read');
+select is((select not exists(select 1 from pg_catalog.aclexplode(coalesce(p.proacl,pg_catalog.acldefault('f',p.proowner))) a where a.grantee=0 and a.privilege_type='EXECUTE') from pg_catalog.pg_proc p where p.oid='public.mark_all_notifications_read()'::regprocedure),true,'PUBLIC cannot mark all notifications read');
+select is((select not exists(select 1 from pg_catalog.aclexplode(coalesce(p.proacl,pg_catalog.acldefault('f',p.proowner))) a where a.grantee=0 and a.privilege_type='EXECUTE') from pg_catalog.pg_proc p where p.oid='public.dismiss_notification(uuid)'::regprocedure),true,'PUBLIC cannot dismiss notifications');
 select * from finish();
 rollback;
