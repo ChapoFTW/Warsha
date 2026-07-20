@@ -1,18 +1,6 @@
-import type { ComponentProps } from 'react';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import type { TranslationKey } from '@/src/i18n/translations';
-
-type IconName = ComponentProps<typeof MaterialIcons>['name'];
-export type Category = { id: string; label: TranslationKey; icon: IconName; description: TranslationKey };
-export type Service = { id: string; name: string; price: number; pricingType: 'fixed' | 'starting' | 'inspection'; duration: string };
-export type Review = { id: string; author: string; rating: number; date: string; comment: string };
-export type Provider = {
-  id: string; name: string; profession: TranslationKey; categoryId: string; rating: number; reviewCount: number;
-  distance: number; price: number; image: string; coverImage: string; verified: boolean; available: boolean;
-  completedJobs: number; experienceYears: number; responseTime: string; location: string; serviceRadius: number;
-  languages: string[]; about: string; skills: string[]; certifications: string[]; services: Service[];
-  portfolio: string[]; reviews: Review[]; cancellationPolicy: string; guarantee: string;
-};
+import type { Category, Provider } from './marketplace-types';
+export type { Availability, Category, Provider, Review, Service } from './marketplace-types';
 
 export const categories: Category[] = [
   { id: 'plumbing', label: 'plumbing', icon: 'plumbing', description: 'plumbingDescription' }, { id: 'electrical', label: 'electrical', icon: 'electrical-services', description: 'electricalDescription' },
