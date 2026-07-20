@@ -11,7 +11,9 @@
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
     "check:mojibake": "node ./scripts/check-mojibake.js",
-    "db:test": "supabase test db"
+    "db:test": "supabase test db",
+    "auth:cleanup-seed": "node ./scripts/cleanup-malformed-seed-users.mjs",
+    "auth:create-dev-user": "node ./scripts/create-dev-auth-user.mjs"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",

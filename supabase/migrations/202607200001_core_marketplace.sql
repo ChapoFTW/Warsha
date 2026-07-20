@@ -27,7 +27,7 @@ create table public.services (
   created_at timestamptz not null default now(), updated_at timestamptz not null default now(), deleted_at timestamptz
 );
 create table public.provider_profiles (
-  id uuid primary key references public.profiles(id) on delete cascade, primary_category_id text references public.service_categories(id),
+  id uuid primary key default gen_random_uuid(), user_id uuid unique references public.profiles(id) on delete set null, display_name text not null, avatar_url text, primary_category_id text references public.service_categories(id),
   profession_key text not null, about text not null default '', cover_image_url text, experience_years integer not null default 0 check(experience_years>=0),
   rating_average numeric(2,1) not null default 0 check(rating_average between 0 and 5), review_count integer not null default 0 check(review_count>=0),
   completed_jobs integer not null default 0 check(completed_jobs>=0), starting_price_egp numeric(12,2) check(starting_price_egp>=0),

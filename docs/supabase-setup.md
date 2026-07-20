@@ -41,3 +41,31 @@ After authentication, detect locally stored addresses, favourites, and bookings 
 ## Reset and security
 
 Use `npx supabase db reset` only for local development; it destroys the local database and reapplies migrations and seed data. All mobile access uses the anon key plus RLS. Never bundle a service-role key. `profile-images` and `provider-portfolios` are public media buckets; `booking-attachments` is private and participant access must be mediated by database authorization or signed URLs.
+
+## Development Auth accounts
+
+The SQL seed creates fictional public provider listings only. It does not write to `auth.users`, `auth.identities`, `auth.sessions`, or any other Supabase-managed Auth table. Seeded marketplace providers are not login accounts.
+
+The preferred test flow is to register normally in the app and confirm the email if confirmation is enabled. For a confirmed server-created development user, run the Admin API script from a trusted terminal:
+
+```powershell
+$env:SUPABASE_URL='https://YOUR_PROJECT_REF.supabase.co'
+$env:SUPABASE_SERVICE_ROLE_KEY='YOUR_SERVER_ONLY_SERVICE_ROLE_KEY'
+$env:DEV_AUTH_EMAIL='your-test-address@example.com'
+$env:DEV_AUTH_PASSWORD='choose-a-development-password'
+$env:DEV_AUTH_NAME='Warsha Test Customer'
+$env:DEV_AUTH_ROLE='customer'
+npm.cmd run auth:create-dev-user
+```
+
+The service-role value is used only by the Node process and must never be placed in `.env`, `.env.local`, `app.json`, an `EXPO_PUBLIC_*` variable, or mobile code.
+
+Projects that previously ran the malformed `provider1@example.invalid` seed should first apply migration `202607200006_decouple_provider_auth.sql`, then remove only those deterministic fixtures through the supported Admin API:
+
+```powershell
+$env:SUPABASE_URL='https://YOUR_PROJECT_REF.supabase.co'
+$env:SUPABASE_SERVICE_ROLE_KEY='YOUR_SERVER_ONLY_SERVICE_ROLE_KEY'
+npm.cmd run auth:cleanup-seed
+```
+
+The cleanup script verifies both the exact fictional email and its deterministic seed UUID before deletion. It does not match normally registered users.

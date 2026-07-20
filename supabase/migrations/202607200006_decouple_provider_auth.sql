@@ -1,0 +1,26 @@
+alter table public.provider_profiles add column if not exists user_id uuid;
+alter table public.provider_profiles add column if not exists display_name text;
+alter table public.provider_profiles add column if not exists avatar_url text;
+update public.provider_profiles p set user_id=p.id where p.user_id is null and exists(select 1 from public.profiles x where x.id=p.id);
+update public.provider_profiles p set display_name=coalesce((select x.display_name from public.profiles x where x.id=p.user_id),'Warsha professional') where p.display_name is null;
+alter table public.provider_profiles alter column display_name set not null;
+alter table public.provider_profiles drop constraint if exists provider_profiles_id_fkey;
+alter table public.provider_profiles drop constraint if exists provider_profiles_user_id_fkey;
+alter table public.provider_profiles add constraint provider_profiles_user_id_fkey foreign key(user_id) references public.profiles(id) on delete set null;
+create unique index if not exists provider_profiles_user_id_unique on public.provider_profiles(user_id) where user_id is not null;
+
+drop policy if exists profiles_public_provider_select on public.profiles;
+drop policy if exists providers_own_update on public.provider_profiles;
+create policy providers_own_update on public.provider_profiles for update to authenticated using(user_id=(select auth.uid())) with check(user_id=(select auth.uid()));
+drop policy if exists provider_services_own_write on public.provider_services;
+create policy provider_services_own_write on public.provider_services for all to authenticated using(exists(select 1 from public.provider_profiles p where p.id=provider_id and p.user_id=(select auth.uid()))) with check(exists(select 1 from public.provider_profiles p where p.id=provider_id and p.user_id=(select auth.uid())));
+drop policy if exists provider_availability_own_write on public.provider_availability;
+create policy provider_availability_own_write on public.provider_availability for all to authenticated using(exists(select 1 from public.provider_profiles p where p.id=provider_id and p.user_id=(select auth.uid()))) with check(exists(select 1 from public.provider_profiles p where p.id=provider_id and p.user_id=(select auth.uid())));
+drop policy if exists provider_areas_own_write on public.provider_service_areas;
+create policy provider_areas_own_write on public.provider_service_areas for all to authenticated using(exists(select 1 from public.provider_profiles p where p.id=provider_id and p.user_id=(select auth.uid()))) with check(exists(select 1 from public.provider_profiles p where p.id=provider_id and p.user_id=(select auth.uid())));
+drop policy if exists bookings_participant_read on public.bookings;
+create policy bookings_participant_read on public.bookings for select to authenticated using(customer_id=(select auth.uid()) or exists(select 1 from public.provider_profiles p where p.id=provider_id and p.user_id=(select auth.uid())) or private.is_staff());
+drop policy if exists booking_history_participant_read on public.booking_status_history;
+create policy booking_history_participant_read on public.booking_status_history for select to authenticated using(exists(select 1 from public.bookings b left join public.provider_profiles p on p.id=b.provider_id where b.id=booking_id and (b.customer_id=(select auth.uid()) or p.user_id=(select auth.uid()))) or private.is_staff());
+drop policy if exists booking_attachments_participant on public.booking_attachments;
+create policy booking_attachments_participant on public.booking_attachments for select to authenticated using(exists(select 1 from public.bookings b left join public.provider_profiles p on p.id=b.provider_id where b.id=booking_id and (b.customer_id=(select auth.uid()) or p.user_id=(select auth.uid()))) or private.is_staff());

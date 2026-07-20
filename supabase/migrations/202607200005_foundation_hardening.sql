@@ -12,7 +12,7 @@ begin
   insert into public.user_roles(user_id,role) values(new.id,'customer');
   if selected_role='provider' then
     insert into public.user_roles(user_id,role) values(new.id,'provider') on conflict do nothing;
-    insert into public.provider_profiles(id,profession_key,is_published) values(new.id,'professional',false) on conflict do nothing;
+    insert into public.provider_profiles(user_id,display_name,profession_key,is_published) values(new.id,coalesce(nullif(trim(new.raw_user_meta_data->>'display_name'),''),'Warsha provider'),'professional',false) on conflict(user_id) do nothing;
   end if;
   insert into public.notification_preferences(user_id) values(new.id);
   return new;
