@@ -1,0 +1,5 @@
+import Storage from 'expo-sqlite/kv-store'; import type { Address } from '@/src/bookings/booking-types';
+const KEY='warsha:addresses:v1';
+export const defaultAddresses:Address[]=[{id:'home-zamalek',label:'Home',governorate:'Cairo',district:'Zamalek',street:'21 El Tahrir Street',building:'21',floor:'4',apartment:'12',landmark:'Near 26 July Street',instructions:'Call on arrival'},{id:'family-dokki',label:'Family home',governorate:'Giza',district:'Dokki',street:'15 Mossadak Street',building:'15',floor:'2',apartment:'6',landmark:'Opposite the pharmacy',instructions:''}];
+export interface AddressRepository{list():Promise<Address[]>;add(address:Omit<Address,'id'>):Promise<Address>}
+export const localAddressRepository:AddressRepository={async list(){const raw=await Storage.getItem(KEY);if(!raw){await Storage.setItem(KEY,JSON.stringify(defaultAddresses));return defaultAddresses}try{return JSON.parse(raw) as Address[]}catch{return defaultAddresses}},async add(input){const addresses=await this.list();const address={...input,id:`ADDR-${Date.now().toString(36)}`};await Storage.setItem(KEY,JSON.stringify([...addresses,address]));return address}};
