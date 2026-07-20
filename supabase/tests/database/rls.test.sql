@@ -1,5 +1,5 @@
 begin;
-select plan(16);
+select plan(30);
 select has_table('public','profiles','profiles exists');
 select has_table('public','bookings','bookings exists');
 select has_table('public','provider_verification_documents','verification documents exist');
@@ -16,5 +16,19 @@ select has_function('public','activate_provider_role',array['text'],'provider ac
 select has_function('public','save_provider_foundation',array['jsonb','boolean'],'provider foundation save is transactional');
 select has_column('public','provider_profiles','onboarding_status','provider onboarding status exists');
 select has_column('public','provider_services','pricing_type','provider pricing model exists');
+select has_function('public','accept_provider_booking',array['uuid'],'provider acceptance RPC exists');
+select has_function('public','reject_provider_booking',array['uuid','text'],'provider rejection RPC exists');
+select has_function('public','propose_provider_reschedule',array['uuid','date','time without time zone','text'],'provider proposal RPC exists');
+select has_function('public','advance_provider_booking_status',array['uuid','text','text'],'provider progression RPC exists');
+select has_function('public','report_provider_no_show',array['uuid','text'],'provider no-show RPC exists');
+select has_function('public','accept_provider_reschedule',array['uuid'],'customer proposal acceptance RPC exists');
+select has_function('public','reject_provider_reschedule',array['uuid'],'customer proposal rejection RPC exists');
+select has_column('public','bookings','proposed_scheduled_date','provider proposal date exists');
+select has_column('public','booking_attachments','attachment_kind','attachment purpose exists');
+select is(has_function_privilege('anon','public.accept_provider_booking(uuid)','EXECUTE'),false,'anon cannot accept provider bookings');
+select is(has_function_privilege('authenticated','public.accept_provider_booking(uuid)','EXECUTE'),true,'authenticated can invoke provider acceptance subject to ownership');
+select is(has_function_privilege('anon','public.accept_provider_reschedule(uuid)','EXECUTE'),false,'anon cannot accept reschedule proposals');
+select is((select count(*)::integer from pg_policies where schemaname='storage' and tablename='objects' and policyname='booking_attachment_participant_upload'),1,'scoped booking upload policy exists');
+select is((select count(*)::integer from pg_policies where schemaname='public' and tablename='bookings' and policyname='bookings_participant_read'),1,'booking participant read remains singular');
 select * from finish();
 rollback;
