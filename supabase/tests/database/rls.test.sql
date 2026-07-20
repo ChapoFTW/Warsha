@@ -1,0 +1,12 @@
+begin;
+select plan(8);
+select has_table('public','profiles','profiles exists');
+select has_table('public','bookings','bookings exists');
+select has_table('public','provider_verification_documents','verification documents exist');
+select has_table('public','audit_logs','audit log exists');
+select is((select relrowsecurity from pg_class where oid='public.bookings'::regclass),true,'bookings RLS enabled');
+select is((select relrowsecurity from pg_class where oid='public.provider_verification_documents'::regclass),true,'verification RLS enabled');
+select is((select relrowsecurity from pg_class where oid='public.messages'::regclass),true,'messages RLS enabled');
+select has_function('public','cancel_own_booking',array['uuid'],'controlled booking cancellation function exists');
+select * from finish();
+rollback;

@@ -1,0 +1,14 @@
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { Image } from 'expo-image';
+import { router } from 'expo-router';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { colors, radii, spacing, typography } from '@/constants/theme';
+import type { Provider } from '@/src/data/mock-data';
+import { useLocalization } from '@/src/i18n/localization';
+import { AppText } from './Typography';
+
+export function ProviderListItem({ provider }: { provider: Provider }) {
+  const { t, isRTL } = useLocalization();
+  return <Pressable onPress={()=>router.push({pathname:'/provider/[id]',params:{id:provider.id}})} style={[styles.card,isRTL&&styles.reverse]}><Image source={{uri:provider.image}} contentFit="cover" style={styles.image}/><View style={styles.body}><View style={[styles.nameRow,isRTL&&styles.reverse]}><AppText numberOfLines={1} style={styles.name}>{provider.name}</AppText>{provider.verified?<MaterialIcons name="verified" size={16} color={colors.white}/>:null}</View><AppText style={styles.profession}>{t(provider.profession)} · {provider.distance.toFixed(1)} km</AppText><View style={[styles.rating,isRTL&&styles.reverse]}><MaterialIcons name="star" size={15} color={colors.white}/><AppText style={styles.ratingText}>{provider.rating}</AppText><AppText style={styles.muted}>({provider.reviewCount} {t('reviews')})</AppText></View><View style={[styles.bottom,isRTL&&styles.reverse]}><View style={[styles.availability,isRTL&&styles.reverse]}><View style={[styles.dot,!provider.available&&styles.dotOffline]}/><AppText style={styles.muted}>{provider.available?t('available'):t('responseTime')}</AppText></View><AppText style={styles.price}>{t('startsAt')} {provider.price} EGP</AppText></View></View><MaterialIcons name={isRTL?'chevron-left':'chevron-right'} size={22} color={colors.textMuted}/></Pressable>;
+}
+const styles=StyleSheet.create({card:{flexDirection:'row',alignItems:'center',gap:spacing.md,padding:spacing.md,borderRadius:radii.lg,borderWidth:1,borderColor:colors.border,backgroundColor:colors.surface},reverse:{flexDirection:'row-reverse'},image:{width:92,height:112,borderRadius:radii.md,backgroundColor:colors.surfaceElevated},body:{flex:1,gap:5},nameRow:{flexDirection:'row',alignItems:'center',gap:5},name:{fontSize:17,fontWeight:typography.semibold,flexShrink:1},profession:{fontSize:12,color:colors.textSecondary},rating:{flexDirection:'row',alignItems:'center',gap:3},ratingText:{fontSize:12,fontWeight:typography.semibold},muted:{fontSize:11,color:colors.textMuted},bottom:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginTop:3},availability:{flexDirection:'row',alignItems:'center',gap:4},dot:{width:6,height:6,borderRadius:3,backgroundColor:colors.success},dotOffline:{backgroundColor:colors.textMuted},price:{fontSize:12,fontWeight:typography.bold}});

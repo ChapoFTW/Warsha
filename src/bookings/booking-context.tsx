@@ -1,0 +1,11 @@
+import { createContext, PropsWithChildren, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { useAuth } from '@/src/auth/auth-context'; import { dataAdapter } from '@/src/data/data-adapter';
+export type BookingStatus='confirmed'|'cancelled'; export type BookingHistoryEvent={status:BookingStatus;at:string};
+export type Booking={id:string;providerId:string;serviceId:string;serviceName:string;price:number;pricingType:'fixed'|'starting'|'inspection';issueDescription:string;date:string;time:string;address:string;status:BookingStatus;createdAt:string;history:BookingHistoryEvent[]};
+export type NewBooking=Omit<Booking,'id'|'status'|'createdAt'|'history'>;
+type Value={bookings:Booking[];loading:boolean;error:string|null;createBooking:(input:NewBooking)=>Promise<Booking>;cancelBooking:(id:string)=>Promise<void>;getBooking:(id:string)=>Booking|undefined;reload:()=>Promise<void>};
+const Context=createContext<Value|null>(null);
+export function BookingProvider({children}:PropsWithChildren){const{user}=useAuth();const[bookings,setBookings]=useState<Booking[]>([]);const[loading,setLoading]=useState(false);const[error,setError]=useState<string|null>(null);const reload=useCallback(async()=>{if(dataAdapter.mode==='supabase'&&!user){setBookings([]);return}setLoading(true);setError(null);try{setBookings(await dataAdapter.listBookings())}catch(reason){setError(reason instanceof Error?reason.message:'Unable to load bookings.')}finally{setLoading(false)}},[user]);useEffect(()=>{void reload()},[reload]);const value=useMemo<Value>(()=>({bookings,loading,error,reload,createBooking:async(input)=>{setError(null);const booking=await dataAdapter.createBooking(input);setBookings((current)=>[booking,...current.filter((item)=>item.id!==booking.id)]);return booking},cancelBooking:async(id)=>{setError(null);const updated=await dataAdapter.cancelBooking(id);setBookings((current)=>current.map((item)=>item.id===id?updated:item))},getBooking:(id)=>bookings.find((booking)=>booking.id===id)}),[bookings,error,loading,reload]);return <Context.Provider value={value}>{children}</Context.Provider>}
+export function useBookings(){const context=useContext(Context);if(!context)throw new Error('useBookings must be used inside BookingProvider');return context}
+
+

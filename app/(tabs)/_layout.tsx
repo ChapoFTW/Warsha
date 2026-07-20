@@ -1,0 +1,2 @@
+import { Tabs } from 'expo-router'; import { BottomNavigation } from '@/components/warsha/BottomNavigation'; import { colors } from '@/constants/theme';
+export default function TabLayout(){return <Tabs tabBar={(props)=><BottomNavigation {...props}/>} screenOptions={{headerShown:false,sceneStyle:{backgroundColor:colors.background}}}><Tabs.Screen name="index"/><Tabs.Screen name="orders"/><Tabs.Screen name="chat"/><Tabs.Screen name="profile"/></Tabs>}

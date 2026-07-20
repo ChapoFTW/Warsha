@@ -1,0 +1,7 @@
+import { ThemeProvider } from '@react-navigation/native'; import { Stack } from 'expo-router'; import { StatusBar } from 'expo-status-bar'; import 'react-native-reanimated'; import { colors } from '@/constants/theme'; import { AuthProvider } from '@/src/auth/auth-context'; import { BookingProvider } from '@/src/bookings/booking-context'; import { MarketplaceDataProvider } from '@/src/data/marketplace-context'; import { LocalizationProvider } from '@/src/i18n/localization';
+const navigationTheme={dark:true,colors:{primary:colors.white,background:colors.background,card:colors.surface,text:colors.textPrimary,border:colors.border,notification:colors.white},fonts:{regular:{fontFamily:'System',fontWeight:'400' as const},medium:{fontFamily:'System',fontWeight:'500' as const},bold:{fontFamily:'System',fontWeight:'700' as const},heavy:{fontFamily:'System',fontWeight:'700' as const}}};
+export default function RootLayout(){return <LocalizationProvider><AuthProvider><MarketplaceDataProvider><BookingProvider><ThemeProvider value={navigationTheme}><Stack screenOptions={{headerShown:false,contentStyle:{backgroundColor:colors.background}}}><Stack.Screen name="(tabs)"/><Stack.Screen name="search"/><Stack.Screen name="categories/[id]"/><Stack.Screen name="provider/[id]"/><Stack.Screen name="booking/new/[providerId]"/><Stack.Screen name="booking/[id]"/></Stack><StatusBar style="light"/></ThemeProvider></BookingProvider></MarketplaceDataProvider></AuthProvider></LocalizationProvider>}
+
+
+
+

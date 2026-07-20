@@ -1,0 +1,15 @@
+project_id = "warsha"
+[api]
+enabled = true
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+[db]
+major_version = 15
+[db.seed]
+enabled = true
+sql_paths = ["./seed.sql"]
+[auth]
+enabled = true
+site_url = "http://localhost:8081"
+[storage]
+enabled = true

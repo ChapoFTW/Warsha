@@ -1,0 +1,6 @@
+insert into public.service_categories(id,translation_key,description_key,icon_name,sort_order) values
+('plumbing','plumbing','plumbingDescription','plumbing',10),('electrical','electrical','electricalDescription','electrical-services',20),('carpentry','carpentry','carpentryDescription','handyman',30),('ac','acRepair','acDescription','ac-unit',40),('cleaning','cleaning','cleaningDescription','cleaning-services',50),('painting','painting','paintingDescription','format-paint',60)
+on conflict(id) do update set translation_key=excluded.translation_key,description_key=excluded.description_key,icon_name=excluded.icon_name,sort_order=excluded.sort_order;
+insert into public.services(id,category_id,name,pricing_type,price_egp,duration_label) values
+('10000000-0000-4000-8000-000000000001','plumbing','Home inspection','inspection',180,'30–45 min'),('10000000-0000-4000-8000-000000000002','plumbing','Leak repair','starting',320,'1–2 hours'),('10000000-0000-4000-8000-000000000003','electrical','Electrical inspection','inspection',220,'45 min'),('10000000-0000-4000-8000-000000000004','cleaning','Deep cleaning','starting',650,'4–6 hours'),('10000000-0000-4000-8000-000000000005','ac','AC cleaning','fixed',275,'1 hour')
+on conflict(id) do update set name=excluded.name,pricing_type=excluded.pricing_type,price_egp=excluded.price_egp,duration_label=excluded.duration_label;
