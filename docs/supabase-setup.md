@@ -12,7 +12,7 @@ Create `.env.local` in the Warsha project root, beside `package.json`:
 ```env
 EXPO_PUBLIC_DATA_MODE=supabase
 EXPO_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
-EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_YOUR_KEY
+EXPO_PUBLIC_SUPABASE_ANON_KEY=YOUR_ANON_OR_PUBLISHABLE_KEY
 ```
 
 Do not quote the values. Stop and restart Expo after changing them because Expo reads public environment variables when bundling.
@@ -26,9 +26,18 @@ Do not copy the Supabase `service_role` secret, secret key, database password, a
 1. In **Authentication → Providers → Email**, enable Email authentication.
 2. Choose whether **Confirm email** is enabled. When enabled, new users must click the emailed confirmation link before signing in.
 3. In **Authentication → URL Configuration**, set the Site URL for development as appropriate for your Expo environment. Password signup/sign-in works without a mobile redirect; magic links require a configured `warsha://` redirect later.
-4. Apply migrations with the Supabase CLI: `npx supabase link`, then `npx supabase db push`.
+4. Apply migrations with `npx supabase login`, `npx supabase link --project-ref YOUR_PROJECT_REF`, then `npx supabase db push`.
+5. Load the idempotent fictional development seed with `npx supabase db reset` locally, or `npx supabase db execute --file supabase/seed.sql --linked` against a disposable development project.
 5. Populate approved providers and their services. Only provider rows with `is_published = true` are visible in Supabase mode.
 
 ## Switching back to local data
 
 Set `EXPO_PUBLIC_DATA_MODE=mock` and restart Expo. No Supabase values are required in mock mode.
+
+## Local-data import strategy
+
+After authentication, detect locally stored addresses, favourites, and bookings before changing either store. Show an explicit import prompt, upsert deterministic records, and record migrated local identifiers. Keep every local record until the complete server transaction succeeds. Local Expo file URIs are intentionally excluded until private Storage upload, retry, and cleanup are implemented.
+
+## Reset and security
+
+Use `npx supabase db reset` only for local development; it destroys the local database and reapplies migrations and seed data. All mobile access uses the anon key plus RLS. Never bundle a service-role key. `profile-images` and `provider-portfolios` are public media buckets; `booking-attachments` is private and participant access must be mediated by database authorization or signed URLs.

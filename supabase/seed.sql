@@ -4,3 +4,30 @@ on conflict(id) do update set translation_key=excluded.translation_key,descripti
 insert into public.services(id,category_id,name,pricing_type,price_egp,duration_label) values
 ('10000000-0000-4000-8000-000000000001','plumbing','Home inspection','inspection',180,'30–45 min'),('10000000-0000-4000-8000-000000000002','plumbing','Leak repair','starting',320,'1–2 hours'),('10000000-0000-4000-8000-000000000003','electrical','Electrical inspection','inspection',220,'45 min'),('10000000-0000-4000-8000-000000000004','cleaning','Deep cleaning','starting',650,'4–6 hours'),('10000000-0000-4000-8000-000000000005','ac','AC cleaning','fixed',275,'1 hour')
 on conflict(id) do update set name=excluded.name,pricing_type=excluded.pricing_type,price_egp=excluded.price_egp,duration_label=excluded.duration_label;
+
+create temporary table if not exists warsha_provider_seed as
+select n,((substr(md5('warsha-provider-'||n),1,8)||'-'||substr(md5('warsha-provider-'||n),9,4)||'-4'||substr(md5('warsha-provider-'||n),14,3)||'-8'||substr(md5('warsha-provider-'||n),18,3)||'-'||substr(md5('warsha-provider-'||n),21,12))::uuid) id
+from generate_series(1,20) n;
+
+insert into auth.users(instance_id,id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at)
+select '00000000-0000-0000-0000-000000000000',id,'authenticated','authenticated','provider'||n||'@example.invalid',crypt('WarshaSeedOnly!42',gen_salt('bf')),now(),'{"provider":"email","providers":["email"]}'::jsonb,jsonb_build_object('display_name',(array['Ahmed Hassan','Mahmoud Adel','Omar Tarek','Youssef Samir','Mostafa Nabil','Karim Fathy','Hany Ashraf','Amr Khaled','Ali Wael','Ehab Sameh','Mohamed Reda','Tamer Salah','Sherif Emad','Khaled Magdy','Ibrahim Saber','Nader Gamal','Ramy Hossam','Sayed Maged','Adel Hamdy','Fady Nasser'])[n],'preferred_language','ar'),now(),now()
+from warsha_provider_seed on conflict(id) do nothing;
+
+insert into public.user_roles(user_id,role) select id,'provider' from warsha_provider_seed on conflict do nothing;
+insert into public.provider_profiles(id,primary_category_id,profession_key,about,experience_years,rating_average,review_count,completed_jobs,starting_price_egp,response_time_label,location_label,service_radius_km,languages,skills,is_verified,is_available,is_published,cancellation_policy,guarantee_text)
+select id,(array['plumbing','electrical','carpentry','ac','cleaning','painting'])[((n-1)%6)+1],(array['plumbing','electrical','carpentry','acRepair','cleaning','painting'])[((n-1)%6)+1],'Fictional Warsha professional serving homes with clear pricing and dependable appointments.',3+(n%12),round((4.0+(n%10)::numeric/10),1),18+n*7,40+n*11,180+n*20,case when n%2=0 then 'Usually replies in 10 minutes' else 'Usually replies in 25 minutes' end,(array['Cairo','Giza','Alexandria'])[((n-1)%3)+1],8+(n%12),array['Arabic','English'],array['Home service','Maintenance'],n%3<>0,n%4<>0,true,'Free cancellation before provider acceptance.','Warsha service support terms apply.'
+from warsha_provider_seed on conflict(id) do update set is_published=true,location_label=excluded.location_label,rating_average=excluded.rating_average;
+
+insert into public.provider_services(provider_id,service_id,custom_price_egp)
+select p.id,s.id,s.price_egp+(p.n*5) from warsha_provider_seed p join lateral(select id,price_egp from public.services order by id limit 1 offset ((p.n-1)%5)) s on true
+on conflict(provider_id,service_id) do update set custom_price_egp=excluded.custom_price_egp,is_active=true;
+
+insert into public.provider_availability(provider_id,weekday,start_time,end_time)
+select id,d,'09:00','18:00' from warsha_provider_seed cross join generate_series(0,5) d
+on conflict(provider_id,weekday,start_time,end_time) where available_date is null do nothing;
+
+insert into public.provider_service_areas(provider_id,governorate,district,radius_km)
+select id,(array['Cairo','Giza','Alexandria'])[((n-1)%3)+1],(array['Nasr City','Dokki','Smouha'])[((n-1)%3)+1],8+(n%12) from warsha_provider_seed
+on conflict do nothing;
+
+drop table warsha_provider_seed;
