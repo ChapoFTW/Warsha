@@ -13,6 +13,7 @@ export const translations = {
     home: 'Home', orders: 'Orders', chat: 'Chat', profile: 'Profile', currentLocation: 'Current location',
     address: '21 El Tahrir St, Zamalek', searchPlaceholder: 'Search for services…', categories: 'Services',
     featuredProviders: 'Featured providers', viewAll: 'View all', specialOffers: 'Special offers',
+    recommendedProviders:'Recommended providers',availableNowProviders:'Providers available now',emergencyProviders:'Emergency services',mostBookedProviders:'Most booked providers',recentlyViewedProviders:'Recently viewed providers',
     recentBookings: 'Recent bookings', startsAt: 'Starts at', reviews: 'reviews', available: 'Available now',
     bookAgain: 'Book again', confirmed: 'Confirmed', offerTitle: 'A fresher home, for less',
     offerBody: 'Get 20% off your first deep cleaning this week.', claimOffer: 'Claim offer',
@@ -28,6 +29,7 @@ export const translations = {
     home: 'الرئيسية', orders: 'الطلبات', chat: 'المحادثات', profile: 'الحساب', currentLocation: 'الموقع الحالي',
     address: '٢١ شارع التحرير، الزمالك', searchPlaceholder: 'ابحث عن خدمة أو صنايعي…', categories: 'الخدمات',
     featuredProviders: 'صنايعية مميزون', viewAll: 'عرض الكل', specialOffers: 'عروض خاصة',
+    recommendedProviders:'فنيون مقترحون',availableNowProviders:'فنيون متاحون الآن',emergencyProviders:'خدمات الطوارئ',mostBookedProviders:'الأكثر حجزًا',recentlyViewedProviders:'شوهدوا مؤخرًا',
     recentBookings: 'آخر الحجوزات', startsAt: 'يبدأ من', reviews: 'تقييم', available: 'متاح الآن',
     bookAgain: 'احجز مجدداً', confirmed: 'مؤكد', offerTitle: 'بيت أنضف بسعر أقل',
     offerBody: 'خصم ٢٠٪ على أول حجز تنظيف عميق هذا الأسبوع.', claimOffer: 'استفد بالعرض',
@@ -42,7 +44,5 @@ export const translations = {
 
 export type Language = keyof typeof translations;
 export type TranslationKey = keyof typeof translations.en;
-
-
 
 
