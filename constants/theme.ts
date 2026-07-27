@@ -12,7 +12,7 @@ export const colors = {
   textMuted: '#707070',
   white: '#FFFFFF',
   success: '#7FC89A',
-  warning: '#D8BA72',
+  warning: '#A3A3A3',
   error: '#D97979',
   transparent: 'transparent',
 } as const;

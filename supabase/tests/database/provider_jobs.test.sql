@@ -13,19 +13,27 @@ insert into auth.users (
   ('00000000-0000-0000-0000-000000000000','20000000-0000-0000-0000-000000000002','authenticated','authenticated','jobs-provider-2@test.local','',pg_catalog.now(),'{}','{}',pg_catalog.now(),pg_catalog.now()),
   ('00000000-0000-0000-0000-000000000000','20000000-0000-0000-0000-000000000003','authenticated','authenticated','jobs-provider-3@test.local','',pg_catalog.now(),'{}','{}',pg_catalog.now(),pg_catalog.now());
 
-insert into public.profiles(id,display_name) values
-  ('10000000-0000-0000-0000-000000000001','Jobs customer one'),
-  ('10000000-0000-0000-0000-000000000002','Jobs customer two'),
-  ('20000000-0000-0000-0000-000000000001','Jobs provider one'),
-  ('20000000-0000-0000-0000-000000000002','Jobs provider two'),
-  ('20000000-0000-0000-0000-000000000003','Jobs provider three');
-insert into public.customer_profiles(id) values
-  ('10000000-0000-0000-0000-000000000001'),
-  ('10000000-0000-0000-0000-000000000002');
+-- The auth trigger already creates profiles and customer profiles. Update only
+-- the display names needed by these assertions instead of inserting duplicates.
+update public.profiles p
+set display_name = names.display_name
+from (values
+  ('10000000-0000-0000-0000-000000000001'::uuid,'Jobs customer one'),
+  ('10000000-0000-0000-0000-000000000002'::uuid,'Jobs customer two'),
+  ('20000000-0000-0000-0000-000000000001'::uuid,'Jobs provider one'),
+  ('20000000-0000-0000-0000-000000000002'::uuid,'Jobs provider two'),
+  ('20000000-0000-0000-0000-000000000003'::uuid,'Jobs provider three')
+) as names(id,display_name)
+where p.id = names.id;
 insert into public.provider_profiles(id,user_id,display_name,profession_key,onboarding_status,is_published) values
   ('30000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001','Jobs provider one','professional','approved',true),
   ('30000000-0000-0000-0000-000000000002','20000000-0000-0000-0000-000000000002','Jobs provider two','professional','approved',true),
   ('30000000-0000-0000-0000-000000000003','20000000-0000-0000-0000-000000000003','Jobs provider three','professional','submitted',false);
+
+-- Availability required by the hardened customer proposal acceptance RPC.
+insert into public.provider_availability(provider_id,weekday,start_time,end_time)
+select '30000000-0000-0000-0000-000000000001', weekday, '00:00', '23:59'
+from generate_series(0,6) as weekday;
 
 select pg_catalog.set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000001',true);
 insert into public.bookings(id,customer_id,provider_id,service_id,status,service_name_snapshot,pricing_type,estimated_price_egp,issue_description,scheduled_date,scheduled_time,address_snapshot,idempotency_key)

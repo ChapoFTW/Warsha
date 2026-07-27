@@ -5,7 +5,7 @@ import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollVie
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppText } from '@/components/warsha/Typography';
-import { WarshaLogo } from '@/components/warsha/WarshaLogo';
+import { BrandLogo } from '@/components/warsha/BrandLogo';
 import { colors, radii, spacing, typography } from '@/constants/theme';
 import { useAuth } from '@/src/auth/auth-context';
 import { authMessageKey, sanitizeAuthError } from '@/src/auth/auth-errors';
@@ -60,7 +60,7 @@ export default function ResetPasswordScreen() {
 
   if (success) return <StateCard icon="check" title={t('passwordUpdated')} body={t('passwordUpdatedBody')} action={t('returnToSignIn')} onPress={returnToSignIn} />;
   if (auth.recoveryStatus === 'checking' || auth.recoveryStatus === 'processing') {
-    return <SafeAreaView style={styles.safe}><View style={styles.center}><WarshaLogo size={58} wordmark/><ActivityIndicator color={colors.white}/></View></SafeAreaView>;
+    return <SafeAreaView style={styles.safe}><View style={styles.center}><BrandLogo size={58} wordmark tagline/><ActivityIndicator color={colors.white}/></View></SafeAreaView>;
   }
   if (auth.mode !== 'supabase' || auth.recoveryStatus !== 'ready' || !auth.session) {
     return <StateCard icon="link-off" title={t('resetPasswordTitle')} body={`${t('resetLinkInvalid')} ${t('requestNewReset')}`} action={t('returnToSignIn')} onPress={returnToSignIn} />;
@@ -70,7 +70,7 @@ export default function ResetPasswordScreen() {
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.page}>
-          <View style={styles.brand}><WarshaLogo size={56} wordmark/></View>
+          <View style={styles.brand}><BrandLogo size={56} wordmark tagline/></View>
           <View style={styles.card}>
             <AppText accessibilityRole="header" style={styles.title}>{t('resetPasswordTitle')}</AppText>
             <AppText style={styles.body}>{t('resetPasswordBody')}</AppText>
@@ -101,7 +101,7 @@ function PasswordField({ label, value, onChangeText, visible, onToggle, rtl, sho
 }
 
 function StateCard({ icon, title, body, action, onPress }: { icon: React.ComponentProps<typeof MaterialIcons>['name']; title: string; body: string; action: string; onPress: () => void }) {
-  return <SafeAreaView style={styles.safe}><View style={styles.center}><WarshaLogo size={58} wordmark/><View style={styles.stateIcon}><MaterialIcons name={icon} size={26} color={colors.white}/></View><AppText accessibilityRole="header" style={styles.title}>{title}</AppText><AppText style={styles.stateBody}>{body}</AppText><Pressable accessibilityRole="button" accessibilityLabel={action} onPress={onPress} style={styles.primary}><AppText style={styles.primaryText}>{action}</AppText></Pressable></View></SafeAreaView>;
+  return <SafeAreaView style={styles.safe}><View style={styles.center}><BrandLogo size={58} wordmark tagline/><View style={styles.stateIcon}><MaterialIcons name={icon} size={26} color={colors.white}/></View><AppText accessibilityRole="header" style={styles.title}>{title}</AppText><AppText style={styles.stateBody}>{body}</AppText><Pressable accessibilityRole="button" accessibilityLabel={action} onPress={onPress} style={styles.primary}><AppText style={styles.primaryText}>{action}</AppText></Pressable></View></SafeAreaView>;
 }
 
 const styles = StyleSheet.create({

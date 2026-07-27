@@ -28,6 +28,10 @@ export default function Profile() {
   const [message, setMessage] = useState('');
 
   useEffect(() => {
+    setPassword('');
+  }, [auth.user?.id]);
+
+  useEffect(() => {
     let active = true;
     if (auth.mode === 'supabase' && auth.user) void supabaseCustomerProfileRepository.get(auth.user.email ?? '').then((profile) => {
       if (active) { setName(profile.displayName); setPreferred(profile.preferredLanguage); }
