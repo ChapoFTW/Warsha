@@ -51,7 +51,7 @@
         "expo-image-picker",
         {
           "photosPermission": "Allow Warsha to attach photos to your service request.",
-          "cameraPermission": false,
+          "cameraPermission": "Allow Warsha to take photos for booking messages.",
           "microphonePermission": false
         }
       ],

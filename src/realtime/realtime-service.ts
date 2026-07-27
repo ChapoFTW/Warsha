@@ -3,8 +3,8 @@ import type { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/
 import { environment } from '@/src/config/environment';
 import { getSupabaseClient } from '@/src/lib/supabase';
 
-export type RealtimeTable = 'notifications' | 'bookings' | 'booking_status_history' | 'booking_attachments';
-export type RealtimeChange = { table: RealtimeTable; event: 'INSERT' | 'UPDATE' | 'DELETE'; id?: string };
+export type RealtimeTable = 'notifications' | 'bookings' | 'booking_status_history' | 'booking_attachments' | 'messages' | 'message_attachments' | 'conversation_typing';
+export type RealtimeChange = { table: RealtimeTable; event: 'INSERT' | 'UPDATE' | 'DELETE'; id?: string; bookingId?: string };
 export type RealtimeConnection = 'connected' | 'reconnecting' | 'error';
 export type RealtimeListener = (change: RealtimeChange) => void;
 export type Unsubscribe = () => void;
@@ -63,6 +63,12 @@ export const realtimeService = {
       { table: 'bookings', filter: `id=eq.${bookingId}` },
       { table: 'booking_status_history', filter: `booking_id=eq.${bookingId}` },
       { table: 'booking_attachments', filter: `booking_id=eq.${bookingId}` },
+    ], listener, connection);
+  },
+  bookingConversation(bookingId: string, listener: RealtimeListener, connection?: (status: RealtimeConnection) => void) {
+    return subscribeChannel(`booking-conversation:${bookingId}`, [
+      { table: 'messages', filter: `booking_id=eq.${bookingId}` },
+      { table: 'conversation_typing', filter: `booking_id=eq.${bookingId}` },
     ], listener, connection);
   },
 };
