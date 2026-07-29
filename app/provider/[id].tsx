@@ -4,6 +4,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AppText } from "@/components/warsha/Typography";
+import { ProviderReviewSummary } from "@/components/warsha/ProviderReviewSummary";
 import { colors, radii, spacing, typography } from "@/constants/theme";
 import { useAuth } from "@/src/auth/auth-context";
 import { useLocalPreferences } from "@/src/data/local-preferences";
@@ -85,13 +86,6 @@ export default function ProviderProfileScreen() {
               <AppText style={styles.muted}>
                 {t(provider.profession)} — {provider.location}
               </AppText>
-              <View style={styles.inline}>
-                <MaterialIcons name="star" size={16} color={colors.white} />
-                <AppText style={styles.strong}>{provider.rating}</AppText>
-                <AppText style={styles.muted}>
-                  ({provider.reviewCount} {t("reviews")})
-                </AppText>
-              </View>
             </View>
           </View>
           <View style={styles.stats}>
@@ -158,19 +152,7 @@ export default function ProviderProfileScreen() {
             />
           </Section>
           <Section title={t("reviewsTitle")}>
-            {provider.reviews.map((review) => (
-              <View key={review.id} style={styles.review}>
-                <View style={styles.between}>
-                  <AppText style={styles.strong}>{review.author}</AppText>
-                  <AppText style={styles.muted}>{review.date}</AppText>
-                </View>
-                <View style={styles.inline}>
-                  <MaterialIcons name="star" size={15} color={colors.white} />
-                  <AppText style={styles.strong}>{review.rating}.0</AppText>
-                </View>
-                <AppText style={styles.copy}>{review.comment}</AppText>
-              </View>
-            ))}
+            <ProviderReviewSummary providerId={provider.id} />
           </Section>
         </View>
       </ScrollView>

@@ -69,7 +69,17 @@ select is(has_function_privilege('authenticated','public.create_customer_booking
 select is((select not exists(select 1 from pg_catalog.aclexplode(coalesce(p.proacl,pg_catalog.acldefault('f',p.proowner))) a where a.grantee=0 and a.privilege_type='EXECUTE') from pg_catalog.pg_proc p where p.oid='public.create_customer_booking(uuid,uuid,text,text,uuid,date,time without time zone,text,text)'::regprocedure),true,'PUBLIC cannot create customer bookings');
 select is(has_function_privilege('authenticated','public.cancel_own_booking(uuid)','EXECUTE'),false,'obsolete cancellation RPC has no client execution');
 select is((select count(*)::integer from pg_policies where schemaname='public' and tablename='booking_attachments' and policyname='booking_attachments_insert_customer' and with_check like '%pending_provider_approval%'),1,'customer attachment metadata inserts are pending-booking scoped');
-select is((select count(*)::integer from pg_policies where schemaname='storage' and tablename='objects' and policyname='booking_attachment_participant_upload' and with_check like '%pending_provider_approval%'),1,'customer attachment object uploads are pending-booking scoped');
+select is((
+  select count(*)::integer
+  from pg_policies
+  where schemaname='storage'
+    and tablename='objects'
+    and policyname='booking_attachment_participant_upload'
+    and with_check like '%can_manage_booking_attachment%'
+    and pg_catalog.pg_get_functiondef(
+      'private.can_manage_booking_attachment(text,text)'::regprocedure
+    ) like '%pending_provider_approval%'
+),1,'customer attachment object uploads are pending-booking scoped');
 select is((select count(*)::integer from pg_policies where schemaname='storage' and tablename='objects' and policyname='public_media_read'),0,'public bucket metadata listing policy is absent');
 select * from finish();
 rollback;

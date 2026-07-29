@@ -3,7 +3,7 @@ import type { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/
 import { environment } from '@/src/config/environment';
 import { getSupabaseClient } from '@/src/lib/supabase';
 
-export type RealtimeTable = 'notifications' | 'bookings' | 'booking_status_history' | 'booking_attachments' | 'messages' | 'message_attachments' | 'conversation_typing';
+export type RealtimeTable = 'notifications' | 'bookings' | 'booking_status_history' | 'booking_attachments' | 'reviews' | 'review_responses' | 'review_attachments' | 'messages' | 'message_attachments' | 'conversation_typing';
 export type RealtimeChange = { table: RealtimeTable; event: 'INSERT' | 'UPDATE' | 'DELETE'; id?: string; bookingId?: string };
 export type RealtimeConnection = 'connected' | 'reconnecting' | 'error';
 export type RealtimeListener = (change: RealtimeChange) => void;
@@ -34,7 +34,7 @@ function subscribeChannel(
   const client = getSupabaseClient();
   let channel: RealtimeChannel = client.channel(name);
   for (const binding of bindings) {
-    channel = channel.on('postgres_changes', { event: '*', schema: 'public', table: binding.table, filter: binding.filter }, (payload) => {
+    channel = channel.on('postgres_changes', { event: '*', schema: 'public', table: binding.table, filter: binding.filter, select: ['id'] }, (payload) => {
       listener({ table: binding.table, event: payload.eventType, id: rowId(payload) });
     });
   }
@@ -57,6 +57,15 @@ export const realtimeService = {
   },
   providerJobs(providerId: string, listener: RealtimeListener, connection?: (status: RealtimeConnection) => void) {
     return subscribeChannel(`provider-jobs:${providerId}`, [{ table: 'bookings', filter: `provider_id=eq.${providerId}` }], listener, connection);
+  },
+  providerReviews(providerId: string, listener: RealtimeListener, connection?: (status: RealtimeConnection) => void) {
+    return subscribeChannel(`provider-reviews:${providerId}`, [{ table: 'reviews', filter: `provider_id=eq.${providerId}` }, { table: 'review_responses', filter: `provider_id=eq.${providerId}` }], listener, connection);
+  },
+  bookingReview(bookingId: string, listener: RealtimeListener, connection?: (status: RealtimeConnection) => void) {
+    return subscribeChannel(`booking-review:${bookingId}`, [{ table: 'reviews', filter: `booking_id=eq.${bookingId}` }], listener, connection);
+  },
+  reviewDetail(reviewId: string, listener: RealtimeListener, connection?: (status: RealtimeConnection) => void) {
+    return subscribeChannel(`review-detail:${reviewId}`, [{ table: 'reviews', filter: `id=eq.${reviewId}` }, { table: 'review_responses', filter: `review_id=eq.${reviewId}` }, { table: 'review_attachments', filter: `review_id=eq.${reviewId}` }], listener, connection);
   },
   bookingDetail(bookingId: string, listener: RealtimeListener, connection?: (status: RealtimeConnection) => void) {
     return subscribeChannel(`booking-detail:${bookingId}`, [
