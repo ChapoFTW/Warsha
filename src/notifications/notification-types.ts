@@ -5,6 +5,7 @@ export type WarshaNotification = {
   body: string;
   bookingId?: string;
   providerId?: string;
+  dedupeKey?: string;
   readAt?: string;
   createdAt: string;
 };

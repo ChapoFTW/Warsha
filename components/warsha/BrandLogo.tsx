@@ -24,10 +24,10 @@ export function BrandWordmark({ size = 40, variant = 'light' }: Pick<BrandLogoPr
 
 export function BrandLogo({ size = 40, variant = 'light', wordmark = false, tagline = false, layout = tagline ? 'stacked' : 'horizontal' }: BrandLogoProps) {
   if (!wordmark && !tagline) return <BrandIcon size={size} variant={variant} />;
-  return <View accessible accessibilityRole="image" accessibilityLabel="Warsha. Your work. Our mission." style={[styles.lockup, layout === 'horizontal' && styles.horizontal]}>
+  return <View accessible accessibilityRole="image" accessibilityLabel="Warsha. Your business. More jobs." style={[styles.lockup, layout === 'horizontal' && styles.horizontal]}>
     <BrandIcon size={size} variant={variant} />
     {wordmark ? <BrandWordmark size={size} variant={variant} /> : null}
-    {tagline ? <AppText style={[styles.tagline, { color: variant === 'light' ? colors.textSecondary : '#666666', fontSize: size * 0.12, lineHeight: size * 0.16 }]}>YOUR WORK. OUR MISSION.</AppText> : null}
+    {tagline ? <AppText style={[styles.tagline, { color: variant === 'light' ? colors.textSecondary : '#666666', fontSize: size * 0.12, lineHeight: size * 0.16 }]}>YOUR BUSINESS. MORE JOBS.</AppText> : null}
   </View>;
 }
 

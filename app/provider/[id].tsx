@@ -5,6 +5,7 @@ import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AppText } from "@/components/warsha/Typography";
 import { ProviderReviewSummary } from "@/components/warsha/ProviderReviewSummary";
+import { ProviderTrustIndicators } from "@/components/warsha/ProviderTrustIndicators";
 import { colors, radii, spacing, typography } from "@/constants/theme";
 import { useAuth } from "@/src/auth/auth-context";
 import { useLocalPreferences } from "@/src/data/local-preferences";
@@ -75,14 +76,11 @@ export default function ProviderProfileScreen() {
             <View style={styles.identityText}>
               <View style={styles.nameRow}>
                 <AppText style={styles.name}>{provider.name}</AppText>
-                {provider.verified ? (
-                  <MaterialIcons
-                    name="verified"
-                    size={20}
-                    color={colors.white}
-                  />
-                ) : null}
               </View>
+              <ProviderTrustIndicators
+                identityVerified={provider.verified}
+                skillCertificateVerified={provider.skillCertificateVerified}
+              />
               <AppText style={styles.muted}>
                 {t(provider.profession)} — {provider.location}
               </AppText>
@@ -157,18 +155,6 @@ export default function ProviderProfileScreen() {
         </View>
       </ScrollView>
       <View style={styles.actions}>
-        <Pressable
-          onPress={() => router.push("/(tabs)/chat")}
-          accessibilityLabel={t("chatAccessibility")}
-          style={styles.secondary}
-        >
-          <MaterialIcons
-            name="chat-bubble-outline"
-            size={19}
-            color={colors.white}
-          />
-          <AppText style={styles.strong}>{t("chatNow")}</AppText>
-        </Pressable>
         <Pressable
           onPress={() =>
             mode === "supabase" && !user

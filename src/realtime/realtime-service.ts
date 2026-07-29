@@ -3,7 +3,7 @@ import type { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/
 import { environment } from '@/src/config/environment';
 import { getSupabaseClient } from '@/src/lib/supabase';
 
-export type RealtimeTable = 'notifications' | 'bookings' | 'booking_status_history' | 'booking_attachments' | 'reviews' | 'review_responses' | 'review_attachments' | 'messages' | 'message_attachments' | 'conversation_typing';
+export type RealtimeTable = 'notifications' | 'bookings' | 'booking_status_history' | 'booking_attachments' | 'reviews' | 'review_responses' | 'review_attachments' | 'messages' | 'message_attachments' | 'conversation_typing' | 'provider_verifications' | 'provider_profiles';
 export type RealtimeChange = { table: RealtimeTable; event: 'INSERT' | 'UPDATE' | 'DELETE'; id?: string; bookingId?: string };
 export type RealtimeConnection = 'connected' | 'reconnecting' | 'error';
 export type RealtimeListener = (change: RealtimeChange) => void;
@@ -26,7 +26,7 @@ function rowId(payload: RealtimePostgresChangesPayload<Record<string, unknown>>)
 
 function subscribeChannel(
   name: string,
-  bindings: { table: RealtimeTable; filter: string }[],
+  bindings: { table: RealtimeTable; filter?: string }[],
   listener: RealtimeListener,
   connection?: (status: RealtimeConnection) => void,
 ): Unsubscribe {
@@ -34,7 +34,7 @@ function subscribeChannel(
   const client = getSupabaseClient();
   let channel: RealtimeChannel = client.channel(name);
   for (const binding of bindings) {
-    channel = channel.on('postgres_changes', { event: '*', schema: 'public', table: binding.table, filter: binding.filter, select: ['id'] }, (payload) => {
+    channel = channel.on('postgres_changes', { event: '*', schema: 'public', table: binding.table, ...(binding.filter ? { filter: binding.filter } : {}), select: ['id'] }, (payload) => {
       listener({ table: binding.table, event: payload.eventType, id: rowId(payload) });
     });
   }
@@ -49,6 +49,12 @@ function subscribeChannel(
 }
 
 export const realtimeService = {
+  marketplaceProviders(listener: RealtimeListener, connection?: (status: RealtimeConnection) => void) {
+    return subscribeChannel('marketplace-providers', [{ table: 'provider_profiles' }], listener, connection);
+  },
+  providerVerification(providerId: string, listener: RealtimeListener, connection?: (status: RealtimeConnection) => void) {
+    return subscribeChannel(`provider-verification:${providerId}`, [{ table: 'provider_verifications', filter: `provider_id=eq.${providerId}` }, { table: 'provider_profiles', filter: `id=eq.${providerId}` }], listener, connection);
+  },
   notifications(userId: string, listener: RealtimeListener, connection?: (status: RealtimeConnection) => void) {
     return subscribeChannel(`notifications:${userId}`, [{ table: 'notifications', filter: `user_id=eq.${userId}` }], listener, connection);
   },
