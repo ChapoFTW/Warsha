@@ -730,28 +730,16 @@ select is(
   'authenticated marketplace users can invoke the sanitized catalog'
 ); -- 98
 set local role anon;
-select ok(
+select is(
   (
-    select provider ? 'is_verified'
-      and provider ? 'skill_certificate_verified'
-      and not (
-        provider ?| array[
-          'user_id',
-          'onboarding_status',
-          'provider_agreement_accepted_at',
-          'temporary_unavailable_until',
-          'deleted_at',
-          'rejection_reason',
-          'documents',
-          'national_id'
-        ]
-      )
+    select pg_catalog.count(*)::integer
     from pg_catalog.jsonb_array_elements(
       public.get_marketplace_catalog()->'providers'
     ) provider
     where provider->>'id' = '82000000-0000-0000-0000-000000000001'
   ),
-  'catalog exposes trust booleans without protected provider data'
+  0,
+  'catalog hides a worker whose identity verification requires resubmission'
 ); -- 99
 
 reset role;

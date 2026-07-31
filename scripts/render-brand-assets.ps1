@@ -1,3 +1,5 @@
+param([switch]$Force)
+
 Add-Type -AssemblyName System.Drawing
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -36,7 +38,10 @@ function Draw-Mark($graphics, [float]$x, [float]$y, [float]$size, $color) {
 
 function Save-Png($bitmap, [string]$name) {
   $destination = Join-Path $brandRoot $name
-  if (Test-Path -LiteralPath $destination) { throw "Refusing to overwrite existing asset: $destination" }
+  if (Test-Path -LiteralPath $destination) {
+    if (-not $Force) { throw "Refusing to overwrite existing asset without -Force: $destination" }
+    Remove-Item -LiteralPath $destination
+  }
   $bitmap.Save($destination, [System.Drawing.Imaging.ImageFormat]::Png)
 }
 
@@ -67,7 +72,7 @@ function Save-Splash {
   $center.Alignment = [System.Drawing.StringAlignment]::Center
   $graphics.DrawString('W A R S H A', $wordmark, [System.Drawing.Brushes]::Black, 800, 865, $center)
   $secondary = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(102, 102, 102))
-  $graphics.DrawString('YOUR WORK. OUR MISSION.', $tagline, $secondary, 800, 990, $center)
+  $graphics.DrawString('YOUR BUSINESS. MORE JOBS.', $tagline, $secondary, 800, 990, $center)
   Save-Png $canvas.Bitmap 'warsha-brand-splash.png'
   $secondary.Dispose(); $center.Dispose(); $wordmark.Dispose(); $tagline.Dispose(); $graphics.Dispose(); $canvas.Bitmap.Dispose()
 }

@@ -3,7 +3,7 @@ import type { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/
 import { environment } from '@/src/config/environment';
 import { getSupabaseClient } from '@/src/lib/supabase';
 
-export type RealtimeTable = 'notifications' | 'bookings' | 'booking_status_history' | 'booking_attachments' | 'reviews' | 'review_responses' | 'review_attachments' | 'messages' | 'message_attachments' | 'conversation_typing' | 'provider_verifications' | 'provider_profiles';
+export type RealtimeTable = 'notifications' | 'bookings' | 'booking_status_history' | 'booking_attachments' | 'reviews' | 'review_responses' | 'review_attachments' | 'messages' | 'message_attachments' | 'conversation_typing' | 'provider_verifications' | 'provider_profiles' | 'financial_booking_payments' | 'provider_earnings_ledger' | 'provider_withdrawal_requests' | 'financial_refunds' | 'marketplace_requests' | 'quote_invitations' | 'worker_quotes';
 export type RealtimeChange = { table: RealtimeTable; event: 'INSERT' | 'UPDATE' | 'DELETE'; id?: string; bookingId?: string };
 export type RealtimeConnection = 'connected' | 'reconnecting' | 'error';
 export type RealtimeListener = (change: RealtimeChange) => void;
@@ -52,6 +52,18 @@ export const realtimeService = {
   marketplaceProviders(listener: RealtimeListener, connection?: (status: RealtimeConnection) => void) {
     return subscribeChannel('marketplace-providers', [{ table: 'provider_profiles' }], listener, connection);
   },
+  customerMarketplaceRequests(userId: string, listener: RealtimeListener, connection?: (status: RealtimeConnection) => void) {
+    return subscribeChannel(`marketplace-requests:${userId}`, [
+      { table: 'marketplace_requests', filter: `customer_id=eq.${userId}` },
+      { table: 'worker_quotes' },
+    ], listener, connection);
+  },
+  workerMarketplaceInvitations(providerId: string, listener: RealtimeListener, connection?: (status: RealtimeConnection) => void) {
+    return subscribeChannel(`marketplace-invitations:${providerId}`, [
+      { table: 'quote_invitations', filter: `provider_id=eq.${providerId}` },
+      { table: 'worker_quotes', filter: `provider_id=eq.${providerId}` },
+    ], listener, connection);
+  },
   providerVerification(providerId: string, listener: RealtimeListener, connection?: (status: RealtimeConnection) => void) {
     return subscribeChannel(`provider-verification:${providerId}`, [{ table: 'provider_verifications', filter: `provider_id=eq.${providerId}` }, { table: 'provider_profiles', filter: `id=eq.${providerId}` }], listener, connection);
   },
@@ -63,6 +75,17 @@ export const realtimeService = {
   },
   providerJobs(providerId: string, listener: RealtimeListener, connection?: (status: RealtimeConnection) => void) {
     return subscribeChannel(`provider-jobs:${providerId}`, [{ table: 'bookings', filter: `provider_id=eq.${providerId}` }], listener, connection);
+  },
+  providerFinances(providerId: string, listener: RealtimeListener, connection?: (status: RealtimeConnection) => void) {
+    return subscribeChannel(`provider-finances:${providerId}`, [
+      { table: 'provider_earnings_ledger', filter: `provider_id=eq.${providerId}` },
+      { table: 'provider_withdrawal_requests', filter: `provider_id=eq.${providerId}` },
+    ], listener, connection);
+  },
+  bookingPayment(bookingId: string, listener: RealtimeListener, connection?: (status: RealtimeConnection) => void) {
+    return subscribeChannel(`booking-payment:${bookingId}`, [
+      { table: 'financial_booking_payments', filter: `booking_id=eq.${bookingId}` },
+    ], listener, connection);
   },
   providerReviews(providerId: string, listener: RealtimeListener, connection?: (status: RealtimeConnection) => void) {
     return subscribeChannel(`provider-reviews:${providerId}`, [{ table: 'reviews', filter: `provider_id=eq.${providerId}` }, { table: 'review_responses', filter: `provider_id=eq.${providerId}` }], listener, connection);

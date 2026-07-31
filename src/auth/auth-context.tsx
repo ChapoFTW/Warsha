@@ -6,7 +6,10 @@ import { createContext, PropsWithChildren, useContext, useEffect, useMemo, useRe
 import { environment } from '@/src/config/environment';
 import { getSupabaseClient } from '@/src/lib/supabase';
 
-import { sanitizeAuthError } from './auth-errors';
+import { SafeAuthError, sanitizeAuthError } from './auth-errors';
+import { assertPhoneAuthAvailable } from './phone-auth-capability';
+import { isValidPhone, isValidSmsOtp, normalizePhone } from './phone-auth';
+import { runAuthSingleFlight } from './auth-request-guard';
 
 export type AccountRole = 'customer' | 'provider';
 type RecoveryStatus = 'checking' | 'idle' | 'processing' | 'ready' | 'invalid';
@@ -16,8 +19,13 @@ type Value = {
   user: User | null;
   loading: boolean;
   recoveryStatus: RecoveryStatus;
+  hasVerifiedPhone: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (name: string, email: string, password: string, role?: AccountRole, language?: 'en' | 'ar') => Promise<{ needsEmailConfirmation: boolean }>;
+  requestWorkerOtp: (phone: string, registration: boolean, name: string, language?: 'en' | 'ar') => Promise<void>;
+  verifyWorkerOtp: (phone: string, token: string, registration: boolean, name: string) => Promise<void>;
+  requestWorkerPhoneChange: (phone: string) => Promise<void>;
+  verifyWorkerPhoneChange: (phone: string, token: string) => Promise<void>;
   requestPasswordReset: (email: string) => Promise<void>;
   finishPasswordRecovery: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -31,6 +39,13 @@ type RecoveryParameters = {
 };
 
 const Context = createContext<Value | null>(null);
+
+async function requireCurrentUser(operation: 'worker-otp-verify' | 'phone-change-request' | 'phone-change-verify') {
+  const { data, error } = await getSupabaseClient().auth.getUser();
+  if (error) throw sanitizeAuthError(error, operation);
+  if (!data.user) throw new SafeAuthError('authSessionExpired');
+  return data.user;
+}
 
 function readRecoveryParameters(url: string): RecoveryParameters {
   const queryStart = url.indexOf('?');
@@ -88,7 +103,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
           openResetScreen();
         }
       } catch (error) {
-        if (__DEV__) console.warn('[Warsha password recovery]', sanitizeAuthError(error).translationKey);
+        sanitizeAuthError(error, 'session');
         if (active) {
           setRecoveryStatus('invalid');
           openResetScreen();
@@ -102,7 +117,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         setLoading(false);
       }
     }).catch((error) => {
-      if (__DEV__) console.warn('[Warsha auth session]', error instanceof Error ? error.message : 'Unknown session error');
+      sanitizeAuthError(error, 'session');
       if (active) setLoading(false);
     });
 
@@ -133,12 +148,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
     user: session?.user ?? null,
     loading,
     recoveryStatus,
+    hasVerifiedPhone: Boolean(session?.user.phone && session.user.phone_confirmed_at),
     signIn: async (email, password) => {
       if (environment.dataMode === 'mock') return;
       try {
         const { error } = await getSupabaseClient().auth.signInWithPassword({ email, password });
         if (error) throw error;
-      } catch (error) { throw sanitizeAuthError(error); }
+      } catch (error) { throw sanitizeAuthError(error, 'password-sign-in'); }
     },
     signUp: async (name, email, password, role = 'customer', language = 'en') => {
       if (environment.dataMode === 'mock') return { needsEmailConfirmation: false };
@@ -147,7 +163,68 @@ export function AuthProvider({ children }: PropsWithChildren) {
         const { data, error } = await getSupabaseClient().auth.signUp({ email, password, options: { data: { display_name: name, preferred_language: language, account_role: role, terms_accepted_at: acceptedAt, privacy_accepted_at: acceptedAt } } });
         if (error) throw error;
         return { needsEmailConfirmation: !data.session };
-      } catch (error) { throw sanitizeAuthError(error); }
+      } catch (error) { throw sanitizeAuthError(error, 'sign-up'); }
+    },
+    requestWorkerOtp: async (phone, registration, name, language = 'en') => {
+      if (environment.dataMode === 'mock') return;
+      const normalized = normalizePhone(phone);
+      if (!isValidPhone(normalized) || registration && name.trim().length < 2) throw new SafeAuthError('authInvalidPhone');
+      return runAuthSingleFlight(`worker:${registration}:${normalized}`, async () => {
+        try {
+          await assertPhoneAuthAvailable(normalized);
+          const acceptedAt = new Date().toISOString();
+          const { error } = await getSupabaseClient().auth.signInWithOtp({
+            phone: normalized,
+            options: {
+              shouldCreateUser: registration,
+              data: registration ? { display_name: name.trim(), preferred_language: language, account_role: 'provider', terms_accepted_at: acceptedAt, privacy_accepted_at: acceptedAt } : undefined,
+            },
+          });
+          if (error) throw error;
+        } catch (error) { throw sanitizeAuthError(error, 'worker-otp-request'); }
+      });
+    },
+    verifyWorkerOtp: async (phone, token, registration, name) => {
+      if (environment.dataMode === 'mock') return;
+      const normalized = normalizePhone(phone);
+      if (!isValidPhone(normalized) || !isValidSmsOtp(token)) throw new SafeAuthError('authInvalidOtp');
+      try {
+        const client = getSupabaseClient();
+        const { error } = await client.auth.verifyOtp({ phone: normalized, token: token.trim(), type: 'sms' });
+        if (error) throw error;
+        const verifiedUser = await requireCurrentUser('worker-otp-verify');
+        if (!verifiedUser.phone_confirmed_at) throw new SafeAuthError('authInvalidOtp');
+        if (registration) {
+          const { error: activationError } = await client.rpc('activate_provider_role', { p_display_name: name.trim() });
+          if (activationError) throw activationError;
+        }
+      } catch (error) { throw sanitizeAuthError(error, 'worker-otp-verify'); }
+    },
+    requestWorkerPhoneChange: async (phone) => {
+      if (environment.dataMode === 'mock') return;
+      const normalized = normalizePhone(phone);
+      if (!isValidPhone(normalized)) throw new SafeAuthError('authInvalidPhone');
+      return runAuthSingleFlight(`change:${normalized}`, async () => {
+        try {
+          await assertPhoneAuthAvailable(normalized);
+          await requireCurrentUser('phone-change-request');
+          const { error } = await getSupabaseClient().auth.updateUser({ phone: normalized });
+          if (error) throw error;
+        } catch (error) { throw sanitizeAuthError(error, 'phone-change-request'); }
+      });
+    },
+    verifyWorkerPhoneChange: async (phone, token) => {
+      if (environment.dataMode === 'mock') return;
+      const normalized = normalizePhone(phone);
+      if (!isValidPhone(normalized) || !isValidSmsOtp(token)) throw new SafeAuthError('authInvalidOtp');
+      try {
+        const { error } = await getSupabaseClient().auth.verifyOtp({ phone: normalized, token: token.trim(), type: 'phone_change' });
+        if (error) throw error;
+        const verifiedUser = await requireCurrentUser('phone-change-verify');
+        if (!verifiedUser.phone_confirmed_at || normalizePhone(verifiedUser.phone ?? '') !== normalized) {
+          throw new SafeAuthError('authInvalidOtp');
+        }
+      } catch (error) { throw sanitizeAuthError(error, 'phone-change-verify'); }
     },
     requestPasswordReset: async (email) => {
       if (environment.dataMode === 'mock') return;
@@ -156,7 +233,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         if (__DEV__) console.info('[Warsha password recovery] Redirect target:', redirectTo);
         const { error } = await getSupabaseClient().auth.resetPasswordForEmail(email, { redirectTo });
         if (error) throw error;
-      } catch (error) { throw sanitizeAuthError(error); }
+      } catch (error) { throw sanitizeAuthError(error, 'password-reset'); }
     },
     finishPasswordRecovery: async () => {
       if (environment.dataMode === 'mock') return;
@@ -165,14 +242,14 @@ export function AuthProvider({ children }: PropsWithChildren) {
         if (error) throw error;
         callbackHandled.current = false;
         setRecoveryStatus('idle');
-      } catch (error) { throw sanitizeAuthError(error); }
+      } catch (error) { throw sanitizeAuthError(error, 'sign-out'); }
     },
     signOut: async () => {
       if (environment.dataMode === 'mock') return;
       try {
         const { error } = await getSupabaseClient().auth.signOut();
         if (error) throw error;
-      } catch (error) { throw sanitizeAuthError(error); }
+      } catch (error) { throw sanitizeAuthError(error, 'sign-out'); }
     },
   }), [loading, recoveryStatus, session]);
 

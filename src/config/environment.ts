@@ -1,11 +1,42 @@
 export type DataMode = 'mock' | 'supabase';
+export type SupabaseTarget = 'mock' | 'local' | 'hosted' | 'unconfigured';
+
 const requestedMode = process.env.EXPO_PUBLIC_DATA_MODE;
+
 export const environment = {
   dataMode: requestedMode === 'supabase' ? 'supabase' : 'mock' as DataMode,
   supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
   supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
 };
-export const supabaseConfigurationMissing=environment.dataMode==='supabase'&&(!environment.supabaseUrl||!environment.supabaseAnonKey);
+
+export const supabaseConfigurationMissing = environment.dataMode === 'supabase'
+  && (!environment.supabaseUrl || !environment.supabaseAnonKey);
+
+export function classifySupabaseTarget(mode: DataMode, url?: string): SupabaseTarget {
+  if (mode === 'mock') return 'mock';
+  if (!url) return 'unconfigured';
+  try {
+    const host = new URL(url).hostname.toLowerCase().replace(/^\[|\]$/g, '');
+    const ipv4 = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/)?.slice(1).map(Number);
+    const privateIpv4 = Boolean(ipv4 && ipv4.every(part => part <= 255) && (
+      ipv4[0] === 10
+      || ipv4[0] === 127
+      || ipv4[0] === 192 && ipv4[1] === 168
+      || ipv4[0] === 172 && ipv4[1] >= 16 && ipv4[1] <= 31
+      || ipv4[0] === 169 && ipv4[1] === 254
+    ));
+    return host === 'localhost' || host === '::1' || host === 'host.docker.internal' || privateIpv4
+      ? 'local'
+      : 'hosted';
+  } catch {
+    return 'unconfigured';
+  }
+}
+
+export const supabaseTarget = classifySupabaseTarget(environment.dataMode, environment.supabaseUrl);
+
 export function assertSupabaseConfiguration() {
-  if (supabaseConfigurationMissing) throw new Error('Supabase mode requires EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY.');
+  if (supabaseConfigurationMissing) {
+    throw new Error('Supabase mode requires EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY.');
+  }
 }

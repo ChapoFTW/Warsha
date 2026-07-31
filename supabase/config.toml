@@ -11,5 +11,16 @@ sql_paths = ["./seed.sql"]
 [auth]
 enabled = true
 site_url = "http://localhost:8081"
+[auth.sms]
+enable_signup = true
+enable_confirmations = true
+max_frequency = "2s"
+[auth.sms.test_otp]
+"+201000000008" = "123456"
+"+201099221106" = "123456"
+[auth.sms.textlocal]
+enabled = true
+api_key = "local-test-only-no-real-sms"
+sender = "WarshaLocal"
 [storage]
 enabled = true

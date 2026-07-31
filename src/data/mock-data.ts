@@ -1,11 +1,15 @@
 import type { TranslationKey } from '@/src/i18n/translations';
 import type { Category, Provider } from './marketplace-types';
-export type { Availability, Category, Provider, Review, Service } from './marketplace-types';
+export type { Category, Provider, Review, Service } from './marketplace-types';
 
 export const categories: Category[] = [
   { id: 'plumbing', label: 'plumbing', icon: 'plumbing', description: 'plumbingDescription' }, { id: 'electrical', label: 'electrical', icon: 'electrical-services', description: 'electricalDescription' },
   { id: 'carpentry', label: 'carpentry', icon: 'handyman', description: 'carpentryDescription' }, { id: 'ac', label: 'acRepair', icon: 'ac-unit', description: 'acDescription' },
   { id: 'cleaning', label: 'cleaning', icon: 'cleaning-services', description: 'cleaningDescription' }, { id: 'painting', label: 'painting', icon: 'format-paint', description: 'paintingDescription' },
+  { id: 'appliance-repair', label: 'applianceRepair', icon: 'kitchen', description: 'applianceRepairDescription' },
+  { id: 'satellite-tv-installation', label: 'satelliteTv', icon: 'satellite-alt', description: 'satelliteTvDescription' },
+  { id: 'moving-help', label: 'movingHelp', icon: 'local-shipping', description: 'movingHelpDescription' },
+  { id: 'general-maintenance', label: 'generalMaintenance', icon: 'home-repair-service', description: 'generalMaintenanceDescription' },
 ];
 
 export const providers: Provider[] = [

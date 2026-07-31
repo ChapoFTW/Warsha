@@ -4,10 +4,11 @@ import type { WarshaDataAdapter } from './types';
 export const mockDataAdapter: WarshaDataAdapter = {
   mode: 'mock',
   async listCategories() { return categories; },
-  async listProviders() { return providers; },
-  async getProvider(id) { return getProvider(id); },
+  async listProviders() { return providers.filter((provider) => provider.verified); },
+  async getProvider(id) { const provider = getProvider(id); return provider?.verified ? provider : undefined; },
   async listServices(categoryId) {
-    const selected = categoryId ? providers.filter((provider) => provider.categoryId === categoryId) : providers;
+    const visible = providers.filter((provider) => provider.verified);
+    const selected = categoryId ? visible.filter((provider) => provider.categoryId === categoryId) : visible;
     return [...new Map(selected.flatMap((provider) => provider.services).map((service) => [service.id, service])).values()];
   },
 };

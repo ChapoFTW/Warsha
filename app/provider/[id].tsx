@@ -13,6 +13,7 @@ import type { Service } from "@/src/data/marketplace-types";
 import { useMarketplaceData } from "@/src/data/marketplace-context";
 import { useLocalization } from "@/src/i18n/localization";
 import type { Language } from "@/src/i18n/translations";
+import { useMarketplaceText } from "@/src/marketplace-intelligence/marketplace-translations";
 
 const servicePricingLabels: Record<Language, Record<Service["pricingType"], string>> = {
   en: { fixed: "Fixed price", starting: "Starting from", hourly: "Hourly", inspection: "Inspection fee", quote: "Quote required" },
@@ -24,6 +25,7 @@ export default function ProviderProfileScreen() {
   const { isFavourite, toggleFavourite } = useLocalPreferences();
   const { user, mode } = useAuth();
   const { t, isRTL } = useLocalization();
+  const mt = useMarketplaceText();
   const provider = getProvider(id);
   if (!provider)
     return (
@@ -160,14 +162,14 @@ export default function ProviderProfileScreen() {
             mode === "supabase" && !user
               ? router.push("/(tabs)/profile")
               : router.push({
-                  pathname: "/booking/new/[providerId]",
-                  params: { providerId: provider.id },
+                  pathname: "/marketplace-request/new",
+                  params: { providerId: provider.id, categoryId: provider.categoryId },
                 })
           }
-          accessibilityLabel={t("bookNow")}
+          accessibilityLabel={mt("requestQuote")}
           style={styles.primary}
         >
-          <AppText style={styles.primaryText}>{t("bookNow")}</AppText>
+          <AppText style={styles.primaryText}>{mt("requestQuote")}</AppText>
         </Pressable>
       </View>
     </SafeAreaView>
@@ -235,14 +237,16 @@ function Info({
 function ServiceRow({ service }: { service: Service }) {
   const { language, t, isRTL } = useLocalization();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const mt = useMarketplaceText();
   return (
     <Pressable
       onPress={() =>
         router.push({
-          pathname: "/booking/new/[providerId]",
+          pathname: "/marketplace-request/new",
           params: { providerId: id, serviceId: service.id },
         })
       }
+      accessibilityLabel={`${mt("requestQuote")} ${service.name}`}
       style={styles.service}
     >
       <View>

@@ -8,7 +8,7 @@ import { providerRepository } from './provider-repository';
 import type { ProviderDraft } from './provider-types';
 
 type AppMode='customer'|'provider';
-type Value={profile:ProviderDraft|null;mode:AppMode;loading:boolean;saving:boolean;error:TranslationKey|null;activate:(name:string)=>Promise<void>;save:(value:ProviderDraft,submit?:boolean)=>Promise<void>;setMode:(mode:AppMode)=>Promise<void>;reload:()=>Promise<void>;uploadAvatar:(uri:string,mime?:string)=>Promise<string>};
+type Value={profile:ProviderDraft|null;mode:AppMode;loading:boolean;saving:boolean;error:TranslationKey|null;activate:(name:string)=>Promise<void>;save:(value:ProviderDraft,submit?:boolean)=>Promise<void>;setAvailability:(available:boolean)=>Promise<void>;setMode:(mode:AppMode)=>Promise<void>;reload:()=>Promise<void>;uploadAvatar:(uri:string,mime?:string)=>Promise<string>};
 const Context=createContext<Value|null>(null);
 const MODE_KEY='warsha:selected-app-mode:v1';
 
@@ -46,6 +46,7 @@ export function ProviderFoundationProvider({children}:PropsWithChildren){
     profile:visibleProfile,mode:visibleProfile?mode:'customer',loading,saving,error,reload,
     activate:async name=>{const target=accountKey;if(!target)throw new Error('Authentication required');setSaving(true);try{const next=await providerRepository.activate(name);if(accountRef.current!==target)throw new Error('The active account changed.');setProfile(next);setLoadedAccount(target);await Storage.setItem(modeStorageKey,'provider');if(accountRef.current===target)setModeState('provider')}catch(reason){logDataError('provider activation',reason);if(accountRef.current===target)setError(dataErrorKey(reason));throw reason}finally{if(mounted.current&&accountRef.current===target)setSaving(false)}},
     save:async(nextProfile,submit)=>{const target=accountKey;if(!target)throw new Error('Authentication required');setSaving(true);try{const next=await providerRepository.save(nextProfile,submit);if(accountRef.current!==target)throw new Error('The active account changed.');setProfile(next);setLoadedAccount(target);setError(null)}catch(reason){logDataError('provider save',reason);if(accountRef.current===target)setError(dataErrorKey(reason));throw reason}finally{if(mounted.current&&accountRef.current===target)setSaving(false)}},
+    setAvailability:async available=>{const target=accountKey;if(!target)throw new Error('Authentication required');setSaving(true);try{const next=await providerRepository.setAvailability(available);if(accountRef.current!==target)throw new Error('The active account changed.');setProfile(next);setLoadedAccount(target);setError(null)}catch(reason){logDataError('provider availability',reason);if(accountRef.current===target)setError(dataErrorKey(reason));throw reason}finally{if(mounted.current&&accountRef.current===target)setSaving(false)}},
     setMode:async next=>{const target=accountKey;if(!target||next==='provider'&&!visibleProfile)return;await Storage.setItem(modeStorageKey,next);if(accountRef.current===target)setModeState(next)},
     uploadAvatar:async(uri,mime)=>{const target=accountKey;if(!target)throw new Error('Authentication required');const result=await providerRepository.uploadAvatar(uri,mime);if(accountRef.current!==target)throw new Error('The active account changed.');return result},
   }),[accountKey,error,loading,mode,modeStorageKey,reload,saving,visibleProfile]);
