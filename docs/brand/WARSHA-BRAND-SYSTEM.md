@@ -12,6 +12,15 @@ The authority order for this implementation is:
 
 The product remains Warsha's independent-worker marketplace. Brand work must not alter marketplace, financial, authentication, trust, privacy, RLS, or account-isolation behavior.
 
+## Approved motto
+
+The sole active customer-facing motto is:
+
+- English: `YOUR WORK, OUR MISSION`
+- Arabic: `شغلك مهمتنا`
+
+The Constitution's mission statement, "Warsha finishes your work safely, for the fairest price," remains authoritative mission language but is not an active UI motto. Historical validation records may quote superseded taglines as evidence; active app UI, shared translations, splash generation, web metadata, notification templates, and current brand documentation must not present them as approved mottos.
+
 ## Primary mark: The Current
 
 The Current is Warsha's sole active primary mark. It combines:
@@ -132,6 +141,8 @@ Icons are single-weight, rounded, abstract, and calm. Do not add trade-tool or s
 | `public/warsha-current-approved-512.png` | Web manifest icon |
 
 `public/manifest.webmanifest` and `app/+html.tsx` connect the web asset family. The old `warsha-brand-*` PNGs are retained only as inactive repository history and must not be referenced by Expo config, product UI, generated web output, or documentation examples.
+
+The native splash uses the English approved motto because native launch assets render before the app language is available. Localized in-app surfaces use `YOUR WORK, OUR MISSION` or `شغلك مهمتنا` from the shared translation catalog.
 
 ## Motion and accessibility
 

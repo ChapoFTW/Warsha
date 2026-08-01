@@ -32,11 +32,11 @@ insert into public.provider_profiles(id,user_id,display_name,profession_key,onbo
 -- when the fixture inserts deterministic IDs as the migration owner.
 select set_config('request.jwt.claim.sub','51000000-0000-0000-0000-000000000001',true);
 insert into public.bookings(id,customer_id,provider_id,service_id,status,service_name_snapshot,pricing_type,estimated_price_egp,issue_description,scheduled_date,scheduled_time,address_snapshot,idempotency_key)
-select booking_id,customer_id,provider_id,s.id,'pending_provider_approval','Chat test','fixed',100,'A chat test booking issue',current_date + 2,'12:00','Test address',request_key
+select booking_id,customer_id,provider_id,s.id,booking_status,'Chat test','fixed',100,'A chat test booking issue',current_date + 2,'12:00','Test address',request_key
 from (values
-  ('54000000-0000-0000-0000-000000000001'::uuid,'51000000-0000-0000-0000-000000000001'::uuid,'53000000-0000-0000-0000-000000000001'::uuid,'chat-booking-1'),
-  ('54000000-0000-0000-0000-000000000002'::uuid,'51000000-0000-0000-0000-000000000001'::uuid,'53000000-0000-0000-0000-000000000003'::uuid,'chat-booking-seed')
-) as source(booking_id,customer_id,provider_id,request_key)
+  ('54000000-0000-0000-0000-000000000001'::uuid,'51000000-0000-0000-0000-000000000001'::uuid,'53000000-0000-0000-0000-000000000001'::uuid,'confirmed','chat-booking-1'),
+  ('54000000-0000-0000-0000-000000000002'::uuid,'51000000-0000-0000-0000-000000000001'::uuid,'53000000-0000-0000-0000-000000000003'::uuid,'pending_provider_approval','chat-booking-seed')
+) as source(booking_id,customer_id,provider_id,booking_status,request_key)
 cross join lateral (select id from public.services where is_active and deleted_at is null order by id limit 1) s;
 
 set local role authenticated;
@@ -70,7 +70,7 @@ select throws_ok($$insert into public.messages(conversation_id,booking_id,messag
 select set_config('request.jwt.claim.sub','52000000-0000-0000-0000-000000000001',true);
 select lives_ok($$select public.send_booking_message('54000000-0000-0000-0000-000000000001','text','Hello customer',null,null,'55000000-0000-0000-0000-000000000006')$$,'assigned provider can send');
 select lives_ok($$select public.mark_booking_messages_read('54000000-0000-0000-0000-000000000001')$$,'recipient can mark incoming messages read');
-select is((select count(*)::integer from public.messages where booking_id='54000000-0000-0000-0000-000000000001' and sender_id='51000000-0000-0000-0000-000000000001' and read_at is not null),1,'only incoming customer message is read');
+select is((select count(*)::integer from public.conversation_members cm join public.conversations c on c.id=cm.conversation_id where c.booking_id='54000000-0000-0000-0000-000000000001' and cm.user_id='52000000-0000-0000-0000-000000000001' and cm.last_read_at is not null),1,'recipient read watermark advances without exact message seen timestamps');
 select lives_ok($$select public.set_booking_typing('54000000-0000-0000-0000-000000000001',true)$$,'participant can set typing');
 select is((select count(*)::integer from public.conversation_typing where booking_id='54000000-0000-0000-0000-000000000001' and user_id='52000000-0000-0000-0000-000000000001'),1,'typing state is scoped to current user and booking');
 select ok((select expires_at <= now() + interval '8 seconds' from public.conversation_typing where booking_id='54000000-0000-0000-0000-000000000001' and user_id='52000000-0000-0000-0000-000000000001'),'typing state has a bounded expiry');

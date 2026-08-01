@@ -12,7 +12,7 @@ const mockSeed: WarshaNotification[] = [
 ];
 function mapRow(row: Record<string, unknown>): WarshaNotification {
   const data = row.data && typeof row.data === 'object' ? row.data as Record<string, unknown> : {};
-  return {id:String(row.id),type:String(row.type),title:String(row.title??''),body:String(row.body??''),bookingId:typeof data.booking_id==='string'?data.booking_id:undefined,providerId:typeof data.provider_id==='string'?data.provider_id:undefined,readAt:typeof row.read_at==='string'?row.read_at:undefined,createdAt:String(row.created_at)};
+  return {id:String(row.id),type:String(row.type),title:String(row.title??''),body:String(row.body??''),bookingId:typeof data.booking_id==='string'?data.booking_id:typeof data.bookingId==='string'?data.bookingId:undefined,providerId:typeof data.provider_id==='string'?data.provider_id:typeof data.providerId==='string'?data.providerId:undefined,readAt:typeof row.read_at==='string'?row.read_at:undefined,createdAt:String(row.created_at)};
 }
 async function mockRead(){const raw=await Storage.getItem(KEY);if(!raw){await Storage.setItem(KEY,JSON.stringify(mockSeed));return mockSeed}try{return JSON.parse(raw) as WarshaNotification[]}catch{return[]}}
 async function mockWrite(items:WarshaNotification[]){await Storage.setItem(KEY,JSON.stringify(items))}

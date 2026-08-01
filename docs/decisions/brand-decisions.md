@@ -61,6 +61,12 @@ Decision: require a native rebuild for icon/splash changes and uninstall/reinsta
 
 Reason: Metro and OTA JavaScript refreshes cannot replace native launcher/splash resources. Store/TestFlight inspection requires a new EAS build.
 
+## 9. One approved motto, separate from the mission statement
+
+Decision: the only active motto is `YOUR WORK, OUR MISSION` in English and `شغلك مهمتنا` in Arabic. The Constitution may retain "Warsha finishes your work safely, for the fairest price" as mission language, but active UI, splash, web metadata, notification templates, generators, and current tests must not use it as a motto.
+
+Reason: one exact localized phrase prevents the splash, web shell, and product copy from drifting between historical taglines. The native splash uses English because it appears before the app knows the selected language; in-app surfaces use the shared localized value.
+
 ## Explicit non-decisions
 
 This change does not:

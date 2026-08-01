@@ -12,7 +12,7 @@ const featureTranslations = {
 export const translations = {
   en: {
     ...featureTranslations.en,
-    home: 'Home', orders: 'Orders', chat: 'Chat', profile: 'Profile', currentLocation: 'Current location',
+    brandMotto: 'YOUR WORK, OUR MISSION', home: 'Home', orders: 'Orders', chat: 'Chat', profile: 'Profile', currentLocation: 'Current location',
     address: '21 El Tahrir St, Zamalek', searchPlaceholder: 'Search for services…', categories: 'Services',
     featuredProviders: 'Featured providers', viewAll: 'View all', specialOffers: 'Special offers',
     recommendedProviders:'Recommended providers',availableNowProviders:'Providers available now',emergencyProviders:'Emergency services',mostBookedProviders:'Most booked providers',recentlyViewedProviders:'Recently viewed providers',
@@ -28,7 +28,7 @@ export const translations = {
   },
   ar: {
     ...featureTranslations.ar,
-    home: 'الرئيسية', orders: 'الطلبات', chat: 'المحادثات', profile: 'الحساب', currentLocation: 'الموقع الحالي',
+    brandMotto: 'شغلك مهمتنا', home: 'الرئيسية', orders: 'الطلبات', chat: 'المحادثات', profile: 'الحساب', currentLocation: 'الموقع الحالي',
     address: '٢١ شارع التحرير، الزمالك', searchPlaceholder: 'ابحث عن خدمة أو صنايعي…', categories: 'الخدمات',
     featuredProviders: 'صنايعية مميزون', viewAll: 'عرض الكل', specialOffers: 'عروض خاصة',
     recommendedProviders:'فنيون مقترحون',availableNowProviders:'فنيون متاحون الآن',emergencyProviders:'خدمات الطوارئ',mostBookedProviders:'الأكثر حجزًا',recentlyViewedProviders:'شوهدوا مؤخرًا',

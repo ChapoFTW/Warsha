@@ -114,6 +114,7 @@ const brandRenderer = readFileSync('scripts/render-brand-assets.ps1', 'utf8');
 ok(brandRenderer.includes('Draw-CurrentMark'), 'approved Current mark renderer is used');
 ok(!brandRenderer.includes('YOUR BUSINESS. MORE JOBS.'), 'obsolete business tagline is absent');
 ok(!brandRenderer.includes('YOUR WORK. OUR MISSION.'), 'stale tagline is absent');
+ok(brandRenderer.includes('YOUR WORK, OUR MISSION'), 'approved motto is present');
 const headerSource = readFileSync('components/warsha/Header.tsx', 'utf8');
 const profileSource = readFileSync('app/(tabs)/profile.tsx', 'utf8');
 ok(headerSource.includes('<BrandLockup'), 'global header uses the reusable Current lockup');

@@ -245,7 +245,7 @@ insert into public.bookings(
 )
 select
   '93000000-0000-0000-0000-000000000002',
-  '91000000-0000-0000-0000-000000000001',p.id,ps.service_id,'pending_provider_approval',
+  '91000000-0000-0000-0000-000000000001',p.id,ps.service_id,'confirmed',
   'Chat cancellation test','fixed',200,'Chat cancellation booking issue',current_date+11,'10:00',
   '92000000-0000-0000-0000-000000000001','Test address','alignment-chat-cancel'
 from public.provider_profiles p

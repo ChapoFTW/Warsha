@@ -1,4 +1,4 @@
-param([switch]$Force)
+param([switch]$Force, [switch]$SplashOnly)
 
 Add-Type -AssemblyName System.Drawing
 Set-StrictMode -Version Latest
@@ -72,12 +72,17 @@ function Save-Png($bitmap, [string]$destination) {
   if (Test-Path -LiteralPath $destination) {
     if (-not $Force) { throw "Refusing to overwrite existing asset without -Force: $destination" }
   }
-  $stream = [System.IO.File]::Open($destination, [System.IO.FileMode]::Create, [System.IO.FileAccess]::Write, [System.IO.FileShare]::None)
+  $temporaryDestination = "$destination.rendering"
+  $stream = [System.IO.File]::Open($temporaryDestination, [System.IO.FileMode]::Create, [System.IO.FileAccess]::Write, [System.IO.FileShare]::None)
   try {
     $bitmap.Save($stream, [System.Drawing.Imaging.ImageFormat]::Png)
   } finally {
     $stream.Dispose()
   }
+  if (Test-Path -LiteralPath $destination) {
+    Remove-Item -LiteralPath $destination
+  }
+  Move-Item -LiteralPath $temporaryDestination -Destination $destination
 }
 
 function Save-MarkAsset(
@@ -103,26 +108,33 @@ function Save-SplashAsset {
   $fontCollection = New-Object System.Drawing.Text.PrivateFontCollection
   $fontCollection.AddFontFile($interBoldPath)
   $font = New-Object System.Drawing.Font($fontCollection.Families[0], 44, [System.Drawing.FontStyle]::Bold, [System.Drawing.GraphicsUnit]::Pixel)
+  $mottoFont = New-Object System.Drawing.Font($fontCollection.Families[0], 15, [System.Drawing.FontStyle]::Regular, [System.Drawing.GraphicsUnit]::Pixel)
   $center = New-Object System.Drawing.StringFormat
   $center.Alignment = [System.Drawing.StringAlignment]::Center
   $center.LineAlignment = [System.Drawing.StringAlignment]::Center
-  $canvas.Graphics.DrawString('WARSHA', $font, (New-Object System.Drawing.SolidBrush($palette.Ink)), 256, 358, $center)
+  $inkBrush = New-Object System.Drawing.SolidBrush($palette.Ink)
+  $canvas.Graphics.DrawString('WARSHA', $font, $inkBrush, 256, 350, $center)
+  $canvas.Graphics.DrawString('YOUR WORK, OUR MISSION', $mottoFont, $inkBrush, 256, 401, $center)
 
   Save-Png $canvas.Bitmap (Join-Path $imageRoot 'warsha-current-approved-splash.png')
   $center.Dispose()
+  $inkBrush.Dispose()
+  $mottoFont.Dispose()
   $font.Dispose()
   $fontCollection.Dispose()
   $canvas.Graphics.Dispose()
   $canvas.Bitmap.Dispose()
 }
 
-Save-MarkAsset (Join-Path $imageRoot 'warsha-current-approved-icon.png') 1024 520 $palette.Background $palette.Ink
-Save-MarkAsset (Join-Path $imageRoot 'warsha-current-approved-favicon.png') 512 300 $palette.Background $palette.Ink
-Save-MarkAsset (Join-Path $imageRoot 'warsha-current-approved-adaptive-foreground.png') 432 210 ([System.Drawing.Color]::Transparent) $palette.Ink
-Save-MarkAsset (Join-Path $imageRoot 'warsha-current-approved-monochrome.png') 432 210 ([System.Drawing.Color]::Transparent) $palette.Ink
-Save-MarkAsset (Join-Path $imageRoot 'warsha-current-approved-notification.png') 96 72 ([System.Drawing.Color]::Transparent) ([System.Drawing.Color]::White)
-Save-MarkAsset (Join-Path $publicRoot 'warsha-current-approved-192.png') 192 104 $palette.Background $palette.Ink
-Save-MarkAsset (Join-Path $publicRoot 'warsha-current-approved-512.png') 512 276 $palette.Background $palette.Ink
+if (-not $SplashOnly) {
+  Save-MarkAsset (Join-Path $imageRoot 'warsha-current-approved-icon.png') 1024 520 $palette.Background $palette.Ink
+  Save-MarkAsset (Join-Path $imageRoot 'warsha-current-approved-favicon.png') 512 300 $palette.Background $palette.Ink
+  Save-MarkAsset (Join-Path $imageRoot 'warsha-current-approved-adaptive-foreground.png') 432 210 ([System.Drawing.Color]::Transparent) $palette.Ink
+  Save-MarkAsset (Join-Path $imageRoot 'warsha-current-approved-monochrome.png') 432 210 ([System.Drawing.Color]::Transparent) $palette.Ink
+  Save-MarkAsset (Join-Path $imageRoot 'warsha-current-approved-notification.png') 96 72 ([System.Drawing.Color]::Transparent) ([System.Drawing.Color]::White)
+  Save-MarkAsset (Join-Path $publicRoot 'warsha-current-approved-192.png') 192 104 $palette.Background $palette.Ink
+  Save-MarkAsset (Join-Path $publicRoot 'warsha-current-approved-512.png') 512 276 $palette.Background $palette.Ink
+}
 Save-SplashAsset
 
 Write-Output 'Rendered The Current icon, adaptive, monochrome, notification, favicon, splash, and web assets.'

@@ -67,6 +67,8 @@ assert.match(brandMark, /variant === 'light' \? colors\.textPrimary : colors\.ba
 const brandRenderer = read('scripts/render-brand-assets.ps1');
 for (const y of currentY) assert.match(brandRenderer, new RegExp(`\\$y \\+ ${y} \\* \\$scale`), `renderer uses upright y=${y}`);
 assert.doesNotMatch(brandRenderer, /ScaleTransform|RotateTransform|scaleY/i, 'raster renderer has no orientation transform');
+assert.match(brandRenderer, /YOUR WORK, OUR MISSION/, 'native splash renderer uses the approved motto');
+assert.doesNotMatch(brandRenderer, /YOUR WORK\. OUR MISSION\.|YOUR BUSINESS\. MORE JOBS\./, 'native splash renderer contains no superseded tagline');
 
 const appConfig = read('app.json');
 const expectedAssets = new Map([
@@ -93,13 +95,18 @@ const manifest = read('public/manifest.webmanifest');
 assert.match(manifest, /"theme_color": "#080808"/, 'web manifest uses the locked theme color');
 assert.match(manifest, /warsha-current-approved-192\.png/, 'web manifest includes the approved 192 px icon');
 assert.match(manifest, /warsha-current-approved-512\.png/, 'web manifest includes the approved 512 px icon');
+assert.match(manifest, /YOUR WORK, OUR MISSION/, 'web manifest uses the approved English motto');
 const html = read('app/+html.tsx');
 assert.match(html, /manifest\.webmanifest/, 'static HTML links the web manifest');
+assert.match(html, /YOUR WORK, OUR MISSION/, 'static HTML metadata uses the approved English motto');
 
 const activeSource = sourceFiles('app').concat(sourceFiles('components')).map(read).join('\n');
 assert.doesNotMatch(activeSource, /LinearGradient|BlurView|linear-gradient/i, 'active UI contains no gradients or glass blur');
 assert.doesNotMatch(activeSource, /warsha-brand-/, 'active UI contains no legacy asset references');
 assert.doesNotMatch(activeSource, /YOUR BUSINESS|MORE JOBS/i, 'active UI contains no obsolete tagline');
+const translations = read('src/i18n/translations.ts');
+assert.match(translations, /brandMotto: 'YOUR WORK, OUR MISSION'/, 'shared English translation exposes the approved motto');
+assert.match(translations, /brandMotto: 'شغلك مهمتنا'/, 'shared Arabic translation exposes the approved motto');
 
 for (const doc of [
   'docs/brand/WARSHA-BRAND-SYSTEM.md',
