@@ -3,10 +3,11 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppText } from '@/components/warsha/Typography';
+import { EmptyState } from '@/components/warsha/BrandUI';
 import { colors, radii, spacing, typography } from '@/constants/theme';
 import { useAuth } from '@/src/auth/auth-context';
 import { useBookings } from '@/src/bookings/booking-context';
@@ -117,12 +118,9 @@ export default function Orders() {
         ) : null}
       </View>
       {loading ? (
-        <View style={styles.center}><ActivityIndicator color={colors.white} /></View>
+        <View style={styles.center}><EmptyState title={t('orders')} loading /></View>
       ) : error ? (
-        <View style={styles.center}>
-          <AppText style={styles.empty}>{t('genericTryAgain')}</AppText>
-          <Pressable onPress={() => void reload()} style={styles.retry}><AppText style={styles.activeText}>{t('tryAgain')}</AppText></Pressable>
-        </View>
+        <View style={styles.center}><EmptyState title={t('genericTryAgain')} icon="error-outline" action={t('tryAgain')} onAction={() => void reload()} /></View>
       ) : (
         <FlatList
           data={visible}
@@ -134,8 +132,7 @@ export default function Orders() {
           contentContainerStyle={styles.list}
           ListEmptyComponent={
             <View style={styles.center}>
-              <MaterialIcons name="receipt-long" size={38} color={colors.textMuted} />
-              <AppText style={styles.empty}>{t('noBookings')}</AppText>
+              <EmptyState title={t('noBookings')} icon="receipt-long" />
             </View>
           }
         />
@@ -221,9 +218,9 @@ const styles = StyleSheet.create({
   grow: { flex: 1, gap: 4 },
   between: { flexDirection: 'row', justifyContent: 'space-between', gap: spacing.sm },
   name: { fontSize: 16, fontWeight: typography.semibold, flexShrink: 1 },
-  badge: { maxWidth: 120, paddingHorizontal: 7, paddingVertical: 4, borderRadius: radii.pill, backgroundColor: 'rgba(127,200,154,.12)' },
+  badge: { maxWidth: 120, paddingHorizontal: 7, paddingVertical: 4, borderRadius: radii.pill, backgroundColor: colors.successSoft },
   badgeText: { fontSize: 9, color: colors.success, textAlign: 'center' },
-  cancelBadge: { backgroundColor: 'rgba(217,121,121,.12)' },
+  cancelBadge: { backgroundColor: colors.errorSoft },
   cancelText: { color: colors.error },
   service: { fontSize: 13, color: colors.textSecondary },
   meta: { fontSize: 11, color: colors.textMuted },

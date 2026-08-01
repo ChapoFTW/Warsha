@@ -1,8 +1,9 @@
 import { Slot, router, useLocalSearchParams, usePathname } from 'expo-router';
 import { useEffect } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { colors } from '@/constants/theme';
+import { BrandLoadingMark as ActivityIndicator } from '@/components/warsha/BrandMark';
 import { useAuth } from '@/src/auth/auth-context';
 import { useBookings } from '@/src/bookings/booking-context';
 import { useBookingDetailRealtime } from '@/src/realtime/use-booking-detail-realtime';

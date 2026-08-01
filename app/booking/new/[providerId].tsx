@@ -4,7 +4,6 @@ import * as ImagePicker from "expo-image-picker";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -15,6 +14,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { BrandLoadingMark as ActivityIndicator } from "@/components/warsha/BrandMark";
 import { ScreenHeader } from "@/components/warsha/ScreenHeader";
 import { AppText } from "@/components/warsha/Typography";
 import { colors, radii, spacing, typography } from "@/constants/theme";
@@ -782,7 +782,7 @@ const styles = StyleSheet.create({
     width: 25,
     height: 25,
     borderRadius: 13,
-    backgroundColor: "rgba(0,0,0,.75)",
+    backgroundColor: colors.scrim,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -814,7 +814,7 @@ const styles = StyleSheet.create({
   warning: {
     padding: spacing.md,
     borderWidth: 1,
-    borderColor: "rgba(216,186,114,.35)",
+    borderColor: colors.warning,
     borderRadius: radii.md,
   },
   warningText: { fontSize: 11, lineHeight: 17, color: colors.warning },

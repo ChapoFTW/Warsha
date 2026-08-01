@@ -1,13 +1,28 @@
+import {
+  Cairo_400Regular,
+  Cairo_500Medium,
+  Cairo_600SemiBold,
+  Cairo_700Bold,
+} from '@expo-google-fonts/cairo';
+import {
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+} from '@expo-google-fonts/inter';
+import { useFonts } from 'expo-font';
 import { ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
+import { useEffect } from 'react';
 import 'react-native-reanimated';
 
 import { ConfigurationError } from '@/components/warsha/ConfigurationError';
 import { LocalDataMigrationGate } from '@/components/warsha/LocalDataMigrationGate';
 import { NotificationBanner } from '@/components/warsha/NotificationBanner';
 import { ProviderModeOverlay } from '@/components/warsha/ProviderModeOverlay';
-import { colors } from '@/constants/theme';
+import { colors, fontFamilies } from '@/constants/theme';
 import { AddressProvider } from '@/src/addresses/address-context';
 import { AuthProvider } from '@/src/auth/auth-context';
 import { BookingProvider } from '@/src/bookings/booking-context';
@@ -35,14 +50,33 @@ const navigationTheme = {
     notification: colors.white,
   },
   fonts: {
-    regular: { fontFamily: 'System', fontWeight: '400' as const },
-    medium: { fontFamily: 'System', fontWeight: '500' as const },
-    bold: { fontFamily: 'System', fontWeight: '700' as const },
-    heavy: { fontFamily: 'System', fontWeight: '700' as const },
+    regular: { fontFamily: fontFamilies.latin.regular, fontWeight: '400' as const },
+    medium: { fontFamily: fontFamilies.latin.medium, fontWeight: '500' as const },
+    bold: { fontFamily: fontFamilies.latin.bold, fontWeight: '700' as const },
+    heavy: { fontFamily: fontFamilies.latin.bold, fontWeight: '700' as const },
   },
 };
 
+void SplashScreen.preventAutoHideAsync();
+
 export default function RootLayout() {
+  const [fontsLoaded, fontError] = useFonts({
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
+    Cairo_400Regular,
+    Cairo_500Medium,
+    Cairo_600SemiBold,
+    Cairo_700Bold,
+  });
+
+  useEffect(() => {
+    if (fontsLoaded || fontError) void SplashScreen.hideAsync();
+  }, [fontError, fontsLoaded]);
+
+  if (!fontsLoaded && !fontError) return null;
+
   return (
     <LocalizationProvider>
       {supabaseConfigurationMissing ? <ConfigurationError /> : (

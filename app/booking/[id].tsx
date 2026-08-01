@@ -2,10 +2,11 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ScreenHeader } from '@/components/warsha/ScreenHeader';
+import { BrandLoadingMark as ActivityIndicator } from '@/components/warsha/BrandMark';
 import { BookingReviewCard } from '@/components/warsha/BookingReviewCard';
 import { BookingPaymentCard } from '@/components/warsha/BookingPaymentCard';
 import { BookingPriceAdjustmentCard } from '@/components/warsha/BookingPriceAdjustmentCard';

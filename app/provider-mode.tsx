@@ -3,11 +3,12 @@ import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ProviderJobsContent } from '@/components/warsha/ProviderJobsContent';
 import { ScreenHeader } from '@/components/warsha/ScreenHeader';
+import { BrandLoadingMark as ActivityIndicator } from '@/components/warsha/BrandMark';
 import { AppText } from '@/components/warsha/Typography';
 import { colors, radii, spacing, typography } from '@/constants/theme';
 import { useMarketplaceData } from '@/src/data/marketplace-context';

@@ -4,10 +4,15 @@
     "slug": "Warsha",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/warsha-brand-icon.png",
+    "icon": "./assets/images/warsha-current-icon.png",
     "scheme": "warsha",
     "userInterfaceStyle": "dark",
-    "backgroundColor": "#FFFFFF",
+    "backgroundColor": "#080808",
+    "primaryColor": "#080808",
+    "notification": {
+      "icon": "./assets/images/warsha-current-notification.png",
+      "color": "#2FBF71"
+    },
     "extra": {
       "supportsRTL": true,
       "router": {},
@@ -17,32 +22,34 @@
     },
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "backgroundColor": "#080808"
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#FFFFFF",
-        "foregroundImage": "./assets/images/warsha-brand-adaptive-foreground.png",
-        "monochromeImage": "./assets/images/warsha-brand-monochrome.png"
+        "backgroundColor": "#080808",
+        "foregroundImage": "./assets/images/warsha-current-adaptive-foreground.png",
+        "monochromeImage": "./assets/images/warsha-current-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/warsha-brand-favicon.png"
+      "favicon": "./assets/images/warsha-current-favicon.png"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/warsha-brand-splash.png",
-          "imageWidth": 200,
+          "image": "./assets/images/warsha-current-splash.png",
+          "imageWidth": 240,
           "resizeMode": "contain",
-          "backgroundColor": "#FFFFFF",
+          "backgroundColor": "#080808",
           "dark": {
-            "backgroundColor": "#FFFFFF"
+            "image": "./assets/images/warsha-current-splash.png",
+            "backgroundColor": "#080808"
           }
         }
       ],

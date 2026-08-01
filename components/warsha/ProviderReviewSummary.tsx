@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppText } from './Typography';
+import { BrandLoadingMark as ActivityIndicator } from './BrandMark';
 import { colors, radii, spacing, typography } from '@/constants/theme';
 import { useLocalization } from '@/src/i18n/localization';
 import { realtimeService } from '@/src/realtime/realtime-service';

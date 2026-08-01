@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { colors, radii, spacing, typography } from '@/constants/theme';
 import type { Booking } from '@/src/bookings/booking-types';
@@ -14,6 +14,7 @@ import {
 import { usePayments } from '@/src/payments/payment-context';
 import type { PriceAdjustment } from '@/src/payments/payment-types';
 import { AppText } from './Typography';
+import { BrandLoadingMark as ActivityIndicator } from './BrandMark';
 
 const providerCanPropose = new Set(['job_started', 'awaiting_quote_approval', 'work_in_progress']);
 

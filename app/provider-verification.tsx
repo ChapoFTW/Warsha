@@ -4,7 +4,6 @@ import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   Pressable,
   RefreshControl,
@@ -14,6 +13,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { BrandLoadingMark as ActivityIndicator } from '@/components/warsha/BrandMark';
 
 import { ProviderTrustIndicators } from '@/components/warsha/ProviderTrustIndicators';
 import { ScreenHeader } from '@/components/warsha/ScreenHeader';

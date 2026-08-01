@@ -1,6 +1,6 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, AppState, Pressable, StyleSheet, View } from 'react-native';
+import { AppState, Pressable, StyleSheet, View } from 'react-native';
 
 import { colors, radii, spacing, typography } from '@/constants/theme';
 import type { Booking } from '@/src/bookings/booking-types';
@@ -17,6 +17,7 @@ import type {
 } from '@/src/payments/payment-types';
 import { realtimeService } from '@/src/realtime/realtime-service';
 import { AppText } from './Typography';
+import { BrandLoadingMark as ActivityIndicator } from './BrandMark';
 
 const eligibleStatuses = new Set([
   'accepted',

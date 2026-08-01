@@ -1,7 +1,7 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { bookingStatusTranslationKeys, type Booking, type BookingStatus } from '@/src/bookings/booking-types';
 import { useProviderJobs } from '@/src/provider-jobs/provider-job-context';
@@ -10,6 +10,7 @@ import { useProviderJobText, type ProviderJobCopyKey } from '@/src/i18n/provider
 import { formatBookingDateTime, formatNumber, localeFor } from '@/src/utils/date-format';
 import { colors, radii, spacing, typography } from '@/constants/theme';
 import { AppText } from './Typography';
+import { BrandLoadingMark as ActivityIndicator } from './BrandMark';
 
 type JobSection='new'|'active'|'done';
 const sections:{id:JobSection;label:ProviderJobCopyKey;statuses:BookingStatus[]}[]=[{id:'new',label:'newRequests',statuses:['pending_provider_approval']},{id:'active',label:'inProgressJobs',statuses:['accepted','rescheduling_requested','confirmed','provider_on_the_way','provider_arrived','job_started','work_in_progress','disputed']},{id:'done',label:'completedJobs',statuses:['completed','rejected','cancelled','refunded','no_show']}];

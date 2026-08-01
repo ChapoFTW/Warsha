@@ -1,6 +1,6 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { colors, radii, spacing, typography } from '@/constants/theme';
 import { useLocalization } from '@/src/i18n/localization';
@@ -9,6 +9,7 @@ import { formatMinor } from '@/src/payments/money';
 import { usePayments } from '@/src/payments/payment-context';
 import type { ProviderBookingPayment } from '@/src/payments/payment-types';
 import { AppText } from './Typography';
+import { BrandLoadingMark as ActivityIndicator } from './BrandMark';
 
 export function ProviderCashPaymentCard({ bookingId, completed }: { bookingId: string; completed: boolean }) {
   const { language } = useLocalization();

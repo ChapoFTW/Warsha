@@ -1,3 +1,34 @@
-import MaterialIcons from '@expo/vector-icons/MaterialIcons'; import { ComponentProps } from 'react'; import { StyleSheet,View } from 'react-native'; import { SafeAreaView } from 'react-native-safe-area-context'; import { colors,spacing,typography } from '@/constants/theme'; import { useLocalization } from '@/src/i18n/localization'; import { TranslationKey } from '@/src/i18n/translations'; import { AppText } from './Typography';
-export function FoundationScreen({title,message,icon}:{title:TranslationKey;message:TranslationKey;icon:ComponentProps<typeof MaterialIcons>['name']}){const{t}=useLocalization();return <SafeAreaView style={styles.safe}><View style={styles.content}><View style={styles.icon}><MaterialIcons name={icon} size={30} color={colors.textPrimary}/></View><AppText style={styles.title}>{t(title)}</AppText><AppText style={styles.message}>{t(message)}</AppText></View></SafeAreaView>}
-const styles=StyleSheet.create({safe:{flex:1,backgroundColor:colors.background},content:{flex:1,alignItems:'center',justifyContent:'center',padding:spacing.xxl},icon:{width:64,height:64,borderRadius:22,backgroundColor:colors.surfaceElevated,borderWidth:1,borderColor:colors.border,alignItems:'center',justifyContent:'center',marginBottom:spacing.lg},title:{fontSize:25,fontWeight:typography.bold,textAlign:'center'},message:{fontSize:14,color:colors.textSecondary,textAlign:'center',marginTop:spacing.sm}});
+import type { ComponentProps } from 'react';
+import { StyleSheet, View } from 'react-native';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+import { colors, spacing } from '@/constants/theme';
+import { useLocalization } from '@/src/i18n/localization';
+import type { TranslationKey } from '@/src/i18n/translations';
+
+import { EmptyState } from './BrandUI';
+
+export function FoundationScreen({
+  title,
+  message,
+  icon,
+}: {
+  title: TranslationKey;
+  message: TranslationKey;
+  icon: ComponentProps<typeof MaterialIcons>['name'];
+}) {
+  const { t } = useLocalization();
+  return (
+    <SafeAreaView style={styles.safe}>
+      <View style={styles.content}>
+        <EmptyState title={t(title)} body={t(message)} icon={icon} />
+      </View>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: colors.background },
+  content: { flex: 1, justifyContent: 'center', padding: spacing.xl },
+});

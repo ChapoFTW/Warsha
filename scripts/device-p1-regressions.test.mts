@@ -107,17 +107,18 @@ ok(rootLayout.includes('<Stack.Screen name="booking"'), 'booking child navigator
 ok(rootLayout.includes('<Stack.Screen name="provider-job"'), 'provider-job child navigator is declared by segment');
 
 const appConfig = readFileSync('app.json', 'utf8');
-for (const asset of ['warsha-brand-icon.png', 'warsha-brand-adaptive-foreground.png', 'warsha-brand-monochrome.png', 'warsha-brand-favicon.png', 'warsha-brand-splash.png']) {
+for (const asset of ['warsha-current-icon.png', 'warsha-current-adaptive-foreground.png', 'warsha-current-monochrome.png', 'warsha-current-notification.png', 'warsha-current-favicon.png', 'warsha-current-splash.png']) {
   ok(appConfig.includes(asset), `${asset} is wired into Expo app config`);
 }
 const brandRenderer = readFileSync('scripts/render-brand-assets.ps1', 'utf8');
-ok(brandRenderer.includes('YOUR BUSINESS. MORE JOBS.'), 'approved current tagline is rendered');
+ok(brandRenderer.includes('Draw-CurrentMark'), 'approved Current mark renderer is used');
+ok(!brandRenderer.includes('YOUR BUSINESS. MORE JOBS.'), 'obsolete business tagline is absent');
 ok(!brandRenderer.includes('YOUR WORK. OUR MISSION.'), 'stale tagline is absent');
 const headerSource = readFileSync('components/warsha/Header.tsx', 'utf8');
 const profileSource = readFileSync('app/(tabs)/profile.tsx', 'utf8');
-ok(headerSource.includes('<BrandLogo'), 'global header uses the reusable current brand component');
-ok(profileSource.includes('<BrandLogo'), 'auth and loading profile UI uses the reusable current brand component');
-ok(!/(?:warsha-(?:icon|splash|adaptive|monochrome|favicon)\.png)/.test(`${rootLayout}\n${headerSource}\n${profileSource}`), 'active UI has no legacy brand asset imports');
+ok(headerSource.includes('<BrandLockup'), 'global header uses the reusable Current lockup');
+ok(profileSource.includes('<BrandLockup'), 'auth and loading profile UI uses the reusable Current lockup');
+ok(!/warsha-brand-(?:icon|splash|adaptive-foreground|monochrome|favicon)\.png/.test(`${appConfig}\n${rootLayout}\n${headerSource}\n${profileSource}`), 'active product config and UI have no legacy brand asset imports');
 const localAuthConfig = readFileSync('supabase/config.toml', 'utf8');
 ok(localAuthConfig.includes('"+201099221106" = "123456"'), 'documented local Egyptian OTP fixture is configured');
 ok(localAuthConfig.includes('local-test-only-no-real-sms'), 'local provider uses an explicit non-secret placeholder');

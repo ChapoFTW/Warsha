@@ -274,7 +274,7 @@ const styles = StyleSheet.create({
   hero: { height: 225, backgroundColor: colors.surface },
   shade: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,.28)",
+    backgroundColor: "rgba(8,8,8,.28)",
   },
   circle: {
     position: "absolute",
@@ -282,11 +282,11 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 14,
-    backgroundColor: "rgba(0,0,0,.65)",
+    backgroundColor: "rgba(8,8,8,.65)",
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,.15)",
+    borderColor: colors.border,
   },
   left: { left: 16 },
   right: { right: 16 },

@@ -1,8 +1,9 @@
 import { router,useFocusEffect,useLocalSearchParams } from 'expo-router';
 import { useCallback,useState } from 'react';
-import { ActivityIndicator,Alert,Pressable,ScrollView,StyleSheet,TextInput,View } from 'react-native';
+import { Alert,Pressable,ScrollView,StyleSheet,TextInput,View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScreenHeader } from '@/components/warsha/ScreenHeader';
+import { BrandLoadingMark as ActivityIndicator } from '@/components/warsha/BrandMark';
 import { AppText } from '@/components/warsha/Typography';
 import { colors,radii,spacing,typography } from '@/constants/theme';
 import { useLocalization } from '@/src/i18n/localization';

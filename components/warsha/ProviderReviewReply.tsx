@@ -1,8 +1,9 @@
 import { Image } from 'expo-image';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import { AppText } from './Typography';
+import { BrandLoadingMark as ActivityIndicator } from './BrandMark';
 import { colors, radii, spacing, typography } from '@/constants/theme';
 import { useLocalization } from '@/src/i18n/localization';
 import { realtimeService } from '@/src/realtime/realtime-service';
