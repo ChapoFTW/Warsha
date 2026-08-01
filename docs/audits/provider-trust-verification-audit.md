@@ -22,7 +22,7 @@ Warsha remains a marketplace for independent service providers. Verification is 
 | Provider profile | “Foundation,” “onboarding,” completion percentage, and every optional biography field being mandatory created HR-style friction. | Reworded as an independent Work profile, removed the percentage, marked biography/experience/language/skills optional, and limited go-live requirements to trade, service, area, and agreement. |
 | Provider verification | No complete workflow existed. | Added a three-photo identity flow, masked 14-digit National ID entry, optional documents, clear status/reason, large controls, retry/replace/delete while editable, and mock parity. |
 | Empty/error/loading states | Existing states are short, actionable, and generally localized. | Preserved; verification adds equivalent retry and status states. |
-| Reusable controls | Several common buttons were below a 44-point touch target. The brand tagline sounded like Warsha owned the provider’s work mission. | Increased common touch targets and changed the tagline to “Your business. More jobs.” |
+| Reusable controls | Several common buttons were below a 44-point touch target. An earlier brand tagline did not match the current brand authority. | Increased common touch targets; the later locked brand correction now requires `YOUR WORK, OUR MISSION` / `شغلك مهمتنا`. |
 
 ## Security architecture
 

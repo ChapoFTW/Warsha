@@ -61,6 +61,8 @@ Primary evidence includes the customer routes under `app`, marketplace/address/b
 - After an eligible completed booking, the customer can submit one 1-5 rating, optional comment, and up to four bounded image attachments.
 - Rating summaries, review attachments, and worker replies are visible through sanitized participant/public paths. Review moderation and visibility remain server-authoritative.
 
+WPS-011 supersedes the review detail in this section with six required scores, a bounded edit window, private signed review photos, helpful voting, reporting, audited soft-hide moderation, and the deterministic public reputation summary. WPS-002 continues to govern customer booking-detail placement and account-scoped navigation.
+
 ## 8. Notifications and trust
 
 - The Notifications screen exposes durable in-app events, unread count, mark one/all read, dismiss, pagination, refresh, and safe routing to booking, chat, payment, review, verification, or earnings destinations.

@@ -82,3 +82,5 @@ Primary evidence includes `src/reviews`, `src/verification`, trust/review compon
 - No review report/moderation UI, customer private rating UI, or automated fraud model is complete.
 - Manual document-camera, signed-URL expiry, moderation, Arabic/RTL, and accessibility results are not recorded as passed.
 
+WPS-011 supersedes the review limitations in Sections 2, 3, and 9 by defining multidimensional ratings, a bounded edit window, helpful voting, reports, audited moderation, and deterministic reputation summaries. WPS-006 remains authoritative for identity and verified-booking eligibility foundations.
+

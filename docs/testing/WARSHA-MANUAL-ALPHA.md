@@ -205,9 +205,8 @@ data.
 - Actions:
   1. Observe the splash at launch and the header logo on Home and Profile
      auth/loading UI.
-- Expected visible: current `BrandLogo` everywhere; the splash tagline reads
-  `YOUR BUSINESS. MORE JOBS.` (the superseded `YOUR WORK. OUR MISSION.` must
-  not appear).
+- Expected visible: current `BrandLogo` everywhere; the splash motto reads
+  `YOUR WORK, OUR MISSION`. No superseded tagline appears.
 - Expected state: none.
 - Result: NOT RUN | Severity if failed: __ | Screenshot: A03-02.png
 - Notes: The *native* home-screen icon and native splash are provable only in

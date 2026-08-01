@@ -109,7 +109,7 @@ async function hydrateMedia(catalog: MarketplaceCatalog): Promise<MarketplaceCat
 function marketplaceCatalog() {
   if (activeCatalogRequest) return activeCatalogRequest;
   activeCatalogRequest = (async () => {
-    const { data, error } = await getSupabaseClient().rpc('get_marketplace_catalog');
+    const { data, error } = await getSupabaseClient().rpc('get_marketplace_catalog_v2');
     if (error) throw error;
     const catalog = (data ?? {}) as Partial<MarketplaceCatalog>;
     return hydrateMedia({

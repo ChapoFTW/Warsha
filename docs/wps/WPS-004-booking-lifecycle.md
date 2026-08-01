@@ -102,6 +102,8 @@ The schema still accepts `draft`, `awaiting_quote_approval`, and `awaiting_custo
 
 ## 12. Known limitations
 
+WPS-011 extends the post-completion review relationship with bounded editing, dimensions, photos, helpful voting, reporting, and moderation. Booking completion and permanent booking linkage remain governed by WPS-004.
+
 - Pre-booking WPS-008 marketplace states and conversion are not implemented in this baseline.
 - Customer worker-no-show reporting, post-agreement worker cancellation, Rescue Mode, Running Late, warranty comeback, and a complete support dispute UI are absent.
 - Manual end-to-end transition, attachment, chat-boundary, Arabic/RTL, and native background tests are not recorded as passed.

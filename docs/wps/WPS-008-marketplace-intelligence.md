@@ -750,6 +750,8 @@ Exact category duration values are not hardcoded in this WPS. Warranty/comeback 
 
 ## 28. Reputation inputs
 
+WPS-011 adds a public informational confidence score, helpful votes, and reputation badges. They are not marketplace ranking inputs and cannot change WPS-008 eligibility, invitation ordering, fairness, quote comparison, or pricing without a later locked WPS revision.
+
 Only completed, eligible, undisputed, or resolved bookings may be reviewed.
 
 Planned customer review dimensions are:

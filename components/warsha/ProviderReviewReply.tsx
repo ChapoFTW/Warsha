@@ -9,10 +9,12 @@ import { useLocalization } from '@/src/i18n/localization';
 import { realtimeService } from '@/src/realtime/realtime-service';
 import { useReviews } from '@/src/reviews/review-context';
 import type { BookingReview } from '@/src/reviews/review-types';
+import { useReviewText } from '@/src/reviews/review-translations';
 import { formatTimestamp, localeFor } from '@/src/utils/date-format';
 
 export function ProviderReviewReply({ bookingId }: { bookingId: string }) {
   const { t, isRTL, language } = useLocalization();
+  const rt = useReviewText();
   const { getBookingReview, reply, busy, revision } = useReviews();
   const [review, setReview] = useState<BookingReview>();
   const [text, setText] = useState('');
@@ -115,6 +117,7 @@ export function ProviderReviewReply({ bookingId }: { bookingId: string }) {
         </View>
       ) : (
         <View style={styles.form}>
+          <AppText style={styles.muted}>{rt('immutableReply')}</AppText>
           <TextInput
             accessibilityLabel={t('writeReply')}
             value={text}

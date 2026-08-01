@@ -1,126 +1,63 @@
+import { Image } from 'expo-image';
+import { router } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
-import { AppText } from './Typography';
 import { BrandLoadingMark as ActivityIndicator } from './BrandMark';
+import { StateBadge } from './BrandUI';
+import { AppText } from './Typography';
 import { colors, radii, spacing, typography } from '@/constants/theme';
+import { useAuth } from '@/src/auth/auth-context';
 import { useLocalization } from '@/src/i18n/localization';
 import { realtimeService } from '@/src/realtime/realtime-service';
 import { useReviews } from '@/src/reviews/review-context';
-import type { RatingSummary } from '@/src/reviews/review-types';
+import { useReviewText } from '@/src/reviews/review-translations';
+import type { BookingReview, RatingSummary, ReviewReportReason, ReviewSort, ReviewVote } from '@/src/reviews/review-types';
 import { formatNumber, formatTimestamp, localeFor } from '@/src/utils/date-format';
 
+const sorts: ReviewSort[] = ['newest', 'highest_rated', 'lowest_rated', 'most_helpful'];
+const sortCopy = { newest: 'newest', highest_rated: 'highestRated', lowest_rated: 'lowestRated', most_helpful: 'mostHelpful' } as const;
+const reasons: ReviewReportReason[] = ['spam', 'abuse', 'fake_review', 'offensive_content'];
+
 export function ProviderReviewSummary({ providerId }: { providerId: string }) {
-  const { t, isRTL, language } = useLocalization();
-  const { getSummary, revision } = useReviews();
-  const [summary, setSummary] = useState<RatingSummary>();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-  const request = useRef(0);
-  const scope = useRef(revision);
-  scope.current = revision;
-
-  const load = useCallback(async () => {
-    const current = ++request.current;
-    const targetRevision = revision;
-    setLoading(true);
-    setError(false);
-    setSummary(undefined);
-    try {
-      const next = await getSummary(providerId);
-      if (request.current === current && scope.current === targetRevision) setSummary(next);
-    } catch {
-      if (request.current === current && scope.current === targetRevision) setError(true);
-    } finally {
-      if (request.current === current && scope.current === targetRevision) setLoading(false);
-    }
-  }, [getSummary, providerId, revision]);
-
-  useEffect(() => {
-    void load();
-    return () => { request.current += 1; };
-  }, [load]);
-
-  useEffect(() => {
-    let firstConnection = true;
-    const reconcile = () => { void load(); };
-    return realtimeService.providerReviews(providerId, reconcile, (status) => {
-      if (status !== 'connected') return;
-      if (firstConnection) firstConnection = false;
-      else reconcile();
-    });
-  }, [load, providerId]);
-
-  if (loading) {
-    return <ActivityIndicator accessibilityLabel={t('ratingSummary')} color={colors.white} />;
-  }
-  if (error && !summary) {
-    return (
-      <View style={styles.state}>
-        <AppText style={styles.error}>{t('reviewLoadError')}</AppText>
-        <Pressable accessibilityRole="button" accessibilityLabel={t('tryAgain')} onPress={() => void load()} style={styles.outline}>
-          <AppText>{t('tryAgain')}</AppText>
-        </Pressable>
-      </View>
-    );
-  }
-  if (!summary?.count) return <AppText style={styles.muted}>{t('noReviewsYet')}</AppText>;
-
+  const { isRTL, language } = useLocalization(); const rt = useReviewText(); const { user, mode } = useAuth();
+  const { getSummary, vote, report, revision } = useReviews();
+  const [summary, setSummary] = useState<RatingSummary>(); const [sort, setSort] = useState<ReviewSort>('newest');
+  const [loading, setLoading] = useState(true); const [error, setError] = useState(''); const request = useRef(0); const scope = useRef(revision); scope.current = revision;
+  const load = useCallback(async () => { const current = ++request.current; const targetRevision = revision; setLoading(true); setError(''); try { const next = await getSummary(providerId, sort); if (request.current === current && scope.current === targetRevision) setSummary(next); } catch { if (request.current === current && scope.current === targetRevision) setError(rt('loadError')); } finally { if (request.current === current && scope.current === targetRevision) setLoading(false); } }, [getSummary, providerId, revision, rt, sort]);
+  useEffect(() => { void load(); return () => { request.current += 1; }; }, [load]);
+  useEffect(() => { let first = true; return realtimeService.providerReviews(providerId, () => void load(), status => { if (status === 'connected') { if (first) first = false; else void load(); } }); }, [load, providerId]);
+  if (loading) return <ActivityIndicator accessibilityLabel={rt('loading')} color={colors.white} />;
+  if (error && !summary) return <View style={styles.state}><AppText accessibilityRole="alert" style={styles.error}>{error}</AppText><Pressable accessibilityRole="button" accessibilityLabel={rt('tryAgain')} onPress={() => void load()} style={styles.outline}><AppText>{rt('tryAgain')}</AppText></Pressable></View>;
+  if (!summary) return null;
+  const canAct = mode === 'mock' || Boolean(user);
   return (
     <View style={styles.wrap}>
-      <View style={[styles.header, isRTL && styles.reverse]}>
-        <View>
-          <AppText style={styles.title}>{t('ratingSummary')}</AppText>
-          <AppText style={styles.score}>★ {formatNumber(summary.average, language)}</AppText>
-        </View>
-        <AppText style={styles.muted}>{formatNumber(summary.count, language)} {t('reviews')}</AppText>
-      </View>
-      <View style={[styles.distribution, isRTL && styles.reverse]}>
-        {[5, 4, 3, 2, 1].map((rating) => (
-          <AppText key={rating} style={styles.distributionItem}>
-            {rating}★ {formatNumber(summary.distribution[rating as 1 | 2 | 3 | 4 | 5], language)}
-          </AppText>
-        ))}
-      </View>
-      {summary.reviews.map((review) => {
-        const reviewerName = review.reviewerName === 'Customer' ? t('reviewCustomer') : review.reviewerName;
-        return (
-          <View key={review.id} style={styles.item}>
-            <View style={[styles.header, isRTL && styles.reverse]}>
-              <AppText style={styles.strong}>{reviewerName}</AppText>
-              <AppText style={styles.muted}>{formatTimestamp(review.createdAt, localeFor(language))}</AppText>
-            </View>
-            <AppText accessibilityLabel={`${review.rating} / 5`} style={styles.strong}>★ {review.rating} / 5</AppText>
-            <AppText style={[styles.verified, { textAlign: isRTL ? 'right' : 'left' }]}>{t('verifiedBooking')}</AppText>
-            {review.comment ? <AppText style={[styles.copy, { textAlign: isRTL ? 'right' : 'left' }]}>{review.comment}</AppText> : null}
-            {review.reply ? (
-              <View style={styles.reply}>
-                <AppText style={styles.strong}>{t('providerReply')}</AppText>
-                <AppText style={[styles.copy, { textAlign: isRTL ? 'right' : 'left' }]}>{review.reply.body}</AppText>
-              </View>
-            ) : null}
-          </View>
-        );
-      })}
+      <Reputation summary={summary} language={language} isRTL={isRTL} />
+      <AppText style={styles.sectionTitle}>{rt('reviews')}</AppText>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>{sorts.map(value => <Pressable key={value} accessibilityRole="radio" accessibilityState={{ selected: sort === value }} accessibilityLabel={`${rt('sortReviews')}: ${rt(sortCopy[value])}`} onPress={() => setSort(value)} style={[styles.chip, sort === value && styles.chipSelected]}><AppText style={styles.chipText}>{rt(sortCopy[value])}</AppText></Pressable>)}</ScrollView>
+      {!summary.reviews.length ? <AppText style={styles.muted}>{rt('noReviews')}</AppText> : summary.reviews.map(review => <ReviewItem key={review.id} review={review} isRTL={isRTL} language={language} canAct={canAct} onAuth={() => router.push('/(tabs)/profile')} onVote={async value => { try { await vote(review.id, value); await load(); } catch { setError(rt('voteError')); } }} onReport={async (reason, details) => { try { await report(review.id, reason, details); } catch { setError(rt('reportError')); throw new Error(rt('reportError')); } }} />)}
+      {error ? <AppText accessibilityRole="alert" style={styles.error}>{error}</AppText> : null}
     </View>
   );
 }
 
+function Reputation({ summary, language, isRTL }: { summary: RatingSummary; language: 'en' | 'ar'; isRTL: boolean }) {
+  const rt = useReviewText(); const percent = (value?: number) => value === undefined ? rt('unavailable') : `${formatNumber(value, language)}%`;
+  const badges = [summary.badges.identityVerified && rt('identityVerified'), summary.badges.skillCertificateVerified && rt('skillVerified'), summary.badges.professionalCertificateVerified && rt('professionalVerified'), summary.badges.topRated && rt('topRated'), summary.badges.fastResponder && rt('fastResponder'), summary.badges.experienced && rt('experienced')].filter(Boolean) as string[];
+  const metrics = [[rt('averageRating'), `★ ${formatNumber(summary.average, language)} (${formatNumber(summary.count, language)})`], [rt('completedJobs'), formatNumber(summary.completedJobs, language)], [rt('responseRate'), percent(summary.responseRate)], [rt('completionRate'), percent(summary.completionRate)], [rt('repeatCustomers'), percent(summary.repeatCustomerPercentage)], [rt('yearsOnPlatform'), formatNumber(summary.yearsOnPlatform, language)]];
+  return <View style={styles.reputation}><View style={[styles.metrics, isRTL && styles.reverse]}>{metrics.map(([label, value]) => <View key={label} style={styles.metric}><AppText style={styles.metricValue}>{value}</AppText><AppText style={styles.muted}>{label}</AppText></View>)}</View><View style={[styles.badges, isRTL && styles.reverse]}>{badges.map(label => <StateBadge key={label} label={label} tone="success" compact />)}</View><AppText style={styles.strong}>{rt('ratingBreakdown')}</AppText><View style={[styles.dimensionGrid, isRTL && styles.reverse]}>{(['professionalism', 'quality', 'punctuality', 'communication', 'value'] as const).map(key => <AppText key={key} style={styles.dimension}>{rt(key)}: ★ {formatNumber(summary.dimensions[key], language)}</AppText>)}</View><AppText style={styles.strong}>{rt('ratingDistribution')}</AppText><View accessibilityLabel={rt('ratingDistribution')} style={styles.distribution}>{([5, 4, 3, 2, 1] as const).map(star => <View key={star} style={[styles.distributionRow, isRTL && styles.reverse]}><AppText style={styles.distributionStar}>{formatNumber(star, language)} ★</AppText><View style={styles.distributionTrack}><View style={[styles.distributionFill, { width: `${summary.count ? summary.distribution[star] / summary.count * 100 : 0}%` }]} /></View><AppText style={styles.distributionCount}>{formatNumber(summary.distribution[star], language)}</AppText></View>)}</View><View style={styles.confidence}><AppText style={styles.strong}>{rt('confidence')}: {formatNumber(summary.confidence.score, language)}/100</AppText><AppText style={styles.muted}>{rt('confidenceHelp')}</AppText></View></View>;
+}
+
+function ReviewItem({ review, isRTL, language, canAct, onAuth, onVote, onReport }: { review: BookingReview; isRTL: boolean; language: 'en' | 'ar'; canAct: boolean; onAuth: () => void; onVote: (vote: ReviewVote) => Promise<void>; onReport: (reason: ReviewReportReason, details: string) => Promise<void> }) {
+  const rt = useReviewText(); const [reporting, setReporting] = useState(false); const [reason, setReason] = useState<ReviewReportReason>('spam'); const [details, setDetails] = useState(''); const [sent, setSent] = useState(false); const [busy, setBusy] = useState(false);
+  const action = (operation: () => Promise<void>) => { if (!canAct) { onAuth(); return; } setBusy(true); void operation().finally(() => setBusy(false)); };
+  return <View style={styles.item}><View style={[styles.header, isRTL && styles.reverse]}><AppText style={styles.strong}>{review.reviewerName}</AppText><AppText style={styles.muted}>{formatTimestamp(review.createdAt, localeFor(language))}</AppText></View><AppText accessibilityLabel={`${rt('overall')}: ${review.rating} / 5`} style={styles.strong}>★ {review.rating} / 5</AppText><View style={[styles.dimensionGrid, isRTL && styles.reverse]}>{(['professionalism', 'quality', 'punctuality', 'communication', 'value'] as const).map(key => <AppText accessibilityLabel={`${rt(key)}: ${review.dimensions[key]} / 5`} key={key} style={styles.reviewDimension}>{rt(key)} {formatNumber(review.dimensions[key], language)}/5</AppText>)}</View><AppText style={[styles.verified, { textAlign: isRTL ? 'right' : 'left' }]}>{rt('verifiedBooking')}</AppText>{review.comment ? <AppText style={[styles.copy, { textAlign: isRTL ? 'right' : 'left' }]}>{review.comment}</AppText> : null}{review.attachments.length ? <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.photos}>{review.attachments.map(image => image.url ? <Image accessibilityLabel={rt('image')} key={image.id} source={{ uri: image.url }} style={styles.photo} /> : <AppText key={image.id}>{rt('imageUnavailable')}</AppText>)}</ScrollView> : null}{review.reply ? <View style={styles.reply}><AppText style={styles.strong}>{rt('providerReply')}</AppText><AppText style={styles.copy}>{review.reply.body}</AppText></View> : null}<View style={[styles.actions, isRTL && styles.reverse]}><VoteButton label={`${rt('helpful')} (${formatNumber(review.helpfulCount, language)})`} selected={review.myVote === 'helpful'} disabled={busy} onPress={() => action(() => onVote('helpful'))} /><VoteButton label={`${rt('notHelpful')} (${formatNumber(review.notHelpfulCount, language)})`} selected={review.myVote === 'not_helpful'} disabled={busy} onPress={() => action(() => onVote('not_helpful'))} /><Pressable accessibilityRole="button" disabled={busy} onPress={() => canAct ? setReporting(value => !value) : onAuth()} style={styles.action}><AppText style={styles.actionText}>{rt('report')}</AppText></Pressable></View>{reporting ? <View style={styles.report}><AppText style={styles.strong}>{rt('reportReason')}</AppText><View style={[styles.badges, isRTL && styles.reverse]}>{reasons.map(value => <Pressable key={value} accessibilityRole="radio" accessibilityState={{ selected: reason === value }} onPress={() => setReason(value)} style={[styles.chip, reason === value && styles.chipSelected]}><AppText style={styles.chipText}>{rt(value === 'fake_review' ? 'fakeReview' : value === 'offensive_content' ? 'offensiveContent' : value)}</AppText></Pressable>)}</View><TextInput accessibilityLabel={rt('reportDetails')} value={details} onChangeText={setDetails} maxLength={1000} multiline placeholder={rt('reportDetails')} placeholderTextColor={colors.textMuted} style={[styles.reportInput, { textAlign: isRTL ? 'right' : 'left' }]} /><Pressable accessibilityRole="button" disabled={busy} onPress={() => action(async () => { await onReport(reason, details); setSent(true); setReporting(false); })} style={styles.outline}><AppText>{rt('sendReport')}</AppText></Pressable></View> : null}{sent ? <AppText accessibilityRole="alert" style={styles.verified}>{rt('reportSent')}</AppText> : null}</View>;
+}
+function VoteButton({ label, selected, disabled, onPress }: { label: string; selected: boolean; disabled: boolean; onPress: () => void }) { return <Pressable accessibilityRole="button" accessibilityState={{ selected, disabled }} accessibilityLabel={label} disabled={disabled} onPress={onPress} style={[styles.action, selected && styles.chipSelected]}><AppText style={styles.actionText}>{label}</AppText></Pressable>; }
+
 const styles = StyleSheet.create({
-  wrap: { gap: spacing.md },
-  state: { gap: spacing.sm, alignItems: 'flex-start' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: spacing.md },
-  reverse: { flexDirection: 'row-reverse' },
-  title: { fontWeight: typography.bold },
-  score: { fontSize: 22, fontWeight: typography.bold },
-  strong: { fontWeight: typography.semibold },
-  muted: { color: colors.textMuted, fontSize: 12 },
-  distribution: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  distributionItem: { color: colors.textSecondary, fontSize: 12 },
-  item: { gap: spacing.xs, paddingTop: spacing.md, borderTopWidth: 1, borderColor: colors.border },
-  verified: { color: colors.success, fontSize: 12 },
-  copy: { lineHeight: 21, flexShrink: 1 },
-  reply: { gap: spacing.xs, marginTop: spacing.xs, padding: spacing.md, borderRadius: radii.md, backgroundColor: colors.surfaceElevated },
-  outline: { minHeight: 44, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, paddingHorizontal: spacing.md, alignItems: 'center', justifyContent: 'center' },
-  error: { color: colors.error },
+  wrap: { gap: spacing.md }, state: { gap: spacing.sm, alignItems: 'flex-start' }, reputation: { gap: spacing.md }, header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: spacing.md }, reverse: { flexDirection: 'row-reverse' }, sectionTitle: { fontSize: 18, fontWeight: typography.bold }, strong: { fontWeight: typography.semibold }, muted: { color: colors.textMuted, fontSize: 12 }, verified: { color: colors.success, fontSize: 12 }, copy: { lineHeight: 21, flexShrink: 1 }, error: { color: colors.error },
+  metrics: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }, metric: { width: '31%', minWidth: 96, minHeight: 70, padding: spacing.sm, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, justifyContent: 'center' }, metricValue: { fontWeight: typography.bold }, badges: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }, dimensionGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }, dimension: { color: colors.textSecondary, fontSize: 12 }, reviewDimension: { color: colors.textSecondary, fontSize: 11 }, distribution: { gap: spacing.xs }, distributionRow: { minHeight: 32, flexDirection: 'row', alignItems: 'center', gap: spacing.sm }, distributionStar: { width: 36, fontSize: 12 }, distributionTrack: { flex: 1, height: 8, borderRadius: radii.pill, backgroundColor: colors.borderSoft, overflow: 'hidden' }, distributionFill: { height: '100%', borderRadius: radii.pill, backgroundColor: colors.warning }, distributionCount: { width: 32, fontSize: 12, textAlign: 'center' }, confidence: { gap: spacing.xs, padding: spacing.md, borderRadius: radii.md, backgroundColor: colors.surfaceElevated },
+  chips: { gap: spacing.sm }, chip: { minHeight: 44, paddingHorizontal: spacing.md, borderWidth: 1, borderColor: colors.border, borderRadius: radii.pill, alignItems: 'center', justifyContent: 'center' }, chipSelected: { borderColor: colors.white, backgroundColor: colors.surfaceElevated }, chipText: { fontSize: 12 }, item: { gap: spacing.xs, paddingTop: spacing.md, borderTopWidth: 1, borderColor: colors.border }, reply: { gap: spacing.xs, marginTop: spacing.xs, padding: spacing.md, borderRadius: radii.md, backgroundColor: colors.surfaceElevated }, photos: { gap: spacing.sm }, photo: { width: 112, height: 96, borderRadius: radii.md }, actions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.sm }, action: { minHeight: 44, paddingHorizontal: spacing.sm, borderWidth: 1, borderColor: colors.border, borderRadius: radii.pill, alignItems: 'center', justifyContent: 'center' }, actionText: { fontSize: 11 }, report: { gap: spacing.sm, padding: spacing.md, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md }, reportInput: { minHeight: 80, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, padding: spacing.sm, color: colors.white, textAlignVertical: 'top' }, outline: { minHeight: 44, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, paddingHorizontal: spacing.md, alignItems: 'center', justifyContent: 'center' },
 });

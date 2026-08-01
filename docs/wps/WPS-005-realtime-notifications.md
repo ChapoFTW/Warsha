@@ -41,6 +41,8 @@ Primary evidence includes `src/realtime`, `src/notifications`, booking/provider/
 - Realtime never creates a durable notification on the client; it only causes refresh and may show a foreground banner for a newly loaded durable row.
 - Notification payloads must not contain internal scores, candidate pools, competitor quote data, raw identity documents, secrets, or unnecessary exact location.
 
+WPS-011 review submissions and immutable provider replies continue to use this durable notification architecture. Helpful votes, reports, reporter identity, moderation reasons, and moderation audit events are not public notification payloads or general Realtime publications.
+
 ## 5. Read, dismiss, and navigation behavior
 
 - Users can mark one notification read, mark all read, dismiss one notification, refresh, and paginate in pages of 20.

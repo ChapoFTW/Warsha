@@ -183,6 +183,8 @@ Mock communication data is account-namespaced and imports no Supabase fallback. 
 | AC-009-044 | Live push, telephony, SMS, webhooks, and schedulers remain disabled. |
 | AC-009-045 | Local migrations/tests/exports pass without applying a hosted migration. |
 
+WPS-011 review reports are a separate post-completion moderation workflow from WPS-009 booking safety reports. Review submissions/replies may use the existing durable notification architecture, but helpful votes, reporter identity, moderation reasons, and audit history are not chat payloads or general Realtime events.
+
 ## 14. Manual acceptance status
 
 `docs/testing/WPS-009-MANUAL-ALPHA.md`, `docs/testing/WPS-009-MANUAL-RESULTS.md`, and `docs/testing/WPS-009-ACCEPTANCE-EVIDENCE.md` are the acceptance record. Every manual case remains **NOT RUN** until a named tester records device/environment evidence.

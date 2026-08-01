@@ -3,14 +3,17 @@ import { createContext, type PropsWithChildren, useCallback, useContext, useEffe
 import { useAuth } from '@/src/auth/auth-context';
 
 import { reviewRepository } from './review-repository';
-import type { BookingReview, RatingSummary, ReviewInput } from './review-types';
+import type { BookingReview, RatingSummary, ReviewInput, ReviewReportReason, ReviewSort, ReviewVote } from './review-types';
 
 type Value = {
-  getSummary: (providerId: string) => Promise<RatingSummary>;
+  getSummary: (providerId: string, sort?: ReviewSort) => Promise<RatingSummary>;
   getBookingReview: (bookingId: string) => Promise<BookingReview | undefined>;
   getReviewedBookingIds: (bookingIds: string[]) => Promise<string[]>;
   submit: (input: ReviewInput) => Promise<BookingReview>;
+  edit: (reviewId: string, input: ReviewInput) => Promise<BookingReview>;
   reply: (reviewId: string, body: string) => Promise<void>;
+  vote: (reviewId: string, vote: ReviewVote) => Promise<void>;
+  report: (reviewId: string, reason: ReviewReportReason, details?: string) => Promise<void>;
   busy: boolean;
   revision: number;
 };
@@ -19,6 +22,7 @@ const Context = createContext<Value | null>(null);
 
 export function ReviewProvider({ children }: PropsWithChildren) {
   const { user, mode } = useAuth();
+  const accountKey = mode === 'mock' ? 'mock-user' : user?.id ?? null;
   const [busy, setBusy] = useState(false);
   const [revision, setRevision] = useState(0);
   const busyRef = useRef(false);
@@ -44,25 +48,47 @@ export function ReviewProvider({ children }: PropsWithChildren) {
   }, []);
 
   const submit = useCallback(
-    (input: ReviewInput) => run(() => reviewRepository.submit(input)),
-    [run],
+    (input: ReviewInput) => run(() => {
+      if (!accountKey) throw new Error('Authentication required');
+      return reviewRepository.submit(accountKey, input);
+    }),
+    [accountKey, run],
   );
+  const edit = useCallback((reviewId: string, input: ReviewInput) => run(() => {
+    if (!accountKey) throw new Error('Authentication required');
+    return reviewRepository.edit(accountKey, reviewId, input);
+  }), [accountKey, run]);
   const reply = useCallback(
     (reviewId: string, body: string) => run(async () => {
-      await reviewRepository.reply(reviewId, body);
+      if (!accountKey) throw new Error('Authentication required');
+      await reviewRepository.reply(accountKey, reviewId, body);
     }),
-    [run],
+    [accountKey, run],
   );
+  const vote = useCallback((reviewId: string, value: ReviewVote) => run(async () => {
+    if (!accountKey) throw new Error('Authentication required');
+    await reviewRepository.vote(accountKey, reviewId, value);
+  }), [accountKey, run]);
+  const report = useCallback((reviewId: string, reason: ReviewReportReason, details = '') => run(async () => {
+    if (!accountKey) throw new Error('Authentication required');
+    await reviewRepository.report(accountKey, reviewId, reason, details);
+  }), [accountKey, run]);
 
   const value = useMemo<Value>(() => ({
     busy,
     revision,
-    getSummary: reviewRepository.summary,
-    getBookingReview: reviewRepository.byBooking,
-    getReviewedBookingIds: reviewRepository.reviewedBookingIds,
+    getSummary: (providerId, sort = 'newest') => reviewRepository.summary(accountKey ?? 'guest', providerId, sort),
+    getBookingReview: (bookingId) => {
+      if (!accountKey) return Promise.resolve(undefined);
+      return reviewRepository.byBooking(accountKey, bookingId);
+    },
+    getReviewedBookingIds: (bookingIds) => accountKey ? reviewRepository.reviewedBookingIds(accountKey, bookingIds) : Promise.resolve([]),
     submit,
+    edit,
     reply,
-  }), [busy, reply, revision, submit]);
+    vote,
+    report,
+  }), [accountKey, busy, edit, reply, report, revision, submit, vote]);
 
   return <Context.Provider value={value}>{children}</Context.Provider>;
 }

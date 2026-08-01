@@ -19,6 +19,7 @@
     "test:profile-phone": "node --no-warnings --experimental-strip-types scripts/profile-phone-verification.test.mts",
     "test:wps009": "node --no-warnings --experimental-strip-types scripts/wps009-communication.test.mts",
     "test:wps010": "node --no-warnings --experimental-strip-types scripts/wps010-worker-profile.test.mts",
+    "test:wps011": "node --no-warnings --experimental-strip-types scripts/wps011-reviews-reputation.test.mts",
     "test:marketplace": "node --no-warnings --experimental-strip-types scripts/marketplace-intelligence.test.mts",
     "smoke:wps007": "node scripts/wps007-smoke.mjs",
     "check:mojibake": "node ./scripts/check-mojibake.js",

@@ -68,6 +68,8 @@ Primary evidence includes `app/provider-mode.tsx`, `app/provider-job`, `app/prov
 - Provider Jobs, Verification, Reviews, and Earnings reconcile from the authoritative repository on Realtime signals, reconnect, pull-to-refresh, and app foreground where implemented.
 - Mock repositories emit equivalent local invalidations and deduplicated local notifications for supported flows.
 
+WPS-011 governs the worker's one-time immutable public review reply, public reputation metrics and badges, and staff-audited review moderation. WPS-003 continues to govern worker identity, job lifecycle actions, and worker-owned private data.
+
 ## 9. What is inferred instead of configured
 
 - The locked direction is to infer capacity from committed work, duration, travel, and buffer; pricing/reliability from completed behavior; and opportunity fairness from invitation history.

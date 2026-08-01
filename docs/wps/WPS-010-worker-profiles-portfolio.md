@@ -100,6 +100,8 @@ Workers can read their metadata, private preview, status, and private rejection 
 
 ## 11. Trust, reviews, and payments
 
+WPS-011 governs the extended public reputation summary, multidimensional review presentation, meaningful derived badges, helpful voting, reports, and audited moderation. WPS-010 continues to govern profile discovery, private worker media, certificates, and the Request a Quote action.
+
 Meaningful trust indicators are identity verified, Skill Certificate verified, relevant-certificate verified, rating, review count, and completed Warsha jobs. There is no Premium label, top-worker claim, XP, level, or decorative badge.
 
 The existing verified-completed-booking review source and provider replies are reused. Fixtures remain visibly Mock-only and never become Supabase production reviews. Supported payment methods may be shown only when supplied by the existing marketplace/financial capability; profile management does not activate money movement.
@@ -122,6 +124,8 @@ All new customer and worker copy is available in English and natural Egyptian Ar
 ## 14. Deferred features
 
 Business employees, dispatch, teams, schedules, fleet/branch management, professional résumé tooling, AI-generated claims, portfolio social features, public certificate downloads, criminal-record documents, OCR/moderation automation, exact public geography, repeat-customer claims, live payment/SMS/call/payout/webhook/scheduler activation, and a staff console are deferred.
+
+WPS-011 supersedes the `repeat-customer claims` deferral only for its deterministic aggregate repeat-customer percentage derived from completed Warsha bookings. It does not authorize customer identities, testimonials, or reviewer contact exposure.
 
 ## 15. Acceptance boundary
 
