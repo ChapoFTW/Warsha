@@ -13,6 +13,7 @@
     "test:payments": "node --no-warnings --experimental-strip-types scripts/payment-money.test.mts",
     "test:wps008-alignment": "node --no-warnings --experimental-strip-types scripts/wps008-alignment.test.mts",
     "test:device-p1": "node --no-warnings --experimental-strip-types scripts/device-p1-regressions.test.mts",
+    "test:profile-phone": "node --no-warnings --experimental-strip-types scripts/profile-phone-verification.test.mts",
     "test:marketplace": "node --no-warnings --experimental-strip-types scripts/marketplace-intelligence.test.mts",
     "smoke:wps007": "node scripts/wps007-smoke.mjs",
     "check:mojibake": "node ./scripts/check-mojibake.js",

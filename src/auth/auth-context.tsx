@@ -24,7 +24,7 @@ type Value = {
   signUp: (name: string, email: string, password: string, role?: AccountRole, language?: 'en' | 'ar') => Promise<{ needsEmailConfirmation: boolean }>;
   requestWorkerOtp: (phone: string, registration: boolean, name: string, language?: 'en' | 'ar') => Promise<void>;
   verifyWorkerOtp: (phone: string, token: string, registration: boolean, name: string) => Promise<void>;
-  requestWorkerPhoneChange: (phone: string) => Promise<void>;
+  requestWorkerPhoneChange: (phone: string) => Promise<'code_sent' | 'already_verified'>;
   verifyWorkerPhoneChange: (phone: string, token: string) => Promise<void>;
   requestPasswordReset: (email: string) => Promise<void>;
   finishPasswordRecovery: () => Promise<void>;
@@ -201,15 +201,17 @@ export function AuthProvider({ children }: PropsWithChildren) {
       } catch (error) { throw sanitizeAuthError(error, 'worker-otp-verify'); }
     },
     requestWorkerPhoneChange: async (phone) => {
-      if (environment.dataMode === 'mock') return;
+      if (environment.dataMode === 'mock') return 'code_sent';
       const normalized = normalizePhone(phone);
       if (!isValidPhone(normalized)) throw new SafeAuthError('authInvalidPhone');
-      return runAuthSingleFlight(`change:${normalized}`, async () => {
+      return runAuthSingleFlight<'code_sent' | 'already_verified'>(`change:${normalized}`, async () => {
         try {
           await assertPhoneAuthAvailable(normalized);
-          await requireCurrentUser('phone-change-request');
+          const currentUser = await requireCurrentUser('phone-change-request');
+          if (currentUser.phone_confirmed_at && normalizePhone(currentUser.phone ?? '') === normalized) return 'already_verified';
           const { error } = await getSupabaseClient().auth.updateUser({ phone: normalized });
           if (error) throw error;
+          return 'code_sent';
         } catch (error) { throw sanitizeAuthError(error, 'phone-change-request'); }
       });
     },

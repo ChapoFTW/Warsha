@@ -6,6 +6,8 @@ import type { TranslationKey } from '@/src/i18n/translations';
 export type AuthFailure =
   | 'authInvalidCredentials'
   | 'authInvalidPhone'
+  | 'authPhoneInUse'
+  | 'authPhoneAlreadyVerified'
   | 'authInvalidOtp'
   | 'authOtpExpired'
   | 'authPhoneUnavailable'
@@ -42,6 +44,8 @@ export class SafeAuthError extends Error {
 const SAFE_MESSAGES: Record<AuthFailure, string> = {
   authInvalidCredentials: 'Credentials were rejected.',
   authInvalidPhone: 'The phone number is invalid.',
+  authPhoneInUse: 'The phone number belongs to another account.',
+  authPhoneAlreadyVerified: 'The phone number is already verified on this account.',
   authInvalidOtp: 'The OTP is invalid.',
   authOtpExpired: 'The OTP has expired.',
   authPhoneUnavailable: 'Phone authentication is unavailable.',
@@ -61,7 +65,10 @@ function classify(error: unknown): AuthFailure {
   const status = Number(candidate?.status ?? 0);
   const message = error instanceof Error ? error.message : '';
   if (code === 'invalid_credentials' || status === 400 && /invalid login credentials/i.test(message)) return 'authInvalidCredentials';
-  if (code === 'phone_provider_disabled') return 'authPhoneUnavailable';
+  if (code === 'phone_provider_disabled' || code === 'sms_provider_disabled') return 'authPhoneUnavailable';
+  if (code === 'phone_exists' || /phone.*already (?:been )?registered|already (?:been )?registered.*phone/i.test(message)) return 'authPhoneInUse';
+  if (/phone.*should be different|same.*phone number/i.test(message)) return 'authPhoneAlreadyVerified';
+  if (code === 'sms_send_failed' || code === 'auth_capability_unavailable') return 'authServerError';
   if (code === 'validation_failed' && /phone/i.test(message)) return 'authInvalidPhone';
   if (code === 'otp_expired' || /otp.*expired|token.*expired/i.test(message)) return 'authOtpExpired';
   if (code === 'otp_disabled' || code === 'invalid_otp' || /token.*invalid|invalid.*token/i.test(message)) return 'authInvalidOtp';

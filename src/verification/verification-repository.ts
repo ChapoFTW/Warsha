@@ -42,7 +42,12 @@ export interface VerificationRepository {
 }
 
 const MOCK_KEY = 'warsha:provider-verification:v1:mock-account';
-const mockDirectory = new Directory(Paths.document, 'provider-verification');
+// Created lazily: constructing a Directory at module scope crashes the web bundle.
+let mockDirectoryCache: Directory | undefined;
+function mockDirectory(): Directory {
+  mockDirectoryCache ??= new Directory(Paths.document, 'provider-verification');
+  return mockDirectoryCache;
+}
 const allowedMimeTypes = [
   'image/jpeg',
   'image/png',
@@ -119,8 +124,8 @@ async function writeMock(value: ProviderVerification, table = 'provider_verifica
 }
 
 function ensureMockDirectory() {
-  if (!mockDirectory.exists) {
-    mockDirectory.create({ idempotent: true, intermediates: true });
+  if (!mockDirectory().exists) {
+    mockDirectory().create({ idempotent: true, intermediates: true });
   }
 }
 
@@ -157,7 +162,7 @@ const mockRepository: VerificationRepository = {
     ensureMockDirectory();
     const id = `verification-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
     const destination = new File(
-      mockDirectory,
+      mockDirectory(),
       `${providerId}-${type}-${id}.${extensionFor(mimeType)}`,
     );
     file.copy(destination);
