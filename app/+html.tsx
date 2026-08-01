@@ -11,8 +11,8 @@ export default function RootHtml({ children }: PropsWithChildren) {
         <meta name="theme-color" content="#080808" />
         <meta name="color-scheme" content="dark" />
         <link rel="manifest" href="/manifest.webmanifest" />
-        <link rel="icon" href="/warsha-icon-192.png" />
-        <link rel="apple-touch-icon" href="/warsha-icon-192.png" />
+        <link rel="icon" href="/warsha-current-approved-192.png" />
+        <link rel="apple-touch-icon" href="/warsha-current-approved-192.png" />
         <ScrollViewStyleReset />
       </head>
       <body>{children}</body>

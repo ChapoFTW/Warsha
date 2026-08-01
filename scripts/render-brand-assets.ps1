@@ -52,11 +52,11 @@ function Draw-CurrentMark($graphics, [float]$x, [float]$y, [float]$size, $color)
 
   $wave = New-Object System.Drawing.Drawing2D.GraphicsPath
   $points = [System.Drawing.PointF[]] @(
-    [System.Drawing.PointF]::new($x + 2 * $scale, $y + 18.8 * $scale),
-    [System.Drawing.PointF]::new($x + 8.4 * $scale, $y + 8.8 * $scale),
-    [System.Drawing.PointF]::new($x + 14 * $scale, $y + 17.2 * $scale),
-    [System.Drawing.PointF]::new($x + 19.6 * $scale, $y + 10.8 * $scale),
-    [System.Drawing.PointF]::new($x + 30 * $scale, $y + 22.8 * $scale)
+    [System.Drawing.PointF]::new($x + 2 * $scale, $y + 13.2 * $scale),
+    [System.Drawing.PointF]::new($x + 8.4 * $scale, $y + 23.2 * $scale),
+    [System.Drawing.PointF]::new($x + 14 * $scale, $y + 14.8 * $scale),
+    [System.Drawing.PointF]::new($x + 19.6 * $scale, $y + 21.2 * $scale),
+    [System.Drawing.PointF]::new($x + 30 * $scale, $y + 9.2 * $scale)
   )
   $wave.AddLines($points)
   $graphics.DrawPath($pen, $wave)
@@ -108,7 +108,7 @@ function Save-SplashAsset {
   $center.LineAlignment = [System.Drawing.StringAlignment]::Center
   $canvas.Graphics.DrawString('WARSHA', $font, (New-Object System.Drawing.SolidBrush($palette.Ink)), 256, 358, $center)
 
-  Save-Png $canvas.Bitmap (Join-Path $imageRoot 'warsha-current-splash.png')
+  Save-Png $canvas.Bitmap (Join-Path $imageRoot 'warsha-current-approved-splash.png')
   $center.Dispose()
   $font.Dispose()
   $fontCollection.Dispose()
@@ -116,13 +116,13 @@ function Save-SplashAsset {
   $canvas.Bitmap.Dispose()
 }
 
-Save-MarkAsset (Join-Path $imageRoot 'warsha-current-icon.png') 1024 520 $palette.Background $palette.Ink
-Save-MarkAsset (Join-Path $imageRoot 'warsha-current-favicon.png') 512 300 $palette.Background $palette.Ink
-Save-MarkAsset (Join-Path $imageRoot 'warsha-current-adaptive-foreground.png') 432 210 ([System.Drawing.Color]::Transparent) $palette.Ink
-Save-MarkAsset (Join-Path $imageRoot 'warsha-current-monochrome.png') 432 210 ([System.Drawing.Color]::Transparent) $palette.Ink
-Save-MarkAsset (Join-Path $imageRoot 'warsha-current-notification.png') 96 72 ([System.Drawing.Color]::Transparent) ([System.Drawing.Color]::White)
-Save-MarkAsset (Join-Path $publicRoot 'warsha-icon-192.png') 192 104 $palette.Background $palette.Ink
-Save-MarkAsset (Join-Path $publicRoot 'warsha-icon-512.png') 512 276 $palette.Background $palette.Ink
+Save-MarkAsset (Join-Path $imageRoot 'warsha-current-approved-icon.png') 1024 520 $palette.Background $palette.Ink
+Save-MarkAsset (Join-Path $imageRoot 'warsha-current-approved-favicon.png') 512 300 $palette.Background $palette.Ink
+Save-MarkAsset (Join-Path $imageRoot 'warsha-current-approved-adaptive-foreground.png') 432 210 ([System.Drawing.Color]::Transparent) $palette.Ink
+Save-MarkAsset (Join-Path $imageRoot 'warsha-current-approved-monochrome.png') 432 210 ([System.Drawing.Color]::Transparent) $palette.Ink
+Save-MarkAsset (Join-Path $imageRoot 'warsha-current-approved-notification.png') 96 72 ([System.Drawing.Color]::Transparent) ([System.Drawing.Color]::White)
+Save-MarkAsset (Join-Path $publicRoot 'warsha-current-approved-192.png') 192 104 $palette.Background $palette.Ink
+Save-MarkAsset (Join-Path $publicRoot 'warsha-current-approved-512.png') 512 276 $palette.Background $palette.Ink
 Save-SplashAsset
 
 Write-Output 'Rendered The Current icon, adaptive, monochrome, notification, favicon, splash, and web assets.'

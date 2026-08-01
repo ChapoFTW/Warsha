@@ -4,13 +4,13 @@
     "slug": "Warsha",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/warsha-current-icon.png",
+    "icon": "./assets/images/warsha-current-approved-icon.png",
     "scheme": "warsha",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#080808",
     "primaryColor": "#080808",
     "notification": {
-      "icon": "./assets/images/warsha-current-notification.png",
+      "icon": "./assets/images/warsha-current-approved-notification.png",
       "color": "#2FBF71"
     },
     "extra": {
@@ -28,27 +28,27 @@
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#080808",
-        "foregroundImage": "./assets/images/warsha-current-adaptive-foreground.png",
-        "monochromeImage": "./assets/images/warsha-current-monochrome.png"
+        "foregroundImage": "./assets/images/warsha-current-approved-adaptive-foreground.png",
+        "monochromeImage": "./assets/images/warsha-current-approved-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/warsha-current-favicon.png"
+      "favicon": "./assets/images/warsha-current-approved-favicon.png"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/warsha-current-splash.png",
+          "image": "./assets/images/warsha-current-approved-splash.png",
           "imageWidth": 240,
           "resizeMode": "contain",
           "backgroundColor": "#080808",
           "dark": {
-            "image": "./assets/images/warsha-current-splash.png",
+            "image": "./assets/images/warsha-current-approved-splash.png",
             "backgroundColor": "#080808"
           }
         }

@@ -14,6 +14,8 @@
     "test:wps008-alignment": "node --no-warnings --experimental-strip-types scripts/wps008-alignment.test.mts",
     "test:device-p1": "node --no-warnings --experimental-strip-types scripts/device-p1-regressions.test.mts",
     "test:brand": "node --no-warnings --experimental-strip-types scripts/brand-system.test.mts",
+    "test:provider-card": "node --no-warnings --experimental-strip-types scripts/provider-card-media.test.mts",
+    "test:worker-auth": "node --no-warnings --experimental-strip-types scripts/worker-auth-flow.test.mts",
     "test:profile-phone": "node --no-warnings --experimental-strip-types scripts/profile-phone-verification.test.mts",
     "test:marketplace": "node --no-warnings --experimental-strip-types scripts/marketplace-intelligence.test.mts",
     "smoke:wps007": "node scripts/wps007-smoke.mjs",

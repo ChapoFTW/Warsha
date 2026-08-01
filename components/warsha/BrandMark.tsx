@@ -39,7 +39,7 @@ export function BrandMark({
       fill="none">
       <Rect x="2" y="2" width="28" height="28" rx="7.2" stroke={ink} strokeWidth="2.5" />
       <Path
-        d="M2 18.8 L8.4 8.8 L14 17.2 L19.6 10.8 L30 22.8"
+        d="M2 13.2 L8.4 23.2 L14 14.8 L19.6 21.2 L30 9.2"
         stroke={ink}
         strokeWidth="2.5"
         strokeLinecap="round"
@@ -139,7 +139,7 @@ export function BrandLoadingMark({
       <Svg width={size} height={size} viewBox="0 0 32 32" fill="none" accessibilityElementsHidden>
         <Rect x="2" y="2" width="28" height="28" rx="7.2" stroke={ink} strokeWidth="2.5" />
         <AnimatedPath
-          d="M2 18.8 L8.4 8.8 L14 17.2 L19.6 10.8 L30 22.8"
+          d="M2 13.2 L8.4 23.2 L14 14.8 L19.6 21.2 L30 9.2"
           stroke={ink}
           strokeWidth="2.5"
           strokeLinecap="round"

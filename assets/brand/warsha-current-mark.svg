@@ -7,7 +7,7 @@
   (docs/brand/Warsha marketplace logo design.pdf). The flow-line vertices
   below reproduce the source proportions to within 0.001 of the frame side:
     x / side = 0, 0.2286, 0.4286, 0.6286, 1
-    y / side = 0.6000, 0.2429, 0.5429, 0.3143, 0.7429
+    y / side = 0.4000, 0.7571, 0.4571, 0.6857, 0.2571
     corner radius / side = 0.2571
 
   currentColor is used so a single file serves light and dark surfaces.
@@ -16,7 +16,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" fill="none" role="img" aria-label="Warsha">
   <rect x="2" y="2" width="28" height="28" rx="7.2" ry="7.2"
         stroke="currentColor" stroke-width="2.5" />
-  <path d="M2 18.8 L8.4 8.8 L14 17.2 L19.6 10.8 L30 22.8"
+  <path d="M2 13.2 L8.4 23.2 L14 14.8 L19.6 21.2 L30 9.2"
         stroke="currentColor" stroke-width="2.5"
         stroke-linecap="round" stroke-linejoin="round" />
 </svg>

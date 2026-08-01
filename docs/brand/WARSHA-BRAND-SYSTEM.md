@@ -27,7 +27,8 @@ The canonical vector is `assets/brand/warsha-current-mark.svg`. Product UI recon
 
 - Canonical view box: 32 by 32.
 - Frame: x/y 2, width/height 28, corner radius 7.2, stroke 2.5.
-- Flow trace: `M2 18.8 L8.4 8.8 L14 17.2 L19.6 10.8 L30 22.8`.
+- Flow trace: `M2 13.2 L8.4 23.2 L14 14.8 L19.6 21.2 L30 9.2`.
+- In screen coordinates the first and third points are upper peaks, the second and fourth points are lower valleys, and the final point exits high. This orientation is canonical and must read as an upright W.
 - Strokes use round caps and round joins.
 - Minimum UI size: 16 px for the mark alone.
 - Recommended clear space: at least one frame-stroke width around the mark; use a larger 4 px token at normal UI sizes.
@@ -121,14 +122,14 @@ Icons are single-weight, rounded, abstract, and calm. Do not add trade-tool or s
 
 | Asset | Purpose |
 | --- | --- |
-| `warsha-current-icon.png` | iOS and legacy Android app icon, 1024 px |
-| `warsha-current-adaptive-foreground.png` | Android adaptive foreground, 432 px transparent |
-| `warsha-current-monochrome.png` | Android themed icon mask, 432 px transparent |
-| `warsha-current-notification.png` | Android notification icon, 96 px grayscale/transparent |
-| `warsha-current-splash.png` | Native splash lockup, transparent |
-| `warsha-current-favicon.png` | Expo web favicon source |
-| `public/warsha-icon-192.png` | Web manifest icon |
-| `public/warsha-icon-512.png` | Web manifest icon |
+| `warsha-current-approved-icon.png` | iOS and legacy Android app icon, 1024 px |
+| `warsha-current-approved-adaptive-foreground.png` | Android adaptive foreground, 432 px transparent |
+| `warsha-current-approved-monochrome.png` | Android themed icon mask, 432 px transparent |
+| `warsha-current-approved-notification.png` | Android notification icon, 96 px grayscale/transparent |
+| `warsha-current-approved-splash.png` | Native splash lockup, transparent |
+| `warsha-current-approved-favicon.png` | Expo web favicon source |
+| `public/warsha-current-approved-192.png` | Web manifest icon |
+| `public/warsha-current-approved-512.png` | Web manifest icon |
 
 `public/manifest.webmanifest` and `app/+html.tsx` connect the web asset family. The old `warsha-brand-*` PNGs are retained only as inactive repository history and must not be referenced by Expo config, product UI, generated web output, or documentation examples.
 

@@ -107,7 +107,7 @@ ok(rootLayout.includes('<Stack.Screen name="booking"'), 'booking child navigator
 ok(rootLayout.includes('<Stack.Screen name="provider-job"'), 'provider-job child navigator is declared by segment');
 
 const appConfig = readFileSync('app.json', 'utf8');
-for (const asset of ['warsha-current-icon.png', 'warsha-current-adaptive-foreground.png', 'warsha-current-monochrome.png', 'warsha-current-notification.png', 'warsha-current-favicon.png', 'warsha-current-splash.png']) {
+for (const asset of ['warsha-current-approved-icon.png', 'warsha-current-approved-adaptive-foreground.png', 'warsha-current-approved-monochrome.png', 'warsha-current-approved-notification.png', 'warsha-current-approved-favicon.png', 'warsha-current-approved-splash.png']) {
   ok(appConfig.includes(asset), `${asset} is wired into Expo app config`);
 }
 const brandRenderer = readFileSync('scripts/render-brand-assets.ps1', 'utf8');

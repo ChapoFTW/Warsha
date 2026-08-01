@@ -1,9 +1,9 @@
-import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { BrandLoadingMark as ActivityIndicator, BrandLockup } from '@/components/warsha/BrandMark';
+import { BrandLoadingMark, BrandLockup } from '@/components/warsha/BrandMark';
 import { BrandTextField } from '@/components/warsha/BrandUI';
 import { AppText } from '@/components/warsha/Typography';
 import { colors, radii, spacing, typography } from '@/constants/theme';
@@ -11,6 +11,12 @@ import { useAuth } from '@/src/auth/auth-context';
 import { authMessageKey } from '@/src/auth/auth-errors';
 import { useAuthText } from '@/src/auth/auth-translations';
 import { isValidPhone, isValidSmsOtp, normalizePhone } from '@/src/auth/phone-auth';
+import {
+  createWorkerAuthFlow,
+  transitionWorkerAuthFlow,
+  workerAuthVisibleErrorKey,
+  workerOtpVisible,
+} from '@/src/auth/worker-auth-flow';
 import { supabaseTarget } from '@/src/config/environment';
 import { dataErrorKey, logDataError } from '@/src/data/data-errors';
 import { useLocalization } from '@/src/i18n/localization';
@@ -35,17 +41,37 @@ export default function Profile() {
   const [authPath, setAuthPath] = useState<AuthPath>('customer');
   const [register, setRegister] = useState(false);
   const [workerRegister, setWorkerRegister] = useState(false);
+  const [workerFlow, setWorkerFlow] = useState(createWorkerAuthFlow);
   const [otpSent, setOtpSent] = useState(false);
   const [phoneEnrollment, setPhoneEnrollment] = useState(false);
   const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [notice, setNotice] = useState('');
+  const workerRequest = useRef(0);
+  const workerOtpIsVisible = workerOtpVisible(workerFlow);
+  const workerErrorKey = workerAuthVisibleErrorKey(workerFlow);
+
+  const resetWorkerTransient = useCallback(() => {
+    workerRequest.current += 1;
+    setWorkerFlow(createWorkerAuthFlow());
+    setOtp('');
+    setMessage('');
+    setNotice('');
+    setBusy(false);
+  }, []);
+
+  useFocusEffect(useCallback(() => {
+    resetWorkerTransient();
+    return () => { workerRequest.current += 1; };
+  }, [resetWorkerTransient]));
 
   useEffect(() => {
     setPassword('');
     setOtp('');
     setOtpSent(false);
+    setWorkerFlow(createWorkerAuthFlow());
+    workerRequest.current += 1;
     setPhoneEnrollment(false);
     setNotice('');
     setMessage('');
@@ -84,28 +110,67 @@ export default function Profile() {
     finally { setBusy(false); }
   };
 
-  const sendWorkerOtp = async () => {
+  const sendWorkerOtp = async (resend = false) => {
+    const request = ++workerRequest.current;
     setBusy(true);
-    setMessage('');
     setNotice('');
+    setWorkerFlow((state) => transitionWorkerAuthFlow(state, { type: resend ? 'RESEND_STARTED' : 'SEND_STARTED' }));
     try {
       await auth.requestWorkerOtp(phone, workerRegister, name, preferred);
-      setOtpSent(true);
+      if (workerRequest.current !== request) return;
+      setWorkerFlow((state) => transitionWorkerAuthFlow(
+        transitionWorkerAuthFlow(state, { type: resend ? 'RESEND_SUCCEEDED' : 'SEND_SUCCEEDED' }),
+        { type: 'OTP_PRESENTED' },
+      ));
       setNotice(at('codeSent'));
-    } catch (error) { setMessage(t(authMessageKey(error))); }
-    finally { setBusy(false); }
+    } catch (error) {
+      if (workerRequest.current === request) setWorkerFlow((state) => transitionWorkerAuthFlow(state, {
+        type: resend ? 'RESEND_FAILED' : 'SEND_FAILED',
+        errorKey: authMessageKey(error),
+      }));
+    } finally {
+      if (workerRequest.current === request) setBusy(false);
+    }
   };
 
   const verifyWorkerOtp = async () => {
+    const request = ++workerRequest.current;
     setBusy(true);
-    setMessage('');
     setNotice('');
+    setWorkerFlow((state) => transitionWorkerAuthFlow(state, { type: 'VERIFY_STARTED' }));
     try {
       await auth.verifyWorkerOtp(phone, otp, workerRegister, name);
+      if (workerRequest.current !== request) return;
+      setWorkerFlow((state) => transitionWorkerAuthFlow(state, { type: 'VERIFIED' }));
       setOtp('');
-      setOtpSent(false);
-    } catch (error) { setMessage(t(authMessageKey(error))); }
-    finally { setBusy(false); }
+    } catch (error) {
+      if (workerRequest.current === request) setWorkerFlow((state) => transitionWorkerAuthFlow(state, {
+        type: 'VERIFY_FAILED',
+        errorKey: authMessageKey(error),
+      }));
+    } finally {
+      if (workerRequest.current === request) setBusy(false);
+    }
+  };
+
+  const changeWorkerPhone = (value: string) => {
+    workerRequest.current += 1;
+    setPhone(value);
+    setOtp('');
+    setNotice('');
+    setBusy(false);
+    setWorkerFlow((state) => transitionWorkerAuthFlow(state, { type: 'PHONE_CHANGED' }));
+  };
+
+  const changeWorkerOtp = (value: string) => {
+    setOtp(value);
+    setWorkerFlow((state) => transitionWorkerAuthFlow(state, { type: 'OTP_CHANGED' }));
+  };
+
+  const changeAuthPath = (path: AuthPath) => {
+    setAuthPath(path);
+    resetWorkerTransient();
+    setOtpSent(false);
   };
 
   const requestReset = async () => {
@@ -179,14 +244,14 @@ export default function Profile() {
     finally { setBusy(false); }
   };
 
-  if (auth.loading || provider.loading) return <Page><ActivityIndicator color={colors.white}/></Page>;
+  if (auth.loading || provider.loading) return <Page><BrandLoadingMark color={colors.white}/></Page>;
 
   if (auth.mode === 'mock' || auth.user) return <Page>
     <AppText style={styles.title}>{auth.mode === 'mock' ? 'Warsha Demo' : (name || auth.user?.email || auth.user?.phone || t('profile'))}</AppText>
     <AppText style={styles.muted}>{auth.user?.email ?? auth.user?.phone ?? ''}</AppText>
     {editing ? <>
       <Field label={t('fullName')} value={name} onChangeText={setName} rtl={isRTL}/>
-      <Pressable accessibilityRole="button" accessibilityLabel={t('saveName')} disabled={busy || name.trim().length < 2} onPress={() => void save()} style={styles.primary}>{busy ? <ActivityIndicator color={colors.background}/> : <AppText style={styles.dark}>{t('saveName')}</AppText>}</Pressable>
+      <Pressable accessibilityRole="button" accessibilityLabel={t('saveName')} disabled={busy || name.trim().length < 2} onPress={() => void save()} style={styles.primary}>{busy ? <BrandLoadingMark size={20} color={colors.background}/> : <AppText style={styles.dark}>{t('saveName')}</AppText>}</Pressable>
     </> : auth.mode === 'supabase' ? <Pressable accessibilityRole="button" accessibilityLabel={t('editName')} onPress={() => setEditing(true)} style={styles.button}><AppText>{t('editName')}</AppText></Pressable> : null}
     {phoneEnrollment ? <View style={styles.panel}>
       <AppText style={styles.panelTitle}>{at('phoneVerifyTitle')}</AppText>
@@ -196,9 +261,9 @@ export default function Profile() {
       {isValidPhone(phone) ? <AppText style={styles.hint}>{at('sendCodePreview')} {normalizePhone(phone)}.</AppText> : null}
       {otpSent ? <Field label={at('otp')} value={otp} onChangeText={setOtp} rtl={isRTL} keyboardType="number-pad" maxLength={6}/> : null}
       {otpSent && __DEV__ && supabaseTarget === 'local' ? <AppText style={styles.hint}>{at('localOtpHint')}</AppText> : null}
-      <Pressable accessibilityRole="button" accessibilityLabel={at(otpSent ? 'verifyPhone' : 'sendOtp')} disabled={busy || (otpSent ? !isValidSmsOtp(otp) : !isValidPhone(phone))} onPress={() => void (otpSent ? finishPhoneEnrollment() : sendPhoneEnrollmentOtp())} style={styles.primary}>{busy ? otpSent ? <ActivityIndicator color={colors.background}/> : <AppText style={styles.dark}>{at('sendingCode')}</AppText> : <AppText style={styles.dark}>{at(otpSent ? 'verifyPhone' : 'sendOtp')}</AppText>}</Pressable>
+      <Pressable accessibilityRole="button" accessibilityLabel={at(otpSent ? 'verifyPhone' : 'sendOtp')} disabled={busy || (otpSent ? !isValidSmsOtp(otp) : !isValidPhone(phone))} onPress={() => void (otpSent ? finishPhoneEnrollment() : sendPhoneEnrollmentOtp())} style={styles.primary}>{busy ? otpSent ? <BrandLoadingMark size={20} color={colors.background}/> : <AppText style={styles.dark}>{at('sendingCode')}</AppText> : <AppText style={styles.dark}>{at(otpSent ? 'verifyPhone' : 'sendOtp')}</AppText>}</Pressable>
       {otpSent ? <Pressable accessibilityRole="button" accessibilityLabel={at('resendOtp')} disabled={busy} onPress={() => void sendPhoneEnrollmentOtp()} style={styles.textButton}><AppText style={styles.link}>{at('resendOtp')}</AppText></Pressable> : null}
-    </View> : <Pressable disabled={provider.saving} onPress={() => void openProvider()} style={styles.primary}>{provider.saving ? <ActivityIndicator color={colors.background}/> : <AppText style={styles.dark}>{provider.profile ? pt('providerMode') : pt('become')}</AppText>}</Pressable>}
+    </View> : <Pressable disabled={provider.saving} onPress={() => void openProvider()} style={styles.primary}>{provider.saving ? <BrandLoadingMark size={20} color={colors.background}/> : <AppText style={styles.dark}>{provider.profile ? pt('providerMode') : pt('become')}</AppText>}</Pressable>}
     <Pressable onPress={() => router.push('/favourites')} style={styles.button}><AppText>{t('favourites')}</AppText></Pressable>
     {auth.mode === 'supabase' ? <Pressable onPress={() => void auth.signOut()} style={styles.button}><AppText>{t('signOut')}</AppText></Pressable> : null}
     {notice ? <AppText accessibilityRole="alert" style={styles.notice}>{notice}</AppText> : null}
@@ -207,7 +272,7 @@ export default function Profile() {
 
   return <Page>
     <View style={[styles.switcher, isRTL && styles.reverse]}>
-      {(['customer', 'worker'] as AuthPath[]).map((path) => <Pressable key={path} onPress={() => { setAuthPath(path); setMessage(''); setNotice(''); setOtpSent(false); setOtp(''); }} style={[styles.switchOption, authPath === path && styles.switchActive]}><AppText style={authPath === path && styles.dark}>{at(path === 'customer' ? 'customerAccount' : 'workerAccount')}</AppText></Pressable>)}
+      {(['customer', 'worker'] as AuthPath[]).map((path) => <Pressable key={path} onPress={() => changeAuthPath(path)} style={[styles.switchOption, authPath === path && styles.switchActive]}><AppText style={authPath === path && styles.dark}>{at(path === 'customer' ? 'customerAccount' : 'workerAccount')}</AppText></Pressable>)}
     </View>
     {authPath === 'customer' ? <>
       <AppText style={styles.title}>{register ? t('signUp') : t('signIn')}</AppText>
@@ -215,22 +280,22 @@ export default function Profile() {
       <Field label={t('email')} value={email} onChangeText={setEmail} rtl={isRTL} keyboardType="email-address" autoCapitalize="none" autoCorrect={false}/>
       <Field label={t('password')} value={password} onChangeText={setPassword} secureTextEntry rtl={isRTL}/>
       {message ? <AppText accessibilityRole="alert" style={styles.error}>{message}</AppText> : null}
-      <Pressable disabled={busy || !email || password.length < 6} onPress={() => void loginCustomer()} style={styles.primary}>{busy ? <ActivityIndicator color={colors.background}/> : <AppText style={styles.dark}>{register ? t('signUp') : t('signIn')}</AppText>}</Pressable>
+      <Pressable disabled={busy || !email || password.length < 6} onPress={() => void loginCustomer()} style={styles.primary}>{busy ? <BrandLoadingMark size={20} color={colors.background}/> : <AppText style={styles.dark}>{register ? t('signUp') : t('signIn')}</AppText>}</Pressable>
       {!register ? <Pressable accessibilityRole="button" accessibilityLabel={t('forgotPassword')} disabled={busy || !email.trim()} onPress={() => void requestReset()} style={styles.textButton}><AppText style={styles.link}>{t('forgotPassword')}</AppText></Pressable> : null}
       <Pressable onPress={() => setRegister((value) => !value)} style={styles.button}><AppText>{register ? t('signIn') : t('signUp')}</AppText></Pressable>
     </> : <>
       <AppText style={styles.title}>{at(workerRegister ? 'workerCreate' : 'workerSignIn')}</AppText>
       {workerRegister ? <Field label={at('workerName')} value={name} onChangeText={setName} rtl={isRTL}/> : null}
-      <Field label={at('phone')} value={phone} onChangeText={setPhone} rtl={isRTL} keyboardType="phone-pad" autoCapitalize="none" autoCorrect={false}/>
+      <Field label={at('phone')} value={phone} onChangeText={changeWorkerPhone} rtl={isRTL} keyboardType="phone-pad" autoCapitalize="none" autoCorrect={false}/>
       <AppText style={styles.hint}>{at('phoneHint')}</AppText>
       {isValidPhone(phone) ? <AppText style={styles.hint}>{at('sendCodePreview')} {normalizePhone(phone)}.</AppText> : null}
-      {otpSent ? <Field label={at('otp')} value={otp} onChangeText={setOtp} rtl={isRTL} keyboardType="number-pad" maxLength={6}/> : null}
-      {otpSent && __DEV__ && supabaseTarget === 'local' ? <AppText style={styles.hint}>{at('localOtpHint')}</AppText> : null}
+      {workerOtpIsVisible ? <Field label={at('otp')} value={otp} onChangeText={changeWorkerOtp} rtl={isRTL} keyboardType="number-pad" maxLength={6}/> : null}
+      {workerOtpIsVisible && __DEV__ && supabaseTarget === 'local' ? <AppText style={styles.hint}>{at('localOtpHint')}</AppText> : null}
       {notice ? <AppText accessibilityRole="alert" style={styles.notice}>{notice}</AppText> : null}
-      {message ? <AppText accessibilityRole="alert" style={styles.error}>{message}</AppText> : null}
-      <Pressable disabled={busy || (otpSent ? !isValidSmsOtp(otp) : !isValidPhone(phone) || workerRegister && name.trim().length < 2)} onPress={() => void (otpSent ? verifyWorkerOtp() : sendWorkerOtp())} style={styles.primary}>{busy ? otpSent ? <ActivityIndicator color={colors.background}/> : <AppText style={styles.dark}>{at('sendingCode')}</AppText> : <AppText style={styles.dark}>{at(otpSent ? 'verifyOtp' : 'sendOtp')}</AppText>}</Pressable>
-      {otpSent ? <Pressable disabled={busy} onPress={() => void sendWorkerOtp()} style={styles.textButton}><AppText style={styles.link}>{at('resendOtp')}</AppText></Pressable> : null}
-      <Pressable onPress={() => { setWorkerRegister((value) => !value); setOtpSent(false); setOtp(''); setMessage(''); setNotice(''); }} style={styles.button}><AppText>{at(workerRegister ? 'existingWorker' : 'newWorker')}</AppText></Pressable>
+      {workerErrorKey ? <AppText accessibilityRole="alert" style={styles.error}>{t(workerErrorKey)}</AppText> : null}
+      <Pressable disabled={busy || (workerOtpIsVisible ? !isValidSmsOtp(otp) : !isValidPhone(phone) || workerRegister && name.trim().length < 2)} onPress={() => void (workerOtpIsVisible ? verifyWorkerOtp() : sendWorkerOtp())} style={styles.primary}>{workerFlow.stage === 'VERIFYING' ? <BrandLoadingMark size={20} color={colors.background}/> : busy ? <AppText style={styles.dark}>{at('sendingCode')}</AppText> : <AppText style={styles.dark}>{at(workerOtpIsVisible ? 'verifyOtp' : 'sendOtp')}</AppText>}</Pressable>
+      {workerOtpIsVisible ? <Pressable disabled={busy} onPress={() => void sendWorkerOtp(true)} style={styles.textButton}><AppText style={styles.link}>{at('resendOtp')}</AppText></Pressable> : null}
+      <Pressable onPress={() => { setWorkerRegister((value) => !value); resetWorkerTransient(); }} style={styles.button}><AppText>{at(workerRegister ? 'existingWorker' : 'newWorker')}</AppText></Pressable>
     </>}
   </Page>;
 }

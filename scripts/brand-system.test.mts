@@ -44,23 +44,40 @@ const svg = read('assets/brand/warsha-current-mark.svg');
 assert.match(svg, /viewBox="0 0 32 32"/, 'Current mark uses the canonical view box');
 assert.match(svg, /<rect[\s\S]*?<path/, 'Current mark contains its frame and flow trace');
 assert.doesNotMatch(svg, /<(?:image|linearGradient|radialGradient)\b/i, 'Current mark is vector-only and gradient-free');
+const uprightCurrentPath = 'M2 13.2 L8.4 23.2 L14 14.8 L19.6 21.2 L30 9.2';
+assert.match(svg, new RegExp(uprightCurrentPath.replace(/\./g, '\\.')), 'canonical SVG contains the approved upright W');
+const currentY = [13.2, 23.2, 14.8, 21.2, 9.2];
+assert.ok(currentY[1] > currentY[0] && currentY[1] > currentY[2], 'left W valley points downward');
+assert.ok(currentY[3] > currentY[2] && currentY[3] > currentY[4], 'right W valley points downward');
+assert.ok(currentY[2] < currentY[1] && currentY[2] < currentY[3], 'central W point is an upward peak');
+for (const size of [16, 24, 32, 48, 512]) {
+  const frameCenter = ((2 + 30) / 2) * (size / 32);
+  assert.equal(frameCenter, size / 2, `Current frame remains centered at ${size}px`);
+}
 
 const brandMark = read('components/warsha/BrandMark.tsx');
 for (const component of ['BrandMark', 'BrandWordmark', 'BrandLockup', 'BrandLoadingMark']) {
   assert.match(brandMark, new RegExp(`export function ${component}\\b`), `${component} is exported`);
 }
 assert.match(brandMark, /useReducedMotion/, 'loading mark honors reduced motion');
+assert.equal(brandMark.split(uprightCurrentPath).length, 3, 'static and loading marks share the upright canonical path');
+assert.doesNotMatch(brandMark, /scaleY\s*[:=(]\s*-1|rotate\s*[:=(]|transform=.*(?:scale|rotate)/i, 'mark has no orientation transform');
+assert.match(brandMark, /variant === 'light' \? colors\.textPrimary : colors\.background/, 'light and dark mark variants use white-on-black and black-on-white ink');
+
+const brandRenderer = read('scripts/render-brand-assets.ps1');
+for (const y of currentY) assert.match(brandRenderer, new RegExp(`\\$y \\+ ${y} \\* \\$scale`), `renderer uses upright y=${y}`);
+assert.doesNotMatch(brandRenderer, /ScaleTransform|RotateTransform|scaleY/i, 'raster renderer has no orientation transform');
 
 const appConfig = read('app.json');
 const expectedAssets = new Map([
-  ['assets/images/warsha-current-icon.png', 1024],
-  ['assets/images/warsha-current-adaptive-foreground.png', 432],
-  ['assets/images/warsha-current-monochrome.png', 432],
-  ['assets/images/warsha-current-notification.png', 96],
-  ['assets/images/warsha-current-favicon.png', 512],
-  ['assets/images/warsha-current-splash.png', 512],
-  ['public/warsha-icon-192.png', 192],
-  ['public/warsha-icon-512.png', 512],
+  ['assets/images/warsha-current-approved-icon.png', 1024],
+  ['assets/images/warsha-current-approved-adaptive-foreground.png', 432],
+  ['assets/images/warsha-current-approved-monochrome.png', 432],
+  ['assets/images/warsha-current-approved-notification.png', 96],
+  ['assets/images/warsha-current-approved-favicon.png', 512],
+  ['assets/images/warsha-current-approved-splash.png', 512],
+  ['public/warsha-current-approved-192.png', 192],
+  ['public/warsha-current-approved-512.png', 512],
 ]);
 
 for (const [asset, size] of expectedAssets) {
@@ -74,8 +91,8 @@ for (const asset of [...expectedAssets.keys()].filter((path) => path.startsWith(
 
 const manifest = read('public/manifest.webmanifest');
 assert.match(manifest, /"theme_color": "#080808"/, 'web manifest uses the locked theme color');
-assert.match(manifest, /warsha-icon-192\.png/, 'web manifest includes the 192 px icon');
-assert.match(manifest, /warsha-icon-512\.png/, 'web manifest includes the 512 px icon');
+assert.match(manifest, /warsha-current-approved-192\.png/, 'web manifest includes the approved 192 px icon');
+assert.match(manifest, /warsha-current-approved-512\.png/, 'web manifest includes the approved 512 px icon');
 const html = read('app/+html.tsx');
 assert.match(html, /manifest\.webmanifest/, 'static HTML links the web manifest');
 
