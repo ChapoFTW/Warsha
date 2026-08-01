@@ -11,6 +11,7 @@ import { BrandLoadingMark as ActivityIndicator } from '@/components/warsha/Brand
 import { ProviderReviewReply } from '@/components/warsha/ProviderReviewReply';
 import { ProviderCashPaymentCard } from '@/components/warsha/ProviderCashPaymentCard';
 import { BookingPriceAdjustmentCard } from '@/components/warsha/BookingPriceAdjustmentCard';
+import { JobOperationsPanel } from '@/components/warsha/JobOperationsPanel';
 import { AppText } from '@/components/warsha/Typography';
 import { colors, radii, spacing, typography } from '@/constants/theme';
 import { persistAttachment, removePersistedAttachment } from '@/src/bookings/attachment-storage';
@@ -34,6 +35,7 @@ export default function ProviderJobDetails(){const{id}=useLocalSearchParams<{id:
     {job.attachments.filter(item=>item.kind!=='completion_evidence').length?<Card><Heading>{jt('customerAttachments')}</Heading><View style={styles.images}>{job.attachments.filter(item=>item.kind!=='completion_evidence').map(item=>item.uri?<Image key={item.id} source={{uri:item.uri}} style={styles.image}/>:null)}</View></Card>:null}
     <Card><Heading>{jt('priceBreakdown')}</Heading><Price label={jt('servicePrice')} value={job.priceBreakdown?.servicePrice??job.price}/><Price label={jt('transportation')} value={job.priceBreakdown?.transportationFee??0}/><Price label={jt('emergencyFee')} value={job.priceBreakdown?.emergencySurcharge??0}/><Price label={jt('discount')} value={-(job.priceBreakdown?.discount??0)}/><View style={styles.divider}/><Price label={jt('total')} value={job.price} strong/></Card>
     <BookingPriceAdjustmentCard booking={job} role="provider"/>
+    <JobOperationsPanel booking={job} role="worker" onBookingChanged={()=>jobs.reload(true)}/>
     <ProviderCashPaymentCard bookingId={job.id} completed={job.status==='completed'}/>
     <Card><Heading>{jt('timeline')}</Heading>{job.history.map((event,index)=><View key={`${event.status}-${event.at}-${index}`} style={[styles.timeline,isRTL&&styles.reverse]}><View style={styles.dot}/><View style={styles.grow}><AppText style={styles.lineLabel}>{t(bookingStatusTranslationKeys[event.status])}</AppText><AppText style={styles.muted}>{formatTimestamp(event.at,localeFor(language))}</AppText>{event.note?<AppText style={styles.note}>{event.note}</AppText>:null}</View></View>)}</Card>
     {job.completionNotes||job.attachments.some(item=>item.kind==='completion_evidence')?<Card><Heading>{jt('completionImages')}</Heading>{job.completionNotes?<AppText style={styles.note}>{job.completionNotes}</AppText>:null}<View style={styles.images}>{job.attachments.filter(item=>item.kind==='completion_evidence').map(item=>item.uri?<Image key={item.id} source={{uri:item.uri}} style={styles.image}/>:null)}</View></Card>:null}
@@ -44,7 +46,7 @@ export default function ProviderJobDetails(){const{id}=useLocalSearchParams<{id:
   </ScrollView></SafeAreaView>;
   function Price({label,value,strong}:{label:string;value:number;strong?:boolean}){return <View style={[styles.row,isRTL&&styles.reverse]}><AppText style={strong&&styles.lineLabel}>{label}</AppText><AppText style={strong&&styles.lineLabel}>{formatNumber(value,language)} {t('currency')}</AppText></View>}
 }
-function actions(status:BookingStatus){return['pending_provider_approval','accepted','confirmed','provider_on_the_way','provider_arrived','job_started','work_in_progress'].filter(item=>item===status)}
+function actions(status:BookingStatus){return['pending_provider_approval','accepted'].filter(item=>item===status)}
 function valid(panel:Panel,note:string,date:string,time:string){if(panel==='complete')return true;if(panel==='late')return Number(time)>=1&&Number(time)<=240;if(panel==='propose')return /^\d{4}-\d{2}-\d{2}$/.test(date)&&/^\d{2}:\d{2}$/.test(time)&&note.trim().length>=3;return note.trim().length>=3}
 function Button(label:string,onPress:()=>void,busy=false,disabled=false){return <Pressable accessibilityRole="button" accessibilityLabel={label} disabled={busy||disabled} onPress={onPress} style={[styles.button,(busy||disabled)&&styles.disabled]}>{busy?<ActivityIndicator color={colors.white}/>:<AppText style={styles.buttonText}>{label}</AppText>}</Pressable>}
 function State({children}:{children:React.ReactNode}){return <SafeAreaView style={styles.safe}><View style={styles.state}>{children}</View></SafeAreaView>}

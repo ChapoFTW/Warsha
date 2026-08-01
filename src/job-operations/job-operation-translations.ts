@@ -1,0 +1,58 @@
+import { useLocalization } from '@/src/i18n/localization';
+import type { DelayReason, InspectionResponse, OperationState, OperationUpdateKey, ProgressPhase } from './job-operation-types';
+
+const copy = {
+  en: {
+    title: 'Job progress', currentStatus: 'Current status', timeline: 'Operational timeline', noTimeline: 'No operational updates yet.',
+    unavailable: 'Job progress starts after the booking is confirmed.', loadError: 'Could not load job progress.', retry: 'Try again', actionFailed: 'Could not save this update. Try again.',
+    updates: 'Quick updates', delays: 'Delay update', progressPhotos: 'Progress photos', addPhoto: 'Add progress photo', uploadPhoto: 'Upload photo', photoCaption: 'Optional caption', photoPhase: 'Photo stage', photoTooLarge: 'Choose a supported image of 8 MB or less.', photoUploaded: 'Progress photo uploaded.', noPhotos: 'No progress photos yet.',
+    actions: 'Next step', additionalWork: 'Additional work', additionalWorkExplanation: 'Explain the extra work', estimatedNewTotal: 'Optional estimated new total (EGP)', submitAdditionalWork: 'Request approval', noAdditionalWork: 'No additional-work requests.', approve: 'Approve', reject: 'Reject', needsClarification: 'Needs clarification', responseNote: 'Optional note', pendingCustomer: 'Waiting for customer decision', priceAuthority: 'Any amount change uses the existing Warsha price approval flow. Nothing changes automatically.',
+    inspection: 'Customer inspection', readyInspection: 'Ready for inspection', workerChecklist: 'Worker checklist', customerChecklist: 'Customer checklist', inspectionNote: 'Optional handover note', approveCompletion: 'Approve completion', requestClarification: 'Request clarification', reportIssue: 'Report remaining issue',
+    warranty: 'Warranty commitment', warrantyNone: 'No added warranty', warranty30: '30 days', warranty60: '60 days', warranty90: '90 days', warrantyCustom: 'Custom', customWarrantyDays: 'Custom warranty days (1–365)', warrantyStarts: 'Starts only when this booking is completed.',
+    returnVisit: 'Return visit', requestReturnVisit: 'Request a return visit', returnReason: 'What needs another visit?', acceptReturn: 'Accept return visit', declineReturn: 'Decline return visit', returnPending: 'Waiting for the worker to respond.', sameBooking: 'This keeps the same booking, participants, history, and single review.',
+    minutes: 'Delay in minutes (optional)', note: 'Optional note', submit: 'Save update', close: 'Close', section: 'Visit', bookingStillCompleted: 'The original booking stays completed while this return visit is tracked here.',
+    checklist_work_finished: 'Work finished', checklist_area_cleaned: 'Area cleaned', checklist_photos_uploaded: 'After photos uploaded', checklist_customer_informed: 'Customer informed',
+    checklist_work_inspected: 'Work inspected', checklist_satisfied: 'Satisfied', checklist_close_booking: 'Close booking', checklist_review_later: 'Review later',
+    state_confirmed: 'Confirmed', state_traveling: 'Traveling', state_arrived: 'Arrived', state_waiting_for_customer: 'Waiting for customer', state_started: 'Started', state_waiting_for_approval: 'Waiting for approval', state_waiting_for_parts: 'Waiting for parts', state_paused: 'Paused', state_resumed: 'Resumed', state_returning_later: 'Returning later', state_finished: 'Finished', state_customer_inspection: 'Customer inspection', state_completed: 'Completed',
+    action_traveling: 'I’m on my way', action_arrived: 'I’ve arrived', action_waiting_for_customer: 'I’m waiting outside', action_started: 'Start work', action_waiting_for_approval: 'Wait for approval', action_waiting_for_parts: 'Waiting for parts', action_paused: 'Pause work', action_resumed: 'Resume work', action_returning_later: 'Return later', action_finished: 'Finish work',
+    update_worker_on_my_way: 'I’m on my way.', update_worker_arrived: 'I’ve arrived.', update_worker_waiting_outside: 'I’m waiting outside.', update_worker_started: 'I’ve started.', update_worker_needs_parts: 'I need additional parts.', update_worker_return_tomorrow: 'I’ll return tomorrow.', update_worker_running_late: 'I’m running late.', update_worker_finished: 'I’ve finished.', update_customer_arriving_shortly: 'I’ll be there shortly.', update_customer_inspected: 'I’ve inspected the work.', update_customer_approved_additional_work: 'I’ve approved the additional work.',
+    delay_running_late: 'Running late', delay_traffic: 'Traffic', delay_waiting_for_parts: 'Waiting for parts', delay_weather: 'Weather', delay_need_customer: 'Need customer', delay_need_helper: 'Need helper', delay_need_tomorrow: 'Need tomorrow',
+    phase_before: 'Before', phase_during: 'During', phase_after: 'After',
+    inspection_approve: 'Completion approved', inspection_request_clarification: 'Clarification requested', inspection_report_remaining_issue: 'Remaining issue reported',
+    event_additional_work_requested: 'Additional work requested', event_additional_work_approved: 'Additional work approved', event_additional_work_rejected: 'Additional work rejected', event_additional_work_needs_clarification: 'Additional work needs clarification', event_delay: 'Delay reported', event_progress_photo_uploaded: 'Progress photo uploaded', event_customer_inspection: 'Ready for customer inspection', event_return_visit_requested: 'Return visit requested', event_return_visit_accepted: 'Return visit accepted', event_return_visit_declined: 'Return visit declined',
+  },
+  ar: {
+    title: 'متابعة الشغل', currentStatus: 'الحالة دلوقتي', timeline: 'سجل تنفيذ الشغل', noTimeline: 'مفيش تحديثات تنفيذ لسه.',
+    unavailable: 'متابعة الشغل بتبدأ بعد تأكيد الحجز.', loadError: 'مقدرناش نحمّل متابعة الشغل.', retry: 'حاول تاني', actionFailed: 'مقدرناش نحفظ التحديث. حاول تاني.',
+    updates: 'تحديثات سريعة', delays: 'تحديث التأخير', progressPhotos: 'صور تقدم الشغل', addPhoto: 'ضيف صورة للتقدم', uploadPhoto: 'ارفع الصورة', photoCaption: 'وصف اختياري', photoPhase: 'مرحلة الصورة', photoTooLarge: 'اختار صورة مدعومة حجمها ٨ ميجابايت أو أقل.', photoUploaded: 'اترفعت صورة التقدم.', noPhotos: 'مفيش صور تقدم لسه.',
+    actions: 'الخطوة الجاية', additionalWork: 'شغل إضافي', additionalWorkExplanation: 'اشرح الشغل الإضافي', estimatedNewTotal: 'الإجمالي الجديد المتوقع اختياري (جنيه)', submitAdditionalWork: 'اطلب الموافقة', noAdditionalWork: 'مفيش طلبات شغل إضافي.', approve: 'موافق', reject: 'رفض', needsClarification: 'محتاج توضيح', responseNote: 'ملاحظة اختيارية', pendingCustomer: 'مستني قرار العميل', priceAuthority: 'أي تغيير في المبلغ بيعدّي من مسار موافقة السعر الموجود في ورشة. مفيش حاجة بتتغير تلقائي.',
+    inspection: 'معاينة العميل', readyInspection: 'جاهز للمعاينة', workerChecklist: 'قائمة الصنايعي', customerChecklist: 'قائمة العميل', inspectionNote: 'ملاحظة تسليم اختيارية', approveCompletion: 'وافق على الإكمال', requestClarification: 'اطلب توضيح', reportIssue: 'بلّغ عن حاجة لسه موجودة',
+    warranty: 'التزام الضمان', warrantyNone: 'من غير ضمان إضافي', warranty30: '٣٠ يوم', warranty60: '٦٠ يوم', warranty90: '٩٠ يوم', warrantyCustom: 'مدة مخصصة', customWarrantyDays: 'أيام الضمان (من ١ لـ ٣٦٥)', warrantyStarts: 'الضمان بيبدأ بس لما الحجز يكتمل.',
+    returnVisit: 'زيارة رجوع', requestReturnVisit: 'اطلب زيارة رجوع', returnReason: 'إيه اللي محتاج زيارة تانية؟', acceptReturn: 'اقبل زيارة الرجوع', declineReturn: 'اعتذر عن زيارة الرجوع', returnPending: 'مستني رد الصنايعي.', sameBooking: 'الزيارة بتفضل على نفس الحجز والأطراف والسجل ومراجعة واحدة.',
+    minutes: 'عدد دقايق التأخير (اختياري)', note: 'ملاحظة اختيارية', submit: 'احفظ التحديث', close: 'اقفل', section: 'الزيارة', bookingStillCompleted: 'الحجز الأصلي بيفضل مكتمل وإحنا بنتابع زيارة الرجوع هنا.',
+    checklist_work_finished: 'الشغل خلص', checklist_area_cleaned: 'المكان اتنضف', checklist_photos_uploaded: 'صور بعد الشغل اترفعت', checklist_customer_informed: 'العميل اتبلغ',
+    checklist_work_inspected: 'الشغل اتعاين', checklist_satisfied: 'راضي عن الشغل', checklist_close_booking: 'اقفل الحجز', checklist_review_later: 'اكتب مراجعة بعدين',
+    state_confirmed: 'متأكد', state_traveling: 'في الطريق', state_arrived: 'وصل', state_waiting_for_customer: 'مستني العميل', state_started: 'الشغل بدأ', state_waiting_for_approval: 'مستني الموافقة', state_waiting_for_parts: 'مستني قطع الغيار', state_paused: 'الشغل متوقف مؤقتًا', state_resumed: 'الشغل اتكمل', state_returning_later: 'هيرجع بعدين', state_finished: 'الشغل خلص', state_customer_inspection: 'معاينة العميل', state_completed: 'مكتمل',
+    action_traveling: 'أنا في الطريق', action_arrived: 'أنا وصلت', action_waiting_for_customer: 'أنا مستني بره', action_started: 'ابدأ الشغل', action_waiting_for_approval: 'استنى الموافقة', action_waiting_for_parts: 'مستني قطع غيار', action_paused: 'وقّف الشغل مؤقتًا', action_resumed: 'كمّل الشغل', action_returning_later: 'هرجع بعدين', action_finished: 'خلّص الشغل',
+    update_worker_on_my_way: 'أنا في الطريق.', update_worker_arrived: 'أنا وصلت.', update_worker_waiting_outside: 'أنا مستني بره.', update_worker_started: 'أنا بدأت.', update_worker_needs_parts: 'محتاج قطع غيار إضافية.', update_worker_return_tomorrow: 'هرجع بكرة.', update_worker_running_late: 'هتأخر شوية.', update_worker_finished: 'أنا خلصت.', update_customer_arriving_shortly: 'أنا جاي حالًا.', update_customer_inspected: 'أنا عاينت الشغل.', update_customer_approved_additional_work: 'أنا وافقت على الشغل الإضافي.',
+    delay_running_late: 'متأخر', delay_traffic: 'زحمة', delay_waiting_for_parts: 'مستني قطع غيار', delay_weather: 'الجو', delay_need_customer: 'محتاج العميل', delay_need_helper: 'محتاج مساعد', delay_need_tomorrow: 'محتاج أكمل بكرة',
+    phase_before: 'قبل', phase_during: 'أثناء', phase_after: 'بعد',
+    inspection_approve: 'العميل وافق على الإكمال', inspection_request_clarification: 'العميل طلب توضيح', inspection_report_remaining_issue: 'العميل بلّغ عن حاجة لسه موجودة',
+    event_additional_work_requested: 'اتطلبت موافقة على شغل إضافي', event_additional_work_approved: 'العميل وافق على الشغل الإضافي', event_additional_work_rejected: 'العميل رفض الشغل الإضافي', event_additional_work_needs_clarification: 'الشغل الإضافي محتاج توضيح', event_delay: 'اتسجل تأخير', event_progress_photo_uploaded: 'اترفعت صورة لتقدم الشغل', event_customer_inspection: 'الشغل جاهز لمعاينة العميل', event_return_visit_requested: 'اتطلبت زيارة رجوع', event_return_visit_accepted: 'الصنايعي وافق على زيارة الرجوع', event_return_visit_declined: 'الصنايعي اعتذر عن زيارة الرجوع',
+  },
+} as const;
+
+export type JobOperationCopyKey = keyof typeof copy.en;
+export function useJobOperationText() { const { language } = useLocalization(); return (key: JobOperationCopyKey) => copy[language][key]; }
+export const operationStateCopyKey = (state: OperationState) => `state_${state}` as JobOperationCopyKey;
+export const operationActionCopyKey = (state: OperationState) => `action_${state}` as JobOperationCopyKey;
+export const operationUpdateCopyKey = (key: OperationUpdateKey) => `update_${key}` as JobOperationCopyKey;
+export const delayCopyKey = (reason: DelayReason) => `delay_${reason}` as JobOperationCopyKey;
+export const phaseCopyKey = (phase: ProgressPhase) => `phase_${phase}` as JobOperationCopyKey;
+export const inspectionCopyKey = (response: InspectionResponse) => `inspection_${response}` as JobOperationCopyKey;
+export function eventCopyKey(eventType: string): JobOperationCopyKey | undefined {
+  if (eventType.startsWith('update_')) return `update_${eventType.slice(7)}` as JobOperationCopyKey;
+  if (eventType.startsWith('inspection_')) return `inspection_${eventType.slice(11)}` as JobOperationCopyKey;
+  const explicit = `event_${eventType}` as JobOperationCopyKey;
+  return explicit in copy.en ? explicit : undefined;
+}

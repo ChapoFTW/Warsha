@@ -108,3 +108,6 @@ WPS-011 extends the post-completion review relationship with bounded editing, di
 - Customer worker-no-show reporting, post-agreement worker cancellation, Rescue Mode, Running Late, warranty comeback, and a complete support dispute UI are absent.
 - Manual end-to-end transition, attachment, chat-boundary, Arabic/RTL, and native background tests are not recorded as passed.
 
+## WPS-012 extension note
+
+WPS-012 adds fine-grained post-confirmation operational states beneath this canonical booking graph. It maps travel/work/inspection states to the existing WPS-004 statuses, keeps `booking_status_history`, cancellation, no-show, dispute, refund, and terminal rules intact, and makes customer inspection the active WPS-012 completion path. Legacy WPS-004 completion calls remain compatible and synchronize into the operational timeline.

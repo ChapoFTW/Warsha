@@ -410,3 +410,6 @@ migrations must be reviewed by filename in the deployment dry run.
   online debt offsets, payout fail-closed mode, cumulative refund allocation,
   post-release financial cases, gateway-fee separation, localized bigint
   formatting, client capability gating, tests, and security documentation.
+## WPS-012 operational integration
+
+WPS-012 additional-work requests call the existing price-adjustment proposal/response RPCs and store only the resulting adjustment reference. Operational events, photos, delays, inspection, warranty, and return visits create no payment, earning, refund, fee, or ledger mutation. Canonical first completion continues to trigger this specification exactly once; return-visit sections leave the completed booking and released financial history unchanged.

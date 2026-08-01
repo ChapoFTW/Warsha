@@ -76,3 +76,5 @@ WPS-011 review submissions and immutable provider replies continue to use this d
 - Notification preference editing is not exposed as a complete mobile workflow.
 - Manual reconnect, background/return, logout isolation, push-disabled copy, Arabic/RTL, and accessibility results are not recorded as passed.
 
+WPS-012 extends this durable-notification and authenticated invalidation architecture with source-linked operational events. Fine-grained operation notifications use minimal booking/event identifiers and dedupe keys; operation-authoritative booking status changes retain history while suppressing only their duplicate coarse chat/notification side effect. Live push remains disabled.
+

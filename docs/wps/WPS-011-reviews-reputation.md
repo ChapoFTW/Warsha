@@ -94,3 +94,6 @@ AI summaries, sentiment analysis, automated moderation, fraud scoring, reviewer 
 ## 15. Acceptance boundary
 
 WPS-011 is local-only until clean database, full pgTAP, regression, Doctor, Android/iOS/web export, repository-wide motto, linked-ledger dry-run, security, accessibility, and manual evidence are reviewed. Manual cases begin **NOT RUN**. No hosted migration or provider activation is authorized.
+## 16. WPS-012 operational integration
+
+WPS-012 customer inspection changes the same canonical booking to `completed`, which unlocks this specification’s one verified review. Return-visit sections keep that booking completed and cannot create a second review. Operational events, helpful-looking progress, speed, photos, delays, warranty, and additional work never directly alter ratings, trust badges, confidence, moderation, or marketplace ranking.

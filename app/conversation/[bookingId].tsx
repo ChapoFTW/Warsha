@@ -465,7 +465,7 @@ function DateLabel({ value, language, today, yesterday }: { value: string; langu
 function Bubble({ message, own, isRTL, language, ct, onPreview }: { message: BookingMessage; own: boolean; isRTL: boolean; language: 'en' | 'ar'; ct: (key: ChatCopyKey) => string; onPreview: (url: string) => void }) {
   if (['system', 'status', 'running_late'].includes(message.kind)) {
     const event = message.systemEvent as ChatCopyKey | undefined;
-    return <View style={styles.system}><AppText style={styles.systemText}>{message.body || (event && event in systemEvents ? ct(event) : ct('system'))}</AppText></View>;
+    return <View style={styles.system}><AppText style={styles.systemText}>{message.body || (event && (event in systemEvents || event.startsWith('operation_')) ? ct(event) : ct('system'))}</AppText></View>;
   }
   const attachment = message.attachments[0];
   const body = message.kind === 'quick_reply' && message.quickReplyKey ? ct(quickReplyCopyKey(message.quickReplyKey)) : message.body;

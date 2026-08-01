@@ -10,6 +10,7 @@ import { BrandLoadingMark as ActivityIndicator } from '@/components/warsha/Brand
 import { BookingReviewCard } from '@/components/warsha/BookingReviewCard';
 import { BookingPaymentCard } from '@/components/warsha/BookingPaymentCard';
 import { BookingPriceAdjustmentCard } from '@/components/warsha/BookingPriceAdjustmentCard';
+import { JobOperationsPanel } from '@/components/warsha/JobOperationsPanel';
 import { AppText } from '@/components/warsha/Typography';
 import { colors, radii, spacing, typography } from '@/constants/theme';
 import { useAuth } from '@/src/auth/auth-context';
@@ -34,6 +35,7 @@ export default function BookingDetails(){const{id}=useLocalSearchParams<{id:stri
     {booking.attachments.length?<Section title={t('attachments')}><ScrollView horizontal contentContainerStyle={styles.gallery}>{booking.attachments.map(item=>item.uri?<Image key={item.id} source={{uri:item.uri}} style={styles.attachment}/>:null)}</ScrollView></Section>:null}
     <Section title={t('priceSummary')}><Price label={t('servicePrice')} value={price?.servicePrice||price?.inspectionFee||booking.price}/><Price label={t('transportationFee')} value={price?.transportationFee??0}/><Price label={t('emergencySurcharge')} value={price?.emergencySurcharge??0}/><Price label={t('discount')} value={-(price?.discount??0)}/><Price label={t('estimatedTotal')} value={price?.estimatedTotal??booking.price}/><AppText style={styles.warning}>{t('estimateNotice')}</AppText></Section>
     <BookingPriceAdjustmentCard booking={booking} role="customer"/>
+    <JobOperationsPanel booking={booking} role="customer" onBookingChanged={()=>bookings.reload()}/>
     <BookingPaymentCard booking={booking}/>
     <Section title={t('bookingTimeline')}>{booking.history.map((event,index)=><View key={`${event.at}-${event.status}-${index}`} style={[styles.event,isRTL&&styles.reverse]}><View style={styles.marker}><View style={[styles.dot,['cancelled','rejected'].includes(event.status)&&styles.red]}/>{index<booking.history.length-1?<View style={styles.line}/>:null}</View><View style={styles.grow}><AppText style={styles.name}>{t(bookingStatusTranslationKeys[event.status])}</AppText>{event.note?<AppText style={styles.muted}>{event.note}</AppText>:null}<AppText style={styles.muted}>{formatTimestamp(event.at,localeFor(language))}</AppText></View></View>)}</Section>
     <BookingReviewCard bookingId={booking.id} providerId={booking.providerId} completed={booking.status==='completed'}/>

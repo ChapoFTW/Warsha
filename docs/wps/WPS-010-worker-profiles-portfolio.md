@@ -130,3 +130,6 @@ WPS-011 supersedes the `repeat-customer claims` deferral only for its determinis
 ## 15. Acceptance boundary
 
 WPS-010 is implemented locally only. Automated validation must include client contracts, Mock isolation, a clean local Supabase reset, all pgTAP suites, Expo Doctor, cache-cleared Android/iOS/web exports, migration ledger inspection, and a hosted dry-run that cannot mutate. Manual cases remain **NOT RUN** until executed and signed. No hosted migration is authorized by this specification.
+## WPS-012 operational integration
+
+WPS-012 progress media is private booking evidence and never enters the WPS-010 public portfolio or profile projection. Operational volume, speed, photos, delays, warranty, and return visits are not new discovery, trust, verification, or ranking fields.

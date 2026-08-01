@@ -1037,3 +1037,6 @@ These criteria define required product outcomes. They do not claim current imple
 - 2026-07-31 — Version 1.2. Locked request/quote expiry, five-useful-quote target, preselection revisions, two-minute collection, conservative editing, Emergency surcharge approval, Normal Rescue Mode, 15-minute worker no-show timing, fail-closed category warranties, MVP cancellation consequences, and Request-a-Quote Browse Workers behavior.
 - 2026-07-31 — Version 1.1. Locked routing-provider travel time, deterministic distance fallback, configurable category duration defaults, a fixed 30-minute post-completion buffer, fail-safe missing-location behavior, and overlap exclusion.
 - 2026-07-31 — Version 1.0. Initial **LOCKED FOR IMPLEMENTATION** product specification.
+## WPS-012 operational integration
+
+WPS-012 begins only after worker confirmation and does not change request, invitation, quote, Emergency, Rescue, cancellation, or no-show authority. An approved quote warranty is a minimum completion commitment that WPS-012 cannot shorten. Same-booking return visits do not create marketplace requests or duplicate bookings; any replacement-worker comeback remains the distinct fail-closed WPS-008 path.

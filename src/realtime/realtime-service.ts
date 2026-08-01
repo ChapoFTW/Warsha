@@ -3,7 +3,7 @@ import type { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/
 import { environment } from '@/src/config/environment';
 import { getSupabaseClient } from '@/src/lib/supabase';
 
-export type RealtimeTable = 'notifications' | 'bookings' | 'booking_status_history' | 'booking_attachments' | 'reviews' | 'review_responses' | 'review_attachments' | 'messages' | 'message_attachments' | 'conversation_members' | 'conversation_typing' | 'provider_verifications' | 'provider_profiles' | 'financial_booking_payments' | 'provider_earnings_ledger' | 'provider_withdrawal_requests' | 'financial_refunds' | 'marketplace_requests' | 'quote_invitations' | 'worker_quotes';
+export type RealtimeTable = 'notifications' | 'bookings' | 'booking_status_history' | 'booking_attachments' | 'reviews' | 'review_responses' | 'review_attachments' | 'messages' | 'message_attachments' | 'conversation_members' | 'conversation_typing' | 'provider_verifications' | 'provider_profiles' | 'financial_booking_payments' | 'provider_earnings_ledger' | 'provider_withdrawal_requests' | 'financial_refunds' | 'marketplace_requests' | 'quote_invitations' | 'worker_quotes' | 'booking_operations' | 'booking_operation_events' | 'job_progress_media' | 'booking_additional_work_requests' | 'booking_return_visits';
 export type RealtimeChange = { table: RealtimeTable; event: 'INSERT' | 'UPDATE' | 'DELETE'; id?: string; bookingId?: string };
 export type RealtimeConnection = 'connected' | 'reconnecting' | 'error';
 export type RealtimeListener = (change: RealtimeChange) => void;
@@ -101,6 +101,15 @@ export const realtimeService = {
       { table: 'bookings', filter: `id=eq.${bookingId}` },
       { table: 'booking_status_history', filter: `booking_id=eq.${bookingId}` },
       { table: 'booking_attachments', filter: `booking_id=eq.${bookingId}` },
+    ], listener, connection);
+  },
+  bookingOperations(bookingId: string, listener: RealtimeListener, connection?: (status: RealtimeConnection) => void) {
+    return subscribeChannel(`booking-operations:${bookingId}`, [
+      { table: 'booking_operations', filter: `booking_id=eq.${bookingId}` },
+      { table: 'booking_operation_events', filter: `booking_id=eq.${bookingId}` },
+      { table: 'job_progress_media', filter: `booking_id=eq.${bookingId}` },
+      { table: 'booking_additional_work_requests', filter: `booking_id=eq.${bookingId}` },
+      { table: 'booking_return_visits', filter: `booking_id=eq.${bookingId}` },
     ], listener, connection);
   },
   bookingConversation(bookingId: string, listener: RealtimeListener, connection?: (status: RealtimeConnection) => void) {

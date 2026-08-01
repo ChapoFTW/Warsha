@@ -83,3 +83,5 @@ WPS-011 governs the worker's one-time immutable public review reply, public repu
 - No push notifications, production maps/ETA, masked calls, staff moderation UI, background scheduler, or production payout provider is active.
 - Manual worker comprehension, low-literacy usability, Arabic/RTL, accessibility, and native lifecycle testing is not recorded as passed.
 
+WPS-012 governs fine-grained post-confirmation job execution, progress evidence, additional-work approval context, worker readiness, customer inspection, warranty, and return sections. WPS-003's legacy job actions remain compatible, while the active worker job surface delegates post-confirmation execution to the WPS-012 operational aggregate.
+

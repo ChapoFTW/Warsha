@@ -192,3 +192,6 @@ WPS-011 review reports are a separate post-completion moderation workflow from W
 ## 15. Changelog
 
 - 2026-08-01 — Version 1.0. Locked the confirmed-booking communication extension, lifecycle windows, private attachments, quick/system/Running Late messages, unread/typing behavior, disabled call relay, immutable safety reports, off-platform reminder, Rescue isolation, localization, exact approved motto, and acceptance criteria.
+## WPS-012 operational integration
+
+WPS-012 immutable operational events append localized, server-authenticated `status` messages to the existing booking conversation using source-event identifiers. It creates no second chat or participant message path, exposes no private notes or media paths in message metadata, and does not relax WPS-009 writability, privacy, retention, safety, or contact rules.
