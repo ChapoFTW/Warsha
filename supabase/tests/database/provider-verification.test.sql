@@ -124,17 +124,46 @@ values
   ('00000000-0000-0000-0000-000000000000', '81000000-0000-0000-0000-000000000003', 'authenticated', 'authenticated', 'verify-customer@test.local', '', pg_catalog.now(), '{}', '{}', pg_catalog.now(), pg_catalog.now()),
   ('00000000-0000-0000-0000-000000000000', '81000000-0000-0000-0000-000000000004', 'authenticated', 'authenticated', 'verify-staff@test.local', '', pg_catalog.now(), '{}', '{}', pg_catalog.now(), pg_catalog.now());
 
+update auth.users set phone = case id
+  when '81000000-0000-0000-0000-000000000001' then '+201000000501'
+  when '81000000-0000-0000-0000-000000000002' then '+201000000502'
+  else phone end,
+  phone_confirmed_at = case when id in (
+    '81000000-0000-0000-0000-000000000001',
+    '81000000-0000-0000-0000-000000000002'
+  ) then pg_catalog.now() else phone_confirmed_at end
+where id in (
+  '81000000-0000-0000-0000-000000000001',
+  '81000000-0000-0000-0000-000000000002'
+);
+
 insert into public.provider_profiles (
   id,
   user_id,
   display_name,
   profession_key,
+  primary_category_id,
+  category_ids,
+  about,
+  avatar_url,
+  service_radius_km,
   onboarding_status,
   is_published
 )
 values
-  ('82000000-0000-0000-0000-000000000001', '81000000-0000-0000-0000-000000000001', 'Verification provider one', 'professional', 'approved', true),
-  ('82000000-0000-0000-0000-000000000002', '81000000-0000-0000-0000-000000000002', 'Verification provider two', 'professional', 'approved', true);
+  ('82000000-0000-0000-0000-000000000001', '81000000-0000-0000-0000-000000000001', 'Verification provider one', 'professional', 'plumbing', array['plumbing'], 'Complete verification provider profile one.', '81000000-0000-0000-0000-000000000001/avatar/profile.jpg', 15, 'approved', true),
+  ('82000000-0000-0000-0000-000000000002', '81000000-0000-0000-0000-000000000002', 'Verification provider two', 'professional', 'plumbing', array['plumbing'], 'Complete verification provider profile two.', '81000000-0000-0000-0000-000000000002/avatar/profile.jpg', 15, 'approved', true);
+
+insert into public.provider_services(provider_id, service_id, is_active)
+select p.id, s.id, true from public.provider_profiles p
+cross join lateral (select id from public.services where category_id = 'plumbing' order by id limit 1) s
+where p.id in ('82000000-0000-0000-0000-000000000001','82000000-0000-0000-0000-000000000002');
+insert into public.provider_service_areas(provider_id, governorate, district, radius_km) values
+('82000000-0000-0000-0000-000000000001','Cairo','Maadi',15),
+('82000000-0000-0000-0000-000000000002','Cairo','Maadi',15);
+insert into storage.objects(bucket_id,name) values
+('profile-images','81000000-0000-0000-0000-000000000001/avatar/profile.jpg'),
+('profile-images','81000000-0000-0000-0000-000000000002/avatar/profile.jpg');
 
 insert into public.user_roles(user_id, role)
 values ('81000000-0000-0000-0000-000000000004', 'admin')

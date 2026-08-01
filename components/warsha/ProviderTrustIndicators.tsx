@@ -9,15 +9,17 @@ import { StateBadge } from './BrandUI';
 export function ProviderTrustIndicators({
   identityVerified,
   skillCertificateVerified,
+  professionalCertificateVerified,
   compact = false,
 }: {
   identityVerified: boolean;
   skillCertificateVerified?: boolean;
+  professionalCertificateVerified?: boolean;
   compact?: boolean;
 }) {
-  const { isRTL } = useLocalization();
+  const { isRTL, language } = useLocalization();
   const vt = useVerificationText();
-  if (!identityVerified && !skillCertificateVerified) return null;
+  if (!identityVerified && !skillCertificateVerified && !professionalCertificateVerified) return null;
   return (
     <View style={[styles.wrapper, isRTL && styles.reverse]}>
       {identityVerified ? (
@@ -25,6 +27,9 @@ export function ProviderTrustIndicators({
       ) : null}
       {skillCertificateVerified ? (
         <StateBadge label={vt('skillCertificateVerified')} tone="success" icon="workspace-premium" compact={compact} />
+      ) : null}
+      {professionalCertificateVerified ? (
+        <StateBadge label={language === 'ar' ? 'شهادة مهنية موثقة' : 'Professional certificate verified'} tone="success" icon="verified-user" compact={compact} />
       ) : null}
     </View>
   );

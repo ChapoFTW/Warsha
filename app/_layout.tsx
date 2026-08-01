@@ -109,6 +109,8 @@ export default function RootLayout() {
                                         <Stack.Screen name="notifications" />
                                         <Stack.Screen name="provider-mode" />
                                         <Stack.Screen name="provider-verification" />
+                                        <Stack.Screen name="provider-portfolio" />
+                                        <Stack.Screen name="provider-certificates" />
                                         <Stack.Screen name="provider-earnings" />
                                         <Stack.Screen name="provider-job" />
                                         <Stack.Screen name="reset-password" />

@@ -14,6 +14,7 @@ import { useMarketplaceData } from "@/src/data/marketplace-context";
 import { useLocalization } from "@/src/i18n/localization";
 import type { Language } from "@/src/i18n/translations";
 import { useMarketplaceText } from "@/src/marketplace-intelligence/marketplace-translations";
+import { useWorkerProfileText } from "@/src/i18n/worker-profile-translations";
 
 const servicePricingLabels: Record<Language, Record<Service["pricingType"], string>> = {
   en: { fixed: "Fixed price", starting: "Starting from", hourly: "Hourly", inspection: "Inspection fee", quote: "Quote required" },
@@ -26,6 +27,7 @@ export default function ProviderProfileScreen() {
   const { user, mode } = useAuth();
   const { t, isRTL } = useLocalization();
   const mt = useMarketplaceText();
+  const wt = useWorkerProfileText();
   const provider = getProvider(id);
   if (!provider)
     return (
@@ -49,11 +51,7 @@ export default function ProviderProfileScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.hero}>
-          <Image
-            source={{ uri: provider.coverImage }}
-            contentFit="cover"
-            style={StyleSheet.absoluteFill}
-          />
+          {provider.coverImage ? <Image source={{ uri: provider.coverImage }} contentFit="cover" style={StyleSheet.absoluteFill} /> : <View style={[StyleSheet.absoluteFill, styles.heroFallback]}><MaterialIcons name="handyman" size={54} color={colors.textMuted} /></View>}
           <View style={styles.shade} />
           <Circle
             accessibilityLabel={t("backAccessibility")}
@@ -74,7 +72,7 @@ export default function ProviderProfileScreen() {
         </View>
         <View style={styles.body}>
           <View style={styles.identity}>
-            <Image source={{ uri: provider.image }} style={styles.avatar} />
+            {provider.image ? <Image source={{ uri: provider.image }} style={styles.avatar} /> : <View style={[styles.avatar, styles.avatarFallback]}><MaterialIcons name="person" size={42} color={colors.textMuted} /></View>}
             <View style={styles.identityText}>
               <View style={styles.nameRow}>
                 <AppText style={styles.name}>{provider.name}</AppText>
@@ -82,6 +80,7 @@ export default function ProviderProfileScreen() {
               <ProviderTrustIndicators
                 identityVerified={provider.verified}
                 skillCertificateVerified={provider.skillCertificateVerified}
+                professionalCertificateVerified={provider.professionalCertificateVerified}
               />
               <AppText style={styles.muted}>
                 {t(provider.profession)} — {provider.location}
@@ -111,6 +110,7 @@ export default function ProviderProfileScreen() {
           <Section title={t("about")}>
             <AppText style={styles.copy}>{provider.about}</AppText>
           </Section>
+          {provider.experienceSummary ? <Section title={wt("workerProvided")}><AppText style={styles.copy}>{provider.experienceSummary}</AppText><AppText style={styles.muted}>{wt("selfDeclared")}</AppText></Section> : null}
           <Section title={t("skills")}>
             <View style={styles.wrap}>
               {provider.skills.map((skill) => (
@@ -125,32 +125,20 @@ export default function ProviderProfileScreen() {
               <ServiceRow key={service.id} service={service} />
             ))}
           </Section>
-          <Section title={t("portfolio")}>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.gallery}
-            >
-              {provider.portfolio.map((uri, index) => (
-                <Image
-                  key={`${uri}-${index}`}
-                  source={{ uri }}
-                  contentFit="cover"
-                  style={styles.work}
-                />
-              ))}
-            </ScrollView>
+          <Section title={wt("workExamples")}>
+            {provider.portfolio.length ? provider.portfolio.map((entry, index) => {
+              const item = typeof entry === "string" ? { id: `${provider.id}-${index}`, title: wt("relatedWork"), description: "", completedPeriod: undefined, images: [entry] } : entry;
+              return <View key={item.id} style={styles.workItem}><AppText style={styles.strong}>{item.title}</AppText>{item.description ? <AppText style={styles.copy}>{item.description}</AppText> : null}{item.completedPeriod ? <AppText style={styles.muted}>{item.completedPeriod}</AppText> : null}<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.gallery}>{item.images.map((uri, imageIndex) => <Image key={`${item.id}-${imageIndex}`} source={{ uri }} contentFit="cover" style={styles.work} />)}</ScrollView></View>;
+            }) : <AppText style={styles.muted}>{wt("noWorkExamples")}</AppText>}
           </Section>
           <Section title={t("availability")}>
             <Info
               icon="schedule"
-              text={
-                provider.available
-                  ? "Available now — Today until 8:00 PM"
-                  : "Currently offline — Replies by appointment"
-              }
+              text={provider.available ? wt("availableNow") : wt("unavailableNow")}
             />
           </Section>
+          {provider.guarantee ? <Section title={t("guarantee")}><Info icon="verified-user" text={provider.guarantee} /></Section> : null}
+          {provider.supportedPaymentMethods?.length ? <Section title={wt("paymentMethods")}><View style={styles.wrap}>{provider.supportedPaymentMethods.map(method => <View key={method} style={styles.tag}><AppText style={styles.tagText}>{wt(method)}</AppText></View>)}</View></Section> : null}
           <Section title={t("reviewsTitle")}>
             <ProviderReviewSummary providerId={provider.id} />
           </Section>
@@ -272,6 +260,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   scroll: { paddingBottom: 96 },
   hero: { height: 225, backgroundColor: colors.surface },
+  heroFallback: { alignItems: "center", justifyContent: "center" },
   shade: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(8,8,8,.28)",
@@ -318,6 +307,7 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: colors.background,
   },
+  avatarFallback: { alignItems: "center", justifyContent: "center", backgroundColor: colors.surfaceElevated },
   identityText: { flex: 1, gap: 5, paddingBottom: 4 },
   nameRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   name: { fontSize: 24, fontWeight: typography.bold, flexShrink: 1 },
@@ -379,6 +369,7 @@ const styles = StyleSheet.create({
   },
   price: { fontSize: 15, fontWeight: typography.bold },
   gallery: { gap: spacing.sm },
+  workItem: { gap: spacing.sm, padding: spacing.md, borderWidth: 1, borderColor: colors.border, borderRadius: radii.lg, backgroundColor: colors.surface },
   work: {
     width: 210,
     height: 145,

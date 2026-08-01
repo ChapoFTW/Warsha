@@ -5,6 +5,7 @@ import { environment } from '@/src/config/environment';
 import { getSupabaseClient } from '@/src/lib/supabase';
 import { createMockNotification } from '@/src/notifications/notification-repository';
 import { emitMockRealtime } from '@/src/realtime/realtime-service';
+import { providerVerificationStorageKey } from '@/src/providers/provider-account-scope';
 
 import {
   editableVerificationStatuses,
@@ -41,7 +42,6 @@ export interface VerificationRepository {
   ): Promise<ProviderVerification>;
 }
 
-const MOCK_KEY = 'warsha:provider-verification:v1:mock-account';
 // Created lazily: constructing a Directory at module scope crashes the web bundle.
 let mockDirectoryCache: Directory | undefined;
 function mockDirectory(): Directory {
@@ -104,7 +104,7 @@ function mapVerification(value: Record<string, unknown>): ProviderVerification {
 }
 
 async function readMock(providerId: string) {
-  const raw = await Storage.getItem(MOCK_KEY);
+  const raw = await Storage.getItem(providerVerificationStorageKey(providerId));
   if (!raw) return emptyVerification(providerId);
   try {
     const saved = mapVerification(JSON.parse(raw) as Record<string, unknown>);
@@ -115,7 +115,7 @@ async function readMock(providerId: string) {
 }
 
 async function writeMock(value: ProviderVerification, table = 'provider_verifications') {
-  await Storage.setItem(MOCK_KEY, JSON.stringify(value));
+  await Storage.setItem(providerVerificationStorageKey(value.providerId), JSON.stringify(value));
   emitMockRealtime({
     table: table as 'provider_verifications' | 'provider_profiles',
     event: 'UPDATE',

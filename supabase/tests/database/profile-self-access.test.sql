@@ -76,13 +76,23 @@ select is(
 -- Public discoverable-provider read is preserved with identical semantics.
 insert into public.provider_profiles(
   id, user_id, display_name, profession_key, primary_category_id, onboarding_status,
-  is_published, is_verified, is_available
+  category_ids, about, avatar_url, service_radius_km, is_published, is_verified, is_available
 ) values (
   'b4000000-0000-4000-8000-000000000001', 'b3000000-0000-4000-8000-000000000002',
-  'Discoverable Worker', 'plumbing', 'plumbing', 'approved', true, true, true
+  'Discoverable Worker', 'plumbing', 'plumbing', 'approved', array['plumbing'],
+  'A complete discoverable worker profile for access testing.',
+  'b3000000-0000-4000-8000-000000000002/avatar/profile.jpg', 15, true, true, true
 );
+update auth.users set phone = '+201000000402', phone_confirmed_at = now()
+where id = 'b3000000-0000-4000-8000-000000000002';
 insert into public.provider_verifications(provider_id, status, revision, reviewed_at)
 values ('b4000000-0000-4000-8000-000000000001', 'approved', 1, now());
+insert into public.provider_services(provider_id, service_id, is_active)
+select 'b4000000-0000-4000-8000-000000000001', id, true from public.services order by id limit 1;
+insert into public.provider_service_areas(provider_id, governorate, district, radius_km)
+values ('b4000000-0000-4000-8000-000000000001', 'Cairo', 'Maadi', 15);
+insert into storage.objects(bucket_id, name)
+values ('profile-images', 'b3000000-0000-4000-8000-000000000002/avatar/profile.jpg');
 
 set local role anon;
 select is(

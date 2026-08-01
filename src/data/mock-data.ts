@@ -21,6 +21,18 @@ export const providers: Provider[] = [
   { id:'mostafa',name:'Mostafa Reda',profession:'painting',categoryId:'painting',rating:4.6,reviewCount:51,distance:4.2,price:400,verified:false,available:false,image:'https://images.unsplash.com/photo-1501196354995-cbb51c65aaea?auto=format&fit=crop&w=700&q=85',coverImage:'https://images.unsplash.com/photo-1562259949-e8e7689d7828?auto=format&fit=crop&w=1200&q=85',completedJobs:132,experienceYears:7,responseTime:'Usually replies in 30 minutes',location:'Maadi, Cairo',serviceRadius:16,languages:['Arabic'],about:'Interior painter providing careful preparation, clean edges, and straightforward material estimates.',skills:['Interior painting','Wall preparation','Decorative finishes'],certifications:[],services:[{id:'inspect',name:'Site inspection',price:400,pricingType:'inspection',duration:'45 min'}],portfolio:['https://images.unsplash.com/photo-1595814433015-e6f5ce69614e?auto=format&fit=crop&w=700&q=80'],reviews:[{id:'r6',author:'Hana T.',rating:4,date:'18 Jun 2026',comment:'Good finish and completed the room on schedule.'}],cancellationPolicy:'Free cancellation up to 12 hours before the visit.',guarantee:'Finish defects are covered for 7 days.' },
 ];
 
+for (const provider of providers) {
+  provider.categoryIds = [provider.categoryId];
+  provider.experienceSummary = provider.experienceSummary
+    ?? `${provider.experienceYears} years of practical experience in ${provider.location}.`;
+  provider.professionalCertificateVerified = provider.certifications.length > 0;
+  provider.professionalCertificateCount = provider.certifications.length;
+  provider.supportedPaymentMethods = ['cash', 'online'];
+  provider.portfolio = provider.portfolio.map((item, index) => typeof item === 'string'
+    ? { id: `${provider.id}-work-${index + 1}`, title: 'Completed work', description: '', images: [item] }
+    : item);
+}
+
 export function getProvider(id: string) { return providers.find((provider) => provider.id === id); }
 export function getCategory(id: string) { return categories.find((category) => category.id === id); }
 

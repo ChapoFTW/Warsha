@@ -69,6 +69,8 @@ select set_config('request.jwt.claim.sub','',true);
 
 update public.provider_profiles
 set profession_key='plumbing', primary_category_id='plumbing', category_ids=array['plumbing'],
+    about='A complete worker profile used for repository alignment testing.',
+    avatar_url=user_id::text||'/avatar/profile.jpg', service_radius_km=15,
     onboarding_status='approved', is_published=true, is_available=true, deleted_at=null
 where user_id in (
   '91000000-0000-0000-0000-000000000002',
@@ -96,6 +98,14 @@ where p.user_id in (
   '91000000-0000-0000-0000-000000000002',
   '91000000-0000-0000-0000-000000000004'
 );
+insert into public.provider_service_areas(provider_id,governorate,district,radius_km)
+select id,'Cairo','Maadi',15 from public.provider_profiles where user_id in (
+  '91000000-0000-0000-0000-000000000002',
+  '91000000-0000-0000-0000-000000000004'
+);
+insert into storage.objects(bucket_id,name) values
+('profile-images','91000000-0000-0000-0000-000000000002/avatar/profile.jpg'),
+('profile-images','91000000-0000-0000-0000-000000000004/avatar/profile.jpg');
 
 select set_config(
   'warsha_test.verified_provider_id',

@@ -37,14 +37,27 @@ insert into auth.users(
   ('00000000-0000-0000-0000-000000000000', 'a1000000-0000-4000-8000-000000000002', 'authenticated', 'authenticated', 'device-import-2@test.local', '', now(), '{}', '{"display_name":"Import Two"}', now(), now());
 
 insert into public.provider_profiles(
-  id, display_name, profession_key, primary_category_id, onboarding_status,
+  id, user_id, display_name, profession_key, primary_category_id, category_ids,
+  about, avatar_url, service_radius_km, onboarding_status,
   is_published, is_verified, is_available
 ) values (
-  'a2000000-0000-4000-8000-000000000001', 'Importable Provider', 'plumbing',
-  'plumbing', 'approved', true, true, true
+  'a2000000-0000-4000-8000-000000000001', 'a1000000-0000-4000-8000-000000000002',
+  'Importable Provider', 'plumbing', 'plumbing', array['plumbing'],
+  'A complete importable plumbing provider profile.',
+  'a1000000-0000-4000-8000-000000000002/avatar/import.jpg', 15,
+  'approved', true, true, true
 );
+update auth.users set phone = '+201000000302', phone_confirmed_at = now()
+where id = 'a1000000-0000-4000-8000-000000000002';
 insert into public.provider_verifications(provider_id, status, revision, reviewed_at)
 values ('a2000000-0000-4000-8000-000000000001', 'approved', 1, now());
+insert into public.provider_services(provider_id, service_id, is_active)
+select 'a2000000-0000-4000-8000-000000000001', id, true
+from public.services where category_id = 'plumbing' order by id limit 1;
+insert into public.provider_service_areas(provider_id, governorate, district, radius_km)
+values ('a2000000-0000-4000-8000-000000000001', 'Cairo', 'Maadi', 15);
+insert into storage.objects(bucket_id, name)
+values ('profile-images', 'a1000000-0000-4000-8000-000000000002/avatar/import.jpg');
 
 select throws_ok(
   $$select public.import_local_customer_data('a1000000-0000-4000-8000-000000000001', '[]'::jsonb, '{}'::uuid[])$$,

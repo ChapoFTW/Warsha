@@ -39,11 +39,11 @@ values
 ('00000000-0000-0000-0000-000000000000','92000000-0000-0000-0000-000000000003','authenticated','authenticated',null,'+201000000203','',null,now(),'{}','{"display_name":"Market Worker Two"}',now(),now()),
 ('00000000-0000-0000-0000-000000000000','92000000-0000-0000-0000-000000000004','authenticated','authenticated',null,'+201000000204','',null,now(),'{}','{"display_name":"Unavailable Worker"}',now(),now());
 
-insert into public.provider_profiles(id,user_id,display_name,primary_category_id,profession_key,category_ids,is_verified,is_available,is_published,onboarding_status,service_radius_km,completed_jobs,rating_average,review_count,emergency_available)
+insert into public.provider_profiles(id,user_id,display_name,primary_category_id,profession_key,category_ids,about,avatar_url,is_verified,is_available,is_published,onboarding_status,service_radius_km,completed_jobs,rating_average,review_count,emergency_available)
 values
-('92000000-0000-0000-0001-000000000002','92000000-0000-0000-0000-000000000002','Market Worker One','plumbing','plumbing',array['plumbing'],true,true,true,'approved',50,40,4.8,20,true),
-('92000000-0000-0000-0001-000000000003','92000000-0000-0000-0000-000000000003','Market Worker Two','plumbing','plumbing',array['plumbing'],true,true,true,'approved',50,4,4.6,3,true),
-('92000000-0000-0000-0001-000000000004','92000000-0000-0000-0000-000000000004','Unavailable Worker','plumbing','plumbing',array['plumbing'],true,false,true,'approved',50,100,5,50,true);
+('92000000-0000-0000-0001-000000000002','92000000-0000-0000-0000-000000000002','Market Worker One','plumbing','plumbing',array['plumbing'],'Complete marketplace worker profile one.','92000000-0000-0000-0000-000000000002/avatar/profile.jpg',true,true,true,'approved',50,40,4.8,20,true),
+('92000000-0000-0000-0001-000000000003','92000000-0000-0000-0000-000000000003','Market Worker Two','plumbing','plumbing',array['plumbing'],'Complete marketplace worker profile two.','92000000-0000-0000-0000-000000000003/avatar/profile.jpg',true,true,true,'approved',50,4,4.6,3,true),
+('92000000-0000-0000-0001-000000000004','92000000-0000-0000-0000-000000000004','Unavailable Worker','plumbing','plumbing',array['plumbing'],'Complete unavailable marketplace profile.','92000000-0000-0000-0000-000000000004/avatar/profile.jpg',true,false,true,'approved',50,100,5,50,true);
 insert into public.user_roles(user_id,role) values
 ('92000000-0000-0000-0000-000000000002','provider'),('92000000-0000-0000-0000-000000000003','provider'),('92000000-0000-0000-0000-000000000004','provider') on conflict do nothing;
 insert into public.provider_verifications(provider_id,status,revision,reviewed_at) values
@@ -58,6 +58,14 @@ select p,(current_setting('warsha_test.service_id'))::uuid,base,'quote',25,emerg
 ('92000000-0000-0000-0001-000000000003'::uuid,240::numeric,75::numeric),
 ('92000000-0000-0000-0001-000000000004'::uuid,100::numeric,10::numeric)
 ) v(p,base,emergency);
+insert into public.provider_service_areas(provider_id,governorate,district,radius_km) values
+('92000000-0000-0000-0001-000000000002','Cairo','Zamalek',50),
+('92000000-0000-0000-0001-000000000003','Cairo','Zamalek',50),
+('92000000-0000-0000-0001-000000000004','Cairo','Zamalek',50);
+insert into storage.objects(bucket_id,name) values
+('profile-images','92000000-0000-0000-0000-000000000002/avatar/profile.jpg'),
+('profile-images','92000000-0000-0000-0000-000000000003/avatar/profile.jpg'),
+('profile-images','92000000-0000-0000-0000-000000000004/avatar/profile.jpg');
 insert into private.worker_matching_locations(provider_id,latitude,longitude,source,verification_state) values
 ('92000000-0000-0000-0001-000000000002',30.0500,31.2300,'operations','verified'),
 ('92000000-0000-0000-0001-000000000003',30.0600,31.2400,'operations','verified'),
