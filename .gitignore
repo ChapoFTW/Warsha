@@ -46,3 +46,5 @@ app-example
 # Supabase CLI machine-specific state
 /supabase/.temp/
 /supabase/.branches/
+
+tmp/
