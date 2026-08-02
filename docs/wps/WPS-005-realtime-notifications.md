@@ -78,3 +78,6 @@ WPS-011 review submissions and immutable provider replies continue to use this d
 
 WPS-012 extends this durable-notification and authenticated invalidation architecture with source-linked operational events. Fine-grained operation notifications use minimal booking/event identifiers and dedupe keys; operation-authoritative booking status changes retain history while suppressing only their duplicate coarse chat/notification side effect. Live push remains disabled.
 
+## WPS-013 dispute integration
+
+WPS-013 reuses durable notifications and participant-scoped Realtime invalidation for opened, evidence-requested, evidence-submitted, under-review, resolved, closed, and withdrawn events. Event IDs form dedupe keys. This does not activate live push delivery or publish private evidence/moderation data.

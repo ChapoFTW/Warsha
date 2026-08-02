@@ -11,6 +11,7 @@ import { BrandLoadingMark as ActivityIndicator } from '@/components/warsha/Brand
 import { ProviderReviewReply } from '@/components/warsha/ProviderReviewReply';
 import { ProviderCashPaymentCard } from '@/components/warsha/ProviderCashPaymentCard';
 import { BookingPriceAdjustmentCard } from '@/components/warsha/BookingPriceAdjustmentCard';
+import { BookingDisputePanel } from '@/components/warsha/BookingDisputePanel';
 import { JobOperationsPanel } from '@/components/warsha/JobOperationsPanel';
 import { AppText } from '@/components/warsha/Typography';
 import { colors, radii, spacing, typography } from '@/constants/theme';
@@ -36,6 +37,7 @@ export default function ProviderJobDetails(){const{id}=useLocalSearchParams<{id:
     <Card><Heading>{jt('priceBreakdown')}</Heading><Price label={jt('servicePrice')} value={job.priceBreakdown?.servicePrice??job.price}/><Price label={jt('transportation')} value={job.priceBreakdown?.transportationFee??0}/><Price label={jt('emergencyFee')} value={job.priceBreakdown?.emergencySurcharge??0}/><Price label={jt('discount')} value={-(job.priceBreakdown?.discount??0)}/><View style={styles.divider}/><Price label={jt('total')} value={job.price} strong/></Card>
     <BookingPriceAdjustmentCard booking={job} role="provider"/>
     <JobOperationsPanel booking={job} role="worker" onBookingChanged={()=>jobs.reload(true)}/>
+    <BookingDisputePanel booking={job} role="worker"/>
     <ProviderCashPaymentCard bookingId={job.id} completed={job.status==='completed'}/>
     <Card><Heading>{jt('timeline')}</Heading>{job.history.map((event,index)=><View key={`${event.status}-${event.at}-${index}`} style={[styles.timeline,isRTL&&styles.reverse]}><View style={styles.dot}/><View style={styles.grow}><AppText style={styles.lineLabel}>{t(bookingStatusTranslationKeys[event.status])}</AppText><AppText style={styles.muted}>{formatTimestamp(event.at,localeFor(language))}</AppText>{event.note?<AppText style={styles.note}>{event.note}</AppText>:null}</View></View>)}</Card>
     {job.completionNotes||job.attachments.some(item=>item.kind==='completion_evidence')?<Card><Heading>{jt('completionImages')}</Heading>{job.completionNotes?<AppText style={styles.note}>{job.completionNotes}</AppText>:null}<View style={styles.images}>{job.attachments.filter(item=>item.kind==='completion_evidence').map(item=>item.uri?<Image key={item.id} source={{uri:item.uri}} style={styles.image}/>:null)}</View></Card>:null}

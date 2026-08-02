@@ -34,10 +34,11 @@ type MockPayment = BookingPayment & {
   providerName: string;
   idempotencyKey: string;
 };
-type MockEarning = ProviderEarning & { accountKey: string; providerId: string; paymentId: string };
+type MockEarning = ProviderEarning & { accountKey: string; providerId: string; paymentId: string; disputeHoldId?: string; disputeHoldPreviousStatus?: ProviderEarning['status'] };
 type MockDestination = PayoutDestination & { accountKey: string; providerId: string; fingerprint: string };
 type MockWithdrawal = WithdrawalRequest & { accountKey: string; providerId: string; idempotencyKey: string };
 type MockAdjustment = PriceAdjustment & { accountKey: string; providerId: string; idempotencyKey: string };
+type MockDisputeDelegation = { id: string; bookingId: string; paymentId: string; amountMinor: MinorAmount; action: 'pre_release_refund' | 'post_release_case'; idempotencyKey: string };
 type MockDebt = {
   accountKey: string;
   providerId: string;
@@ -50,6 +51,7 @@ type MockStore = {
   destinations: MockDestination[];
   withdrawals: MockWithdrawal[];
   adjustments: MockAdjustment[];
+  disputeDelegations: MockDisputeDelegation[];
   debts: MockDebt[];
 };
 
@@ -60,6 +62,7 @@ const emptyStore: MockStore = {
   destinations: [],
   withdrawals: [],
   adjustments: [],
+  disputeDelegations: [],
   debts: [],
 };
 let queue: Promise<unknown> = Promise.resolve();
@@ -94,6 +97,7 @@ async function readMock(): Promise<MockStore> {
       destinations: parsed.destinations ?? [],
       withdrawals: parsed.withdrawals ?? [],
       adjustments: parsed.adjustments ?? [],
+      disputeDelegations: parsed.disputeDelegations ?? [],
       debts: parsed.debts ?? [],
     };
   } catch {
@@ -307,6 +311,58 @@ function mockSummary(store: MockStore, accountKey: string, providerId: string): 
     automaticReleaseSchedulerEnabled: false,
     transactions,
   };
+}
+
+export async function delegateMockDisputeFinancialAction(input: {
+  bookingId: string;
+  paymentId: string;
+  amountMinor: number;
+  action: 'pre_release_refund' | 'post_release_case';
+  idempotencyKey: string;
+}) {
+  if (environment.dataMode !== 'mock') throw new Error('Mock dispute financial delegation is disabled outside Mock mode.');
+  return atomic(async () => {
+    const store = await readMock();
+    const existing = store.disputeDelegations.find(item => item.idempotencyKey === input.idempotencyKey);
+    if (existing) return existing.id;
+    const payment = store.payments.find(item => item.paymentId === input.paymentId && item.bookingId === input.bookingId);
+    const amount = minor(String(input.amountMinor));
+    if (!payment || compareMinor(amount, subtractMinor(payment.amountMinor, payment.refundedMinor)) > 0) throw new Error('Financial delegation is not available');
+    const delegation: MockDisputeDelegation = { id: identifier(input.action === 'pre_release_refund' ? 'mock-refund' : 'mock-financial-case'), bookingId: input.bookingId, paymentId: input.paymentId, amountMinor: amount, action: input.action, idempotencyKey: input.idempotencyKey };
+    if (input.action === 'pre_release_refund') {
+      payment.refundedMinor = addMinor(payment.refundedMinor, amount);
+      payment.status = compareMinor(payment.refundedMinor, payment.amountMinor) === 0 ? 'refunded' : 'partially_refunded';
+      payment.refundStatus = 'succeeded';
+    }
+    store.disputeDelegations.push(delegation);
+    await writeMock(store, 'financial_booking_payments');
+    if (input.action === 'pre_release_refund') await createMockNotification('refund_completed', input.bookingId, payment.providerId, `mock-dispute-refund:${delegation.id}`);
+    return delegation.id;
+  });
+}
+
+export async function setMockDisputeEarningHold(bookingId: string, disputeId: string, hold: boolean) {
+  if (environment.dataMode !== 'mock') return;
+  await atomic(async () => {
+    const store = await readMock();
+    let changed = false;
+    for (const earning of store.earnings.filter(item => item.bookingId === bookingId)) {
+      if (hold && ['pending_job_completion', 'pending_release'].includes(earning.status)) {
+        earning.disputeHoldPreviousStatus = earning.status;
+        earning.disputeHoldId = disputeId;
+        earning.heldMinor = earning.netMinor;
+        earning.status = 'held_for_dispute';
+        changed = true;
+      } else if (!hold && earning.status === 'held_for_dispute' && earning.disputeHoldId === disputeId) {
+        earning.status = earning.disputeHoldPreviousStatus ?? 'pending_release';
+        earning.disputeHoldPreviousStatus = undefined;
+        earning.disputeHoldId = undefined;
+        earning.heldMinor = '0';
+        changed = true;
+      }
+    }
+    if (changed) await writeMock(store, 'provider_earnings_ledger');
+  });
 }
 
 export const paymentRepository = {

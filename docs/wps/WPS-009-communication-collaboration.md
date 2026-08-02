@@ -195,3 +195,7 @@ WPS-011 review reports are a separate post-completion moderation workflow from W
 ## WPS-012 operational integration
 
 WPS-012 immutable operational events append localized, server-authenticated `status` messages to the existing booking conversation using source-event identifiers. It creates no second chat or participant message path, exposes no private notes or media paths in message metadata, and does not relax WPS-009 writability, privacy, retention, safety, or contact rules.
+
+## WPS-013 dispute integration
+
+WPS-013 participant responses and participant-visible case events project into this same booking conversation with immutable source-event IDs. Staff-private notes and evidence paths never project. The dispute RPC is authoritative for responses even when ordinary post-completion chat is read-only; it does not reopen general chat or expose contact data.

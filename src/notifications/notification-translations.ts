@@ -14,8 +14,17 @@ const rawCopy = {
 } as const;
 
 const copy = {
-  en: rawCopy.en,
-  ar: { ...rawCopy.ar, booking_message: 'رسالة جديدة', booking_messageBody: 'لديك رسالة جديدة بشأن حجزك.' },
+  en: {
+    ...rawCopy.en,
+    dispute_opened: 'Dispute opened', dispute_evidence_requested: 'Evidence requested', dispute_evidence_submitted: 'Evidence added', dispute_under_review: 'Dispute under review', dispute_resolved: 'Dispute resolved', dispute_closed: 'Dispute closed', dispute_cancelled: 'Dispute withdrawn',
+    dispute_openedBody: 'A dispute was opened for this booking.', dispute_evidence_requestedBody: 'Warsha support requested more evidence.', dispute_evidence_submittedBody: 'New evidence was added to the dispute.', dispute_under_reviewBody: 'Warsha support is reviewing the dispute.', dispute_resolvedBody: 'A resolution is available for the dispute.', dispute_closedBody: 'The dispute was closed.', dispute_cancelledBody: 'The customer withdrew the dispute.',
+  },
+  ar: {
+    ...rawCopy.ar,
+    booking_message: 'رسالة جديدة', booking_messageBody: 'لديك رسالة جديدة بشأن حجزك.',
+    dispute_opened: 'تم فتح نزاع', dispute_evidence_requested: 'مطلوب أدلة', dispute_evidence_submitted: 'اتضاف دليل', dispute_under_review: 'النزاع تحت المراجعة', dispute_resolved: 'النزاع اتحل', dispute_closed: 'النزاع اتقفل', dispute_cancelled: 'النزاع اتسحب',
+    dispute_openedBody: 'اتفتح نزاع على الحجز ده.', dispute_evidence_requestedBody: 'فريق دعم ورشة طلب أدلة زيادة.', dispute_evidence_submittedBody: 'اتضاف دليل جديد للنزاع.', dispute_under_reviewBody: 'فريق دعم ورشة بيراجع النزاع.', dispute_resolvedBody: 'قرار النزاع بقى متاح.', dispute_closedBody: 'النزاع اتقفل.', dispute_cancelledBody: 'العميل سحب النزاع.',
+  },
 } as const;
 
 export type NotificationCopyKey = keyof typeof copy.en;

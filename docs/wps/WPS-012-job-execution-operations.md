@@ -123,3 +123,7 @@ Live push delivery, SMS, telephony, maps/automatic travel tracking, background l
 ## 16. Acceptance boundary
 
 WPS-012 remains local-only until clean reset, full pgTAP, TypeScript regression, lint, mojibake, Expo Doctor, Android/iOS/web exports, motto audit, linked-ledger/dry-run, security/accessibility review, and manual evidence are reviewed. Manual cases begin **NOT RUN**. No hosted migration, deployment, provider activation, payment, SMS, phone call, push delivery, webhook, or scheduler is authorized.
+
+## 17. WPS-013 dispute integration
+
+WPS-013 reads this specification's immutable operation events, progress photos, additional-work approvals, inspection, checklists, warranty, and return visits as evidence. Return-visit and warranty-work resolutions create a new section through WPS-012 while preserving the completed booking, participants, history, financial record, and single review.

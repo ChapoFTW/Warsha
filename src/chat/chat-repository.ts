@@ -98,6 +98,34 @@ async function mockWrite(accountId: string, bookingId: string, messages: Booking
   await Storage.setItem(keyFor(accountId, bookingId), JSON.stringify(messages));
 }
 
+export async function appendMockDisputeConversationEvent(input: {
+  bookingId: string;
+  eventId: string;
+  eventType: string;
+  actor: 'customer' | 'worker' | 'staff' | 'system';
+  note?: string;
+}) {
+  if (environment.dataMode !== 'mock') return;
+  const isResponse = ['customer_response', 'worker_response', 'worker_accepted_responsibility', 'worker_contested'].includes(input.eventType);
+  const message: BookingMessage = {
+    id: `mock-dispute-message-${input.eventId}`,
+    bookingId: input.bookingId,
+    senderId: isResponse ? input.actor === 'customer' ? 'mock-customer' : 'mock-user' : undefined,
+    kind: isResponse ? 'text' : 'system',
+    body: isResponse ? input.note : undefined,
+    systemEvent: isResponse ? undefined : `dispute_${input.eventType}`,
+    metadata: { source_event_id: input.eventId, event: isResponse ? 'dispute_response' : `dispute_${input.eventType}` },
+    createdAt: new Date().toISOString(),
+    attachments: [],
+    delivery: 'sent',
+  };
+  await Promise.all(['mock-customer', 'mock-user'].map(async accountId => {
+    const current = await mockRead(accountId, input.bookingId);
+    if (!current.some(item => item.id === message.id)) await mockWrite(accountId, input.bookingId, [...current, message]);
+  }));
+  emitMockRealtime({ table: 'messages', event: 'INSERT', id: message.id, bookingId: input.bookingId });
+}
+
 const mockRepository: ChatRepository = {
   async list(bookingId, accountId, offset = 0): Promise<ChatPage> {
     const items = (await mockRead(accountId, bookingId)).sort((a, b) => b.createdAt.localeCompare(a.createdAt));

@@ -7,11 +7,17 @@ import { providers } from '@/src/data/mock-data';
 import { getSupabaseClient } from '@/src/lib/supabase';
 import { createMockNotification } from '@/src/notifications/notification-repository';
 import { emitMockRealtime } from '@/src/realtime/realtime-service';
+import { getMockDisputePublicationHoldId } from '@/src/disputes/mock-dispute-state';
 
 import { emptyDimensions } from './review-types';
 import type { BookingReview, RatingSummary, ReputationBadges, ReviewInput, ReviewReport, ReviewReportReason, ReviewSort, ReviewVote } from './review-types';
 
-type StoredReview = BookingReview & { ownerAccountId: string; visible: boolean };
+type StoredReview = BookingReview & {
+  ownerAccountId: string;
+  visible: boolean;
+  disputeHoldId?: string;
+  staffHidden?: boolean;
+};
 type MockReportEvent = { reportId: string; actorId: string; fromStatus: ReviewReport['status']; toStatus: ReviewReport['status']; note: string; createdAt: string };
 type MockModerationEvent = { reviewId: string; actorId: string; action: 'hide' | 'restore'; reason: string; previousStatus: 'visible' | 'hidden'; createdAt: string };
 type MockState = {
@@ -56,6 +62,22 @@ async function readMock() {
   } catch { return seedState(); }
 }
 async function writeMock(state: MockState) { await Storage.setItem(MOCK_KEY, JSON.stringify(state)); emitMockRealtime({ table: 'reviews', event: 'UPDATE' }); }
+export async function setMockReviewDisputeHold(bookingId: string, disputeId: string, hold: boolean) {
+  if (environment.dataMode !== 'mock') return;
+  await atomic(async () => {
+    const state = await readMock();
+    const review = state.reviews.find(item => item.bookingId === bookingId);
+    if (!review) return;
+    if (hold) {
+      review.disputeHoldId = disputeId;
+      review.visible = false;
+    } else if (review.disputeHoldId === disputeId) {
+      review.disputeHoldId = undefined;
+      review.visible = !review.staffHidden;
+    }
+    await writeMock(state);
+  });
+}
 function safeRating(input: ReviewInput) {
   const values = [input.rating, ...Object.values(input.dimensions)];
   if (values.some(value => !Number.isInteger(value) || value < 1 || value > 5)) throw new Error('Choose a rating from 1 to 5 for every item.');
@@ -140,13 +162,13 @@ const mock = {
   async reviewedBookingIds(accountId: string, bookingIds: string[]) { const wanted = new Set(uniqueBookingIds(bookingIds)); return (await readMock()).reviews.filter(item => item.ownerAccountId === accountId && wanted.has(item.bookingId)).map(item => item.bookingId); },
   async summary(accountId: string, providerId: string, sort: ReviewSort) { return mockSummary(await readMock(), providerId, sort, accountId); },
   async byBooking(accountId: string, bookingId: string) { const row = (await readMock()).reviews.find(item => item.bookingId === bookingId); return row && isMockParticipant(row, accountId) ? { ...row, myVote: undefined, canEdit: row.ownerAccountId === accountId && Boolean(row.editDeadlineAt) && Date.now() <= Date.parse(row.editDeadlineAt!) } : undefined; },
-  async submit(accountId: string, input: ReviewInput) { return atomic(async () => { safeRating(input); await requireCompletedMockBooking(input); const state = await readMock(); if (state.reviews.some(item => item.bookingId === input.bookingId)) throw new Error('This booking has already been reviewed.'); const now = new Date(); const review: StoredReview = { id: `mock-review-${Date.now()}`, bookingId: input.bookingId, providerId: input.providerId, reviewerName: input.isAnonymous ? 'Customer' : 'You', rating: input.rating, dimensions: input.dimensions, comment: input.comment.trim(), isAnonymous: input.isAnonymous, createdAt: now.toISOString(), editDeadlineAt: new Date(now.getTime() + 72 * 3600000).toISOString(), canEdit: true, attachments: input.attachments, helpfulCount: 0, notHelpfulCount: 0, ownerAccountId: accountId, visible: true }; state.reviews.unshift(review); await writeMock(state); await createMockNotification('new_review', input.bookingId); return review; }); },
+  async submit(accountId: string, input: ReviewInput) { return atomic(async () => { safeRating(input); await requireCompletedMockBooking(input); const state = await readMock(); if (state.reviews.some(item => item.bookingId === input.bookingId)) throw new Error('This booking has already been reviewed.'); const now = new Date(); const disputeHoldId = await getMockDisputePublicationHoldId(input.bookingId); const review: StoredReview = { id: `mock-review-${Date.now()}`, bookingId: input.bookingId, providerId: input.providerId, reviewerName: input.isAnonymous ? 'Customer' : 'You', rating: input.rating, dimensions: input.dimensions, comment: input.comment.trim(), isAnonymous: input.isAnonymous, createdAt: now.toISOString(), editDeadlineAt: new Date(now.getTime() + 72 * 3600000).toISOString(), canEdit: true, attachments: input.attachments, helpfulCount: 0, notHelpfulCount: 0, ownerAccountId: accountId, visible: !disputeHoldId, disputeHoldId }; state.reviews.unshift(review); await writeMock(state); await createMockNotification('new_review', input.bookingId); return review; }); },
   async edit(accountId: string, reviewId: string, input: ReviewInput) { return atomic(async () => { safeRating(input); const state = await readMock(); const review = state.reviews.find(item => item.id === reviewId && item.ownerAccountId === accountId); if (!review || !review.editDeadlineAt || Date.now() > Date.parse(review.editDeadlineAt)) throw new Error('Review edit window has closed'); Object.assign(review, { rating: input.rating, dimensions: input.dimensions, comment: input.comment.trim(), isAnonymous: input.isAnonymous, reviewerName: input.isAnonymous ? 'Customer' : 'You', attachments: input.attachments, editedAt: new Date().toISOString() }); await writeMock(state); return review; }); },
   async reply(accountId: string, reviewId: string, body: string) { return atomic(async () => { const normalized = body.trim(); if (!normalized || normalized.length > 1500) throw new Error('Enter a reply up to 1,500 characters.'); const state = await readMock(); const review = state.reviews.find(item => item.id === reviewId && item.providerId === mockProviderId(accountId)); if (!review) throw new Error('Reply is not available.'); if (review.reply) return review.reply; review.reply = { id: `mock-reply-${Date.now()}`, body: normalized, createdAt: new Date().toISOString() }; await writeMock(state); await createMockNotification('review_reply', review.bookingId); return review.reply; }); },
   async vote(accountId: string, reviewId: string, vote: ReviewVote) { return atomic(async () => { const state = await readMock(); const review = state.reviews.find(item => item.id === reviewId && item.visible); if (!review || review.ownerAccountId === accountId || review.providerId === mockProviderId(accountId)) throw new Error('Vote is not available.'); const existing = state.votes.find(item => item.reviewId === reviewId && item.accountId === accountId); if (existing) existing.vote = vote; else state.votes.push({ reviewId, accountId, vote }); review.helpfulCount = state.votes.filter(item => item.reviewId === reviewId && item.vote === 'helpful').length; review.notHelpfulCount = state.votes.filter(item => item.reviewId === reviewId && item.vote === 'not_helpful').length; await writeMock(state); return { ...review, myVote: vote }; }); },
   async report(accountId: string, reviewId: string, reason: ReviewReportReason, details: string) { return atomic(async () => { if (!['spam', 'abuse', 'fake_review', 'offensive_content'].includes(reason) || details.trim().length > 1000) throw new Error('Invalid report.'); const state = await readMock(); if (!state.reviews.some(item => item.id === reviewId && item.visible)) throw new Error('Report is not available.'); let report = state.reports.find(item => item.reviewId === reviewId && item.accountId === accountId); if (report) Object.assign(report, { reason, details: details.trim(), status: report.status === 'resolved' || report.status === 'dismissed' ? 'submitted' as const : report.status }); else { report = { id: `mock-report-${Date.now()}`, reviewId, reason, details: details.trim(), status: 'submitted', createdAt: new Date().toISOString(), accountId }; state.reports.push(report); } await writeMock(state); return report; }); },
   async transitionReport(actorId: string, reportId: string, status: Exclude<ReviewReport['status'], 'submitted'>, note: string) { return atomic(async () => { if (!['in_review', 'resolved', 'dismissed'].includes(status) || note.trim().length > 1000) throw new Error('Invalid report transition.'); const state = await readMock(); const report = state.reports.find(item => item.id === reportId); if (!report) throw new Error('Report not found.'); state.reportEvents.push({ reportId, actorId, fromStatus: report.status, toStatus: status, note: note.trim(), createdAt: new Date().toISOString() }); report.status = status; await writeMock(state); return report; }); },
-  async simulateModeration(actorId: string, reviewId: string, hidden: boolean, reason = 'Mock staff review') { return atomic(async () => { if (!reason.trim() || reason.trim().length > 1000) throw new Error('Invalid moderation reason.'); const state = await readMock(); const review = state.reviews.find(item => item.id === reviewId); if (!review) throw new Error('Review not found'); const previousStatus = review.visible ? 'visible' : 'hidden'; review.visible = !hidden; state.moderationEvents.push({ reviewId, actorId, action: hidden ? 'hide' : 'restore', reason: reason.trim(), previousStatus, createdAt: new Date().toISOString() }); await writeMock(state); }); },
+  async simulateModeration(actorId: string, reviewId: string, hidden: boolean, reason = 'Mock staff review') { return atomic(async () => { if (!reason.trim() || reason.trim().length > 1000) throw new Error('Invalid moderation reason.'); const state = await readMock(); const review = state.reviews.find(item => item.id === reviewId); if (!review) throw new Error('Review not found'); const previousStatus = review.visible ? 'visible' : 'hidden'; review.staffHidden = hidden; review.disputeHoldId = hidden ? review.disputeHoldId : await getMockDisputePublicationHoldId(review.bookingId); review.visible = !review.staffHidden && !review.disputeHoldId; state.moderationEvents.push({ reviewId, actorId, action: hidden ? 'hide' : 'restore', reason: reason.trim(), previousStatus, createdAt: new Date().toISOString() }); await writeMock(state); }); },
 };
 
 export const reviewMockStaffHarness = {

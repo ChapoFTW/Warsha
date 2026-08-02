@@ -111,3 +111,7 @@ WPS-011 extends the post-completion review relationship with bounded editing, di
 ## WPS-012 extension note
 
 WPS-012 adds fine-grained post-confirmation operational states beneath this canonical booking graph. It maps travel/work/inspection states to the existing WPS-004 statuses, keeps `booking_status_history`, cancellation, no-show, dispute, refund, and terminal rules intact, and makes customer inspection the active WPS-012 completion path. Legacy WPS-004 completion calls remain compatible and synchronize into the operational timeline.
+
+## WPS-013 dispute integration
+
+WPS-013 extends the dormant dispute relationship without changing this booking graph for normal cases. A submitted case stays permanently linked to its booking, reads this specification's immutable status history and attachments as evidence, and leaves booking state unchanged. The legacy `disputed` status remains compatible and bootstraps a WPS-013 case; new WPS-013 cases do not require that status.

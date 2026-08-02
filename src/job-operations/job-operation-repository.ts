@@ -182,6 +182,26 @@ function addEvent(operation: JobOperation, state: OperationState, eventType: str
 async function notifyMock(operation: JobOperation, event: string, eventId: string) { await createMockNotification(`operation_${event}`, operation.bookingId, undefined, `operation:${eventId}`); }
 function ensureKey(state: MockState, key: string) { if (state.keys[key]) return false; state.keys[key] = now(); return true; }
 
+export async function createMockDisputeReturnVisit(bookingId: string, reason: string, key: string) {
+  if (environment.dataMode !== 'mock') throw new Error('Mock dispute return visits are disabled outside Mock mode.');
+  const booking = (await localBookingRepository.list()).find(item => item.id === bookingId);
+  if (!booking || booking.status !== 'completed' || reason.trim().length < 3) throw new Error('Return visit is unavailable.');
+  let returnVisitId = '';
+  await mockAtomic(async state => {
+    const operation = requireOperation(state, booking);
+    const existing = operation.returnVisits.find(item => item.status === 'requested' && operation.events.some(event => event.metadata.sourceDisputeKey === key && event.metadata.returnVisitId === item.id));
+    if (existing) { returnVisitId = existing.id; return; }
+    if (!ensureKey(state, key)) throw new Error('Return visit retry could not be resolved.');
+    if (operation.returnVisits.some(item => !['declined', 'completed'].includes(item.status))) throw new Error('A return visit is already open.');
+    operation.currentSection += 1;
+    const visit: ReturnVisit = { id: id('return-visit'), bookingId, sectionNumber: operation.currentSection, reason: reason.trim(), status: 'requested', requestedAt: now() };
+    operation.returnVisits.push(visit); returnVisitId = visit.id;
+    const event = addEvent(operation, 'completed', 'return_visit_requested', 'staff', reason, { returnVisitId: visit.id, sourceDisputeKey: key });
+    await notifyMock(operation, 'return_visit', event.id);
+  });
+  return returnVisitId;
+}
+
 const mockRepository: JobOperationRepository = {
   async get(booking, accountId, role) { assertMockParticipant(accountId, role); return mockAtomic(state => structuredClone(requireOperation(state, booking))); },
   async transition(booking, accountId, role, target, note, key) { assertMockParticipant(accountId, role); if (role !== 'worker') throw new Error('Only the worker can publish this transition.'); await mockAtomic(async state => { if (!ensureKey(state, key)) return; const operation = requireOperation(state, booking); if (!canTransitionOperation(operation.currentState, target) || target === 'completed') throw new Error('Invalid operation transition.'); await syncMockBookingStatus(booking, role, operationBookingStatus[target]); const event = addEvent(operation, target, target, 'worker', note, { bookingStatus: operationBookingStatus[target] }); await notifyMock(operation, target, event.id); }); },

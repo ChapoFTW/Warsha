@@ -133,3 +133,6 @@ WPS-010 is implemented locally only. Automated validation must include client co
 ## WPS-012 operational integration
 
 WPS-012 progress media is private booking evidence and never enters the WPS-010 public portfolio or profile projection. Operational volume, speed, photos, delays, warranty, and return visits are not new discovery, trust, verification, or ranking fields.
+## WPS-013 dispute integration
+
+WPS-013 exposes no case, evidence, allegation, assignment, or moderation data through public worker profiles. Its temporary review-publication hold flows through WPS-011's sanitized visible-review projection only and adds no ranking or badge signal.

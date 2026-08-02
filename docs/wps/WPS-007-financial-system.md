@@ -413,3 +413,7 @@ migrations must be reviewed by filename in the deployment dry run.
 ## WPS-012 operational integration
 
 WPS-012 additional-work requests call the existing price-adjustment proposal/response RPCs and store only the resulting adjustment reference. Operational events, photos, delays, inspection, warranty, and return visits create no payment, earning, refund, fee, or ledger mutation. Canonical first completion continues to trigger this specification exactly once; return-visit sections leave the completed booking and released financial history unchanged.
+
+## WPS-013 dispute integration
+
+WPS-013 submitted cases reuse this specification's existing earning hold/release checks. Any partial compensation delegates to the existing pre-release refund or post-release financial-case RPC and stores only the resulting reference; dispute logic never creates a second ledger, calculates money client-side, or performs live movement.

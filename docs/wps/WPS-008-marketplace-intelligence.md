@@ -1040,3 +1040,6 @@ These criteria define required product outcomes. They do not claim current imple
 ## WPS-012 operational integration
 
 WPS-012 begins only after worker confirmation and does not change request, invitation, quote, Emergency, Rescue, cancellation, or no-show authority. An approved quote warranty is a minimum completion commitment that WPS-012 cannot shorten. Same-booking return visits do not create marketplace requests or duplicate bookings; any replacement-worker comeback remains the distinct fail-closed WPS-008 path.
+## WPS-013 dispute integration
+
+WPS-013 may use confirmed WPS-008 no-show events as immutable case evidence and applies the configured short no-show eligibility window. Opening or resolving a dispute does not change matching, capacity, provider ranking, Rescue, or marketplace eligibility automatically.

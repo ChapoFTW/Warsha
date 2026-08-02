@@ -97,3 +97,7 @@ WPS-011 is local-only until clean database, full pgTAP, regression, Doctor, Andr
 ## 16. WPS-012 operational integration
 
 WPS-012 customer inspection changes the same canonical booking to `completed`, which unlocks this specification’s one verified review. Return-visit sections keep that booking completed and cannot create a second review. Operational events, helpful-looking progress, speed, photos, delays, warranty, and additional work never directly alter ratings, trust badges, confidence, moderation, or marketplace ranking.
+
+## 17. WPS-013 dispute integration
+
+An active submitted WPS-013 case may temporarily set the booking's review to the existing non-public `flagged` state with a case reference. Drafts do not hold publication. Terminal case states restore only case-held reviews that staff did not hide. The review, one-review constraint, reply, votes, reports, rating, badges, confidence rules, and ranking remain unchanged.
