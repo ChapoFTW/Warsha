@@ -125,10 +125,11 @@ insert into public.notifications(user_id,type,title,body,data,dedupe_key)
 values('e1400000-0000-4000-8000-000000000001','review_unlocked','Retry','Retry','{"booking_id":"e1420000-0000-4000-8000-000000000001"}','review-reminder-1') on conflict do nothing;
 select is((select count(*)::integer from private.notification_reminder_jobs where policy_key='review_opportunity' and resource_id='e1420000-0000-4000-8000-000000000001'),1,'review reminder creation is idempotent');
 
-set local role authenticated;
+-- `authenticated` deliberately holds no direct UPDATE on public.bookings, so this
+-- terminal transition is driven as the table owner with the customer identity set,
+-- matching the fixture pattern above. The assertion still exercises the trigger.
 select set_config('request.jwt.claim.sub','e1400000-0000-4000-8000-000000000001',true);
 update public.bookings set status='cancelled' where id='e1420000-0000-4000-8000-000000000001';
-reset role;
 select is((select status from private.notification_reminder_jobs where policy_key='review_opportunity' and resource_id='e1420000-0000-4000-8000-000000000001'),'suppressed','terminal booking state suppresses future reminder');
 
 set local role authenticated;
@@ -140,7 +141,9 @@ reset role;
 
 set local role anon;
 select set_config('request.jwt.claim.sub','',true);
-select throws_ok($$select public.get_my_notifications('customer',null,null,20,false,null)$$,'42501','Authentication required','anonymous inbox access is denied');
+-- EXECUTE is revoked from anon outright, so denial happens at the privilege layer
+-- before the in-function authentication check can run. That is the stronger denial.
+select throws_ok($$select public.get_my_notifications('customer',null,null,20,false,null)$$,'42501','permission denied for function get_my_notifications','anonymous inbox access is denied');
 reset role;
 
 select is(private.process_notification_reminders(20)->>'status','disabled','private reminder processor remains disabled');

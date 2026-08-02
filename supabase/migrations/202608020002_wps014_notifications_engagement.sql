@@ -382,15 +382,15 @@ stable
 security definer
 set search_path=''
 as $$
-declare booking_id uuid:=private.notification_data_uuid(p_data,'booking_id'); request_id uuid:=private.notification_data_uuid(p_data,'request_id'); provider_id uuid:=private.notification_data_uuid(p_data,'provider_id'); review_id uuid:=private.notification_data_uuid(p_data,'review_id'); dispute_id uuid:=private.notification_data_uuid(p_data,'dispute_id');
+declare booking_id uuid:=private.notification_data_uuid(p_data,'booking_id'); target_request_id uuid:=private.notification_data_uuid(p_data,'request_id'); provider_id uuid:=private.notification_data_uuid(p_data,'provider_id'); review_id uuid:=private.notification_data_uuid(p_data,'review_id'); dispute_id uuid:=private.notification_data_uuid(p_data,'dispute_id');
 begin
   if booking_id is not null then
     if exists(select 1 from public.bookings b where b.id=booking_id and b.customer_id=p_user_id) then return 'customer'; end if;
     if exists(select 1 from public.bookings b join public.provider_profiles p on p.id=b.provider_id where b.id=booking_id and p.user_id=p_user_id) then return 'worker'; end if;
   end if;
-  if request_id is not null then
-    if exists(select 1 from public.marketplace_requests r where r.id=request_id and r.customer_id=p_user_id) then return 'customer'; end if;
-    if exists(select 1 from public.quote_invitations i join public.provider_profiles p on p.id=i.provider_id where i.request_id=request_id and p.user_id=p_user_id) then return 'worker'; end if;
+  if target_request_id is not null then
+    if exists(select 1 from public.marketplace_requests r where r.id=target_request_id and r.customer_id=p_user_id) then return 'customer'; end if;
+    if exists(select 1 from public.quote_invitations i join public.provider_profiles p on p.id=i.provider_id where i.request_id=target_request_id and p.user_id=p_user_id) then return 'worker'; end if;
   end if;
   if review_id is not null then
     if exists(select 1 from public.reviews r where r.id=review_id and r.customer_id=p_user_id) then return 'customer'; end if;
@@ -843,7 +843,7 @@ $$;
 
 create or replace function public.resolve_notification_route(p_notification_id uuid,p_mode text)
 returns jsonb language plpgsql security definer set search_path='' as $$
-declare uid uuid:=(select auth.uid()); n public.notifications; booking_id uuid; request_id uuid; quote_id uuid; provider_id uuid; invitation_id uuid; allowed boolean:=false; route_resource uuid;
+declare uid uuid:=(select auth.uid()); n public.notifications; booking_id uuid; target_request_id uuid; quote_id uuid; provider_id uuid; invitation_id uuid; allowed boolean:=false; route_resource uuid;
 begin
   if uid is null or not private.notification_mode_allowed(uid,p_mode) then return pg_catalog.jsonb_build_object('status','inaccessible'); end if;
   select * into n from public.notifications owned where owned.id=p_notification_id and owned.user_id=uid and private.notification_visible_in_mode(owned.audience,p_mode);
@@ -856,17 +856,17 @@ begin
     return pg_catalog.jsonb_build_object('status','inaccessible');
   end if;
   booking_id:=private.notification_data_uuid(n.data,'booking_id');
-  request_id:=private.notification_data_uuid(n.data,'request_id');
+  target_request_id:=private.notification_data_uuid(n.data,'request_id');
   quote_id:=private.notification_data_uuid(n.data,'quote_id');
   provider_id:=private.notification_data_uuid(n.data,'provider_id');
   if n.route_type='marketplace_request' then
-    select exists(select 1 from public.marketplace_requests r where r.id=request_id and r.customer_id=uid) into allowed;
-    route_resource:=request_id;
+    select exists(select 1 from public.marketplace_requests r where r.id=target_request_id and r.customer_id=uid) into allowed;
+    route_resource:=target_request_id;
   elsif n.route_type='worker_quote' then
     select i.id into invitation_id from public.quote_invitations i
     join public.provider_profiles p on p.id=i.provider_id
     left join public.worker_quotes q on q.invitation_id=i.id
-    where p.user_id=uid and ((quote_id is not null and q.id=quote_id) or (request_id is not null and i.request_id=request_id))
+    where p.user_id=uid and ((quote_id is not null and q.id=quote_id) or (target_request_id is not null and i.request_id=target_request_id))
     order by i.invited_at desc limit 1;
     allowed:=p_mode='worker' and invitation_id is not null; route_resource:=invitation_id;
   elsif n.route_type in ('booking','conversation','booking_payment','booking_review','booking_dispute') then
@@ -884,7 +884,7 @@ begin
   if not coalesce(allowed,false) then
     insert into private.notification_operational_events(event_key,user_id,notification_id)
     values('route_inaccessible',uid,n.id);
-    return pg_catalog.jsonb_build_object('status',case when n.resource_id is null and booking_id is null and request_id is null then 'stale' else 'inaccessible' end);
+    return pg_catalog.jsonb_build_object('status',case when n.resource_id is null and booking_id is null and target_request_id is null then 'stale' else 'inaccessible' end);
   end if;
   return pg_catalog.jsonb_strip_nulls(pg_catalog.jsonb_build_object('status','ok','routeType',n.route_type,'resourceId',route_resource));
 end;
@@ -1218,29 +1218,29 @@ revoke all on private.notification_discoverability_state from public,anon,authen
 
 create or replace function private.refresh_notification_discoverability()
 returns trigger language plpgsql security definer set search_path='' as $$
-declare provider_id uuid; previous boolean; current_value boolean; recipient uuid; source_stamp text;
+declare target_provider_id uuid; previous boolean; current_value boolean; recipient uuid; source_stamp text;
 begin
-  provider_id:=coalesce(
+  target_provider_id:=coalesce(
     private.notification_safe_uuid(pg_catalog.to_jsonb(new)->>'provider_id'),
     private.notification_safe_uuid(pg_catalog.to_jsonb(old)->>'provider_id'),
     private.notification_safe_uuid(pg_catalog.to_jsonb(new)->>'id'),
     private.notification_safe_uuid(pg_catalog.to_jsonb(old)->>'id')
   );
-  if provider_id is null then
+  if target_provider_id is null then
     if tg_op='DELETE' then return old; end if;
     return new;
   end if;
-  select s.discoverable into previous from private.notification_discoverability_state s where s.provider_id=provider_id for update;
-  current_value:=private.is_provider_publicly_discoverable(provider_id);
+  select s.discoverable into previous from private.notification_discoverability_state s where s.provider_id=target_provider_id for update;
+  current_value:=private.is_provider_publicly_discoverable(target_provider_id);
   insert into private.notification_discoverability_state(provider_id,discoverable,updated_at)
-  values(provider_id,current_value,pg_catalog.now()) on conflict(provider_id) do update set discoverable=excluded.discoverable,updated_at=excluded.updated_at;
+  values(target_provider_id,current_value,pg_catalog.now()) on conflict(provider_id) do update set discoverable=excluded.discoverable,updated_at=excluded.updated_at;
   if previous is not null and previous is distinct from current_value then
-    select p.user_id into recipient from public.provider_profiles p where p.id=provider_id;
-    source_stamp:=pg_catalog.extract(epoch from pg_catalog.clock_timestamp())::bigint::text;
+    select p.user_id into recipient from public.provider_profiles p where p.id=target_provider_id;
+    source_stamp:=pg_catalog.date_part('epoch',pg_catalog.clock_timestamp())::bigint::text;
     insert into public.notifications(user_id,type,title,body,data,dedupe_key)
     values(recipient,case when current_value then 'worker_profile_discoverable' else 'worker_profile_unavailable' end,
-      'Worker account update','Your worker profile has an update.',pg_catalog.jsonb_build_object('provider_id',provider_id),
-      'discoverability:'||provider_id::text||':'||current_value::text||':'||source_stamp) on conflict do nothing;
+      'Worker account update','Your worker profile has an update.',pg_catalog.jsonb_build_object('provider_id',target_provider_id),
+      'discoverability:'||target_provider_id::text||':'||current_value::text||':'||source_stamp) on conflict do nothing;
   end if;
   if tg_op='DELETE' then return old; end if;
   return new;
@@ -1263,7 +1263,7 @@ create or replace function private.notify_auth_security_change()
 returns trigger language plpgsql security definer set search_path='' as $$
 declare event_type text; source_stamp text;
 begin
-  source_stamp:=pg_catalog.extract(epoch from coalesce(new.updated_at,pg_catalog.clock_timestamp()))::numeric::text;
+  source_stamp:=pg_catalog.date_part('epoch',coalesce(new.updated_at,pg_catalog.clock_timestamp()))::numeric::text;
   if old.encrypted_password is distinct from new.encrypted_password then event_type:='password_changed';
   elsif old.email is distinct from new.email then event_type:='email_changed';
   elsif old.phone is distinct from new.phone then event_type:='phone_changed';
