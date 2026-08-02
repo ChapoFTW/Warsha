@@ -136,3 +136,7 @@ WPS-012 progress media is private booking evidence and never enters the WPS-010 
 ## WPS-013 dispute integration
 
 WPS-013 exposes no case, evidence, allegation, assignment, or moderation data through public worker profiles. Its temporary review-publication hold flows through WPS-011's sanitized visible-review projection only and adds no ranking or badge signal.
+
+## WPS-014 notification integration
+
+WPS-014 observes existing certificate and public-discoverability decisions to inform the owning worker. Notifications expose only provider/certificate routing identifiers; private media, rejection reasons, identity material, profile drafts, blocking-rule internals, and documents remain excluded.

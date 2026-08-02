@@ -85,3 +85,7 @@ WPS-011 governs the worker's one-time immutable public review reply, public repu
 
 WPS-012 governs fine-grained post-confirmation job execution, progress evidence, additional-work approval context, worker readiness, customer inspection, warranty, and return sections. WPS-003's legacy job actions remain compatible, while the active worker job surface delegates post-confirmation execution to the WPS-012 operational aggregate.
 
+## WPS-014 notification integration
+
+WPS-014 uses the persisted customer/provider app mode to scope worker inbox rows, counts, Realtime reconciliation, preferences, and routes. It adds no employment framing, availability pressure, opportunity gamification, ranking manipulation, or promotional engagement.
+

@@ -86,3 +86,7 @@ WPS-011 supersedes the review limitations in Sections 2, 3, and 9 by defining mu
 
 WPS-012 makes customer-approved canonical booking completion the operational close point while preserving WPS-011's permanent one-review-per-booking rule. Return visits remain sections of that completed booking and cannot create another review or alter identity-verification authority.
 
+## WPS-014 notification integration
+
+WPS-014 creates only safe verification/certificate/profile-state notices from these authoritative trust transitions. Identity documents, certificate documents, National ID material, rejection detail, internal checks, and trust calculations never enter notification rows, Realtime payloads, or external previews.
+

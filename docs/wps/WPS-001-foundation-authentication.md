@@ -94,3 +94,7 @@ Primary evidence includes `app/_layout.tsx`, `src/auth`, `src/config/environment
 - No background push token registration is implemented.
 - Manual authentication, recovery-link, Arabic/RTL, and account-isolation testing is not recorded as passed.
 
+## WPS-014 notification integration
+
+WPS-014 may create privacy-safe account-security notifications only for password, email, or phone changes that this authentication system can authoritatively observe. It adds no session telemetry, arbitrary deep links, contact exposure, or production push delivery, and routing always requires the current authenticated account.
+

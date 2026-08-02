@@ -199,3 +199,7 @@ WPS-012 immutable operational events append localized, server-authenticated `sta
 ## WPS-013 dispute integration
 
 WPS-013 participant responses and participant-visible case events project into this same booking conversation with immutable source-event IDs. Staff-private notes and evidence paths never project. The dispute RPC is authoritative for responses even when ordinary post-completion chat is read-only; it does not reopen general chat or expose contact data.
+
+## WPS-014 notification integration
+
+WPS-014 groups unread message and attachment notifications by booking conversation while leaving WPS-009 conversation watermarks as chat-unread authority. Payloads and previews omit message text and attachment filenames. Safety-report receipt is private to the reporter, and the 48-hour read-only boundary is represented by a disabled scheduler job until trusted processing exists.

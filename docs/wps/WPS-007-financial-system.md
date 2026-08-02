@@ -417,3 +417,7 @@ WPS-012 additional-work requests call the existing price-adjustment proposal/res
 ## WPS-013 dispute integration
 
 WPS-013 submitted cases reuse this specification's existing earning hold/release checks. Any partial compensation delegates to the existing pre-release refund or post-release financial-case RPC and stores only the resulting reference; dispute logic never creates a second ledger, calculates money client-side, or performs live movement.
+
+## WPS-014 notification integration
+
+WPS-014 classifies and routes this specification's payment, refund, earning, withdrawal, and cash-debt events without changing their state machines or ledger authority. Financial notices are mandatory in-app where required, contain only routing identifiers, never expose amounts or credentials externally, and never perform money mutation from notification actions.

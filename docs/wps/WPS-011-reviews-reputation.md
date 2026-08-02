@@ -101,3 +101,7 @@ WPS-012 customer inspection changes the same canonical booking to `completed`, w
 ## 17. WPS-013 dispute integration
 
 An active submitted WPS-013 case may temporarily set the booking's review to the existing non-public `flagged` state with a case reference. Drafts do not hold publication. Terminal case states restore only case-held reviews that staff did not hide. The review, one-review constraint, reply, votes, reports, rating, badges, confidence rules, and ranking remain unchanged.
+
+## WPS-014 notification integration
+
+WPS-014 reuses review/reply/report/moderation/publication-hold sources and safe booking/review identifiers. Reporter identity, report reasons/details, moderation reasons, confidence components, and staff audit data remain private. Notifications do not summarize reviews, influence helpfulness, badges, confidence, or ranking.

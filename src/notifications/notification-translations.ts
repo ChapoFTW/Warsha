@@ -36,3 +36,8 @@ export function notificationBodyKey(type: string): NotificationCopyKey {
   const key = `${type}Body`;
   return key in copy.en ? key as NotificationCopyKey : 'genericBody';
 }
+export function legacyNotificationEventCopy(language: 'en' | 'ar', type: string) {
+  const values = copy[language] as Record<string, string>;
+  if (!(type in values)) return undefined;
+  return { title: values[type], body: values[`${type}Body`] ?? values.genericBody };
+}

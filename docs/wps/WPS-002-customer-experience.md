@@ -77,3 +77,7 @@ WPS-011 supersedes the review detail in this section with six required scores, a
 - The mobile app has no push/background notification delivery, phone relay, live location, promo redemption flow, dispute/support UI, or legal deletion flow.
 - Accessibility, Arabic/RTL, native background/return, payment, and end-to-end manual results are not recorded as passed.
 
+## WPS-014 notification integration
+
+WPS-014 extends the existing single customer notification center with categories, grouped updates, archive history, authoritative counts, simple preferences, and guarded actions. It does not create separate marketplace, payment, review, or dispute inboxes and changes no customer-domain mutation.
+

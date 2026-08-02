@@ -81,3 +81,7 @@ WPS-012 extends this durable-notification and authenticated invalidation archite
 ## WPS-013 dispute integration
 
 WPS-013 reuses durable notifications and participant-scoped Realtime invalidation for opened, evidence-requested, evidence-submitted, under-review, resolved, closed, and withdrawn events. Event IDs form dedupe keys. This does not activate live push delivery or publish private evidence/moderation data.
+
+## WPS-014 authoritative extension
+
+WPS-014 is the locked product authority for the unified notification center. It retains `public.notifications` and centralized owner-filtered Realtime, adds server-derived categories/priorities/audiences/sources/groups, archive history, owner/mode RPC projections, authoritative counts, simple preferences, quiet-hours policy, and typed guarded routes. Realtime remains invalidation-only. Production push, tokens, delivery attempts, and reminders remain private and fail closed.

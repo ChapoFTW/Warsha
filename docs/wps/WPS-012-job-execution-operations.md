@@ -127,3 +127,7 @@ WPS-012 remains local-only until clean reset, full pgTAP, TypeScript regression,
 ## 17. WPS-013 dispute integration
 
 WPS-013 reads this specification's immutable operation events, progress photos, additional-work approvals, inspection, checklists, warranty, and return visits as evidence. Return-visit and warranty-work resolutions create a new section through WPS-012 while preserving the completed booking, participants, history, financial record, and single review.
+
+## WPS-014 notification integration
+
+WPS-014 maps immutable operation event IDs to deduplicated booking notifications, required-action priority, safe routing, and conservative disabled reminders. Fine-grained events own travel/arrival/start/progress/completion notices during legacy synchronization; no progress note, photo path, checklist detail, delay reason, or private metadata enters notification payloads.

@@ -115,3 +115,7 @@ WPS-012 adds fine-grained post-confirmation operational states beneath this cano
 ## WPS-013 dispute integration
 
 WPS-013 extends the dormant dispute relationship without changing this booking graph for normal cases. A submitted case stays permanently linked to its booking, reads this specification's immutable status history and attachments as evidence, and leaves booking state unchanged. The legacy `disputed` status remains compatible and bootstraps a WPS-013 case; new WPS-013 cases do not require that status.
+
+## WPS-014 notification integration
+
+WPS-014 normalizes booking notifications at the existing durable insert boundary and preserves this booking graph. WPS-012 fine-grained operational milestones own their user-facing row, so the five legacy-synchronized statuses no longer create an additional coarse durable notification; booking history remains unchanged.

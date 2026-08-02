@@ -1043,3 +1043,7 @@ WPS-012 begins only after worker confirmation and does not change request, invit
 ## WPS-013 dispute integration
 
 WPS-013 may use confirmed WPS-008 no-show events as immutable case evidence and applies the configured short no-show eligibility window. Opening or resolving a dispute does not change matching, capacity, provider ranking, Rescue, or marketplace eligibility automatically.
+
+## WPS-014 notification integration
+
+WPS-014 reuses WPS-008 request, invitation, quote, matching, Emergency, Rescue, expiry, and confirmation sources. Quote arrivals group only within one request, retries dedupe by trusted source, routes recheck customer/worker ownership, and no candidate scores, competitor quotes, precise locations, or ranking inputs enter notification data.

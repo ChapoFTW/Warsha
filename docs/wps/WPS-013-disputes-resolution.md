@@ -128,3 +128,7 @@ Production staff dashboards, automatic resolution, AI summaries, automated image
 ## 16. Acceptance boundary
 
 WPS-013 remains local-only until clean database reset, full pgTAP, all TypeScript regressions, lint, mojibake, Expo Doctor, Android/iOS/web exports, motto audit, local/linked migration evidence, hosted dry-run, security/storage/accessibility review, and manual evidence are reviewed. Manual cases begin **NOT RUN**. No hosted migration, deployment, provider activation, live payment, SMS, telephony, push, webhook, scheduler, or irreversible action is authorized.
+
+## WPS-014 notification integration
+
+WPS-014 classifies existing participant-visible dispute events, preserves their immutable source IDs, and resolves only to the guarded booking dispute surface. Evidence, responses, allegations, staff identity, private notes, resolution internals, and financial references never enter notification rows or previews; reminders remain scheduler-disabled.

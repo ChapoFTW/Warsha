@@ -107,6 +107,7 @@ export default function RootLayout() {
                                         <Stack.Screen name="conversation/[bookingId]" />
                                         <Stack.Screen name="favourites" />
                                         <Stack.Screen name="notifications" />
+                                        <Stack.Screen name="notification-preferences" />
                                         <Stack.Screen name="provider-mode" />
                                         <Stack.Screen name="provider-verification" />
                                         <Stack.Screen name="provider-portfolio" />
