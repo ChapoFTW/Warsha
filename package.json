@@ -23,6 +23,8 @@
     "test:wps012": "node --no-warnings --experimental-strip-types scripts/wps012-job-operations.test.mts",
     "test:wps013": "node --no-warnings --experimental-strip-types scripts/wps013-disputes-resolution.test.mts",
     "test:wps014": "node --no-warnings --experimental-strip-types scripts/wps014-notifications-engagement.test.mts",
+    "test:wps015": "node --no-warnings --experimental-strip-types scripts/wps015-production-payments.test.mts",
+    "test:wps016": "node --no-warnings --experimental-strip-types scripts/wps016-trust-safety.test.mts",
     "test:marketplace": "node --no-warnings --experimental-strip-types scripts/marketplace-intelligence.test.mts",
     "smoke:wps007": "node scripts/wps007-smoke.mjs",
     "check:mojibake": "node ./scripts/check-mojibake.js",
