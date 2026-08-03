@@ -31,7 +31,12 @@
     "db:test": "supabase test db",
     "auth:cleanup-seed": "node ./scripts/cleanup-malformed-seed-users.mjs",
     "auth:create-dev-user": "node ./scripts/create-dev-auth-user.mjs",
-    "test:wps017": "node --no-warnings --experimental-strip-types scripts/wps017-operations-admin.test.mts"
+    "test:wps017": "node --no-warnings --experimental-strip-types scripts/wps017-operations-admin.test.mts",
+    "audit:secrets": "node ./scripts/audit-secrets.mjs",
+    "audit:migrations": "node ./scripts/audit-migrations.mjs",
+    "audit:environment": "node ./scripts/audit-environment.mjs",
+    "audit:all": "npm run audit:secrets && npm run audit:migrations && npm run audit:environment",
+    "test:wps018": "node --no-warnings --experimental-strip-types scripts/wps018-production-readiness.test.mts"
   },
   "dependencies": {
     "@expo-google-fonts/cairo": "^0.4.2",

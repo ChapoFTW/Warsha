@@ -1,6 +1,24 @@
 begin;
 select no_plan();
 
+-- WPS-018: staff sessions are verified from the signed token, so the fixture
+-- must present the same claims PostgREST would set from a real access token:
+-- the subject, the assurance level, and the signed `amr` authentication record.
+create function pg_temp.act_as(p_uid uuid, p_aal text default 'aal1', p_age_seconds integer default 0)
+returns void language plpgsql as $fn$
+begin
+  perform set_config('request.jwt.claim.sub', p_uid::text, true);
+  perform set_config('request.jwt.claims', jsonb_build_object(
+    'sub', p_uid::text,
+    'aal', p_aal,
+    'session_id', p_uid::text,
+    'amr', jsonb_build_array(jsonb_build_object(
+      'method', 'password',
+      'timestamp', floor(extract(epoch from now()))::bigint - p_age_seconds))
+  )::text, true);
+end $fn$;
+
+
 -- ---------------------------------------------------------------------------
 -- Structure
 -- ---------------------------------------------------------------------------
@@ -115,7 +133,7 @@ select ok(private.bootstrap_staff_role('a1700000-0000-4000-8000-000000000001','s
 -- Customer and worker denial
 -- ---------------------------------------------------------------------------
 set local role authenticated;
-select set_config('request.jwt.claim.sub','a1700000-0000-4000-8000-000000000006',true);
+select pg_temp.act_as('a1700000-0000-4000-8000-000000000006');
 select is((public.get_staff_session())->>'isStaff','false','a customer is not staff');
 select throws_ok($$select public.get_staff_home()$$,'42501','Staff capability required',
   'a customer cannot open the operational home');
@@ -133,7 +151,7 @@ select is((select count(*)::integer from public.operational_incidents),0,'a cust
 reset role;
 
 set local role authenticated;
-select set_config('request.jwt.claim.sub','a1700000-0000-4000-8000-000000000007',true);
+select pg_temp.act_as('a1700000-0000-4000-8000-000000000007');
 select is((public.get_staff_session())->>'isStaff','false','a worker is not staff');
 select throws_ok($$select public.get_staff_queue('open_disputes')$$,'42501','Staff capability required',
   'a worker cannot open a queue');
@@ -143,15 +161,24 @@ reset role;
 -- Role administration: dual control, re-authentication, audit
 -- ---------------------------------------------------------------------------
 set local role authenticated;
-select set_config('request.jwt.claim.sub','a1700000-0000-4000-8000-000000000001',true);
+select pg_temp.act_as('a1700000-0000-4000-8000-000000000001');
 select is((public.get_staff_session())->>'isStaff','true','the bootstrapped administrator is staff');
 
--- A high-risk capability needs a fresh re-authentication.
+-- A high-risk capability needs a recent, server-verified authentication.
+-- WPS-018 replaced the client-attested check: freshness now comes from the
+-- signed `amr` claim, so a stale session is refused however the client asks.
+select pg_temp.act_as('a1700000-0000-4000-8000-000000000001', 'aal1', 4000);
 select throws_ok(
   $$select public.staff_grant_role('a1700000-0000-4000-8000-000000000002','support_agent','Onboarding','grant-key-0001')$$,
-  '42501','Re-authentication required','role administration requires re-authentication');
-select is((public.staff_reauthenticate())->>'reauthValid','true','a staff member can re-authenticate');
-select is((public.get_staff_session())->>'reauthValid','true','the session reports a fresh re-authentication');
+  '42501','Re-authentication required','a stale session cannot administer roles');
+select is((public.get_staff_session())->>'reauthValid','false','a stale session reports itself stale');
+select throws_ok(
+  $$select public.staff_reauthenticate()$$,
+  '42501','Re-authentication required',
+  'a stale session cannot confirm itself; the account must authenticate again');
+select pg_temp.act_as('a1700000-0000-4000-8000-000000000001');
+select is((public.staff_reauthenticate())->>'reauthValid','true','a freshly authenticated session verifies');
+select is((public.get_staff_session())->>'reauthValid','true','the session reports verified freshness');
 
 -- Dual control: a staff member can never grant a role to their own account.
 select throws_ok(
@@ -205,7 +232,7 @@ select throws_ok($$update public.staff_role_grants set role_key='super_administr
 -- Capability enforcement and cross-role denial
 -- ---------------------------------------------------------------------------
 set local role authenticated;
-select set_config('request.jwt.claim.sub','a1700000-0000-4000-8000-000000000002',true);
+select pg_temp.act_as('a1700000-0000-4000-8000-000000000002');
 select is((public.get_staff_session())->>'isStaff','true','a support agent is staff');
 select ok((public.get_staff_home())->'queues' is not null,'a support agent can open the operational home');
 select throws_ok($$select public.get_staff_queue('open_disputes')$$,'42501','Staff capability required',
@@ -233,14 +260,14 @@ select is(private.is_staff(), false, 'a support agent cannot reach the legacy do
 reset role;
 
 set local role authenticated;
-select set_config('request.jwt.claim.sub','a1700000-0000-4000-8000-000000000003',true);
+select pg_temp.act_as('a1700000-0000-4000-8000-000000000003');
 select is(private.is_staff(), true, 'a dispute reviewer can reach the legacy domain staff RPCs');
 select throws_ok($$select public.get_staff_queue('reconciliation_exceptions')$$,'42501',
   'Staff capability required','a dispute reviewer cannot open a financial queue');
 reset role;
 
 set local role authenticated;
-select set_config('request.jwt.claim.sub','a1700000-0000-4000-8000-000000000004',true);
+select pg_temp.act_as('a1700000-0000-4000-8000-000000000004');
 select is((public.get_staff_worker_overview('b1700000-0000-4000-8000-000000000001'))->>'financialVisible',
   'true','a financial operator sees the earnings summary');
 select throws_ok($$select public.get_staff_queue('abuse_reports')$$,'42501','Staff capability required',
@@ -251,7 +278,7 @@ reset role;
 insert into public.user_roles(user_id, role) values ('a1700000-0000-4000-8000-000000000006','support')
 on conflict do nothing;
 set local role authenticated;
-select set_config('request.jwt.claim.sub','a1700000-0000-4000-8000-000000000006',true);
+select pg_temp.act_as('a1700000-0000-4000-8000-000000000006');
 select is(private.is_staff(), true, 'a legacy support role still satisfies the legacy gate unchanged');
 select is((public.get_staff_session())->>'isStaff','false',
   'a legacy support role alone grants no WPS-017 capability');
@@ -262,7 +289,7 @@ delete from public.user_roles where user_id='a1700000-0000-4000-8000-00000000000
 -- Queue isolation, assignment races, workload, private notes
 -- ---------------------------------------------------------------------------
 set local role authenticated;
-select set_config('request.jwt.claim.sub','a1700000-0000-4000-8000-000000000003',true);
+select pg_temp.act_as('a1700000-0000-4000-8000-000000000003');
 select ok((public.get_staff_queue('open_disputes'))->'items' is not null,'the dispute queue renders');
 select throws_ok($$select public.get_staff_queue('not_a_queue')$$,'22023','Unknown queue',
   'an unknown queue is refused');
@@ -321,7 +348,7 @@ select set_config('wps017.assignment_version',
 
 -- Assigning someone else needs the assignment capability AND the queue capability.
 set local role authenticated;
-select set_config('request.jwt.claim.sub','a1700000-0000-4000-8000-000000000005',true);
+select pg_temp.act_as('a1700000-0000-4000-8000-000000000005');
 select throws_ok(
   $$select public.staff_assign_case(current_setting('wps017.assignment')::uuid,
     'a1700000-0000-4000-8000-000000000002',
@@ -332,7 +359,7 @@ reset role;
 
 -- A staff member who cannot work the queue can never be assigned to it.
 set local role authenticated;
-select set_config('request.jwt.claim.sub','a1700000-0000-4000-8000-000000000003',true);
+select pg_temp.act_as('a1700000-0000-4000-8000-000000000003');
 select throws_ok(
   $$select public.staff_assign_case(current_setting('wps017.assignment')::uuid,
     'a1700000-0000-4000-8000-000000000002',
@@ -342,7 +369,7 @@ select throws_ok(
 reset role;
 
 set local role authenticated;
-select set_config('request.jwt.claim.sub','a1700000-0000-4000-8000-000000000002',true);
+select pg_temp.act_as('a1700000-0000-4000-8000-000000000002');
 select throws_ok($$select public.get_staff_case(current_setting('wps017.assignment')::uuid)$$,
   '42501','Staff capability required','a support agent cannot read a dispute case or its private notes');
 select is((select count(*)::integer from public.operational_assignments),0,
@@ -360,11 +387,11 @@ select throws_ok($$update private.operational_case_notes set note='changed'$$,
   '55000','Operational assignment history is immutable','private notes cannot be rewritten');
 
 set local role authenticated;
-select set_config('request.jwt.claim.sub','a1700000-0000-4000-8000-000000000005',true);
+select pg_temp.act_as('a1700000-0000-4000-8000-000000000005');
 select ok(pg_catalog.jsonb_array_length(public.get_staff_workload()) >= 1,'workload is visible to a manager');
 reset role;
 set local role authenticated;
-select set_config('request.jwt.claim.sub','a1700000-0000-4000-8000-000000000004',true);
+select pg_temp.act_as('a1700000-0000-4000-8000-000000000004');
 select throws_ok($$select public.get_staff_workload()$$,'42501','Staff capability required',
   'workload needs the assignment capability');
 reset role;
@@ -373,7 +400,7 @@ reset role;
 -- Global safe search restrictions
 -- ---------------------------------------------------------------------------
 set local role authenticated;
-select set_config('request.jwt.claim.sub','a1700000-0000-4000-8000-000000000002',true);
+select pg_temp.act_as('a1700000-0000-4000-8000-000000000002');
 select throws_ok($$select public.staff_safe_search('ab')$$,'22023','Search term is too short',
   'a short search term is refused');
 select throws_ok($$select public.staff_safe_search('abcdef%')$$,'22023','Wildcard search is not permitted',
@@ -398,7 +425,7 @@ select is((select count(*)::integer from private.staff_access_log
 -- Search is rate limited before anything is read.
 update private.staff_platform_configuration set search_rate_limit_per_minute = 1;
 set local role authenticated;
-select set_config('request.jwt.claim.sub','a1700000-0000-4000-8000-000000000002',true);
+select pg_temp.act_as('a1700000-0000-4000-8000-000000000002');
 select throws_ok($$select public.staff_safe_search('b1700000-0000-4000-8000-000000000001')$$,
   '53400','Search rate limit reached','the operational search is rate limited');
 reset role;
@@ -408,7 +435,7 @@ update private.staff_platform_configuration set search_rate_limit_per_minute = 3
 -- Safe account views
 -- ---------------------------------------------------------------------------
 set local role authenticated;
-select set_config('request.jwt.claim.sub','a1700000-0000-4000-8000-000000000002',true);
+select pg_temp.act_as('a1700000-0000-4000-8000-000000000002');
 select is((public.get_staff_customer_overview('a1700000-0000-4000-8000-000000000006'))->>'displayName',
   'Customer','safe customer context is available');
 select is((public.get_staff_customer_overview('a1700000-0000-4000-8000-000000000006'))->>'contact','{}',
@@ -425,7 +452,7 @@ select ok((select count(*) from private.staff_access_log where surface='customer
 -- Configuration versioning, validation, dual control, rollback
 -- ---------------------------------------------------------------------------
 set local role authenticated;
-select set_config('request.jwt.claim.sub','a1700000-0000-4000-8000-000000000005',true);
+select pg_temp.act_as('a1700000-0000-4000-8000-000000000005');
 select is((public.staff_create_configuration_draft('marketplace_waves','local',
   '{"firstWaveSize":4}'::jsonb,'Widen the first wave for coverage'))->>'version','1',
   'a configuration draft is versioned');
@@ -447,7 +474,7 @@ select set_config('wps017.config_version', (select id::text from private.staff_c
   where domain_key='marketplace_waves' and version=1), false);
 
 set local role authenticated;
-select set_config('request.jwt.claim.sub','a1700000-0000-4000-8000-000000000005',true);
+select pg_temp.act_as('a1700000-0000-4000-8000-000000000005');
 select is((public.staff_submit_configuration(current_setting('wps017.config_version')::uuid))->>'status',
   'pending_approval','a draft can be submitted for approval');
 -- Dual control: the author cannot approve their own version.
@@ -459,14 +486,14 @@ select throws_ok(
 reset role;
 
 set local role authenticated;
-select set_config('request.jwt.claim.sub','a1700000-0000-4000-8000-000000000001',true);
+select pg_temp.act_as('a1700000-0000-4000-8000-000000000001');
 select throws_ok(
   $$select public.staff_activate_configuration(current_setting('wps017.config_version')::uuid,'Reviewed')$$,
   '42501','Staff capability required','approval needs the approval capability, not role administration');
 reset role;
 
 set local role authenticated;
-select set_config('request.jwt.claim.sub','a1700000-0000-4000-8000-000000000003',true);
+select pg_temp.act_as('a1700000-0000-4000-8000-000000000003');
 select is((public.staff_reauthenticate())->>'reauthValid','true','the second approver re-authenticates');
 select is((public.staff_activate_configuration(current_setting('wps017.config_version')::uuid,
   'Reviewed against the coverage evidence'))->>'status','active','a second person can activate the version');
@@ -483,7 +510,7 @@ reset role;
 
 -- Rollback creates a new corrective version instead of editing history.
 set local role authenticated;
-select set_config('request.jwt.claim.sub','a1700000-0000-4000-8000-000000000005',true);
+select pg_temp.act_as('a1700000-0000-4000-8000-000000000005');
 select is((public.staff_rollback_configuration('marketplace_waves','local',1,
   'Reverting to the previous wave size'))->>'version','2','a rollback creates a new version');
 select throws_ok(
@@ -509,13 +536,13 @@ select is((select count(*)::integer from private.staff_configuration_versions
 -- Feature flags
 -- ---------------------------------------------------------------------------
 set local role authenticated;
-select set_config('request.jwt.claim.sub','a1700000-0000-4000-8000-000000000005',true);
+select pg_temp.act_as('a1700000-0000-4000-8000-000000000005');
 select throws_ok($$select public.get_staff_feature_flags()$$,'42501','Staff capability required',
   'a manager cannot manage feature flags');
 reset role;
 
 set local role authenticated;
-select set_config('request.jwt.claim.sub','a1700000-0000-4000-8000-000000000001',true);
+select pg_temp.act_as('a1700000-0000-4000-8000-000000000001');
 select is((public.staff_reauthenticate())->>'reauthValid','true','flag management requires re-authentication');
 select ok(pg_catalog.jsonb_array_length(public.get_staff_feature_flags()) >= 10,'the flag catalog is visible');
 select throws_ok(
@@ -546,7 +573,7 @@ select throws_ok(
   '23514',null,'an enabled flag must name an audience');
 
 set local role authenticated;
-select set_config('request.jwt.claim.sub','a1700000-0000-4000-8000-000000000006',true);
+select pg_temp.act_as('a1700000-0000-4000-8000-000000000006');
 select is((public.get_my_feature_flags('customer'))->>'new_review_ui','true','a customer resolves an enabled flag');
 select is((public.get_my_feature_flags('customer'))->>'online_payments','false','a disabled flag fails closed');
 select is((public.get_my_feature_flags('worker'))->>'new_review_ui','false',
@@ -559,7 +586,7 @@ reset role;
 -- Kill switches operate the domain authority and only ever restrict
 -- ---------------------------------------------------------------------------
 set local role authenticated;
-select set_config('request.jwt.claim.sub','a1700000-0000-4000-8000-000000000001',true);
+select pg_temp.act_as('a1700000-0000-4000-8000-000000000001');
 select is((public.staff_reauthenticate())->>'reauthValid','true','kill switches require re-authentication');
 select throws_ok($$select public.staff_set_kill_switch('not_a_switch',true,'Testing an unknown switch','ks-key-0002')$$,
   '22023','Unknown kill switch','an unknown kill switch is refused');
@@ -572,7 +599,7 @@ select is((select maintenance_mode from private.payment_configuration where id),
   'the switch operates the WPS-015 maintenance control rather than shadowing it');
 
 set local role authenticated;
-select set_config('request.jwt.claim.sub','a1700000-0000-4000-8000-000000000001',true);
+select pg_temp.act_as('a1700000-0000-4000-8000-000000000001');
 select is((public.staff_set_kill_switch('payments_maintenance',true,
   'Provider incident under investigation','ks-key-0005'))->>'duplicate','true','kill switches are idempotent');
 select is((public.staff_set_kill_switch('payments_maintenance',false,
@@ -583,7 +610,7 @@ select is((select maintenance_mode from private.payment_configuration where id),
 select ok((select count(*) from private.staff_kill_switch_events) >= 2,'kill switch changes are audited');
 
 set local role authenticated;
-select set_config('request.jwt.claim.sub','a1700000-0000-4000-8000-000000000006',true);
+select pg_temp.act_as('a1700000-0000-4000-8000-000000000006');
 select ok((public.get_platform_operational_status())->'activeSwitches' is not null,
   'a client can read the restrictive platform status');
 select is((public.get_platform_operational_status())->>'readOnlyMaintenance','false',
@@ -596,7 +623,7 @@ reset role;
 -- Support cases
 -- ---------------------------------------------------------------------------
 set local role authenticated;
-select set_config('request.jwt.claim.sub','a1700000-0000-4000-8000-000000000006',true);
+select pg_temp.act_as('a1700000-0000-4000-8000-000000000006');
 select ok((public.open_support_case('payment_question','Payment did not go through',
   'I tried to pay and nothing happened.','support-key-0001'))->>'caseId' is not null,
   'a customer can open a support case');
@@ -612,7 +639,7 @@ reset role;
 select set_config('wps017.support_case', (select id::text from public.support_tickets limit 1), false);
 
 set local role authenticated;
-select set_config('request.jwt.claim.sub','a1700000-0000-4000-8000-000000000002',true);
+select pg_temp.act_as('a1700000-0000-4000-8000-000000000002');
 select ok((public.staff_add_support_note(current_setting('wps017.support_case')::uuid,
   'Internal: the gateway is disabled in this environment.','support-note-0001'))->>'noteId' is not null,
   'staff can add a private note to a support case');
@@ -631,7 +658,7 @@ select is(pg_catalog.jsonb_array_length((public.get_staff_support_case(
 reset role;
 
 set local role authenticated;
-select set_config('request.jwt.claim.sub','a1700000-0000-4000-8000-000000000006',true);
+select pg_temp.act_as('a1700000-0000-4000-8000-000000000006');
 select is(pg_catalog.jsonb_array_length((public.get_my_support_cases())->0->'messages'),1,
   'a participant never sees the staff-private note');
 select is((select count(*)::integer from public.support_messages where visibility='staff'),0,
@@ -647,7 +674,7 @@ select throws_ok($$update public.support_ticket_events set note='changed'$$,'550
 -- Incidents
 -- ---------------------------------------------------------------------------
 set local role authenticated;
-select set_config('request.jwt.claim.sub','a1700000-0000-4000-8000-000000000005',true);
+select pg_temp.act_as('a1700000-0000-4000-8000-000000000005');
 select ok((public.staff_open_incident('payment_provider_outage','sev2',
   'The sandbox gateway is returning errors for every attempt.',
   array['payments','checkout'],'incident-key-0001'))->>'incidentId' is not null,
@@ -666,7 +693,7 @@ select ok(pg_catalog.jsonb_array_length(public.get_staff_incidents()) >= 1,'open
 reset role;
 
 set local role authenticated;
-select set_config('request.jwt.claim.sub','a1700000-0000-4000-8000-000000000004',true);
+select pg_temp.act_as('a1700000-0000-4000-8000-000000000004');
 select throws_ok($$select public.get_staff_incidents()$$,'42501','Staff capability required',
   'a financial operator cannot read incidents');
 select is((select count(*)::integer from public.operational_incidents),0,'RLS hides incidents without the capability');
@@ -679,7 +706,7 @@ select throws_ok($$update public.operational_incident_events set detail='changed
 -- Audit explorer
 -- ---------------------------------------------------------------------------
 set local role authenticated;
-select set_config('request.jwt.claim.sub','a1700000-0000-4000-8000-000000000001',true);
+select pg_temp.act_as('a1700000-0000-4000-8000-000000000001');
 select ok((public.staff_audit_search('staff_audit',null,null))->'rows' is not null,
   'a security administrator can read the staff audit');
 select ok((public.staff_audit_search('staff_role_history',null,null))->'rows' is not null,
@@ -706,7 +733,7 @@ select throws_ok($$update private.staff_access_log set result_count=0$$,'55000',
 -- Analytics: aggregate only, bounded, timezone aware
 -- ---------------------------------------------------------------------------
 set local role authenticated;
-select set_config('request.jwt.claim.sub','a1700000-0000-4000-8000-000000000005',true);
+select pg_temp.act_as('a1700000-0000-4000-8000-000000000005');
 select is((public.get_staff_analytics('executive'))->>'timezone','Africa/Cairo',
   'analytics report their display timezone');
 select ok((public.get_staff_analytics('marketplace'))->'metrics' is not null,'the marketplace dashboard renders');
@@ -734,7 +761,7 @@ reset role;
 -- Exports
 -- ---------------------------------------------------------------------------
 set local role authenticated;
-select set_config('request.jwt.claim.sub','a1700000-0000-4000-8000-000000000005',true);
+select pg_temp.act_as('a1700000-0000-4000-8000-000000000005');
 select is((public.staff_reauthenticate())->>'reauthValid','true','exports require re-authentication');
 select throws_ok(
   $$select public.staff_request_export('not_a_report',current_date,current_date,'A reason for this export','exp-key-0001')$$,
@@ -756,7 +783,7 @@ reset role;
 select set_config('wps017.export_request', (select id::text from private.staff_export_requests limit 1), false);
 
 set local role authenticated;
-select set_config('request.jwt.claim.sub','a1700000-0000-4000-8000-000000000005',true);
+select pg_temp.act_as('a1700000-0000-4000-8000-000000000005');
 select is((public.staff_export_preview(current_setting('wps017.export_request')::uuid))->>'fileDeliveryAvailable',
   'false','file delivery is explicitly unavailable and fails closed');
 select ok((public.staff_export_preview(current_setting('wps017.export_request')::uuid))->'columns' is not null,
@@ -765,7 +792,7 @@ reset role;
 
 -- Another staff member cannot download someone else's export.
 set local role authenticated;
-select set_config('request.jwt.claim.sub','a1700000-0000-4000-8000-000000000003',true);
+select pg_temp.act_as('a1700000-0000-4000-8000-000000000003');
 select is((public.staff_reauthenticate())->>'reauthValid','true','the second manager re-authenticates');
 select throws_ok(
   $$select public.staff_export_preview(current_setting('wps017.export_request')::uuid)$$,
@@ -797,12 +824,12 @@ select is(private.notification_audience('a1700000-0000-4000-8000-000000000003','
   'staff','a staff event always resolves to the staff audience');
 
 set local role authenticated;
-select set_config('request.jwt.claim.sub','a1700000-0000-4000-8000-000000000003',true);
+select pg_temp.act_as('a1700000-0000-4000-8000-000000000003');
 select ok(pg_catalog.jsonb_array_length(public.get_my_notifications('staff',null,null,20,false,null)) >= 1,
   'a reviewer sees their staff notifications');
 reset role;
 set local role authenticated;
-select set_config('request.jwt.claim.sub','a1700000-0000-4000-8000-000000000006',true);
+select pg_temp.act_as('a1700000-0000-4000-8000-000000000006');
 select throws_ok($$select public.get_my_notifications('staff',null,null,20,false,null)$$,
   '42501','Notification mode is not available','a customer cannot query the staff inbox');
 select is(pg_catalog.jsonb_array_length(public.get_my_notifications('customer',null,null,20,false,null)),0,
@@ -825,7 +852,7 @@ select set_config('wps017.support_grant', (select id::text from public.staff_rol
     and g.revoked_at is null), false);
 
 set local role authenticated;
-select set_config('request.jwt.claim.sub','a1700000-0000-4000-8000-000000000001',true);
+select pg_temp.act_as('a1700000-0000-4000-8000-000000000001');
 select is((public.staff_reauthenticate())->>'reauthValid','true','the administrator re-authenticates to revoke');
 select is((public.staff_revoke_role(current_setting('wps017.support_grant')::uuid,
   'Left the support team'))->>'duplicate','false','a role can be revoked');
@@ -834,7 +861,7 @@ select is((public.staff_revoke_role(current_setting('wps017.support_grant')::uui
 reset role;
 
 set local role authenticated;
-select set_config('request.jwt.claim.sub','a1700000-0000-4000-8000-000000000002',true);
+select pg_temp.act_as('a1700000-0000-4000-8000-000000000002');
 select is((public.get_staff_session())->>'isStaff','false','a revoked staff member loses access immediately');
 select throws_ok($$select public.get_staff_home()$$,'42501','Staff capability required',
   'a revoked staff member cannot open the operational home');
@@ -847,7 +874,7 @@ insert into public.trust_account_state(user_id,trust_level,public_reason)
 values ('a1700000-0000-4000-8000-000000000004','suspended','Account under review')
 on conflict (user_id) do update set trust_level='suspended';
 set local role authenticated;
-select set_config('request.jwt.claim.sub','a1700000-0000-4000-8000-000000000004',true);
+select pg_temp.act_as('a1700000-0000-4000-8000-000000000004');
 select is((public.get_staff_session())->>'isStaff','false','a suspended account is never staff');
 select throws_ok($$select public.get_staff_worker_overview('b1700000-0000-4000-8000-000000000001')$$,
   '42501','Staff capability required','a suspended account loses every capability');
@@ -855,7 +882,7 @@ reset role;
 
 -- A staff member can revoke their own sessions.
 set local role authenticated;
-select set_config('request.jwt.claim.sub','a1700000-0000-4000-8000-000000000005',true);
+select pg_temp.act_as('a1700000-0000-4000-8000-000000000005');
 select ok((public.staff_revoke_my_sessions())->>'revoked' is not null,'a staff member can revoke their sessions');
 select is((public.get_staff_session())->>'reauthValid','false','revoking sessions clears re-authentication');
 reset role;

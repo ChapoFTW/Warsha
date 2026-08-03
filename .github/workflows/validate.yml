@@ -1,0 +1,169 @@
+name: Validate
+
+# Every pull request and every push to a release branch runs the same gates a
+# developer runs locally. Nothing here deploys anything, and no job has access
+# to a production credential.
+
+on:
+  pull_request:
+    branches: [main, 'v*']
+  push:
+    branches: [main, 'v*']
+  workflow_dispatch:
+
+# A superseded run for the same ref is cancelled: a stale green check is worse
+# than no check.
+concurrency:
+  group: validate-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # Validation never points at a real project. Mock mode keeps the static and
+  # build gates independent of any hosted environment.
+  EXPO_PUBLIC_DATA_MODE: mock
+  EXPO_PUBLIC_ADMIN_SURFACE: enabled
+
+jobs:
+  static:
+    name: Static analysis and audits
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The secret scan reads history, so it needs the whole history.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: npm
+
+      # `npm ci` is lockfile-exact and reproducible. `npm install` is not.
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Encoding check
+        run: npm run check:mojibake
+
+      - name: Whitespace check
+        run: git diff --check
+
+      - name: Secret scan
+        run: npm run audit:secrets
+
+      - name: Migration audit
+        run: npm run audit:migrations
+
+      - name: Environment, route, and asset audit
+        run: npm run audit:environment
+
+      - name: Forbidden files
+        run: |
+          set -euo pipefail
+          if git ls-files | grep -E '^\.env($|\.local$|\.production$)'; then
+            echo "An environment file is tracked."; exit 1
+          fi
+          if git ls-files | grep -E '\.(p12|p8|jks|keystore|mobileprovision|pem)$'; then
+            echo "A signing artefact is tracked."; exit 1
+          fi
+          if git ls-files | grep -E '^(dist|web-build|node_modules)/'; then
+            echo "A build output is tracked."; exit 1
+          fi
+          echo "No forbidden file is tracked."
+
+  regressions:
+    name: Regression suites
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: npm
+      - run: npm ci
+
+      # Includes the brand and motto regressions, which assert the approved
+      # identity and the active motto have not drifted.
+      - name: Run every regression suite
+        run: |
+          set -euo pipefail
+          for suite in payments wps008-alignment device-p1 brand provider-card worker-auth \
+                       profile-phone wps009 wps010 wps011 wps012 wps013 wps014 wps015 \
+                       wps016 wps017 wps018 marketplace; do
+            echo "::group::test:$suite"
+            npm run "test:$suite"
+            echo "::endgroup::"
+          done
+
+  database:
+    name: Migrations and pgTAP
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: npm
+      - run: npm ci
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      # A clean reset proves the whole forward-only chain applies from nothing,
+      # which is exactly what a hosted deployment does.
+      - name: Start local Supabase and apply every migration
+        run: supabase db start
+
+      - name: Run every pgTAP suite
+        run: supabase test db
+
+      - name: Stop Supabase
+        if: always()
+        run: supabase stop --no-backup
+
+  build:
+    name: Expo Doctor and exports
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: npm
+      - run: npm ci
+
+      - name: Expo Doctor
+        run: npx expo-doctor
+
+      - name: Android export
+        run: npx expo export --platform android --clear --output-dir dist/ci-android
+
+      - name: iOS export
+        run: npx expo export --platform ios --clear --output-dir dist/ci-ios
+
+      - name: Web export
+        run: npx expo export --platform web --clear --output-dir dist/ci-web
+
+      # A bundle must never contain a credential shape, whatever the source
+      # audit said about the repository.
+      - name: Scan exported bundles for credential shapes
+        run: |
+          set -euo pipefail
+          if grep -rIlE 'sb_secret_|service_role|-----BEGIN [A-Z ]*PRIVATE KEY-----' dist/ci-web dist/ci-android dist/ci-ios; then
+            echo "A credential shape was found in an exported bundle."; exit 1
+          fi
+          echo "No credential shape in any exported bundle."

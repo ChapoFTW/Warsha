@@ -114,6 +114,18 @@ export type StaffSession = {
   reauthValid: boolean;
   platformReady: boolean;
   breakGlassOnly?: boolean;
+  /**
+   * WPS-018 additions. Freshness and assurance are read from the signed access
+   * token by the server; the client only renders what it is told. `reauthValid`
+   * is no longer a client attestation.
+   */
+  launchPhase?: 'pre_beta' | 'private_beta' | 'public_beta' | 'production';
+  assuranceLevel?: string;
+  mfaSatisfied?: boolean;
+  sessionFreshnessSeconds?: number | null;
+  sessionRevoked?: boolean;
+  legacyRpcGraceEnabled?: boolean;
+  dualControlEnabled?: boolean;
 };
 
 export const anonymousStaffSession: StaffSession = {

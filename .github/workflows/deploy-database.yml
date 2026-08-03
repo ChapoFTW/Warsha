@@ -1,0 +1,129 @@
+name: Deploy database
+
+# Schema deployment is deliberately manual, environment-approved, and separate
+# from every other release step. It never runs on a push, never runs from an
+# unreviewed branch, and never touches production without a recorded approval.
+#
+# It does NOT build a mobile app, deploy a web bundle, activate a provider, or
+# activate configuration. Those are separate, sequenced steps in
+# docs/operations/deployment-runbook.md.
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment
+        required: true
+        type: choice
+        options: [staging, production]
+      confirm:
+        description: Type the environment name again to confirm
+        required: true
+        type: string
+      dry_run:
+        description: Compare and dry-run only; apply nothing
+        required: true
+        type: boolean
+        default: true
+
+concurrency:
+  group: deploy-database-${{ inputs.environment }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    name: Guard
+    runs-on: ubuntu-latest
+    steps:
+      - name: Confirmation must match the target
+        run: |
+          set -euo pipefail
+          if [ "${{ inputs.confirm }}" != "${{ inputs.environment }}" ]; then
+            echo "Confirmation did not match the target environment."; exit 1
+          fi
+
+      # Only a reviewed default branch may reach a real environment. This is a
+      # second line of defence behind branch protection, not a replacement.
+      - name: Refuse an unreviewed ref
+        run: |
+          set -euo pipefail
+          case "${{ github.ref }}" in
+            refs/heads/main|refs/heads/v*) echo "Ref accepted: ${{ github.ref }}" ;;
+            *) echo "Database deployment is only permitted from a protected branch."; exit 1 ;;
+          esac
+
+  deploy:
+    name: ${{ inputs.dry_run && 'Dry run' || 'Apply' }} on ${{ inputs.environment }}
+    needs: guard
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # The GitHub environment supplies the credentials and, for production, the
+    # required reviewers. Nothing here is stored in the workflow file.
+    environment: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link the project
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: supabase link --project-ref "${{ vars.SUPABASE_PROJECT_REF }}"
+
+      # Always compare before changing anything, and always print the plan.
+      - name: Compare local and remote migration ledgers
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: supabase migration list --linked
+
+      - name: Dry run
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: supabase db push --linked --dry-run
+
+      # A backup is taken immediately before any schema change. A deployment
+      # without a verified restore point is not a deployment, it is a gamble.
+      - name: Confirm a restore point exists
+        if: ${{ !inputs.dry_run }}
+        run: |
+          set -euo pipefail
+          echo "A pre-migration backup must be confirmed in the Supabase dashboard"
+          echo "and recorded in docs/operations/backup-runbook.md before proceeding."
+          if [ -z "${{ vars.PRE_MIGRATION_BACKUP_REF }}" ]; then
+            echo "PRE_MIGRATION_BACKUP_REF is not set for this environment."; exit 1
+          fi
+          echo "Restore point recorded: ${{ vars.PRE_MIGRATION_BACKUP_REF }}"
+
+      - name: Apply
+        if: ${{ !inputs.dry_run }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: supabase db push --linked
+
+      # "The migration applied without error" is not success. The structural
+      # guarantees the specifications claim are re-checked against the live
+      # database before the deployment is called done.
+      - name: Post-migration verification
+        if: ${{ !inputs.dry_run }}
+        run: |
+          set -euo pipefail
+          echo "Run public.verify_platform_release() as a staff member holding"
+          echo "view_audit_logs and record the result in the deployment log."
+          echo "A non-zero failure count blocks sign-off."
+
+      - name: Record the deployment
+        if: always()
+        run: |
+          echo "environment=${{ inputs.environment }}"
+          echo "dry_run=${{ inputs.dry_run }}"
+          echo "ref=${{ github.sha }}"
+          echo "actor=${{ github.actor }}"
