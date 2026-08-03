@@ -115,6 +115,7 @@ export default function RootLayout() {
                                         <Stack.Screen name="provider-earnings" />
                                         <Stack.Screen name="provider-job" />
                                         <Stack.Screen name="reset-password" />
+                                        <Stack.Screen name="admin" />
                                       </Stack>
                                       <NotificationBanner />
                                       <ProviderModeOverlay />

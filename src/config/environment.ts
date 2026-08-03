@@ -12,6 +12,20 @@ export const environment = {
 export const supabaseConfigurationMissing = environment.dataMode === 'supabase'
   && (!environment.supabaseUrl || !environment.supabaseAnonKey);
 
+/**
+ * WPS-017: the staff operations surface is inert unless a build explicitly asks
+ * for it — the guard refuses to open it and the repository refuses every call.
+ *
+ * Be precise about what this does not do: Expo Router's file-based routing
+ * bundles every route module regardless, so the operations code is still present
+ * in a build that leaves this unset. It contains no secret and grants no access.
+ *
+ * This is defence in depth and never the authorization control: every
+ * operational action is capability-checked on the server, whatever the client
+ * believes.
+ */
+export const adminSurfaceEnabled = process.env.EXPO_PUBLIC_ADMIN_SURFACE === 'enabled';
+
 export function classifySupabaseTarget(mode: DataMode, url?: string): SupabaseTarget {
   if (mode === 'mock') return 'mock';
   if (!url) return 'unconfigured';

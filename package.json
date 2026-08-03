@@ -30,7 +30,8 @@
     "check:mojibake": "node ./scripts/check-mojibake.js",
     "db:test": "supabase test db",
     "auth:cleanup-seed": "node ./scripts/cleanup-malformed-seed-users.mjs",
-    "auth:create-dev-user": "node ./scripts/create-dev-auth-user.mjs"
+    "auth:create-dev-user": "node ./scripts/create-dev-auth-user.mjs",
+    "test:wps017": "node --no-warnings --experimental-strip-types scripts/wps017-operations-admin.test.mts"
   },
   "dependencies": {
     "@expo-google-fonts/cairo": "^0.4.2",
