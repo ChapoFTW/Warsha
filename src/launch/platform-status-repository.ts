@@ -6,6 +6,10 @@ import {
   unknownPlatformStatus,
 } from './launch-types';
 
+// Re-exported so callers reach it from the repository they already import.
+// The implementation lives in the pure module so it stays testable.
+export { surfaceIsRestricted } from './launch-types';
+
 /**
  * WPS-018 platform status.
  *
@@ -38,8 +42,3 @@ export const platformStatusRepository = {
     }
   },
 };
-
-/** True when a named surface has been restricted by an active kill switch. */
-export function surfaceIsRestricted(status: PlatformStatus, switchKey: string): boolean {
-  return status.readOnlyMaintenance || status.activeSwitches.includes(switchKey);
-}

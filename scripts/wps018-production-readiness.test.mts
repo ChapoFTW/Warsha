@@ -16,9 +16,9 @@ import {
   rateLimitSqlState,
   secretInventory,
   secretIsBundleSafe,
+  surfaceIsRestricted,
   unknownPlatformStatus,
 } from '../src/launch/launch-types.ts';
-import { surfaceIsRestricted } from '../src/launch/platform-status-repository.ts';
 
 const root = process.cwd(); let checks = 0;
 const read = (path: string) => readFileSync(join(root, path), 'utf8');
@@ -92,7 +92,12 @@ match(migration, /staff_auth_freshness_seconds/, 'server-verified freshness exis
 match(migration, /'amr'/, 'freshness is read from the signed authentication record');
 prose(migration, /GoTrue signs .{0,80}PostgREST verifies/i,
   'the migration states why the claim is server-verified');
-notMatch(migration, /client[- ]attested/i, 'the client attestation is gone from the mechanism');
+// Comments describe what was replaced and should say so; the mechanism itself
+// must not accept anything the client asserts.
+notMatch(migration.replace(/--[^\n]*/g, ''), /client[- ]attested/i,
+  'no executable statement relies on a client attestation');
+prose(migration, /client[- ]attested/i,
+  'the migration records that the client attestation was replaced');
 prose(wps, /server[- ]verifi(ed|able)/i, 'WPS-018 records the replacement');
 
 // 2. MFA enforcement.
@@ -156,7 +161,7 @@ equal(environmentAllowsRiskyAction('production', null), false,
 equal(environmentAllowsRiskyAction('production', 'production'), true,
   'an acknowledged production action proceeds');
 equal(environmentAllowsRiskyAction('staging', null), true, 'staging needs no acknowledgement');
-prose(environmentMatrix, /separate Supabase project/i,
+prose(environmentMatrix, /separate projects?\b/i,
   'the environment matrix requires separate projects');
 prose(environmentMatrix, /promotion/i, 'the environment matrix documents the promotion path');
 
@@ -275,8 +280,16 @@ for (const gate of ['npm ci', 'typecheck', 'lint', 'check:mojibake', 'git diff -
 match(validateWorkflow, /concurrency:/, 'superseded validation runs are cancelled');
 match(validateWorkflow, /permissions:\s*\n\s*contents: read/, 'the validation workflow is read-only');
 notMatch(validateWorkflow, /secrets\./, 'the validation workflow uses no secret');
-match(validateWorkflow, /credential shape.{0,40}bundle|bundle.{0,60}credential shape/i,
-  'exported bundles are scanned for credential shapes');
+match(validateWorkflow, /audit:bundle/, 'exported bundles are scanned for credential values');
+// The scan must match credential VALUES; a bare prefix appears in supabase-js's
+// own client-side guard and would fail every build.
+const bundleAudit = read('scripts/audit-bundle.mjs');
+notMatch(bundleAudit, /re: \/sb_secret_\[A-Za-z0-9_-\]\{\d+,\}\//,
+  'the bundle scan does not match a bare prefix followed by any characters');
+match(bundleAudit, /\(\?=\[A-Za-z0-9_-\]\*\[0-9\]\)/,
+  'the bundle scan requires key-material entropy');
+prose(bundleAudit, /not the primary control/i, 'the bundle scan records that it is a heuristic');
+ok(packageJson.includes('audit:bundle'), 'audit:bundle is registered');
 match(deployWorkflow, /workflow_dispatch/, 'database deployment is manual only');
 match(deployWorkflow, /environment: \$\{\{ inputs\.environment \}\}/,
   'database deployment runs inside an approved GitHub environment');

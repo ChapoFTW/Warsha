@@ -158,12 +158,9 @@ jobs:
       - name: Web export
         run: npx expo export --platform web --clear --output-dir dist/ci-web
 
-      # A bundle must never contain a credential shape, whatever the source
-      # audit said about the repository.
-      - name: Scan exported bundles for credential shapes
-        run: |
-          set -euo pipefail
-          if grep -rIlE 'sb_secret_|service_role|-----BEGIN [A-Z ]*PRIVATE KEY-----' dist/ci-web dist/ci-android dist/ci-ios; then
-            echo "A credential shape was found in an exported bundle."; exit 1
-          fi
-          echo "No credential shape in any exported bundle."
+      # A shipped artefact must never carry a credential, whatever the source
+      # audit said about the repository: a build can inject one from the
+      # environment. This matches credential VALUES, not vocabulary — a bare
+      # `sb_secret_` appears in supabase-js's own client-side guard.
+      - name: Scan exported bundles for credential values
+        run: npm run audit:bundle -- dist/ci-web dist/ci-android dist/ci-ios

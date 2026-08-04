@@ -42,6 +42,17 @@ export const unknownPlatformStatus: PlatformStatus = {
   generatedAt: '',
 };
 
+/**
+ * True when a named surface has been restricted by an active kill switch, or
+ * while the platform status could not be read at all.
+ *
+ * This lives in the pure module rather than the repository so it can be tested
+ * without an Expo or Supabase runtime, matching every other Warsha domain.
+ */
+export function surfaceIsRestricted(status: PlatformStatus, switchKey: string): boolean {
+  return status.readOnlyMaintenance || status.activeSwitches.includes(switchKey);
+}
+
 /* -------------------------------------------------------------------------
  * Feature activation matrix
  * ---------------------------------------------------------------------- */
