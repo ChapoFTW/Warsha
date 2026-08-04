@@ -6,7 +6,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BrandLoadingMark, BrandLockup } from '@/components/warsha/BrandMark';
 import { BrandTextField } from '@/components/warsha/BrandUI';
 import { AppText } from '@/components/warsha/Typography';
-import { colors, radii, spacing, typography } from '@/constants/theme';
+import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
+import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
 import { useAuth } from '@/src/auth/auth-context';
 import { authMessageKey } from '@/src/auth/auth-errors';
 import { useAuthText } from '@/src/auth/auth-translations';
@@ -23,15 +24,19 @@ import { useLocalization } from '@/src/i18n/localization';
 import { useProviderText } from '@/src/i18n/provider-translations';
 import { useProviderFoundation } from '@/src/providers/provider-context';
 import { supabaseCustomerProfileRepository } from '@/src/repositories/supabase-user-repositories';
+import { useDiscoveryText } from '@/src/discovery/discovery-translations';
 import { useSupportText } from '@/src/support/support-translations';
 
 type AuthPath = 'customer' | 'worker';
 
 export default function Profile() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   const { t, isRTL, language } = useLocalization();
   const at = useAuthText();
   const pt = useProviderText();
   const st = useSupportText();
+  const dt = useDiscoveryText();
   const auth = useAuth();
   const provider = useProviderFoundation();
   const [name, setName] = useState('');
@@ -267,6 +272,8 @@ export default function Profile() {
       {otpSent ? <Pressable accessibilityRole="button" accessibilityLabel={at('resendOtp')} disabled={busy} onPress={() => void sendPhoneEnrollmentOtp()} style={styles.textButton}><AppText style={styles.link}>{at('resendOtp')}</AppText></Pressable> : null}
     </View> : <Pressable disabled={provider.saving} onPress={() => void openProvider()} style={styles.primary}>{provider.saving ? <BrandLoadingMark size={20} color={colors.background}/> : <AppText style={styles.dark}>{provider.profile ? pt('providerMode') : pt('become')}</AppText>}</Pressable>}
     <Pressable onPress={() => router.push('/favourites')} style={styles.button}><AppText>{t('favourites')}</AppText></Pressable>
+    <Pressable accessibilityRole="button" accessibilityLabel={dt.text('recentlyViewed')} onPress={() => router.push('/recently-viewed')} style={styles.button}><AppText>{dt.text('recentlyViewed')}</AppText></Pressable>
+    <Pressable accessibilityRole="button" accessibilityLabel={dt.text('appearance')} onPress={() => router.push('/appearance')} style={styles.button}><AppText>{dt.text('appearance')}</AppText></Pressable>
     <Pressable accessibilityRole="button" accessibilityLabel={st.text('helpCenter')} onPress={() => router.push('/help')} style={styles.button}><AppText>{st.text('helpCenter')}</AppText></Pressable>
     <Pressable accessibilityRole="button" accessibilityLabel={st.text('myCases')} onPress={() => router.push('/support')} style={styles.button}><AppText>{st.text('myCases')}</AppText></Pressable>
     {auth.mode === 'supabase' ? <Pressable onPress={() => void auth.signOut()} style={styles.button}><AppText>{t('signOut')}</AppText></Pressable> : null}
@@ -304,6 +311,8 @@ export default function Profile() {
   </Page>;
 }
 
-function Page({ children }: { children: React.ReactNode }) { return <SafeAreaView style={styles.safe}><ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.page}><BrandLockup size={46}/>{children}</ScrollView></SafeAreaView>; }
-function Field({ label, rtl, ...props }: { label: string; rtl: boolean } & React.ComponentProps<typeof TextInput>) { return <View style={styles.fieldWidth}><BrandTextField {...props} label={label} style={{textAlign:rtl?'right':'left'}}/></View>; }
-const styles = StyleSheet.create({ safe: { flex: 1, backgroundColor: colors.background }, page: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl, gap: spacing.md }, title: { fontSize: 28, fontWeight: typography.bold, textAlign: 'center' }, muted: { color: colors.textMuted, textAlign: 'center' }, hint: { width: '100%', maxWidth: 520, color: colors.textMuted, fontSize: 12 }, fieldWidth: { width: '100%', maxWidth: 520 }, input: { width: '100%', maxWidth: 520, height: 54, borderWidth: 1, borderColor: colors.border, borderRadius: radii.lg, backgroundColor: colors.surface, color: colors.white, paddingHorizontal: spacing.lg }, button: { minWidth: 220, minHeight: 50, borderWidth: 1, borderColor: colors.border, borderRadius: radii.sm, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.lg }, primary: { minWidth: 220, minHeight: 52, borderRadius: radii.sm, backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.lg }, dark: { color: colors.background, fontWeight: typography.bold }, error: { color: colors.error, textAlign: 'center' }, notice: { color: colors.success, textAlign: 'center' }, panelTitle: { fontSize: 18, fontWeight: typography.semibold, textAlign: 'center' }, textButton: { minHeight: 44, justifyContent: 'center', paddingHorizontal: spacing.md }, link: { color: colors.textSecondary, textDecorationLine: 'underline' }, switcher: { width: '100%', maxWidth: 520, flexDirection: 'row', borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, padding: 4 }, reverse: { flexDirection: 'row-reverse' }, switchOption: { flex: 1, minHeight: 46, alignItems: 'center', justifyContent: 'center', borderRadius: radii.sm }, switchActive: { backgroundColor: colors.white }, panel: { width: '100%', maxWidth: 520, alignItems: 'center', gap: spacing.md, borderWidth: 1,borderColor: colors.border,borderRadius:radii.md,padding:spacing.lg } });
+function Page({ children }: { children: React.ReactNode }) {
+  const styles = useThemedStyles(makeStyles); return <SafeAreaView style={styles.safe}><ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.page}><BrandLockup size={46}/>{children}</ScrollView></SafeAreaView>; }
+function Field({ label, rtl, ...props }: { label: string; rtl: boolean } & React.ComponentProps<typeof TextInput>) {
+  const styles = useThemedStyles(makeStyles); return <View style={styles.fieldWidth}><BrandTextField {...props} label={label} style={{textAlign:rtl?'right':'left'}}/></View>; }
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({ safe: { flex: 1, backgroundColor: colors.background }, page: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl, gap: spacing.md }, title: { fontSize: 28, fontWeight: typography.bold, textAlign: 'center' }, muted: { color: colors.textMuted, textAlign: 'center' }, hint: { width: '100%', maxWidth: 520, color: colors.textMuted, fontSize: 12 }, fieldWidth: { width: '100%', maxWidth: 520 }, input: { width: '100%', maxWidth: 520, height: 54, borderWidth: 1, borderColor: colors.border, borderRadius: radii.lg, backgroundColor: colors.surface, color: colors.white, paddingHorizontal: spacing.lg }, button: { minWidth: 220, minHeight: 50, borderWidth: 1, borderColor: colors.border, borderRadius: radii.sm, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.lg }, primary: { minWidth: 220, minHeight: 52, borderRadius: radii.sm, backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.lg }, dark: { color: colors.background, fontWeight: typography.bold }, error: { color: colors.error, textAlign: 'center' }, notice: { color: colors.success, textAlign: 'center' }, panelTitle: { fontSize: 18, fontWeight: typography.semibold, textAlign: 'center' }, textButton: { minHeight: 44, justifyContent: 'center', paddingHorizontal: spacing.md }, link: { color: colors.textSecondary, textDecorationLine: 'underline' }, switcher: { width: '100%', maxWidth: 520, flexDirection: 'row', borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, padding: 4 }, reverse: { flexDirection: 'row-reverse' }, switchOption: { flex: 1, minHeight: 46, alignItems: 'center', justifyContent: 'center', borderRadius: radii.sm }, switchActive: { backgroundColor: colors.white }, panel: { width: '100%', maxWidth: 520, alignItems: 'center', gap: spacing.md, borderWidth: 1,borderColor: colors.border,borderRadius:radii.md,padding:spacing.lg } });

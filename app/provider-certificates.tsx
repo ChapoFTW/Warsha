@@ -8,7 +8,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BrandLoadingMark } from '@/components/warsha/BrandMark';
 import { ScreenHeader } from '@/components/warsha/ScreenHeader';
 import { AppText } from '@/components/warsha/Typography';
-import { colors, radii, spacing, typography } from '@/constants/theme';
+import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
+import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
 import { environment } from '@/src/config/environment';
 import { useLocalization } from '@/src/i18n/localization';
 import { useWorkerProfileText, type WorkerProfileCopyKey } from '@/src/i18n/worker-profile-translations';
@@ -22,6 +23,8 @@ const typeCopy: Record<ProviderCertificateType, WorkerProfileCopyKey> = {
 };
 
 export default function ProviderCertificatesScreen() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   const { isRTL } = useLocalization();
   const wt = useWorkerProfileText();
   const state = useProviderFoundation();
@@ -98,11 +101,13 @@ export default function ProviderCertificatesScreen() {
 }
 
 function Field({ label, ...props }: { label: string } & React.ComponentProps<typeof TextInput>) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   const { isRTL } = useLocalization();
   return <TextInput {...props} accessibilityLabel={label} placeholder={label} placeholderTextColor={colors.textMuted} style={[styles.input, { textAlign: isRTL ? 'right' : 'left' }]} />;
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background, paddingTop: spacing.sm },
   content: { width: '100%', maxWidth: 720, alignSelf: 'center', padding: spacing.lg, paddingBottom: spacing.xxxl, gap: spacing.lg },
   notice: { flexDirection: 'row', gap: spacing.md, padding: spacing.lg, borderRadius: radii.xl, backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border },

@@ -4,7 +4,8 @@ import { StyleSheet, View } from 'react-native';
 import { AdminRow, AdminSection, AdminShell } from '@/components/warsha/AdminShell';
 import { BrandButton, BrandLoadingState, BrandTextField } from '@/components/warsha/BrandUI';
 import { AppText } from '@/components/warsha/Typography';
-import { colors, spacing, typography } from '@/constants/theme';
+import { spacing, typography, type ThemeColors } from '@/constants/theme';
+import { useThemedStyles } from '@/src/appearance/appearance-context';
 import { useAdmin } from '@/src/admin/admin-context';
 import { adminRepository } from '@/src/admin/admin-repository';
 import type { ConfigurationDomain, ConfigurationVersion, FeatureFlag, KillSwitch } from '@/src/admin/admin-types';
@@ -18,6 +19,7 @@ import type { ConfigurationDomain, ConfigurationVersion, FeatureFlag, KillSwitch
  * version. Nothing here stores a secret, and a kill switch only ever restricts.
  */
 export default function AdminConfigurationScreen() {
+  const styles = useThemedStyles(makeStyles);
   const { text, can, mayAct } = useAdmin();
   const [domains, setDomains] = useState<ConfigurationDomain[]>([]);
   const [versions, setVersions] = useState<ConfigurationVersion[]>([]);
@@ -164,7 +166,7 @@ function statusLabel(status: ConfigurationVersion['status'], text: ReturnType<ty
   }
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   error: { ...typography.bodySmall, color: colors.error },
   note: { ...typography.caption, color: colors.textMuted, marginTop: spacing.xs },
   actions: { gap: spacing.sm, marginTop: spacing.sm },

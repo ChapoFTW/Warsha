@@ -7,13 +7,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BrandButton, BrandCard, BrandLoadingState, EmptyState } from '@/components/warsha/BrandUI';
 import { ScreenHeader } from '@/components/warsha/ScreenHeader';
 import { AppText } from '@/components/warsha/Typography';
-import { colors, radii, spacing, typography } from '@/constants/theme';
+import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
+import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
 import { useSupport } from '@/src/support/support-context';
 import { supportRepository } from '@/src/support/support-repository';
 import { useSupportText } from '@/src/support/support-translations';
 import type { HelpArticle } from '@/src/support/support-types';
 
 export default function HelpArticleScreen() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const support = useSupport();
   const copy = useSupportText();
@@ -123,7 +126,7 @@ export default function HelpArticleScreen() {
   </SafeAreaView>;
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   content: { padding: spacing.lg, paddingBottom: spacing.xxxl, gap: spacing.lg, maxWidth: 760, width: '100%', alignSelf: 'center' },
   reverse: { flexDirection: 'row-reverse' },

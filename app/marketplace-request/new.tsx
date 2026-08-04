@@ -6,7 +6,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScreenHeader } from '@/components/warsha/ScreenHeader';
 import { BrandLoadingMark as ActivityIndicator } from '@/components/warsha/BrandMark';
 import { AppText } from '@/components/warsha/Typography';
-import { colors,radii,spacing,typography } from '@/constants/theme';
+import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
+import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
 import { useAddresses } from '@/src/addresses/address-context';
 import { useAuth } from '@/src/auth/auth-context';
 import { useMarketplaceData } from '@/src/data/marketplace-context';
@@ -17,6 +18,8 @@ import { useMarketplaceText } from '@/src/marketplace-intelligence/marketplace-t
 import type { MarketplacePaymentCompatibility,MarketplaceRequestInput,MarketplaceScheduleKind } from '@/src/marketplace-intelligence/marketplace-types';
 
 export default function NewMarketplaceRequest(){
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   const params=useLocalSearchParams<{providerId?:string;serviceId?:string;categoryId?:string;flow?:'get_quotes'|'emergency'}>();
   const mt=useMarketplaceText();const{isRTL}=useLocalization();const{user,mode}=useAuth();const{addresses}=useAddresses();const{categories,getProvider}=useMarketplaceData();const market=useMarketplaceIntelligence();
   const provider=params.providerId?getProvider(params.providerId):undefined;
@@ -35,6 +38,8 @@ export default function NewMarketplaceRequest(){
     <Pressable accessibilityRole="button" accessibilityLabel={mt('sendRequest')} disabled={!valid||saving} onPress={()=>void submit()} style={[styles.primary,(!valid||saving)&&styles.disabled]}>{saving?<ActivityIndicator color={colors.background}/>:<><MaterialIcons name="send" size={21} color={colors.background}/><AppText style={styles.primaryText}>{params.flow==='emergency'?mt('approveSurcharge'):mt('sendRequest')}</AppText></>}</Pressable>
   </ScrollView></SafeAreaView>;
 }
-function Chip({label,selected,onPress}:{label:string;selected:boolean;onPress:()=>void}){return <Pressable accessibilityRole="radio" accessibilityState={{selected}} onPress={onPress} style={[styles.chip,selected&&styles.selected]}><AppText style={styles.chipText}>{label}</AppText></Pressable>}
-function Center({children}:{children:React.ReactNode}){return <View style={styles.center}>{children}</View>}
-const styles=StyleSheet.create({safe:{flex:1,backgroundColor:colors.background},content:{padding:spacing.lg,paddingBottom:spacing.xxxl,gap:spacing.md,maxWidth:720,width:'100%',alignSelf:'center'},rtl:{direction:'rtl'},center:{flex:1,alignItems:'center',justifyContent:'center',gap:spacing.md,padding:spacing.xl},centerText:{textAlign:'center',color:colors.textSecondary},summary:{flexDirection:'row',alignItems:'center',gap:spacing.md,padding:spacing.lg,borderRadius:radii.lg,backgroundColor:colors.surface,borderWidth:1,borderColor:colors.border},strong:{fontWeight:typography.bold,fontSize:17},muted:{color:colors.textMuted},label:{fontWeight:typography.semibold,fontSize:16,marginTop:spacing.sm},wrap:{flexDirection:'row',flexWrap:'wrap',gap:spacing.sm},chip:{minHeight:46,paddingHorizontal:spacing.md,borderRadius:radii.pill,borderWidth:1,borderColor:colors.border,alignItems:'center',justifyContent:'center'},selected:{backgroundColor:colors.surfaceSoft,borderColor:colors.white},chipText:{textTransform:'capitalize'},input:{minHeight:54,borderWidth:1,borderColor:colors.border,borderRadius:radii.md,backgroundColor:colors.surface,color:colors.white,padding:spacing.md},description:{minHeight:130,textAlignVertical:'top'},primary:{minHeight:58,marginTop:spacing.md,backgroundColor:colors.white,borderRadius:radii.lg,flexDirection:'row',gap:spacing.sm,alignItems:'center',justifyContent:'center'},primaryText:{color:colors.background,fontWeight:typography.bold},disabled:{opacity:.45}});
+function Chip({label,selected,onPress}:{label:string;selected:boolean;onPress:()=>void}){
+  const styles = useThemedStyles(makeStyles);return <Pressable accessibilityRole="radio" accessibilityState={{selected}} onPress={onPress} style={[styles.chip,selected&&styles.selected]}><AppText style={styles.chipText}>{label}</AppText></Pressable>}
+function Center({children}:{children:React.ReactNode}){
+  const styles = useThemedStyles(makeStyles);return <View style={styles.center}>{children}</View>}
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({safe:{flex:1,backgroundColor:colors.background},content:{padding:spacing.lg,paddingBottom:spacing.xxxl,gap:spacing.md,maxWidth:720,width:'100%',alignSelf:'center'},rtl:{direction:'rtl'},center:{flex:1,alignItems:'center',justifyContent:'center',gap:spacing.md,padding:spacing.xl},centerText:{textAlign:'center',color:colors.textSecondary},summary:{flexDirection:'row',alignItems:'center',gap:spacing.md,padding:spacing.lg,borderRadius:radii.lg,backgroundColor:colors.surface,borderWidth:1,borderColor:colors.border},strong:{fontWeight:typography.bold,fontSize:17},muted:{color:colors.textMuted},label:{fontWeight:typography.semibold,fontSize:16,marginTop:spacing.sm},wrap:{flexDirection:'row',flexWrap:'wrap',gap:spacing.sm},chip:{minHeight:46,paddingHorizontal:spacing.md,borderRadius:radii.pill,borderWidth:1,borderColor:colors.border,alignItems:'center',justifyContent:'center'},selected:{backgroundColor:colors.surfaceSoft,borderColor:colors.white},chipText:{textTransform:'capitalize'},input:{minHeight:54,borderWidth:1,borderColor:colors.border,borderRadius:radii.md,backgroundColor:colors.surface,color:colors.white,padding:spacing.md},description:{minHeight:130,textAlignVertical:'top'},primary:{minHeight:58,marginTop:spacing.md,backgroundColor:colors.white,borderRadius:radii.lg,flexDirection:'row',gap:spacing.sm,alignItems:'center',justifyContent:'center'},primaryText:{color:colors.background,fontWeight:typography.bold},disabled:{opacity:.45}});

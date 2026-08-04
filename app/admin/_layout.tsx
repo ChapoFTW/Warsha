@@ -4,7 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BrandCard, BrandLoadingState } from '@/components/warsha/BrandUI';
 import { AppText } from '@/components/warsha/Typography';
-import { colors, spacing, typography } from '@/constants/theme';
+import { spacing, typography, type ThemeColors } from '@/constants/theme';
+import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
 import { AdminProvider, useAdmin } from '@/src/admin/admin-context';
 
 /**
@@ -22,6 +23,8 @@ import { AdminProvider, useAdmin } from '@/src/admin/admin-context';
  * usability decision, not a security boundary.
  */
 function AdminGate() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   const { session, loading, surfaceEnabled, text } = useAdmin();
 
   if (!surfaceEnabled) return <AdminNotice title={text('surfaceDisabled')} />;
@@ -54,6 +57,7 @@ function AdminGate() {
 }
 
 function AdminNotice({ title, detail }: { title: string; detail?: string }) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <View style={styles.centre}>
@@ -74,7 +78,7 @@ export default function AdminLayout() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   centre: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl },
   card: { maxWidth: 480, gap: spacing.sm },

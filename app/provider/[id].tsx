@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
   heroFallback: { alignItems: "center", justifyContent: "center" },
   shade: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(8,8,8,.28)",
+    backgroundColor: colors.imageScrim,
   },
   circle: {
     position: "absolute",
@@ -271,7 +271,7 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 14,
-    backgroundColor: "rgba(8,8,8,.65)",
+    backgroundColor: colors.overlay,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
@@ -404,7 +404,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     padding: spacing.md,
     paddingHorizontal: spacing.lg,
-    backgroundColor: "rgba(5,5,5,.97)",
+    backgroundColor: colors.canvasElevated,
     borderTopWidth: 1,
     borderTopColor: colors.border,
   },

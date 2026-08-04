@@ -16,7 +16,8 @@ import { BrandLoadingMark as ActivityIndicator } from '@/components/warsha/Brand
 
 import { ScreenHeader } from '@/components/warsha/ScreenHeader';
 import { AppText } from '@/components/warsha/Typography';
-import { colors, radii, spacing, typography } from '@/constants/theme';
+import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
+import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
 import { useLocalization } from '@/src/i18n/localization';
 import { usePaymentText } from '@/src/i18n/payment-translations';
 import { normalizeEgyptianPhone } from '@/src/auth/phone-auth';
@@ -31,6 +32,8 @@ const destinationTypes: PayoutDestinationType[] = [
 ];
 
 export default function ProviderEarningsScreen() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   const { language, isRTL, t } = useLocalization();
   const pt = usePaymentText();
   const payments = usePayments();
@@ -321,10 +324,12 @@ export default function ProviderEarningsScreen() {
 }
 
 function Card({ children }: { children: React.ReactNode }) {
+  const styles = useThemedStyles(makeStyles);
   return <View style={styles.card}>{children}</View>;
 }
 
 function Metric({ label, value }: { label: string; value: string }) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.metric}>
       <AppText style={styles.muted}>{label}</AppText>
@@ -334,6 +339,8 @@ function Metric({ label, value }: { label: string; value: string }) {
 }
 
 function Field({ label, ...props }: { label: string } & React.ComponentProps<typeof TextInput>) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   const { isRTL } = useLocalization();
   return (
     <View style={styles.field}>
@@ -360,7 +367,7 @@ function earningStatus(status: string, pt: ReturnType<typeof usePaymentText>) {
   return pt('pending');
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   flex: { flex: 1 },
   rtl: { direction: 'rtl' },

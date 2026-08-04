@@ -8,7 +8,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppText } from '@/components/warsha/Typography';
 import { EmptyState } from '@/components/warsha/BrandUI';
-import { colors, radii, spacing, typography } from '@/constants/theme';
+import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
+import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
 import { useAuth } from '@/src/auth/auth-context';
 import { useBookings } from '@/src/bookings/booking-context';
 import { bookingStatusTranslationKeys, terminalStatuses, type Booking } from '@/src/bookings/booking-types';
@@ -20,6 +21,7 @@ import { formatBookingDateTime, formatNumber, localeFor } from '@/src/utils/date
 type Tab = 'upcoming' | 'past' | 'cancelled';
 
 export default function Orders() {
+  const styles = useThemedStyles(makeStyles);
   const { bookings, loading, error, reload } = useBookings();
   const { mode, user } = useAuth();
   const { t } = useLocalization();
@@ -142,6 +144,8 @@ export default function Orders() {
 }
 
 function OrderCard({ booking, reviewed, reviewStateLoading, canReview }: { booking: Booking; reviewed: boolean; reviewStateLoading: boolean; canReview: boolean }) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   const { t, isRTL, language } = useLocalization();
   const { getProvider } = useMarketplaceData();
   const provider = getProvider(booking.providerId);
@@ -195,7 +199,7 @@ function OrderCard({ booking, reviewed, reviewStateLoading, canReview }: { booki
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   header: { padding: spacing.lg, paddingBottom: spacing.xl, gap: spacing.xl },
   title: { fontSize: 28, fontWeight: typography.bold },

@@ -4,7 +4,8 @@ import { StyleSheet, View } from 'react-native';
 import { AdminRow, AdminSection, AdminShell } from '@/components/warsha/AdminShell';
 import { BrandButton, BrandLoadingState, BrandTextField, EmptyState } from '@/components/warsha/BrandUI';
 import { AppText } from '@/components/warsha/Typography';
-import { colors, spacing, typography } from '@/constants/theme';
+import { spacing, typography, type ThemeColors } from '@/constants/theme';
+import { useThemedStyles } from '@/src/appearance/appearance-context';
 import { useAdmin } from '@/src/admin/admin-context';
 import { environment } from '@/src/config/environment';
 import { supportRepository } from '@/src/support/support-repository';
@@ -23,6 +24,7 @@ import type { StaffSupportCase, StaffSupportQueue, StaffSupportToolkit } from '@
  * action below is refused by the server unless the caller holds the capability.
  */
 export default function AdminSupportScreen() {
+  const styles = useThemedStyles(makeStyles);
   const { can, text: adminText } = useAdmin();
   const copy = useSupportText();
   const [queue, setQueue] = useState<StaffSupportQueue | null>(null);
@@ -137,6 +139,7 @@ function CaseCard({
   onAssign: () => void;
   onResolve: (reasonKey: string) => void;
 }) {
+  const styles = useThemedStyles(makeStyles);
   const copy = useSupportText();
   return <AdminSection title={item.subject}>
     <AdminRow label={copy.text('category')} value={copy.category(item.category)} />
@@ -178,7 +181,7 @@ function CaseCard({
   </AdminSection>;
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   error: { color: colors.error, fontSize: 13, fontWeight: typography.medium, marginBottom: spacing.md },
   actions: { gap: spacing.sm, marginTop: spacing.sm },
 });

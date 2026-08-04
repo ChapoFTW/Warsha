@@ -4,7 +4,8 @@ import { Pressable, ScrollView, StyleSheet } from 'react-native';
 import { AdminRow, AdminSection, AdminShell } from '@/components/warsha/AdminShell';
 import { BrandLoadingState, EmptyState } from '@/components/warsha/BrandUI';
 import { AppText } from '@/components/warsha/Typography';
-import { colors, radii, spacing, typography } from '@/constants/theme';
+import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
+import { useThemedStyles } from '@/src/appearance/appearance-context';
 import { useAdmin } from '@/src/admin/admin-context';
 import { adminRepository } from '@/src/admin/admin-repository';
 import { auditSources, type AuditRow, type AuditSource } from '@/src/admin/admin-types';
@@ -14,6 +15,7 @@ import { auditSources, type AuditRow, type AuditSource } from '@/src/admin/admin
  * shown, there is no unrestricted export, and opening it is itself recorded.
  */
 export default function AdminAuditScreen() {
+  const styles = useThemedStyles(makeStyles);
   const { text } = useAdmin();
   const [source, setSource] = useState<AuditSource>('staff_audit');
   const [rows, setRows] = useState<AuditRow[]>([]);
@@ -77,7 +79,7 @@ export default function AdminAuditScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   tabs: { gap: spacing.sm, paddingBottom: spacing.sm },
   tab: {
     minHeight: 36,

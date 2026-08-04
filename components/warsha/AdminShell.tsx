@@ -4,7 +4,8 @@ import type { ComponentProps, ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { colors, radii, spacing, typography } from '@/constants/theme';
+import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
+import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
 import { useAdmin } from '@/src/admin/admin-context';
 import { environmentTone } from '@/src/admin/admin-types';
 
@@ -32,6 +33,8 @@ export function AdminShell({
   onBack?: boolean;
   action?: ReactNode;
 }) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   const { session, simulated, isRTL, text } = useAdmin();
   const environment = session.environment ?? 'local';
   const environmentLabel = environment === 'production'
@@ -108,6 +111,8 @@ export function AdminRow({
   onPress?: () => void;
   accessibilityLabel?: string;
 }) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   const { isRTL } = useAdmin();
   const body = (
     <View style={[styles.row, isRTL && styles.reverse]}>
@@ -137,6 +142,7 @@ export function AdminRow({
 }
 
 export function AdminSection({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.section}>
       <AppText accessibilityRole="header" style={styles.sectionTitle}>{title}</AppText>
@@ -166,6 +172,7 @@ export function AdminMetric({
   suppressedLabel: string;
   metricLabel: string;
 }) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View
       accessible
@@ -180,7 +187,7 @@ export function AdminMetric({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   header: {
     flexDirection: 'row',

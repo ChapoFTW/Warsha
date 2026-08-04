@@ -6,7 +6,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BrandButton, BrandCard, BrandTextField } from '@/components/warsha/BrandUI';
 import { ScreenHeader } from '@/components/warsha/ScreenHeader';
 import { AppText } from '@/components/warsha/Typography';
-import { colors, radii, spacing, typography } from '@/constants/theme';
+import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
+import { useThemedStyles } from '@/src/appearance/appearance-context';
 import { useSupport } from '@/src/support/support-context';
 import { useSupportText } from '@/src/support/support-translations';
 import type { SupportCategory, SupportLinkedType, SupportSurface } from '@/src/support/support-types';
@@ -21,6 +22,7 @@ import { supportCategories, supportLinkedTypes, supportSurfaces } from '@/src/su
  * the booking, and the server refuses a link to a record the caller cannot see.
  */
 export default function NewSupportCaseScreen() {
+  const styles = useThemedStyles(makeStyles);
   const params = useLocalSearchParams<{ surface?: string; linkedType?: string; linkedId?: string }>();
   const support = useSupport();
   const copy = useSupportText();
@@ -133,7 +135,7 @@ function defaultCategory(surface: SupportSurface): SupportCategory {
   }
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   content: { padding: spacing.lg, paddingBottom: spacing.xxxl, gap: spacing.lg, maxWidth: 760, width: '100%', alignSelf: 'center' },
   reverse: { flexDirection: 'row-reverse' },

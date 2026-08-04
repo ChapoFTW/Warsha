@@ -7,7 +7,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BrandLoadingMark as ActivityIndicator } from '@/components/warsha/BrandMark';
 import { EmptyState } from '@/components/warsha/BrandUI';
 import { AppText } from '@/components/warsha/Typography';
-import { colors, radii, spacing, typography } from '@/constants/theme';
+import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
+import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
 import { useAuth } from '@/src/auth/auth-context';
 import { useBookings } from '@/src/bookings/booking-context';
 import { bookingStatusTranslationKeys, type Booking } from '@/src/bookings/booking-types';
@@ -20,6 +21,8 @@ import { realtimeService } from '@/src/realtime/realtime-service';
 import { formatTimestamp, localeFor } from '@/src/utils/date-format';
 
 export default function ChatInboxScreen() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   const { mode, user } = useAuth();
   const bookings = useBookings();
   const jobs = useProviderJobs();
@@ -139,7 +142,7 @@ function messageKindLabel(kind: MessageKind | undefined, ct: ReturnType<typeof u
   return kind === 'text' ? ct('newMessage') : ct('system');
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   content: { width: '100%', maxWidth: 720, alignSelf: 'center', padding: spacing.lg, paddingBottom: spacing.xxxl },
   grow: { flexGrow: 1 },

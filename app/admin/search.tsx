@@ -4,7 +4,8 @@ import { StyleSheet } from 'react-native';
 import { AdminRow, AdminSection, AdminShell } from '@/components/warsha/AdminShell';
 import { BrandButton, BrandTextField, EmptyState } from '@/components/warsha/BrandUI';
 import { AppText } from '@/components/warsha/Typography';
-import { colors, spacing, typography } from '@/constants/theme';
+import { spacing, typography, type ThemeColors } from '@/constants/theme';
+import { useThemedStyles } from '@/src/appearance/appearance-context';
 import { useAdmin } from '@/src/admin/admin-context';
 import { adminRepository } from '@/src/admin/admin-repository';
 import { searchTermIsAllowed, type SafeSearchResult } from '@/src/admin/admin-types';
@@ -15,6 +16,7 @@ import { searchTermIsAllowed, type SafeSearchResult } from '@/src/admin/admin-ty
  * server re-applies every one of those rules and records the search.
  */
 export default function AdminSearchScreen() {
+  const styles = useThemedStyles(makeStyles);
   const { text } = useAdmin();
   const [term, setTerm] = useState('');
   const [results, setResults] = useState<SafeSearchResult[] | null>(null);
@@ -78,6 +80,6 @@ export default function AdminSearchScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   note: { ...typography.caption, color: colors.textMuted, marginTop: spacing.xs },
 });

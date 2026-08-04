@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
-import { colors, radii, spacing, typography } from '@/constants/theme';
+import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
+import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
 import type { Booking } from '@/src/bookings/booking-types';
 import { useLocalization } from '@/src/i18n/localization';
 import { usePaymentText } from '@/src/i18n/payment-translations';
@@ -25,6 +26,8 @@ export function BookingPriceAdjustmentCard({
   booking: Booking;
   role: 'customer' | 'provider';
 }) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   const { language, isRTL } = useLocalization();
   const pt = usePaymentText();
   const payments = usePayments();
@@ -148,6 +151,7 @@ function formatDifference(
 }
 
 function MoneyRow({ label, value }: { label: string; value: string }) {
+  const styles = useThemedStyles(makeStyles);
   const { isRTL } = useLocalization();
   return (
     <View style={[styles.row, isRTL && styles.reverse]}>
@@ -157,7 +161,7 @@ function MoneyRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   card: { gap: spacing.md, padding: spacing.lg, borderWidth: 1, borderColor: colors.border, borderRadius: radii.xl, backgroundColor: colors.surface },
   title: { fontSize: 17, fontWeight: typography.bold },
   note: { color: colors.textMuted, fontSize: 11, lineHeight: 17 },

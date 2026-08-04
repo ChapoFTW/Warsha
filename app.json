@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/images/warsha-current-approved-icon.png",
     "scheme": "warsha",
-    "userInterfaceStyle": "dark",
+    "userInterfaceStyle": "automatic",
     "backgroundColor": "#080808",
     "primaryColor": "#080808",
     "notification": {
@@ -24,7 +24,10 @@
     "ios": {
       "supportsTablet": true,
       "backgroundColor": "#080808",
-      "bundleIdentifier": "com.warsha.app"
+      "bundleIdentifier": "com.warsha.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -72,6 +75,9 @@
     },
     "runtimeVersion": {
       "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/6c8fbcda-6bb2-40b2-b8db-3b0ce127525f"
     }
   }
 }

@@ -7,7 +7,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BrandButton, EmptyState, StateBadge } from '@/components/warsha/BrandUI';
 import { ScreenHeader } from '@/components/warsha/ScreenHeader';
 import { AppText } from '@/components/warsha/Typography';
-import { colors, radii, spacing, typography } from '@/constants/theme';
+import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
+import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
 import { useSupport } from '@/src/support/support-context';
 import { useSupportText } from '@/src/support/support-translations';
 import type { SupportStatus } from '@/src/support/support-types';
@@ -22,6 +23,8 @@ const tone: Record<SupportStatus, 'neutral' | 'success' | 'warning' | 'error'> =
 };
 
 export default function SupportCasesScreen() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   const support = useSupport();
   const copy = useSupportText();
 
@@ -77,7 +80,7 @@ export default function SupportCasesScreen() {
   </SafeAreaView>;
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   content: { padding: spacing.lg, paddingBottom: spacing.xxxl, gap: spacing.md, maxWidth: 760, width: '100%', alignSelf: 'center' },
   reverse: { flexDirection: 'row-reverse' },

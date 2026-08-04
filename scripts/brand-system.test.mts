@@ -24,17 +24,49 @@ function sourceFiles(directory: string): string[] {
 }
 
 const theme = read('constants/theme.ts');
+
+/**
+ * WPS-020 moved the palette values into `constants/appearance.ts`, where they
+ * are expressed as semantic roles for two themes. The locked "The Current"
+ * values themselves did not change, so this check follows them rather than
+ * being relaxed — and it now also proves the dark theme was not quietly
+ * redesigned while a light one was added.
+ */
+const appearance = read('constants/appearance.ts');
+const darkTheme = appearance.slice(
+  appearance.indexOf('export const darkColors: ThemeColors = {'),
+  appearance.indexOf('export const lightColors: ThemeColors = {'));
+assert.ok(darkTheme.length > 0, 'the dark theme block is present');
+
 for (const [token, value] of Object.entries({
-  background: '#080808',
   surface: '#141414',
-  textPrimary: '#FAFAFA',
   textSecondary: '#B8B8B8',
   textMuted: '#6E6E6E',
-  success: '#2FBF71',
-  warning: '#E8A13A',
 })) {
-  assert.match(theme, new RegExp(`${token}: '${value}'`), `${token} is locked to ${value}`);
+  assert.match(darkTheme, new RegExp(`${token}: '${value}'`), `dark ${token} is locked to ${value}`);
 }
+// These resolve through the raw palette constant rather than a literal.
+for (const [token, ink] of Object.entries({
+  canvas: 'black',
+  textPrimary: 'offWhite',
+  successText: 'green',
+  warningText: 'amber',
+  errorText: 'red',
+})) {
+  assert.match(darkTheme, new RegExp(`${token}: ink\\.${ink},`), `dark ${token} keeps the locked ink`);
+}
+for (const [ink, value] of Object.entries({
+  black: '#080808',
+  offWhite: '#FAFAFA',
+  green: '#2FBF71',
+  amber: '#E8A13A',
+  red: '#F06455',
+})) {
+  assert.match(appearance, new RegExp(`${ink}: '${value}'`), `the locked ${ink} value is unchanged`);
+}
+assert.match(appearance, /export const lightColors: ThemeColors = \{/, 'a light theme exists');
+assert.match(theme, /export const colors: ThemeColors = darkColors;/,
+  'the static palette export still resolves to the dark theme');
 assert.match(theme, /xs: 4,[\s\S]*sm: 8,[\s\S]*md: 12,[\s\S]*lg: 16/, 'spacing uses the 4 px scale');
 assert.match(theme, /xs: 6,[\s\S]*sm: 10,[\s\S]*md: 16,[\s\S]*lg: 22/, 'approved radius scale is present');
 assert.match(theme, /Inter_400Regular/, 'Inter is configured');
@@ -62,7 +94,12 @@ for (const component of ['BrandMark', 'BrandWordmark', 'BrandLockup', 'BrandLoad
 assert.match(brandMark, /useReducedMotion/, 'loading mark honors reduced motion');
 assert.equal(brandMark.split(uprightCurrentPath).length, 3, 'static and loading marks share the upright canonical path');
 assert.doesNotMatch(brandMark, /scaleY\s*[:=(]\s*-1|rotate\s*[:=(]|transform=.*(?:scale|rotate)/i, 'mark has no orientation transform');
-assert.match(brandMark, /variant === 'light' \? colors\.textPrimary : colors\.background/, 'light and dark mark variants use white-on-black and black-on-white ink');
+// WPS-020: the ink is expressed as the surface the mark sits on, so it stays
+// correct in both themes. `light` is the canvas mark; `dark` is the ink used on
+// a filled primary surface, which is that surface's own inverse.
+assert.match(brandMark, /variant === 'light' \? colors\.brandMark : colors\.actionPrimaryText/, 'mark ink is theme-derived from the surface it sits on');
+assert.match(read('constants/appearance.ts'), /brandMark: ink\.offWhite,/, 'the dark-theme mark is light ink');
+assert.match(read('constants/appearance.ts'), /brandMark: ink\.nearBlack,/, 'the light-theme mark is dark ink');
 
 const brandRenderer = read('scripts/render-brand-assets.ps1');
 for (const y of currentY) assert.match(brandRenderer, new RegExp(`\\$y \\+ ${y} \\* \\$scale`), `renderer uses upright y=${y}`);

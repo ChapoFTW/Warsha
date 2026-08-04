@@ -24,7 +24,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BrandLoadingMark as ActivityIndicator } from '@/components/warsha/BrandMark';
 import { ScreenHeader } from '@/components/warsha/ScreenHeader';
 import { AppText } from '@/components/warsha/Typography';
-import { colors, radii, spacing, typography } from '@/constants/theme';
+import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
+import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
 import { useAuth } from '@/src/auth/auth-context';
 import { useBookings } from '@/src/bookings/booking-context';
 import { useChatVisibility } from '@/src/chat/chat-context';
@@ -59,6 +60,8 @@ const merge = (items: BookingMessage[]) => [...new Map(items.map((item) => [item
 const sameDay = (left: string, right: string) => new Date(left).toDateString() === new Date(right).toDateString();
 
 export default function ConversationScreen() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   const { bookingId } = useLocalSearchParams<{ bookingId: string }>();
   const { user, mode } = useAuth();
   const bookings = useBookings();
@@ -453,9 +456,11 @@ export default function ConversationScreen() {
 
 type Row = { item: BookingMessage; separator: boolean };
 function State({ title, text }: { title: string; text: string }) {
+  const styles = useThemedStyles(makeStyles);
   return <SafeAreaView style={styles.safe}><ScreenHeader title={title} /><View style={styles.state}><AppText>{text}</AppText></View></SafeAreaView>;
 }
 function DateLabel({ value, language, today, yesterday }: { value: string; language: 'en' | 'ar'; today: string; yesterday: string }) {
+  const styles = useThemedStyles(makeStyles);
   const now = new Date();
   const prior = new Date();
   prior.setDate(now.getDate() - 1);
@@ -463,6 +468,8 @@ function DateLabel({ value, language, today, yesterday }: { value: string; langu
   return <View style={styles.date}><AppText style={styles.dateText}>{label}</AppText></View>;
 }
 function Bubble({ message, own, isRTL, language, ct, onPreview }: { message: BookingMessage; own: boolean; isRTL: boolean; language: 'en' | 'ar'; ct: (key: ChatCopyKey) => string; onPreview: (url: string) => void }) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   if (['system', 'status', 'running_late'].includes(message.kind)) {
     const event = message.systemEvent as ChatCopyKey | undefined;
     return <View style={styles.system}><AppText style={styles.systemText}>{message.body || (event && (event in systemEvents || event.startsWith('operation_') || event.startsWith('dispute_')) ? ct(event) : ct('system'))}</AppText></View>;
@@ -495,7 +502,7 @@ const systemEvents: Record<string, true> = {
   booking_no_show: true,
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   state: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.lg, padding: spacing.xl },
   retry: { borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, borderRadius: radii.md },
@@ -541,10 +548,10 @@ const styles = StyleSheet.create({
   rtlText: { textAlign: 'right', writingDirection: 'rtl' },
   send: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: radii.md, backgroundColor: colors.white },
   disabled: { opacity: 0.45 },
-  previewModal: { flex: 1, backgroundColor: 'rgba(0,0,0,.96)', alignItems: 'center', justifyContent: 'center' },
+  previewModal: { flex: 1, backgroundColor: colors.scrim, alignItems: 'center', justifyContent: 'center' },
   preview: { width: '100%', height: '85%' },
   close: { position: 'absolute', top: 56, right: 22, zIndex: 2, padding: spacing.sm },
-  reportBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,.72)' },
+  reportBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: colors.overlay },
   reportSheet: { maxHeight: '88%', gap: spacing.md, padding: spacing.lg, paddingBottom: spacing.xxl, borderTopLeftRadius: radii.lg, borderTopRightRadius: radii.lg, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface },
   reportHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   reportTitle: { fontSize: 18, fontWeight: typography.bold },

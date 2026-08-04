@@ -5,7 +5,8 @@ import { StyleSheet } from 'react-native';
 import { AdminRow, AdminSection, AdminShell } from '@/components/warsha/AdminShell';
 import { BrandLoadingState, EmptyState } from '@/components/warsha/BrandUI';
 import { AppText } from '@/components/warsha/Typography';
-import { colors, typography } from '@/constants/theme';
+import { typography, type ThemeColors } from '@/constants/theme';
+import { useThemedStyles } from '@/src/appearance/appearance-context';
 import { useAdmin } from '@/src/admin/admin-context';
 import { adminRepository } from '@/src/admin/admin-repository';
 import {
@@ -23,6 +24,7 @@ import {
  * and deadline — and nothing private. The private detail lives on the case.
  */
 export default function AdminQueueScreen() {
+  const styles = useThemedStyles(makeStyles);
   const params = useLocalSearchParams<{ queueKey?: string }>();
   const { text, language } = useAdmin();
   const [queue, setQueue] = useState<StaffQueueView | null>(null);
@@ -128,7 +130,7 @@ function priorityCopyKey(priority: StaffQueueView['items'][number]['priority']) 
   }
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   error: { ...typography.bodySmall, color: colors.error },
   meta: { ...typography.caption, color: colors.textMuted },
 });

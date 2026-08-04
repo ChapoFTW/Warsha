@@ -3,7 +3,8 @@ import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { colors, radii, spacing, typography } from '@/constants/theme';
+import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
+import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
 import { bookingStatusTranslationKeys } from '@/src/bookings/booking-types';
 import { useBookings } from '@/src/bookings/booking-context';
 import { useMarketplaceData } from '@/src/data/marketplace-context';
@@ -13,6 +14,8 @@ import { formatBookingDateTime, localeFor } from '@/src/utils/date-format';
 import { AppText } from './Typography';
 
 export function RecentBookingCard() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   const { t, isRTL, language } = useLocalization();
   const { bookings } = useBookings();
   const { getProvider } = useMarketplaceData();
@@ -43,7 +46,7 @@ export function RecentBookingCard() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   card: { minHeight: 108, borderRadius: radii.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderSoft, flexDirection: 'row', alignItems: 'center', padding: spacing.md, gap: spacing.md },
   reverse: { flexDirection: 'row-reverse' },
   avatar: { width: 58, height: 58, borderRadius: 18, backgroundColor: colors.surfaceSoft },

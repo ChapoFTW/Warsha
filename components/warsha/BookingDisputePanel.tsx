@@ -6,7 +6,8 @@ import * as Linking from 'expo-linking';
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
-import { colors, radii, spacing, typography } from '@/constants/theme';
+import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
+import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
 import { useAuth } from '@/src/auth/auth-context';
 import type { Booking } from '@/src/bookings/booking-types';
 import { environment } from '@/src/config/environment';
@@ -24,6 +25,8 @@ type Panel = 'create' | 'respond' | 'withdraw' | null;
 const OPENABLE_STATUSES = ['confirmed', 'provider_on_the_way', 'provider_arrived', 'job_started', 'work_in_progress', 'completed', 'disputed', 'no_show'];
 
 export function BookingDisputePanel({ booking, role }: { booking: Booking; role: ParticipantRole }) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   const auth = useAuth(); const { language, isRTL } = useLocalization(); const dt = useDisputeText();
   const accountId = disputeAccountId(environment.dataMode, auth.user?.id, role);
   const [dispute, setDispute] = useState<BookingDispute | null>(null); const [loading, setLoading] = useState(true);
@@ -87,19 +90,25 @@ export function BookingDisputePanel({ booking, role }: { booking: Booking; role:
   </View>;
 }
 
-function Card({ children }: { children: React.ReactNode }) { return <View style={styles.card}>{children}</View>; }
-function Field({ label, ...props }: { label: string } & React.ComponentProps<typeof TextInput>) { const { isRTL } = useLocalization(); return <View style={styles.field}><AppText style={styles.label}>{label}</AppText><TextInput accessibilityLabel={label} placeholder={label} placeholderTextColor={colors.textMuted} {...props} style={[styles.input, props.multiline && styles.multiline, { textAlign: isRTL ? 'right' : 'left' }]}/></View>; }
-function Choice({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) { return <Pressable accessibilityRole="radio" accessibilityState={{ checked: selected }} accessibilityLabel={label} onPress={onPress} style={[styles.choice, selected && styles.selected]}><AppText style={styles.choiceText}>{label}</AppText></Pressable>; }
-function Action({ label, onPress, busy, disabled, primary, danger, grow, icon }: { label: string; onPress: () => void; busy?: boolean; disabled?: boolean; primary?: boolean; danger?: boolean; grow?: boolean; icon?: React.ComponentProps<typeof MaterialIcons>['name'] }) { return <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled: busy || disabled, busy }} disabled={busy || disabled} onPress={onPress} style={[styles.action, grow && styles.grow, primary && styles.primary, danger && styles.danger, (busy || disabled) && styles.disabled]}>{busy ? <ActivityIndicator color={primary ? colors.background : colors.white}/> : <>{icon ? <MaterialIcons name={icon} size={18} color={danger ? colors.error : primary ? colors.background : colors.textPrimary}/> : null}<AppText style={[styles.actionText, primary && styles.primaryText, danger && styles.dangerText]}>{label}</AppText></>}</Pressable>; }
+function Card({ children }: { children: React.ReactNode }) {
+  const styles = useThemedStyles(makeStyles); return <View style={styles.card}>{children}</View>; }
+function Field({ label, ...props }: { label: string } & React.ComponentProps<typeof TextInput>) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles); const { isRTL } = useLocalization(); return <View style={styles.field}><AppText style={styles.label}>{label}</AppText><TextInput accessibilityLabel={label} placeholder={label} placeholderTextColor={colors.textMuted} {...props} style={[styles.input, props.multiline && styles.multiline, { textAlign: isRTL ? 'right' : 'left' }]}/></View>; }
+function Choice({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) {
+  const styles = useThemedStyles(makeStyles); return <Pressable accessibilityRole="radio" accessibilityState={{ checked: selected }} accessibilityLabel={label} onPress={onPress} style={[styles.choice, selected && styles.selected]}><AppText style={styles.choiceText}>{label}</AppText></Pressable>; }
+function Action({ label, onPress, busy, disabled, primary, danger, grow, icon }: { label: string; onPress: () => void; busy?: boolean; disabled?: boolean; primary?: boolean; danger?: boolean; grow?: boolean; icon?: React.ComponentProps<typeof MaterialIcons>['name'] }) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles); return <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled: busy || disabled, busy }} disabled={busy || disabled} onPress={onPress} style={[styles.action, grow && styles.grow, primary && styles.primary, danger && styles.danger, (busy || disabled) && styles.disabled]}>{busy ? <ActivityIndicator color={primary ? colors.background : colors.white}/> : <>{icon ? <MaterialIcons name={icon} size={18} color={danger ? colors.error : primary ? colors.background : colors.textPrimary}/> : null}<AppText style={[styles.actionText, primary && styles.primaryText, danger && styles.dangerText]}>{label}</AppText></>}</Pressable>; }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   wrapper: { gap: spacing.md }, card: { gap: spacing.md, padding: spacing.lg, borderWidth: 1, borderColor: colors.borderSoft, borderRadius: radii.xl, backgroundColor: colors.surface },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm }, reverse: { flexDirection: 'row-reverse' }, grow: { flex: 1 },
   heading: { fontSize: 17, fontWeight: typography.bold }, itemTitle: { fontSize: 13, fontWeight: typography.semibold }, note: { color: colors.textSecondary, lineHeight: 21 }, muted: { color: colors.textMuted, fontSize: 11, lineHeight: 17 }, warning: { color: colors.warning, fontSize: 11, lineHeight: 17 }, label: { color: colors.textSecondary, fontSize: 12 },
   badge: { maxWidth: '50%', paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radii.pill, backgroundColor: colors.surfaceElevated }, badgeText: { fontSize: 11, textAlign: 'center' },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }, choice: { minHeight: 44, justifyContent: 'center', paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md }, selected: { borderColor: colors.white, backgroundColor: colors.surfaceElevated }, choiceText: { fontSize: 12 },
   field: { gap: 6 }, input: { minHeight: 48, padding: spacing.md, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, color: colors.textPrimary, backgroundColor: colors.surfaceElevated }, multiline: { minHeight: 110, textAlignVertical: 'top' },
-  action: { minHeight: 48, flexDirection: 'row', gap: spacing.sm, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.md, borderWidth: 1, borderColor: colors.border, borderRadius: radii.lg }, primary: { backgroundColor: colors.white, borderColor: colors.white }, danger: { borderColor: 'rgba(217,121,121,.55)' }, actionText: { fontSize: 13, fontWeight: typography.semibold, textAlign: 'center' }, primaryText: { color: colors.background }, dangerText: { color: colors.error }, disabled: { opacity: 0.45 },
+  action: { minHeight: 48, flexDirection: 'row', gap: spacing.sm, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.md, borderWidth: 1, borderColor: colors.border, borderRadius: radii.lg }, primary: { backgroundColor: colors.white, borderColor: colors.white }, danger: { borderColor: colors.actionDangerBorder }, actionText: { fontSize: 13, fontWeight: typography.semibold, textAlign: 'center' }, primaryText: { color: colors.background }, dangerText: { color: colors.error }, disabled: { opacity: 0.45 },
   source: { paddingHorizontal: spacing.sm, paddingVertical: 6, borderRadius: radii.pill, backgroundColor: colors.surfaceElevated }, sourceText: { fontSize: 10, color: colors.textSecondary }, evidenceGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }, evidenceCard: { width: 105, gap: 4, padding: spacing.sm, borderWidth: 1, borderColor: colors.borderSoft, borderRadius: radii.md }, image: { width: '100%', height: 76, borderRadius: radii.sm, backgroundColor: colors.surfaceElevated }, file: { alignItems: 'center', justifyContent: 'center' }, fileName: { fontSize: 10, lineHeight: 14 },
   timeline: { flexDirection: 'row', gap: spacing.md, minHeight: 54 }, marker: { width: 12, alignItems: 'center' }, dot: { width: 9, height: 9, marginTop: 4, borderRadius: 5, backgroundColor: colors.white }, line: { width: 1, flex: 1, marginTop: 4, backgroundColor: colors.border }, state: { minHeight: 90, alignItems: 'center', justifyContent: 'center', gap: spacing.sm },
 });

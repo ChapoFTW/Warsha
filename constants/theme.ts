@@ -1,29 +1,24 @@
 import type { TextStyle, ViewStyle } from 'react-native';
 
-/** Locked Warsha palette from the approved "The Current" identity system. */
-export const colors = {
-  background: '#080808',
-  surface: '#141414',
-  surfaceElevated: '#191919',
-  surfaceSoft: '#1D1D1D',
-  border: 'rgba(250,250,250,0.14)',
-  borderSoft: 'rgba(250,250,250,0.08)',
-  borderStrong: 'rgba(250,250,250,0.22)',
-  textPrimary: '#FAFAFA',
-  textSecondary: '#B8B8B8',
-  textMuted: '#6E6E6E',
-  white: '#FAFAFA',
-  success: '#2FBF71',
-  successSoft: 'rgba(47,191,113,0.13)',
-  warning: '#E8A13A',
-  warningSoft: 'rgba(232,161,58,0.13)',
-  error: '#F06455',
-  errorSoft: 'rgba(240,100,85,0.13)',
-  transparent: 'transparent',
-  scrim: 'rgba(8,8,8,0.88)',
-} as const;
+import { darkColors, elevationFor, lightColors, type ThemeColors } from './appearance';
 
-export type ColorToken = keyof typeof colors;
+/**
+ * The Warsha palette, resolved for the dark appearance.
+ *
+ * WPS-020 made colour a runtime decision. This export is the **static** dark
+ * palette and remains correct for module-scope constants that can never
+ * re-render — the navigation fallback theme and the native window colour.
+ *
+ * Product components must not import it. They call `useThemeColors()` or wrap
+ * their stylesheet in `useThemedStyles()`, both from
+ * `@/src/appearance/appearance-context`, so the value follows the active
+ * appearance. `scripts/audit-appearance.mjs` enforces that boundary.
+ */
+export const colors: ThemeColors = darkColors;
+
+export type ColorToken = keyof ThemeColors;
+export type { ThemeColors };
+export { darkColors, lightColors, elevationFor };
 
 /** 4px base spacing scale. */
 export const spacing = {
@@ -95,39 +90,18 @@ export const motion = {
   easing: [0.4, 0, 0.2, 1] as const,
 } as const;
 
-const baseShadow: ViewStyle = {
-  shadowColor: '#000000',
-  shadowOffset: { width: 0, height: 10 },
-};
-
-export const elevation = {
-  resting: {
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-  } satisfies ViewStyle,
-  card: {
-    ...baseShadow,
-    borderWidth: 1,
-    borderColor: colors.border,
-    shadowOpacity: 0.18,
-    shadowRadius: 16,
-    elevation: 3,
-  } satisfies ViewStyle,
-  modal: {
-    ...baseShadow,
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-    shadowOpacity: 0.26,
-    shadowRadius: 24,
-    elevation: 7,
-  } satisfies ViewStyle,
-} as const;
+/** Dark-resolved elevation. Themed screens use `useThemedElevation()` instead. */
+export const elevation: Record<'resting' | 'card' | 'modal', ViewStyle> = elevationFor(darkColors, 'dark');
 
 export const shadows = { card: elevation.card } as const;
 
-// Backwards-compatible exports for Expo starter components that remain in the repository.
+/**
+ * Expo starter compatibility. Before WPS-020 both entries held the same dark
+ * values, so anything trusting `Colors.light` silently rendered dark. They are
+ * now genuinely different.
+ */
 export const Colors = {
-  light: { text: colors.textPrimary, background: colors.background, tint: colors.white, icon: colors.textSecondary, tabIconDefault: colors.textMuted, tabIconSelected: colors.white },
-  dark: { text: colors.textPrimary, background: colors.background, tint: colors.white, icon: colors.textSecondary, tabIconDefault: colors.textMuted, tabIconSelected: colors.white },
+  light: { text: lightColors.textPrimary, background: lightColors.canvas, tint: lightColors.actionPrimaryBackground, icon: lightColors.textSecondary, tabIconDefault: lightColors.navigationInactive, tabIconSelected: lightColors.navigationActive },
+  dark: { text: darkColors.textPrimary, background: darkColors.canvas, tint: darkColors.actionPrimaryBackground, icon: darkColors.textSecondary, tabIconDefault: darkColors.navigationInactive, tabIconSelected: darkColors.navigationActive },
 };
 export const Fonts = { sans: typography.family, serif: 'serif', rounded: typography.family, mono: 'monospace' };

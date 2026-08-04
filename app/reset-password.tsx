@@ -6,7 +6,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppText } from '@/components/warsha/Typography';
 import { BrandLoadingMark as ActivityIndicator, BrandLockup } from '@/components/warsha/BrandMark';
-import { colors, radii, spacing, typography } from '@/constants/theme';
+import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
+import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
 import { useAuth } from '@/src/auth/auth-context';
 import { authMessageKey, sanitizeAuthError } from '@/src/auth/auth-errors';
 import { useLocalization } from '@/src/i18n/localization';
@@ -16,6 +17,8 @@ import { getSupabaseClient } from '@/src/lib/supabase';
 type Requirement = { key: TranslationKey; met: boolean };
 
 export default function ResetPasswordScreen() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   const { t, isRTL } = useLocalization();
   const auth = useAuth();
   const [password, setPassword] = useState('');
@@ -97,14 +100,18 @@ export default function ResetPasswordScreen() {
 }
 
 function PasswordField({ label, value, onChangeText, visible, onToggle, rtl, showLabel, hideLabel }: { label: string; value: string; onChangeText: (value: string) => void; visible: boolean; onToggle: () => void; rtl: boolean; showLabel: string; hideLabel: string }) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   return <View style={styles.field}><AppText style={styles.label}>{label}</AppText><View style={[styles.inputShell, rtl && styles.reverse]}><TextInput accessibilityLabel={label} autoCapitalize="none" autoCorrect={false} secureTextEntry={!visible} value={value} onChangeText={onChangeText} placeholder={label} placeholderTextColor={colors.textMuted} style={[styles.input, { textAlign: rtl ? 'right' : 'left' }]}/><Pressable accessibilityRole="button" accessibilityLabel={visible ? hideLabel : showLabel} hitSlop={10} onPress={onToggle} style={styles.eye}><MaterialIcons name={visible ? 'visibility-off' : 'visibility'} size={21} color={colors.textSecondary}/></Pressable></View></View>;
 }
 
 function StateCard({ icon, title, body, action, onPress }: { icon: React.ComponentProps<typeof MaterialIcons>['name']; title: string; body: string; action: string; onPress: () => void }) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   return <SafeAreaView style={styles.safe}><View style={styles.center}><BrandLockup size={54}/><View style={styles.stateIcon}><MaterialIcons name={icon} size={26} color={colors.white}/></View><AppText accessibilityRole="header" style={styles.title}>{title}</AppText><AppText style={styles.stateBody}>{body}</AppText><Pressable accessibilityRole="button" accessibilityLabel={action} onPress={onPress} style={styles.primary}><AppText style={styles.primaryText}>{action}</AppText></Pressable></View></SafeAreaView>;
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background }, flex: { flex: 1 },
   page: { flexGrow: 1, width: '100%', alignItems: 'center', justifyContent: 'center', padding: spacing.xl, gap: spacing.xl },
   brand: { alignItems: 'center' }, card: { width: '100%', maxWidth: 520, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radii.xl, padding: spacing.xl, gap: spacing.lg },

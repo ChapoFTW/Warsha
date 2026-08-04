@@ -7,7 +7,8 @@ import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native
 
 import { BrandLoadingMark as ActivityIndicator } from '@/components/warsha/BrandMark';
 import { AppText } from '@/components/warsha/Typography';
-import { colors, radii, spacing, typography } from '@/constants/theme';
+import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
+import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
 import { useLocalization } from '@/src/i18n/localization';
 import { realtimeService } from '@/src/realtime/realtime-service';
 import { useReviews } from '@/src/reviews/review-context';
@@ -22,6 +23,8 @@ const MIME = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const dimensionKeys: (keyof ReviewDimensions)[] = ['professionalism', 'quality', 'punctuality', 'communication', 'value'];
 
 export function BookingReviewCard({ bookingId, providerId, completed }: { bookingId: string; providerId: string; completed: boolean }) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   const { language, isRTL } = useLocalization();
   const rt = useReviewText();
   const reviews = useReviews();
@@ -113,13 +116,16 @@ export function BookingReviewCard({ bookingId, providerId, completed }: { bookin
 }
 
 function RatingRow({ label, value, onChange, isRTL }: { label: string; value: number; onChange: (value: number) => void; isRTL: boolean }) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   return <View accessibilityRole="radiogroup" accessibilityLabel={label} style={styles.ratingRow}><AppText style={styles.ratingLabel}>{label}</AppText><View style={[styles.stars, isRTL && styles.reverse]}>{[1, 2, 3, 4, 5].map(star => <Pressable key={star} accessibilityRole="radio" accessibilityState={{ selected: value === star }} accessibilityLabel={`${label}: ${star} / 5`} onPress={() => onChange(star)} style={styles.star}><MaterialIcons name={star <= value ? 'star' : 'star-border'} size={28} color={colors.white} /></Pressable>)}</View></View>;
 }
 function PhotoStrip({ items, label }: { items: ReviewAttachment[]; label: string }) {
+  const styles = useThemedStyles(makeStyles);
   if (!items.length) return null;
   return <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.images}>{items.map(item => item.url ? <Image accessibilityLabel={label} key={item.id} source={{ uri: item.url }} style={styles.image} /> : null)}</ScrollView>;
 }
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   card: { gap: spacing.md, padding: spacing.lg, borderWidth: 1, borderColor: colors.borderSoft, borderRadius: radii.lg, backgroundColor: colors.surface }, title: { fontSize: 18, fontWeight: typography.semibold }, form: { gap: spacing.sm },
   ratingRow: { gap: 4 }, ratingLabel: { fontWeight: typography.semibold }, stars: { flexDirection: 'row', flexWrap: 'wrap', gap: 2 }, reverse: { flexDirection: 'row-reverse' }, star: { width: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
   input: { minHeight: 100, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, color: colors.white, padding: spacing.md, textAlignVertical: 'top' }, count: { fontSize: 11, color: colors.textMuted, alignSelf: 'flex-end' },

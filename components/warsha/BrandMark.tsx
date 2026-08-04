@@ -2,10 +2,23 @@ import { useEffect, useMemo, useRef } from 'react';
 import { Animated, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import Svg, { Path, Rect } from 'react-native-svg';
 
-import { brandFontFamily, colors, motion, spacing } from '@/constants/theme';
+import { brandFontFamily, motion, spacing, type ThemeColors } from '@/constants/theme';
+import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
 import { useReducedMotion } from '@/hooks/use-reduced-motion';
 import { useLocalization } from '@/src/i18n/localization';
 
+/**
+ * Which ink the mark uses, expressed as the surface it sits on rather than as a
+ * literal colour — which is what makes it survive a theme change untouched.
+ *
+ * `light` = the ordinary canvas or card. Resolves to `brandMark`: near-white on
+ * the dark theme, near-black on the light theme.
+ * `dark`  = a primary-action surface (a filled button, a solid brand circle).
+ * Resolves to `actionPrimaryText`, which is the inverse of whatever that
+ * surface is in the active theme.
+ *
+ * The geometry below is untouched by WPS-020. Only the ink is theme-aware.
+ */
 export type BrandVariant = 'light' | 'dark';
 export type BrandLanguage = 'en' | 'ar';
 
@@ -17,8 +30,8 @@ type BrandMarkProps = {
   style?: StyleProp<ViewStyle>;
 };
 
-function brandInk(variant: BrandVariant) {
-  return variant === 'light' ? colors.textPrimary : colors.background;
+function brandInk(variant: BrandVariant, colors: ThemeColors) {
+  return variant === 'light' ? colors.brandMark : colors.actionPrimaryText;
 }
 
 /** The Current: a protective frame containing a concealed W-shaped flow trace. */
@@ -28,7 +41,8 @@ export function BrandMark({
   color,
   accessibilityLabel = 'Warsha',
 }: BrandMarkProps) {
-  const ink = color ?? brandInk(variant);
+  const colors = useThemeColors();
+  const ink = color ?? brandInk(variant, colors);
   return (
     <Svg
       accessibilityRole="image"
@@ -54,6 +68,8 @@ export function BrandWordmark({
   variant = 'light',
   language,
 }: Pick<BrandMarkProps, 'size' | 'variant'> & { language?: BrandLanguage }) {
+  const styles = useThemedStyles(makeStyles);
+  const colors = useThemeColors();
   const localization = useLocalization();
   const resolvedLanguage = language ?? localization.language;
   const isArabic = resolvedLanguage === 'ar';
@@ -63,7 +79,7 @@ export function BrandWordmark({
       style={[
         styles.wordmark,
         {
-          color: brandInk(variant),
+          color: brandInk(variant, colors),
           fontFamily: brandFontFamily(isArabic, 'bold'),
           fontSize: size * (isArabic ? 0.43 : 0.38),
           lineHeight: size * 0.58,
@@ -84,6 +100,7 @@ export function BrandLockup({
   language?: BrandLanguage;
   layout?: 'horizontal' | 'stacked';
 }) {
+  const styles = useThemedStyles(makeStyles);
   const localization = useLocalization();
   const resolvedLanguage = language ?? localization.language;
   const isArabic = resolvedLanguage === 'ar';
@@ -112,9 +129,10 @@ export function BrandLoadingMark({
   style,
   accessibilityLabel = 'Loading',
 }: BrandMarkProps) {
+  const colors = useThemeColors();
   const reducedMotion = useReducedMotion();
   const progress = useRef(new Animated.Value(0)).current;
-  const ink = color ?? brandInk(variant);
+  const ink = color ?? brandInk(variant, colors);
   const offset = useMemo(() => progress.interpolate({ inputRange: [0, 1], outputRange: [58, -32] }), [progress]);
 
   useEffect(() => {
@@ -152,7 +170,7 @@ export function BrandLoadingMark({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   lockup: { alignItems: 'center' },
   horizontal: { flexDirection: 'row', gap: spacing.sm },
   horizontalRTL: { flexDirection: 'row-reverse' },

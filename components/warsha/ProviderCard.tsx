@@ -4,7 +4,8 @@ import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { colors, radii, spacing, typography } from '@/constants/theme';
+import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
+import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
 import { useAuth } from '@/src/auth/auth-context';
 import { useLocalPreferences } from '@/src/data/local-preferences';
 import type { Provider } from '@/src/data/marketplace-types';
@@ -20,6 +21,8 @@ import { ProviderTrustIndicators } from './ProviderTrustIndicators';
 import { AppText } from './Typography';
 
 export function ProviderCard({ item, width }: { item: Provider; width: number }) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   const { t, isRTL } = useLocalization();
   const { user, mode } = useAuth();
   const { isFavourite, toggleFavourite } = useLocalPreferences();
@@ -100,7 +103,7 @@ export function ProviderCard({ item, width }: { item: Provider; width: number })
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   card: { borderRadius: radii.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderSoft, overflow: 'hidden' },
   cardWithoutMedia: { minHeight: 196 },
   media: { height: PROVIDER_MEDIA_HEIGHT, backgroundColor: colors.surfaceSoft },

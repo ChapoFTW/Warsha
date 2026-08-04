@@ -4,7 +4,8 @@ import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native
 
 import { AppText } from './Typography';
 import { BrandLoadingMark as ActivityIndicator } from './BrandMark';
-import { colors, radii, spacing, typography } from '@/constants/theme';
+import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
+import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
 import { useLocalization } from '@/src/i18n/localization';
 import { realtimeService } from '@/src/realtime/realtime-service';
 import { useReviews } from '@/src/reviews/review-context';
@@ -13,6 +14,8 @@ import { useReviewText } from '@/src/reviews/review-translations';
 import { formatTimestamp, localeFor } from '@/src/utils/date-format';
 
 export function ProviderReviewReply({ bookingId }: { bookingId: string }) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   const { t, isRTL, language } = useLocalization();
   const rt = useReviewText();
   const { getBookingReview, reply, busy, revision } = useReviews();
@@ -146,7 +149,7 @@ export function ProviderReviewReply({ bookingId }: { bookingId: string }) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   wrap: { gap: spacing.sm },
   state: { gap: spacing.sm, alignItems: 'flex-start' },
   row: { flexDirection: 'row', justifyContent: 'space-between', gap: spacing.md },

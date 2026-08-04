@@ -10,7 +10,8 @@ import { BrandLoadingMark as ActivityIndicator } from '@/components/warsha/Brand
 import { ProviderJobsContent } from '@/components/warsha/ProviderJobsContent';
 import { ScreenHeader } from '@/components/warsha/ScreenHeader';
 import { AppText } from '@/components/warsha/Typography';
-import { colors, radii, spacing, typography } from '@/constants/theme';
+import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
+import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
 import { useMarketplaceData } from '@/src/data/marketplace-context';
 import { useLocalization } from '@/src/i18n/localization';
 import { usePaymentText } from '@/src/i18n/payment-translations';
@@ -33,6 +34,8 @@ const verificationStatusCopy: Record<VerificationStatus, VerificationCopyKey> = 
 };
 
 export default function ProviderMode() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   const pt = useProviderText();
   const wt = useWorkerProfileText();
   const payText = usePaymentText();
@@ -207,6 +210,8 @@ export default function ProviderMode() {
 }
 
 function Checklist({ value }: { value: ReturnType<typeof providerChecklist> }) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   const wt = useWorkerProfileText();
   const labels: Record<keyof typeof value, ReturnType<typeof wt>> = {
     photo: wt('photoDone'), introduction: wt('introDone'), services: wt('servicesDone'),
@@ -216,6 +221,8 @@ function Checklist({ value }: { value: ReturnType<typeof providerChecklist> }) {
 }
 
 function VerificationSummary() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   const state = useVerification();
   const vt = useVerificationText();
   if (state.loading) return <Card><ActivityIndicator color={colors.white} /></Card>;
@@ -226,16 +233,26 @@ function VerificationSummary() {
 }
 
 function ActionCard({ icon, title, help, onPress, isRTL }: { icon: React.ComponentProps<typeof MaterialIcons>['name']; title: string; help: string; onPress: () => void; isRTL: boolean }) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   return <Pressable accessibilityRole="button" accessibilityLabel={title} onPress={onPress} style={[styles.actionCard, isRTL && styles.reverse]}><View style={styles.iconBox}><MaterialIcons name={icon} size={28} color={colors.background} /></View><View style={styles.grow}><AppText style={styles.title}>{title}</AppText><AppText style={styles.hint}>{help}</AppText></View><MaterialIcons name={isRTL ? 'arrow-back' : 'arrow-forward'} size={24} color={colors.white} /></Pressable>;
 }
-function Page({ children }: { children: React.ReactNode }) { return <SafeAreaView style={styles.safe}><View style={styles.center}>{children}</View></SafeAreaView>; }
-function Card({ children }: { children: React.ReactNode }) { return <View style={styles.card}>{children}</View>; }
-function Wrap({ children }: { children: React.ReactNode }) { return <View style={styles.wrap}>{children}</View>; }
-function Chip({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) { return <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: selected }} onPress={onPress} style={[styles.chip, selected && styles.selected]}><AppText>{label}</AppText></Pressable>; }
-function Toggle({ label, value, onPress }: { label: string; value: boolean; onPress: () => void }) { return <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: value }} onPress={onPress} style={styles.toggle}><MaterialIcons name={value ? 'check-box' : 'check-box-outline-blank'} size={23} color={colors.white} /><AppText style={styles.grow}>{label}</AppText></Pressable>; }
-function Field({ label, ...props }: { label: string } & React.ComponentProps<typeof TextInput>) { const { isRTL } = useLocalization(); return <TextInput {...props} accessibilityLabel={label} placeholder={label} placeholderTextColor={colors.textMuted} style={[styles.input, props.multiline && styles.multiline, { textAlign: isRTL ? 'right' : 'left' }]} />; }
+function Page({ children }: { children: React.ReactNode }) {
+  const styles = useThemedStyles(makeStyles); return <SafeAreaView style={styles.safe}><View style={styles.center}>{children}</View></SafeAreaView>; }
+function Card({ children }: { children: React.ReactNode }) {
+  const styles = useThemedStyles(makeStyles); return <View style={styles.card}>{children}</View>; }
+function Wrap({ children }: { children: React.ReactNode }) {
+  const styles = useThemedStyles(makeStyles); return <View style={styles.wrap}>{children}</View>; }
+function Chip({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) {
+  const styles = useThemedStyles(makeStyles); return <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: selected }} onPress={onPress} style={[styles.chip, selected && styles.selected]}><AppText>{label}</AppText></Pressable>; }
+function Toggle({ label, value, onPress }: { label: string; value: boolean; onPress: () => void }) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles); return <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: value }} onPress={onPress} style={styles.toggle}><MaterialIcons name={value ? 'check-box' : 'check-box-outline-blank'} size={23} color={colors.white} /><AppText style={styles.grow}>{label}</AppText></Pressable>; }
+function Field({ label, ...props }: { label: string } & React.ComponentProps<typeof TextInput>) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles); const { isRTL } = useLocalization(); return <TextInput {...props} accessibilityLabel={label} placeholder={label} placeholderTextColor={colors.textMuted} style={[styles.input, props.multiline && styles.multiline, { textAlign: isRTL ? 'right' : 'left' }]} />; }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   header: { padding: spacing.lg, gap: spacing.md },
   nav: { flexDirection: 'row', gap: spacing.sm },

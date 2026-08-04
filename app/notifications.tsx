@@ -7,7 +7,8 @@ import { BrandLoadingMark as ActivityIndicator } from '@/components/warsha/Brand
 import { EmptyState } from '@/components/warsha/BrandUI';
 import { ScreenHeader } from '@/components/warsha/ScreenHeader';
 import { AppText } from '@/components/warsha/Typography';
-import { colors, radii, spacing, typography } from '@/constants/theme';
+import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
+import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
 import { useLocalization } from '@/src/i18n/localization';
 import { useNotifications } from '@/src/notifications/notification-context';
 import { useEngagementText } from '@/src/notifications/notification-engagement-translations';
@@ -15,6 +16,8 @@ import { notificationCategories, type WarshaNotification } from '@/src/notificat
 import { localeFor } from '@/src/utils/date-format';
 
 export default function NotificationsScreen() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   const state = useNotifications(); const copy = useEngagementText(); const { isRTL } = useLocalization();
   return <SafeAreaView style={styles.safe}><FlatList
     data={state.items} keyExtractor={item => item.id} refreshing={state.refreshing} onRefresh={() => void state.reload()}
@@ -40,10 +43,14 @@ export default function NotificationsScreen() {
 }
 
 function Filter({ selected, label, onPress }: { selected: boolean; label: string; onPress: () => void }) {
+  const styles = useThemedStyles(makeStyles);
   return <Pressable accessibilityRole="tab" accessibilityState={{ selected }} accessibilityLabel={label} onPress={onPress} style={[styles.filter, selected && styles.filterSelected]}><AppText style={[styles.filterText, selected && styles.filterTextSelected]}>{label}</AppText></Pressable>;
 }
 
 function NotificationCard({ item }: { item: WarshaNotification }) {
+  const colors = useThemeColors();
+  const priorityStyle = useThemedStyles(makePriorityStyle);
+  const styles = useThemedStyles(makeStyles);
   const state = useNotifications(); const copy = useEngagementText(); const { isRTL } = useLocalization(); const eventCopy = copy.event(item.eventKey, item.category);
   const stateLabel = item.readAt ? copy.text('read') : copy.text('unread');
   const accessibility = `${stateLabel}. ${copy.category(item.category)}. ${copy.priority(item.priority)}. ${eventCopy.title}. ${eventCopy.body}${item.groupCount > 1 ? `. ${item.groupCount} ${copy.text('grouped')}` : ''}`;
@@ -59,11 +66,12 @@ function NotificationCard({ item }: { item: WarshaNotification }) {
   </Pressable>;
 }
 
-const priorityStyle = StyleSheet.create({ critical: { backgroundColor: colors.error }, action_required: { backgroundColor: colors.warning }, important: { backgroundColor: colors.white }, informational: { backgroundColor: colors.textMuted } });
-function State({ icon, text, body, action, onPress, loading }: { icon?: React.ComponentProps<typeof MaterialIcons>['name']; text: string; body?: string; action?: string; onPress?: () => void; loading?: boolean }) { return <View style={styles.state}><EmptyState title={text} body={body} icon={icon} action={action} onAction={onPress} loading={loading}/></View>; }
+const makePriorityStyle = (colors: ThemeColors) => StyleSheet.create({ critical: { backgroundColor: colors.error }, action_required: { backgroundColor: colors.warning }, important: { backgroundColor: colors.white }, informational: { backgroundColor: colors.textMuted } });
+function State({ icon, text, body, action, onPress, loading }: { icon?: React.ComponentProps<typeof MaterialIcons>['name']; text: string; body?: string; action?: string; onPress?: () => void; loading?: boolean }) {
+  const styles = useThemedStyles(makeStyles); return <View style={styles.state}><EmptyState title={text} body={body} icon={icon} action={action} onAction={onPress} loading={loading}/></View>; }
 function relativeTime(value: string, language: 'en' | 'ar', justNow: string) { const elapsed = Date.now() - Date.parse(value); const formatter = new Intl.RelativeTimeFormat(localeFor(language), { numeric: 'auto' }); if (elapsed < 60_000) return justNow; if (elapsed < 3_600_000) return formatter.format(-Math.max(1, Math.round(elapsed / 60_000)), 'minute'); if (elapsed < 86_400_000) return formatter.format(-Math.max(1, Math.round(elapsed / 3_600_000)), 'hour'); return formatter.format(-Math.max(1, Math.round(elapsed / 86_400_000)), 'day'); }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background }, content: { padding: spacing.lg, paddingBottom: spacing.xxxl, maxWidth: 760, width: '100%', alignSelf: 'center', flexGrow: 1 },
   header: { gap: spacing.md, marginBottom: spacing.lg }, headerRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md }, headerGrow: { flex: 1 }, reverse: { flexDirection: 'row-reverse' },
   iconButton: { width: 44, height: 44, borderWidth: 1, borderColor: colors.border, borderRadius: radii.pill, alignItems: 'center', justifyContent: 'center' },

@@ -4,10 +4,12 @@ import { StyleSheet, TouchableOpacity } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/theme';
+import { Colors, type ThemeColors } from '@/constants/theme';
+import { useThemedStyles } from '@/src/appearance/appearance-context';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export function Collapsible({ children, title }: PropsWithChildren & { title: string }) {
+  const styles = useThemedStyles(makeStyles);
   const [isOpen, setIsOpen] = useState(false);
   const theme = useColorScheme() ?? 'light';
 
@@ -32,7 +34,7 @@ export function Collapsible({ children, title }: PropsWithChildren & { title: st
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   heading: {
     flexDirection: 'row',
     alignItems: 'center',

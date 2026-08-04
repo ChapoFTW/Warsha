@@ -7,7 +7,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BrandButton, BrandCard, BrandLoadingState, BrandTextField, EmptyState } from '@/components/warsha/BrandUI';
 import { ScreenHeader } from '@/components/warsha/ScreenHeader';
 import { AppText } from '@/components/warsha/Typography';
-import { colors, radii, spacing, typography } from '@/constants/theme';
+import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
+import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
 import { useSupport } from '@/src/support/support-context';
 import { useSupportText } from '@/src/support/support-translations';
 import type { HelpArticleSummary, HelpSearchResult, SupportSurface } from '@/src/support/support-types';
@@ -21,6 +22,8 @@ import { supportSurfaces } from '@/src/support/support-types';
  * article about writing a quote.
  */
 export default function HelpCenterScreen() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   const params = useLocalSearchParams<{ surface?: string }>();
   const surface = supportSurfaces.includes(params.surface as SupportSurface)
     ? params.surface as SupportSurface
@@ -174,6 +177,8 @@ function SearchResults({ result }: { result: HelpSearchResult }) {
 }
 
 function ArticleRow({ article }: { article: HelpArticleSummary }) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   const copy = useSupportText();
   return <Pressable
     accessibilityRole="button"
@@ -193,13 +198,14 @@ function ArticleRow({ article }: { article: HelpArticleSummary }) {
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  const styles = useThemedStyles(makeStyles);
   return <View accessibilityRole="summary" style={styles.section}>
     <AppText style={styles.sectionTitle}>{title}</AppText>
     <View style={styles.sectionBody}>{children}</View>
   </View>;
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   content: { padding: spacing.lg, paddingBottom: spacing.xxxl, gap: spacing.lg, maxWidth: 760, width: '100%', alignSelf: 'center' },
   reverse: { flexDirection: 'row-reverse' },

@@ -18,7 +18,8 @@ import { BrandLoadingMark as ActivityIndicator } from '@/components/warsha/Brand
 import { ProviderTrustIndicators } from '@/components/warsha/ProviderTrustIndicators';
 import { ScreenHeader } from '@/components/warsha/ScreenHeader';
 import { AppText } from '@/components/warsha/Typography';
-import { colors, radii, spacing, typography } from '@/constants/theme';
+import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
+import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
 import { useAuth } from '@/src/auth/auth-context';
 import { useLocalization } from '@/src/i18n/localization';
 import {
@@ -60,6 +61,8 @@ const statusCopy: Record<VerificationStatus, VerificationCopyKey> = {
 };
 
 export default function ProviderVerificationScreen() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   const { t, isRTL } = useLocalization();
   const vt = useVerificationText();
   const auth = useAuth();
@@ -421,6 +424,8 @@ function StatusCard({
 }: {
   verification: NonNullable<ReturnType<typeof useVerification>['verification']>;
 }) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   const vt = useVerificationText();
   return (
     <View style={styles.statusCard}>
@@ -456,6 +461,8 @@ function DocumentStep({
   onLibrary: () => void;
   onDelete: () => void;
 }) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   const vt = useVerificationText();
   const copy = requiredCopy[type];
   return (
@@ -524,6 +531,8 @@ function LargeButton({
   danger?: boolean;
   busy?: boolean;
 }) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   return (
     <Pressable
       accessibilityRole="button"
@@ -561,6 +570,8 @@ function Choice({
   selected: boolean;
   onPress: () => void;
 }) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   return (
     <Pressable
       accessibilityRole="radio"
@@ -584,6 +595,8 @@ function StateMessage({
   icon: React.ComponentProps<typeof MaterialIcons>['name'];
   title: string;
 }) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.stateMessage}>
       <MaterialIcons name={icon} size={52} color={colors.textMuted} />
@@ -592,7 +605,7 @@ function StateMessage({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   page: { width: '100%', maxWidth: 680, alignSelf: 'center', padding: spacing.lg, paddingBottom: spacing.xxxl, gap: spacing.lg },
   rtl: { direction: 'rtl' },

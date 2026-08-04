@@ -10,14 +10,8 @@ import {
   type ViewProps,
 } from 'react-native';
 
-import {
-  brandFontFamily,
-  colors,
-  elevation,
-  radii,
-  spacing,
-  typography,
-} from '@/constants/theme';
+import { brandFontFamily, elevation, radii, spacing, typography, type ThemeColors } from '@/constants/theme';
+import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
 import { useLocalization } from '@/src/i18n/localization';
 
 import { BrandLoadingMark } from './BrandMark';
@@ -39,6 +33,8 @@ export function BrandButton({
   loading?: boolean;
   icon?: ComponentProps<typeof MaterialIcons>['name'];
 }) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   const { isRTL } = useLocalization();
   const isDisabled = disabled || loading;
   const foreground = variant === 'primary'
@@ -78,6 +74,7 @@ export function BrandCard({
   style,
   ...props
 }: ViewProps & { children: ReactNode; level?: keyof typeof elevation }) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View {...props} style={[styles.card, elevation[level], level === 'modal' && styles.cardModal, style]}>
       {children}
@@ -93,6 +90,8 @@ export function BrandTextField({
   multiline,
   ...props
 }: TextInputProps & { label?: string; error?: string; helper?: string }) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   const { isRTL } = useLocalization();
   return (
     <View style={styles.fieldGroup}>
@@ -137,6 +136,8 @@ export function StateBadge({
   icon?: ComponentProps<typeof MaterialIcons>['name'];
   compact?: boolean;
 }) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   const { isRTL } = useLocalization();
   const ink = tone === 'success'
     ? colors.success
@@ -171,6 +172,8 @@ export function EmptyState({
   onAction?: () => void;
   loading?: boolean;
 }) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   return (
     <BrandCard style={styles.empty}>
       {loading
@@ -184,6 +187,7 @@ export function EmptyState({
 }
 
 export function BrandLoadingState({ label }: { label: string }) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.loadingState}>
       <BrandLoadingMark size={48} accessibilityLabel={label} />
@@ -192,7 +196,7 @@ export function BrandLoadingState({ label }: { label: string }) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   button: {
     minHeight: 48,
     borderRadius: radii.sm,
@@ -242,9 +246,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   badge_neutral: { backgroundColor: colors.surfaceElevated, borderColor: colors.border },
-  badge_success: { backgroundColor: colors.successSoft, borderColor: 'rgba(47,191,113,0.28)' },
-  badge_warning: { backgroundColor: colors.warningSoft, borderColor: 'rgba(232,161,58,0.28)' },
-  badge_error: { backgroundColor: colors.errorSoft, borderColor: 'rgba(240,100,85,0.28)' },
+  badge_success: { backgroundColor: colors.successSoft, borderColor: colors.successBorder },
+  badge_warning: { backgroundColor: colors.warningSoft, borderColor: colors.warningBorder },
+  badge_error: { backgroundColor: colors.errorSoft, borderColor: colors.errorBorder },
   badgeCompact: { minHeight: 24, paddingHorizontal: spacing.sm },
   badgeLabel: { maxWidth: 220, fontSize: 11, lineHeight: 15, fontWeight: typography.semibold },
   badgeLabelCompact: { maxWidth: 120, fontSize: 9, lineHeight: 12 },

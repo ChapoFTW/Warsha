@@ -35,10 +35,12 @@
     "audit:secrets": "node ./scripts/audit-secrets.mjs",
     "audit:migrations": "node ./scripts/audit-migrations.mjs",
     "audit:environment": "node ./scripts/audit-environment.mjs",
-    "audit:all": "npm run audit:secrets && npm run audit:migrations && npm run audit:environment",
+    "audit:all": "npm run audit:secrets && npm run audit:migrations && npm run audit:environment && npm run audit:appearance",
     "test:wps018": "node --no-warnings --experimental-strip-types scripts/wps018-production-readiness.test.mts",
     "audit:bundle": "node ./scripts/audit-bundle.mjs",
-    "test:wps019": "node --no-warnings --experimental-strip-types scripts/wps019-customer-support.test.mts"
+    "test:wps019": "node --no-warnings --experimental-strip-types scripts/wps019-customer-support.test.mts",
+    "test:wps020": "node --no-warnings --experimental-strip-types scripts/wps020-search-discovery-appearance.test.mts",
+    "audit:appearance": "node ./scripts/audit-appearance.mjs"
   },
   "dependencies": {
     "@expo-google-fonts/cairo": "^0.4.2",
@@ -50,6 +52,7 @@
     "@supabase/supabase-js": "^2.110.7",
     "expo": "~54.0.35",
     "expo-constants": "~18.0.13",
+    "expo-dev-client": "~6.0.21",
     "expo-document-picker": "~14.0.8",
     "expo-file-system": "~19.0.23",
     "expo-font": "~14.0.12",
@@ -64,6 +67,7 @@
     "expo-status-bar": "~3.0.9",
     "expo-symbols": "~1.0.8",
     "expo-system-ui": "~6.0.9",
+    "expo-updates": "~29.0.19",
     "expo-web-browser": "~15.0.11",
     "react": "19.1.0",
     "react-dom": "19.1.0",

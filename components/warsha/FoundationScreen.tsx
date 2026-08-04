@@ -3,7 +3,8 @@ import { StyleSheet, View } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { colors, spacing } from '@/constants/theme';
+import { spacing, type ThemeColors } from '@/constants/theme';
+import { useThemedStyles } from '@/src/appearance/appearance-context';
 import { useLocalization } from '@/src/i18n/localization';
 import type { TranslationKey } from '@/src/i18n/translations';
 
@@ -18,6 +19,7 @@ export function FoundationScreen({
   message: TranslationKey;
   icon: ComponentProps<typeof MaterialIcons>['name'];
 }) {
+  const styles = useThemedStyles(makeStyles);
   const { t } = useLocalization();
   return (
     <SafeAreaView style={styles.safe}>
@@ -28,7 +30,7 @@ export function FoundationScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   content: { flex: 1, justifyContent: 'center', padding: spacing.xl },
 });

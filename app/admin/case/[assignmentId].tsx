@@ -5,7 +5,8 @@ import { StyleSheet, View } from 'react-native';
 import { AdminRow, AdminSection, AdminShell } from '@/components/warsha/AdminShell';
 import { BrandButton, BrandLoadingState, BrandTextField } from '@/components/warsha/BrandUI';
 import { AppText } from '@/components/warsha/Typography';
-import { colors, spacing, typography } from '@/constants/theme';
+import { spacing, typography, type ThemeColors } from '@/constants/theme';
+import { useThemedStyles } from '@/src/appearance/appearance-context';
 import { useAdmin } from '@/src/admin/admin-context';
 import { adminRepository } from '@/src/admin/admin-repository';
 import { caseStatusTone, isCaseOpen, type CaseStatus, type StaffCase } from '@/src/admin/admin-types';
@@ -16,6 +17,7 @@ import { caseStatusTone, isCaseOpen, type CaseStatus, type StaffCase } from '@/s
  * or approving a refund still happens in the specification that owns it.
  */
 export default function AdminCaseScreen() {
+  const styles = useThemedStyles(makeStyles);
   const params = useLocalSearchParams<{ assignmentId?: string }>();
   const { session, text, can } = useAdmin();
   const [record, setRecord] = useState<StaffCase | null>(null);
@@ -161,7 +163,7 @@ export default function AdminCaseScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   error: { ...typography.bodySmall, color: colors.error },
   muted: { ...typography.caption, color: colors.textMuted },
   actions: { gap: spacing.sm, marginTop: spacing.sm },

@@ -5,13 +5,15 @@ import { StyleSheet, View } from 'react-native';
 import { AdminRow, AdminSection, AdminShell } from '@/components/warsha/AdminShell';
 import { BrandButton, BrandLoadingState, EmptyState } from '@/components/warsha/BrandUI';
 import { AppText } from '@/components/warsha/Typography';
-import { colors, spacing, typography } from '@/constants/theme';
+import { spacing, typography, type ThemeColors } from '@/constants/theme';
+import { useThemedStyles } from '@/src/appearance/appearance-context';
 import { useAdmin } from '@/src/admin/admin-context';
 import { adminRepository } from '@/src/admin/admin-repository';
 import { priorityTone, type StaffHome } from '@/src/admin/admin-types';
 
 /** Operational home: prioritized queues, personal workload, and platform state. */
 export default function AdminHomeScreen() {
+  const styles = useThemedStyles(makeStyles);
   const { session, text, can, refresh, reauthenticate, revokeSessions } = useAdmin();
   const [home, setHome] = useState<StaffHome | null>(null);
   const [loading, setLoading] = useState(true);
@@ -119,7 +121,7 @@ export default function AdminHomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   error: { ...typography.bodySmall, color: colors.error },
   footnote: { ...typography.caption, color: colors.textMuted, marginTop: spacing.xs },
   actions: { gap: spacing.sm },

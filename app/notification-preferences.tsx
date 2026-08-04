@@ -6,7 +6,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BrandLoadingMark } from '@/components/warsha/BrandMark';
 import { ScreenHeader } from '@/components/warsha/ScreenHeader';
 import { AppText } from '@/components/warsha/Typography';
-import { colors, radii, spacing, typography } from '@/constants/theme';
+import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
+import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
 import { useAuth } from '@/src/auth/auth-context';
 import { useLocalization } from '@/src/i18n/localization';
 import { useEngagementText } from '@/src/notifications/notification-engagement-translations';
@@ -21,6 +22,8 @@ const mandatory = new Set<NotificationCategory>(['payments', 'disputes', 'securi
 const validTime = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 export default function NotificationPreferencesScreen() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   const auth = useAuth(); const provider = useProviderFoundation(); const copy = useEngagementText(); const { isRTL } = useLocalization();
   const accountId = notificationAccountId(auth.mode, auth.user?.id, provider.mode);
   const categories = provider.mode === 'provider' ? workerCategories : customerCategories;
@@ -46,11 +49,16 @@ export default function NotificationPreferencesScreen() {
   </ScrollView></SafeAreaView>;
 }
 
-function Section({ title, body, children }: { title: string; body: string; children: React.ReactNode }) { return <View style={styles.section}><AppText style={styles.sectionTitle}>{title}</AppText><AppText style={styles.sectionBody}>{body}</AppText>{children}</View>; }
-function Toggle({ label, value, disabled, isRTL, onChange }: { label: string; value: boolean; disabled?: boolean; isRTL: boolean; onChange: (value: boolean) => void }) { return <View style={[styles.toggle, isRTL && styles.reverse]}><AppText style={styles.toggleLabel}>{label}</AppText><Switch accessibilityLabel={label} accessibilityState={{ checked: value, disabled }} disabled={disabled} value={value} onValueChange={onChange} trackColor={{ false: colors.surfaceSoft, true: colors.borderStrong }} thumbColor={value ? colors.white : colors.textMuted}/></View>; }
-function TimeField({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) { return <View style={styles.timeField}><AppText style={styles.timeLabel}>{label}</AppText><TextInput accessibilityLabel={label} value={value} onChangeText={onChange} placeholder="22:00" placeholderTextColor={colors.textMuted} maxLength={5} keyboardType="numbers-and-punctuation" style={styles.input}/></View>; }
+function Section({ title, body, children }: { title: string; body: string; children: React.ReactNode }) {
+  const styles = useThemedStyles(makeStyles); return <View style={styles.section}><AppText style={styles.sectionTitle}>{title}</AppText><AppText style={styles.sectionBody}>{body}</AppText>{children}</View>; }
+function Toggle({ label, value, disabled, isRTL, onChange }: { label: string; value: boolean; disabled?: boolean; isRTL: boolean; onChange: (value: boolean) => void }) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles); return <View style={[styles.toggle, isRTL && styles.reverse]}><AppText style={styles.toggleLabel}>{label}</AppText><Switch accessibilityLabel={label} accessibilityState={{ checked: value, disabled }} disabled={disabled} value={value} onValueChange={onChange} trackColor={{ false: colors.surfaceSoft, true: colors.borderStrong }} thumbColor={value ? colors.white : colors.textMuted}/></View>; }
+function TimeField({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles); return <View style={styles.timeField}><AppText style={styles.timeLabel}>{label}</AppText><TextInput accessibilityLabel={label} value={value} onChangeText={onChange} placeholder="22:00" placeholderTextColor={colors.textMuted} maxLength={5} keyboardType="numbers-and-punctuation" style={styles.input}/></View>; }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background }, content: { width: '100%', maxWidth: 720, alignSelf: 'center', padding: spacing.lg, paddingBottom: spacing.xxxl, gap: spacing.lg }, center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md },
   section: { gap: spacing.md, padding: spacing.lg, borderWidth: 1, borderColor: colors.border, borderRadius: radii.lg, backgroundColor: colors.surface }, sectionTitle: { fontSize: 16, fontWeight: typography.bold }, sectionBody: { color: colors.textSecondary, fontSize: 13, lineHeight: 20 },
   toggle: { minHeight: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.lg }, toggleLabel: { flex: 1, fontSize: 14 }, reverse: { flexDirection: 'row-reverse' }, timeRow: { flexDirection: 'row', gap: spacing.md, flexWrap: 'wrap' }, timeField: { flex: 1, minWidth: 130, gap: spacing.sm }, timeLabel: { fontSize: 12, color: colors.textSecondary }, input: { minHeight: 48, color: colors.textPrimary, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, paddingHorizontal: spacing.md, fontSize: 16 }, zone: { color: colors.textMuted, fontSize: 12 },

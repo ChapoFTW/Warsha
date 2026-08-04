@@ -8,7 +8,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BrandLoadingMark } from '@/components/warsha/BrandMark';
 import { ScreenHeader } from '@/components/warsha/ScreenHeader';
 import { AppText } from '@/components/warsha/Typography';
-import { colors, radii, spacing, typography } from '@/constants/theme';
+import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
+import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
 import { useLocalization } from '@/src/i18n/localization';
 import { useWorkerProfileText } from '@/src/i18n/worker-profile-translations';
 import { useProviderFoundation } from '@/src/providers/provider-context';
@@ -17,6 +18,8 @@ import type { PortfolioItem, PortfolioItemInput } from '@/src/providers/provider
 const emptyInput: PortfolioItemInput = { title: '', description: '', completedPeriod: '', status: 'draft' };
 
 export default function ProviderPortfolioScreen() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   const { isRTL } = useLocalization();
   const wt = useWorkerProfileText();
   const state = useProviderFoundation();
@@ -131,15 +134,19 @@ export default function ProviderPortfolioScreen() {
 }
 
 function Field({ label, ...props }: { label: string } & React.ComponentProps<typeof TextInput>) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   const { isRTL } = useLocalization();
   return <TextInput {...props} accessibilityLabel={label} placeholder={label} placeholderTextColor={colors.textMuted} style={[styles.input, props.multiline && styles.multiline, { textAlign: isRTL ? 'right' : 'left' }]} />;
 }
 
 function IconButton({ label, icon, disabled = false, onPress }: { label: string; icon: React.ComponentProps<typeof MaterialIcons>['name']; disabled?: boolean; onPress: () => void }) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   return <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled }} disabled={disabled} onPress={onPress} style={[styles.iconButton, disabled && styles.disabled]}><MaterialIcons name={icon} size={21} color={colors.white} /></Pressable>;
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background, paddingTop: spacing.sm },
   content: { width: '100%', maxWidth: 720, alignSelf: 'center', padding: spacing.lg, paddingBottom: spacing.xxxl, gap: spacing.lg },
   notice: { flexDirection: 'row', gap: spacing.md, padding: spacing.lg, borderRadius: radii.xl, backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border },

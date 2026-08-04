@@ -4,13 +4,15 @@ import { StyleSheet } from 'react-native';
 import { AdminRow, AdminSection, AdminShell } from '@/components/warsha/AdminShell';
 import { BrandLoadingState, EmptyState } from '@/components/warsha/BrandUI';
 import { AppText } from '@/components/warsha/Typography';
-import { colors, typography } from '@/constants/theme';
+import { typography, type ThemeColors } from '@/constants/theme';
+import { useThemedStyles } from '@/src/appearance/appearance-context';
 import { useAdmin } from '@/src/admin/admin-context';
 import { adminRepository } from '@/src/admin/admin-repository';
 import type { OperationalIncident } from '@/src/admin/admin-types';
 
 /** Incidents are opened and updated by a person. No automated detection exists. */
 export default function AdminIncidentsScreen() {
+  const styles = useThemedStyles(makeStyles);
   const { text } = useAdmin();
   const [incidents, setIncidents] = useState<OperationalIncident[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,6 +71,6 @@ export default function AdminIncidentsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   error: { ...typography.bodySmall, color: colors.error },
 });

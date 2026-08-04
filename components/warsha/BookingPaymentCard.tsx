@@ -2,7 +2,8 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, Pressable, StyleSheet, View } from 'react-native';
 
-import { colors, radii, spacing, typography } from '@/constants/theme';
+import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
+import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
 import type { Booking } from '@/src/bookings/booking-types';
 import { useMarketplaceData } from '@/src/data/marketplace-context';
 import { useLocalization } from '@/src/i18n/localization';
@@ -32,6 +33,8 @@ const eligibleStatuses = new Set([
 ]);
 
 export function BookingPaymentCard({ booking }: { booking: Booking }) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   const { language, isRTL } = useLocalization();
   const pt = usePaymentText();
   const payments = usePayments();
@@ -256,6 +259,7 @@ function statusLabel(payment: BookingPayment, pt: ReturnType<typeof usePaymentTe
 }
 
 function MoneyRow({ label, value }: { label: string; value: string }) {
+  const styles = useThemedStyles(makeStyles);
   const { isRTL } = useLocalization();
   return (
     <View style={[styles.row, isRTL && styles.reverse]}>
@@ -266,6 +270,7 @@ function MoneyRow({ label, value }: { label: string; value: string }) {
 }
 
 function DevAction({ label, onPress }: { label: string; onPress: () => void }) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <Pressable onPress={onPress} style={styles.devButton}>
       <AppText style={styles.devText}>{label}</AppText>
@@ -273,7 +278,7 @@ function DevAction({ label, onPress }: { label: string; onPress: () => void }) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   card: { gap: spacing.md, padding: spacing.lg, borderWidth: 1, borderColor: colors.borderSoft, borderRadius: radii.lg, backgroundColor: colors.surface },
   heading: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   reverse: { flexDirection: 'row-reverse' },

@@ -1,6 +1,7 @@
 import { StyleSheet, Text, type TextProps, type TextStyle } from 'react-native';
 
-import { brandFontFamily, type BrandFontWeight, colors } from '@/constants/theme';
+import { brandFontFamily, type BrandFontWeight } from '@/constants/theme';
+import { useThemeColors } from '@/src/appearance/appearance-context';
 import { useLocalization } from '@/src/i18n/localization';
 
 function styleWeight(style: TextProps['style']): BrandFontWeight {
@@ -12,6 +13,7 @@ function styleWeight(style: TextProps['style']): BrandFontWeight {
 }
 
 export function AppText({ style, ...props }: TextProps) {
+  const colors = useThemeColors();
   const { isRTL } = useLocalization();
   const family = brandFontFamily(isRTL, styleWeight(style));
   return (

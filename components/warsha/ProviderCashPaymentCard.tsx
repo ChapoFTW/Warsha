@@ -2,7 +2,8 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { colors, radii, spacing, typography } from '@/constants/theme';
+import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
+import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
 import { useLocalization } from '@/src/i18n/localization';
 import { usePaymentText } from '@/src/i18n/payment-translations';
 import { formatMinor } from '@/src/payments/money';
@@ -12,6 +13,8 @@ import { AppText } from './Typography';
 import { BrandLoadingMark as ActivityIndicator } from './BrandMark';
 
 export function ProviderCashPaymentCard({ bookingId, completed }: { bookingId: string; completed: boolean }) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   const { language } = useLocalization();
   const pt = usePaymentText();
   const payments = usePayments();
@@ -62,7 +65,7 @@ export function ProviderCashPaymentCard({ bookingId, completed }: { bookingId: s
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   card: { gap: spacing.md, padding: spacing.lg, borderWidth: 1, borderColor: colors.border, borderRadius: radii.xl, backgroundColor: colors.surface },
   heading: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   title: { fontSize: 17, fontWeight: typography.bold },

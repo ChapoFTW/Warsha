@@ -4,7 +4,8 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { AdminMetric, AdminSection, AdminShell } from '@/components/warsha/AdminShell';
 import { BrandLoadingState, EmptyState } from '@/components/warsha/BrandUI';
 import { AppText } from '@/components/warsha/Typography';
-import { colors, radii, spacing, typography } from '@/constants/theme';
+import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
+import { useThemedStyles } from '@/src/appearance/appearance-context';
 import { useAdmin } from '@/src/admin/admin-context';
 import { adminRepository } from '@/src/admin/admin-repository';
 import {
@@ -22,6 +23,7 @@ import { findMetric, isDocumentedMetric } from '@/src/admin/metric-catalog';
  * "hidden" rather than zero, and a period containing today is flagged partial.
  */
 export default function AdminAnalyticsScreen() {
+  const styles = useThemedStyles(makeStyles);
   const { text, language, can } = useAdmin();
   const [dashboard, setDashboard] = useState<StaffDashboard>('executive');
   const [data, setData] = useState<StaffAnalytics | null>(null);
@@ -115,7 +117,7 @@ function renderValue(key: string, raw: unknown, language: 'en' | 'ar'): string {
   return String(raw);
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   tabs: { gap: spacing.sm, paddingBottom: spacing.sm },
   tab: {
     minHeight: 36,

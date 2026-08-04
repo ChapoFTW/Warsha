@@ -7,7 +7,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BrandButton, BrandCard, BrandLoadingState, BrandTextField, EmptyState, StateBadge } from '@/components/warsha/BrandUI';
 import { ScreenHeader } from '@/components/warsha/ScreenHeader';
 import { AppText } from '@/components/warsha/Typography';
-import { colors, radii, spacing, typography } from '@/constants/theme';
+import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
+import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
 import { useSupport } from '@/src/support/support-context';
 import { supportRepository } from '@/src/support/support-repository';
 import { useSupportText } from '@/src/support/support-translations';
@@ -26,6 +27,8 @@ const tone: Record<SupportStatus, 'neutral' | 'success' | 'warning' | 'error'> =
  * reopen window is still open; it renders what the server said.
  */
 export default function SupportCaseScreen() {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
   const { id } = useLocalSearchParams<{ id: string }>();
   const support = useSupport();
   const copy = useSupportText();
@@ -210,7 +213,7 @@ export default function SupportCaseScreen() {
   </SafeAreaView>;
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl },
   content: { padding: spacing.lg, paddingBottom: spacing.xxxl, gap: spacing.md, maxWidth: 760, width: '100%', alignSelf: 'center' },

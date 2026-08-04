@@ -1,6 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 
-import { spacing } from '@/constants/theme';
+import { spacing, type ThemeColors } from '@/constants/theme';
+import { useThemedStyles } from '@/src/appearance/appearance-context';
 import { useLocalization } from '@/src/i18n/localization';
 import { useVerificationText } from '@/src/i18n/verification-translations';
 
@@ -17,6 +18,7 @@ export function ProviderTrustIndicators({
   professionalCertificateVerified?: boolean;
   compact?: boolean;
 }) {
+  const styles = useThemedStyles(makeStyles);
   const { isRTL, language } = useLocalization();
   const vt = useVerificationText();
   if (!identityVerified && !skillCertificateVerified && !professionalCertificateVerified) return null;
@@ -35,7 +37,7 @@ export function ProviderTrustIndicators({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   wrapper: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   reverse: { flexDirection: 'row-reverse' },
 });
