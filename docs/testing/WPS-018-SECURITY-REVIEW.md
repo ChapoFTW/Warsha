@@ -47,9 +47,11 @@ learn to ignore it, and the one time it is right nobody looks.
 
 **Second-order finding.** A naive fix — matching the prefix plus any 16
 characters — still fails on Hermes bytecode, because Hermes packs string
-literals contiguously with no separator. The real bundle contains
-`sb_secret_allocateCallbackButtonInCustomViewebsocket`, which is two unrelated
-literals abutting.
+literals contiguously with no separator. The real bundle contains the guard
+prefix `sb_secret_` immediately followed by
+`allocateCallbackButtonInCustomViewebsocket`, which is two unrelated literals
+abutting. (The two halves are written separately here on purpose: as one string
+it is a credential shape, and `audit:secrets` correctly flags it.)
 
 **Fixed.** Replaced with `scripts/audit-bundle.mjs`, which matches credential
 **values**: the prefix plus at least twenty characters that include a digit, a

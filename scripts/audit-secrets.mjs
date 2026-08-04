@@ -38,6 +38,24 @@ const KNOWN_LOCAL_DEMO = [
   'super-secret-jwt-token-with-at-least-32-characters-long',
 ];
 
+// Self-reference: the WPS-018 commit recorded the credential SHAPES this
+// repository scans for, inside the scanner and inside the security review that
+// explains it. Those are pattern sources and documentation, not credentials, and
+// they are unreachable in the working tree but permanent in git history.
+//
+// They are neutralized by EXACT VALUE, never by path. A path allowlist would let
+// a real secret hide in that file forever; an exact literal cannot, because a
+// real private key does not carry the regex tail `[\s\S]{0,40}MIG` and a real
+// Supabase key is not this specific Hermes string. Each literal is assembled
+// from parts so this file does not itself become a match.
+const KNOWN_BENIGN_LITERALS = [
+  // scripts/audit-bundle.mjs Apple p8 pattern source, as committed in c88957a.
+  '-----BEGIN PRIVATE ' + 'KEY-----[\\s\\S]{0,40}MIG',
+  // The Hermes literal collision documented in WPS-018-SECURITY-REVIEW.md: two
+  // unrelated bundle strings abutting, which is the whole point of that finding.
+  'sb_secret_' + 'allocateCallbackButtonInCustomViewebsocket',
+];
+
 const SKIP_EXT = new Set(['.png', '.jpg', '.jpeg', '.pdf', '.ico', '.webp', '.ttf', '.otf', '.hbc']);
 
 function git(args) {
@@ -49,6 +67,7 @@ const findings = [];
 function scan(label, text) {
   let body = text;
   for (const demo of KNOWN_LOCAL_DEMO) body = body.split(demo).join('LOCAL_DEMO_VALUE');
+  for (const literal of KNOWN_BENIGN_LITERALS) body = body.split(literal).join('PATTERN_SOURCE');
   for (const { name, re } of PATTERNS) {
     const match = body.match(re);
     if (match) {

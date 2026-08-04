@@ -1,6 +1,6 @@
 export const notificationCategories = [
   'marketplace', 'bookings', 'messages', 'payments', 'worker_account',
-  'reviews', 'disputes', 'security', 'system',
+  'reviews', 'disputes', 'security', 'system', 'support',
 ] as const;
 
 export type NotificationCategory = typeof notificationCategories[number];
@@ -10,7 +10,7 @@ export type NotificationMode = 'customer' | 'worker';
 export type NotificationRouteType =
   | 'marketplace_request' | 'worker_opportunities' | 'worker_quote' | 'booking'
   | 'conversation' | 'provider_profile' | 'booking_payment' | 'worker_earnings'
-  | 'verification' | 'booking_review' | 'booking_dispute' | 'preferences';
+  | 'verification' | 'booking_review' | 'booking_dispute' | 'preferences' | 'support_case';
 
 export type WarshaNotification = {
   id: string;

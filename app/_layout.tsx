@@ -37,6 +37,7 @@ import { PaymentsProvider } from '@/src/payments/payment-context';
 import { ProviderJobsProvider } from '@/src/provider-jobs/provider-job-context';
 import { ProviderFoundationProvider } from '@/src/providers/provider-context';
 import { ReviewProvider } from '@/src/reviews/review-context';
+import { SupportProvider } from '@/src/support/support-context';
 import { VerificationProvider } from '@/src/verification/verification-context';
 
 const navigationTheme = {
@@ -94,6 +95,7 @@ export default function RootLayout() {
                               <ReviewProvider>
                                 <ChatProvider>
                                   <NotificationProvider>
+                                    <SupportProvider>
                                     <ThemeProvider value={navigationTheme}>
                                       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
                                         <Stack.Screen name="(tabs)" />
@@ -115,12 +117,15 @@ export default function RootLayout() {
                                         <Stack.Screen name="provider-earnings" />
                                         <Stack.Screen name="provider-job" />
                                         <Stack.Screen name="reset-password" />
+                                        <Stack.Screen name="help" />
+                                        <Stack.Screen name="support" />
                                         <Stack.Screen name="admin" />
                                       </Stack>
                                       <NotificationBanner />
                                       <ProviderModeOverlay />
                                       <StatusBar style="light" />
                                     </ThemeProvider>
+                                    </SupportProvider>
                                   </NotificationProvider>
                                 </ChatProvider>
                               </ReviewProvider>

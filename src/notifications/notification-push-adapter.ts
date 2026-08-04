@@ -18,6 +18,7 @@ const genericPreview: Record<NotificationCategory, string> = {
   disputes: 'Your dispute has an update.',
   security: 'Your Warsha account security changed.',
   system: 'You have an update in Warsha.',
+  support: 'Your support case has an update.',
 };
 
 export function externalNotificationPreview(category: NotificationCategory) { return genericPreview[category]; }

@@ -120,6 +120,7 @@ export function NotificationProvider({ children }: PropsWithChildren) {
         case 'booking_review': if (id) router.push({ pathname: '/booking/[id]', params: { id, focusReview: '1' } }); break;
         case 'booking_dispute': if (id) router.push({ pathname: '/booking/[id]', params: { id, focusDispute: '1' } }); break;
         case 'preferences': router.push('/notification-preferences'); break;
+        case 'support_case': if (id) router.push({ pathname: '/support/case/[id]', params: { id } }); break;
       }
     } finally { openLock.current.delete(item.id); }
   }, [accountId, copy, markRead, notificationMode]);

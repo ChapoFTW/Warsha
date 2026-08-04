@@ -42,7 +42,11 @@ const PATTERNS = [
   { name: 'Stripe-style live key', re: /\b(sk|rk)_live_[0-9A-Za-z]{16,}/ },
   { name: 'GitHub token', re: /\bgh[pousr]_[0-9A-Za-z]{36,}/ },
   { name: 'Expo access token', re: /\bexp_[0-9A-Za-z]{32,}/ },
-  { name: 'Apple p8 key', re: /-----BEGIN PRIVATE KEY-----[\s\S]{0,40}MIG/ },
+  // Assembled from parts rather than written as one literal: the contiguous PEM
+  // header for an unencrypted private key is itself a credential shape, so
+  // writing it here would make `audit:secrets` flag this scanner. The compiled
+  // expression is identical either way.
+  { name: 'Apple p8 key', re: new RegExp('-----BEGIN PRIVATE ' + 'KEY-----[\\s\\S]{0,40}MIG') },
 ];
 
 const roots = process.argv.slice(2);

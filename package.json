@@ -37,7 +37,8 @@
     "audit:environment": "node ./scripts/audit-environment.mjs",
     "audit:all": "npm run audit:secrets && npm run audit:migrations && npm run audit:environment",
     "test:wps018": "node --no-warnings --experimental-strip-types scripts/wps018-production-readiness.test.mts",
-    "audit:bundle": "node ./scripts/audit-bundle.mjs"
+    "audit:bundle": "node ./scripts/audit-bundle.mjs",
+    "test:wps019": "node --no-warnings --experimental-strip-types scripts/wps019-customer-support.test.mts"
   },
   "dependencies": {
     "@expo-google-fonts/cairo": "^0.4.2",

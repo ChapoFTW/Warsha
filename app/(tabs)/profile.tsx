@@ -23,6 +23,7 @@ import { useLocalization } from '@/src/i18n/localization';
 import { useProviderText } from '@/src/i18n/provider-translations';
 import { useProviderFoundation } from '@/src/providers/provider-context';
 import { supabaseCustomerProfileRepository } from '@/src/repositories/supabase-user-repositories';
+import { useSupportText } from '@/src/support/support-translations';
 
 type AuthPath = 'customer' | 'worker';
 
@@ -30,6 +31,7 @@ export default function Profile() {
   const { t, isRTL, language } = useLocalization();
   const at = useAuthText();
   const pt = useProviderText();
+  const st = useSupportText();
   const auth = useAuth();
   const provider = useProviderFoundation();
   const [name, setName] = useState('');
@@ -265,6 +267,8 @@ export default function Profile() {
       {otpSent ? <Pressable accessibilityRole="button" accessibilityLabel={at('resendOtp')} disabled={busy} onPress={() => void sendPhoneEnrollmentOtp()} style={styles.textButton}><AppText style={styles.link}>{at('resendOtp')}</AppText></Pressable> : null}
     </View> : <Pressable disabled={provider.saving} onPress={() => void openProvider()} style={styles.primary}>{provider.saving ? <BrandLoadingMark size={20} color={colors.background}/> : <AppText style={styles.dark}>{provider.profile ? pt('providerMode') : pt('become')}</AppText>}</Pressable>}
     <Pressable onPress={() => router.push('/favourites')} style={styles.button}><AppText>{t('favourites')}</AppText></Pressable>
+    <Pressable accessibilityRole="button" accessibilityLabel={st.text('helpCenter')} onPress={() => router.push('/help')} style={styles.button}><AppText>{st.text('helpCenter')}</AppText></Pressable>
+    <Pressable accessibilityRole="button" accessibilityLabel={st.text('myCases')} onPress={() => router.push('/support')} style={styles.button}><AppText>{st.text('myCases')}</AppText></Pressable>
     {auth.mode === 'supabase' ? <Pressable onPress={() => void auth.signOut()} style={styles.button}><AppText>{t('signOut')}</AppText></Pressable> : null}
     {notice ? <AppText accessibilityRole="alert" style={styles.notice}>{notice}</AppText> : null}
     {message ? <AppText accessibilityRole="alert" style={styles.error}>{message}</AppText> : null}

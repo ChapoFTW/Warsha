@@ -832,7 +832,14 @@ set local role authenticated;
 select pg_temp.act_as('a1700000-0000-4000-8000-000000000006');
 select throws_ok($$select public.get_my_notifications('staff',null,null,20,false,null)$$,
   '42501','Notification mode is not available','a customer cannot query the staff inbox');
-select is(pg_catalog.jsonb_array_length(public.get_my_notifications('customer',null,null,20,false,null)),0,
+-- WPS-019 gives a customer real support notifications in their own inbox, so an
+-- empty inbox is no longer the right proxy for this property. The property
+-- being tested is unchanged and is now asserted directly: nothing addressed to
+-- staff reaches a customer, whatever else is there.
+select is((select count(*)::integer
+  from pg_catalog.jsonb_array_elements(
+    public.get_my_notifications('customer',null,null,20,false,null)) item
+  where item->>'eventKey' like 'staff\_%' or item->>'audience'='staff'),0,
   'no staff notification leaks into a customer inbox');
 reset role;
 

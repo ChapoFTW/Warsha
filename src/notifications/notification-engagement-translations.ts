@@ -32,8 +32,8 @@ const ui = {
 } as const;
 
 const categories: Record<'en' | 'ar', Record<NotificationCategory, string>> = {
-  en: { marketplace: 'Marketplace', bookings: 'Bookings', messages: 'Messages', payments: 'Payments', worker_account: 'Worker account', reviews: 'Reviews', disputes: 'Disputes', security: 'Security', system: 'System' },
-  ar: { marketplace: 'السوق والعروض', bookings: 'الحجوزات', messages: 'الرسائل', payments: 'المدفوعات', worker_account: 'حساب الصنايعي', reviews: 'التقييمات', disputes: 'النزاعات', security: 'الأمان', system: 'النظام' },
+  en: { marketplace: 'Marketplace', bookings: 'Bookings', messages: 'Messages', payments: 'Payments', worker_account: 'Worker account', reviews: 'Reviews', disputes: 'Disputes', security: 'Security', system: 'System', support: 'Support' },
+  ar: { marketplace: 'السوق والعروض', bookings: 'الحجوزات', messages: 'الرسائل', payments: 'المدفوعات', worker_account: 'حساب الصنايعي', reviews: 'التقييمات', disputes: 'النزاعات', security: 'الأمان', system: 'النظام', support: 'الدعم' },
 };
 
 const eventCopy: Record<'en' | 'ar', Record<string, { title: string; body: string; action?: string }>> = {
@@ -167,12 +167,14 @@ const generic: Record<'en' | 'ar', Record<NotificationCategory, { title: string;
     messages: { title: 'New message', body: 'You have a new message in Warsha.' }, payments: { title: 'Payment update', body: 'Your payment status changed.' },
     worker_account: { title: 'Worker account update', body: 'Your worker account has an update.' }, reviews: { title: 'Review update', body: 'A review has an update.' },
     disputes: { title: 'Dispute update', body: 'Your dispute has an update.' }, security: { title: 'Account security update', body: 'Your Warsha account security changed.' }, system: { title: 'Warsha update', body: 'You have an update in Warsha.' },
+    support: { title: 'Support update', body: 'Your support case has an update.' },
   },
   ar: {
     marketplace: { title: 'تحديث في السوق', body: 'طلب الخدمة عليه تحديث.' }, bookings: { title: 'تحديث حجز', body: 'الحجز عليه تحديث.' },
     messages: { title: 'رسالة جديدة', body: 'عندك رسالة جديدة على ورشة.' }, payments: { title: 'تحديث دفع', body: 'حالة الدفع اتغيّرت.' },
     worker_account: { title: 'تحديث حساب الصنايعي', body: 'حساب الصنايعي عليه تحديث.' }, reviews: { title: 'تحديث تقييم', body: 'فيه تقييم عليه تحديث.' },
     disputes: { title: 'تحديث نزاع', body: 'النزاع عليه تحديث.' }, security: { title: 'تحديث أمان الحساب', body: 'أمان حسابك على ورشة اتغيّر.' }, system: { title: 'تحديث من ورشة', body: 'عندك تحديث جديد على ورشة.' },
+    support: { title: 'تحديث من الدعم', body: 'حالة الدعم بتاعتك عليها تحديث.' },
   },
 };
 

@@ -31,9 +31,16 @@ const index = read('docs/wps/WPS-INDEX.md');
 const packageJson = read('package.json');
 const supabaseRepositorySection = repository.slice(repository.indexOf('const supabaseRepository'));
 
-equal(notificationCategories.length, 9, 'nine product categories are explicit');
+// The category constraint now spans two forward migrations: WPS-014 defined the
+// original nine, WPS-019 widened it to add `support`. The property under test is
+// unchanged — every category the client knows is constrained in the database —
+// so it is checked against the schema rather than against one file.
+const categoryConstraintSql = migration
+  + read('supabase/migrations/202608040001_wps019_customer_support_help_center.sql');
+
+equal(notificationCategories.length, 10, 'ten product categories are explicit — WPS-019 adds support');
 for (const category of notificationCategories) {
-  match(migration, new RegExp(`'${category}'`), `${category} is database constrained`);
+  match(categoryConstraintSql, new RegExp(`'${category}'`), `${category} is database constrained`);
   match(translations, new RegExp(`${category}:`), `${category} is localized`);
   const preview = externalNotificationPreview(category);
   ok(preview.length > 10, `${category} has a generic external preview`);
