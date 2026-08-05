@@ -285,8 +285,8 @@ Full measured results: `docs/testing/WPS-020-ACCEPTANCE-EVIDENCE.md`.
 | Clean `supabase db reset` | Full chain through `202608050001` applies |
 | Full pgTAP | **23 files / 2,170 assertions, `Result: PASS`** |
 | WPS-020 pgTAP | 138 assertions |
-| WPS-020 client suite | see the evidence document |
-| All regression suites | 0 failures |
+| WPS-020 client suite | 877 checks |
+| All regression suites | 20 of 21; one pre-existing failure WPS-020 did not cause (§19) |
 | Appearance audit | Clean — 73 roles in both themes, no colour literal outside the theme |
 | TypeScript, ESLint, mojibake, whitespace | Clean |
 | Secret, migration, environment, bundle audits | Clean |
@@ -327,6 +327,43 @@ Four, all deliberate:
 4. **`components/themed-text.tsx` link colour** moved from a literal `#0a7ea4`
    to the theme tint. Expo starter code, but it was the last colour literal
    outside the palette and the audit is absolute.
+5. **`hooks/use-color-scheme.ts` now reports the resolved app appearance**, not
+   the device setting, and `hooks/use-color-scheme.web.ts` was deleted. The two
+   answered different questions while looking identical: a person who chose
+   Light on a dark phone got `"dark"` from a hook named `useColorScheme`, and
+   the web variant additionally returned `"light"` until hydration, so the
+   platforms did not agree with each other either. There is nothing
+   platform-specific left to decide, so the split is gone. The return type
+   narrows from `'light' | 'dark' | null` to `'light' | 'dark'`, which let the
+   dead `?? 'light'` guard in `use-theme-color.ts` go with it.
 
 No existing table, RPC, policy, grant, or test was dropped or weakened. All 22
 pre-existing pgTAP suites pass unchanged, with no assertion edited.
+
+## 19. Pre-existing failure recorded, not fixed
+
+`npm run test:wps018` fails on one assertion: *"over-the-air updates are not
+enabled."* `app.json` carries an `"updates"` block pointing at an Expo update
+URL, plus an `ios.infoPlist` block. Neither was in `HEAD` when WPS-020 began —
+both were uncommitted working-tree changes already present, and they were swept
+into the same `wip` commit as WPS-020's own single `app.json` line.
+
+WPS-020 did not cause it. The WPS-018 suite reads five properties from
+`app.json`, and `userInterfaceStyle` — the only line WPS-020 changed — is not
+one of them.
+
+Neither the file nor the assertion was touched. The assertion is correct and is
+doing its job: WPS-018 recorded "no over-the-air updates" as a launch-readiness
+property, and something enabled them. Whether Warsha ships with EAS Update
+enabled is a launch decision for the WPS-018 gap register, not something to be
+quietly resolved inside a search-and-appearance change.
+
+## 20. Session interruption and recovery
+
+The implementing session hit its limit mid-write on `hooks/use-color-scheme.ts`.
+The write did not land; the file was recovered **unchanged**, at its original
+single-line content, and was completed in the following session. Everything else
+had already been written and committed as `9237b82`.
+
+Every gate in §16 was re-executed from the recovered tree. No result in this
+document is carried over from before the interruption.

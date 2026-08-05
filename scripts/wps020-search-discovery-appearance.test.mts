@@ -7,7 +7,7 @@
  * this file asserts what the client guarantees.
  */
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { darkColors, lightColors, platformCanvas, type ThemeColors } from '../constants/appearance.ts';
@@ -235,6 +235,24 @@ is(platformCanvas.light, lightColors.canvas, 'the platform canvas matches the li
 lacks(codeOf(appearanceSource), /filter:\s*\[?['"`]?invert/i, 'the theme applies no inversion filter');
 lacks(codeOf(rootLayout), /filter:\s*\[?['"`]?invert/i, 'the root layout applies no inversion filter');
 lacks(codeOf(rootLayout), /invert\(/i, 'the root layout uses no CSS invert function');
+
+// ---------------------------------------------------------------------------
+// The colour-scheme hook answers "what is Warsha painting", not "what is the
+// device set to". Those diverge the moment someone chooses Light on a dark
+// phone, and the old hook answered the second question while looking like it
+// answered the first.
+// ---------------------------------------------------------------------------
+const colorSchemeHook = read('hooks/use-color-scheme.ts');
+has(colorSchemeHook, /useAppearance\(\)\.scheme/,
+  'useColorScheme reports the resolved app appearance');
+lacks(codeOf(colorSchemeHook), /from 'react-native'/,
+  'useColorScheme no longer re-exports the device-level hook');
+has(colorSchemeHook, /: ResolvedAppearance/,
+  'the hook narrows to a resolved appearance, never null');
+check(!existsSync(join(root, 'hooks/use-color-scheme.web.ts')),
+  'the platform split is gone: there is nothing platform-specific left to decide');
+lacks(codeOf(read('hooks/use-theme-color.ts')), /\?\? 'light'/,
+  'the dead null-guard is gone now that the scheme is always resolved');
 
 // ---------------------------------------------------------------------------
 // Startup: no flash

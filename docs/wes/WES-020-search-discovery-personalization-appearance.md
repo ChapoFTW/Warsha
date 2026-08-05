@@ -81,7 +81,27 @@ The codemod's own report is not evidence. Two things are:
 2. **`scripts/audit-appearance.mjs` runs on every build** and fails if any
    product file imports the static palette or contains a colour literal.
 
-### 2.4 Provider placement
+### 2.4 The starter hooks, which were the subtlest defect
+
+`hooks/use-color-scheme.ts` re-exported React Native's hook of the same name.
+That hook reports the **device** setting. Once an in-app preference exists, that
+is a different question from "what is Warsha painting", and the two diverge the
+moment someone chooses Light on a dark phone — while the call site still reads
+`useColorScheme()` and looks completely correct.
+
+The `.web` variant made it worse by returning `'light'` until hydration, so the
+two platforms disagreed with each other as well.
+
+Both now resolve to one implementation reading `useAppearance().scheme`, and the
+platform split was deleted because nothing platform-specific remains to decide.
+The return type narrows to `'light' | 'dark'`, which retired the dead
+`?? 'light'` guard in `use-theme-color.ts`.
+
+The consumers — `ThemedText`, `ThemedView`, `ParallaxScrollView`, `Collapsible` —
+are Expo starter leftovers that no Warsha screen renders. That is exactly why
+this mattered: nobody would have noticed it was wrong.
+
+### 2.5 Provider placement
 
 `AppearanceProvider` sits **above** `AuthProvider`, because the theme must be
 correct on the first frame and the configuration-error screen renders outside
@@ -89,11 +109,12 @@ authentication entirely. A provider cannot read a context provided below it, so
 the account link is *pushed up* by `AppearanceAccountSync`, a component that
 renders nothing and lives inside `AuthProvider`.
 
-### 2.5 Synchronous local read
+### 2.6 Synchronous local read
 
 `expo-sqlite/kv-store` exposes `getItemSync`. Its web build is WASM-backed and
-does not, so `appearance-storage.web.ts` uses `localStorage` — following the
-existing `hooks/use-color-scheme.web.ts` split rather than inventing a pattern.
+does not, so `appearance-storage.web.ts` uses `localStorage`. This is the only
+platform split WPS-020 keeps, and unlike the one it deleted in §2.4 it exists for
+a concrete platform difference rather than a historical accident.
 
 Static web export runs in Node, where `window` does not exist; that path reports
 "no stored preference", which is correct, and the inline `<head>` script paints

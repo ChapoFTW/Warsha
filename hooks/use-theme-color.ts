@@ -10,7 +10,10 @@ export function useThemeColor(
   props: { light?: string; dark?: string },
   colorName: keyof typeof Colors.light & keyof typeof Colors.dark
 ) {
-  const theme = useColorScheme() ?? 'light';
+  // Since WPS-020 the scheme is always resolved, so there is no null to guard
+  // against. `Colors.light` also holds real light values now — before WPS-020
+  // both entries were dark, and anything trusting this path rendered dark.
+  const theme = useColorScheme();
   const colorFromProps = props[theme];
 
   if (colorFromProps) {

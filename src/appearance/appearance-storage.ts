@@ -10,8 +10,9 @@ import { appearanceExplicitKey, appearanceStorageKey, isAppearancePreference, ty
  * WPS-020 forbids. `expo-sqlite/kv-store` backs the same database the rest of
  * the app already uses, so this introduces no new storage system.
  *
- * The web implementation lives in `appearance-storage.web.ts`, following the
- * existing `hooks/use-color-scheme.web.ts` split.
+ * The web implementation lives in `appearance-storage.web.ts`. That is the only
+ * platform split WPS-020 keeps, and it exists for a concrete reason: the web
+ * build of expo-sqlite is WASM-backed and has no synchronous read at all.
  */
 export function readLocalAppearance(): { preference: AppearancePreference | null; explicit: boolean } {
   try {

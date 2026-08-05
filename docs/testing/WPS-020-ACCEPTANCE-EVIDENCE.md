@@ -10,8 +10,24 @@
 | Hosted deployment | **Not applied** |
 | Local implementation | **Accepted** |
 
-Every result below was executed from the final repository state on 2026-08-05.
-Nothing is carried over from an earlier run, and nothing here is inferred.
+Every result below was re-executed from the final repository state after the
+interrupted session was recovered. Nothing is carried over from an earlier run,
+and nothing here is inferred.
+
+## Session interruption and recovery
+
+The implementing session hit its limit **mid-write on `hooks/use-color-scheme.ts`**.
+The write did not land. The file was recovered **unchanged** — its original
+single line, `export { useColorScheme } from 'react-native';` — not truncated,
+not corrupt, not partially written. Everything else had already been written and
+committed as `9237b82`, and a clean `git status` confirmed no other artefact was
+left half-saved.
+
+The recovering session completed that file, deleted the now-redundant
+`hooks/use-color-scheme.web.ts`, removed the dead null-guard in
+`hooks/use-theme-color.ts` that the narrowed return type retired, refreshed one
+stale comment in `appearance-storage.ts`, added five regression assertions
+covering the hook, and re-ran **every** gate below from the recovered tree.
 
 ## Executed gates
 
@@ -21,15 +37,15 @@ Nothing is carried over from an earlier run, and nothing here is inferred.
 | ESLint | `npm run lint` | Pass, 0 errors, 0 warnings |
 | Mojibake | `npm run check:mojibake` | `No likely mojibake found.` |
 | Whitespace | `git diff --check` | Clean |
-| Secret scan | `npm run audit:secrets` | Clean — 465 tracked files, 40 commits |
+| Secret scan | `npm run audit:secrets` | Clean — 492 tracked files, 41 commits |
 | Migration audit | `npm run audit:migrations` | Clean — 35 migrations, forward-only verified |
 | Environment audit | `npm run audit:environment` | Clean — 5 variables, 24 routes, 6 assets, 0 notes |
-| **Appearance audit** | `npm run audit:appearance` | Clean — 202 files, **73 semantic roles in both themes**, no colour literal outside the theme |
+| **Appearance audit** | `npm run audit:appearance` | Clean — 216 files, **73 semantic roles in both themes**, no colour literal outside the theme |
 | Bundle audit | `node scripts/audit-bundle.mjs dist/web dist/android dist/ios` | Clean — 55 artefacts across 3 exports |
 | Clean database reset | `supabase db reset` | Full chain through `202608050001` applied without error |
 | Full pgTAP | `supabase test db` | **23 files / 2,170 assertions, `Result: PASS`** |
 | WPS-020 pgTAP | single-file run | **138 assertions pass** |
-| WPS-020 client suite | `npm run test:wps020` | **872 checks pass** |
+| WPS-020 client suite | `npm run test:wps020` | **877 checks pass** |
 | All regression suites | 21 suites, exit-code checked | **20 pass, 1 pre-existing failure** (see below) |
 | Expo Doctor | `npx expo-doctor` | **18/18** |
 | Android export | `--platform android --clear` | Exported |
@@ -41,7 +57,7 @@ Nothing is carried over from an earlier run, and nothing here is inferred.
 | Hosted push | — | **Not executed** |
 
 Totals before WPS-020: 22 pgTAP files / 2,032 assertions, 20 regression suites.
-WPS-020 adds a 138-assertion pgTAP suite and an 872-check client suite.
+WPS-020 adds a 138-assertion pgTAP suite and an 877-check client suite.
 
 ## Pre-existing failure, not caused by WPS-020
 
@@ -51,18 +67,18 @@ WPS-020 adds a 138-assertion pgTAP suite and an 872-check client suite.
 notMatch(appJson, /"updates"/, 'over-the-air updates are not enabled');
 ```
 
-`app.json` in the working tree contains an `"updates"` block pointing at an Expo
-update URL, plus an `ios.infoPlist` block. Neither is in `HEAD`:
+`app.json` contains an `"updates"` block pointing at an Expo update URL, plus an
+`ios.infoPlist` block. Both were **uncommitted working-tree changes already
+present when WPS-020 began** — the implementing session's opening `git status`
+showed `app.json` as modified before a line of WPS-020 was written.
 
-```
-$ git show HEAD:app.json | grep -c updates   →  0
-$ git show HEAD:app.json | grep -c infoPlist →  0
-```
+They are now in `HEAD`, because the `wip` commit that preserved the interrupted
+work swept them in alongside WPS-020's own single `app.json` line. `git show
+9237b82 -- app.json` shows all three changes together; only
+`userInterfaceStyle: dark → automatic` is WPS-020's.
 
-Both were uncommitted working-tree changes present **before this session began**
-— the session's opening `git status` already showed `app.json` as modified. The
-WPS-018 suite reads only five properties from `app.json`, and `userInterfaceStyle`
-— the single line WPS-020 changed — is not one of them.
+The WPS-018 suite reads five properties from `app.json`, and `userInterfaceStyle`
+is not one of them. WPS-020 cannot have caused this failure.
 
 It was left alone in both directions. The assertion is correct and is doing
 exactly its job: WPS-018 recorded "over-the-air updates are not enabled" as a
@@ -163,8 +179,14 @@ not a search-and-theme change's. Recorded as an open item with a proposed value.
 | `components/themed-text.tsx` link colour → theme tint | The last colour literal outside the palette |
 | `scripts/brand-system.test.mts` palette assertions redirected | The locked values moved file; the check follows them and now also proves a light theme exists and dark was not redesigned |
 | `scripts/brand-system.test.mts` brand-ink assertion updated | The ink is now theme-derived from the surface; the new assertion is stricter, checking both themes' `brandMark` |
+| `hooks/use-color-scheme.ts` reports the app appearance, not the device | It answered a different question from the one its name implies; a Light choice on a dark phone made it say "dark" |
+| `hooks/use-color-scheme.web.ts` deleted | It returned `'light'` until hydration, so the platforms disagreed. Nothing platform-specific remains to decide. |
+| `hooks/use-theme-color.ts` null-guard removed | Dead once the return type narrowed to `'light' | 'dark'` |
 
-None weakened a check. The brand-suite changes strengthened two.
+None weakened a check. The brand-suite changes strengthened two, and the
+colour-scheme hook change closed the last hidden dark-mode assumption in the
+repository — the one that would never have shown up in a screenshot, because its
+only consumers are Expo starter components no Warsha screen renders.
 
 ## Known residue
 
