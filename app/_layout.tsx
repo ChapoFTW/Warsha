@@ -35,6 +35,7 @@ import { supabaseConfigurationMissing } from '@/src/config/environment';
 import { LocalPreferencesProvider } from '@/src/data/local-preferences';
 import { MarketplaceDataProvider } from '@/src/data/marketplace-context';
 import { DiscoveryProvider } from '@/src/discovery/discovery-context';
+import { GrowthProvider } from '@/src/growth/growth-context';
 import { LocalizationProvider } from '@/src/i18n/localization';
 import { MarketplaceIntelligenceProvider } from '@/src/marketplace-intelligence/marketplace-context';
 import { NotificationProvider } from '@/src/notifications/notification-context';
@@ -114,6 +115,7 @@ function ThemedRoot() {
           <Stack.Screen name="conversation/[bookingId]" />
           <Stack.Screen name="favourites" />
           <Stack.Screen name="recently-viewed" />
+          <Stack.Screen name="referrals" />
           <Stack.Screen name="appearance" />
           <Stack.Screen name="notifications" />
           <Stack.Screen name="notification-preferences" />
@@ -175,7 +177,9 @@ export default function RootLayout() {
                                     <ChatProvider>
                                       <NotificationProvider>
                                         <SupportProvider>
-                                          <ThemedRoot />
+                                          <GrowthProvider>
+                                            <ThemedRoot />
+                                          </GrowthProvider>
                                         </SupportProvider>
                                       </NotificationProvider>
                                     </ChatProvider>

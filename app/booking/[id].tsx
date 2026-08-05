@@ -10,6 +10,7 @@ import { BrandLoadingMark as ActivityIndicator } from '@/components/warsha/Brand
 import { BookingReviewCard } from '@/components/warsha/BookingReviewCard';
 import { BookingPaymentCard } from '@/components/warsha/BookingPaymentCard';
 import { BookingPriceAdjustmentCard } from '@/components/warsha/BookingPriceAdjustmentCard';
+import { EligiblePromotionBanner } from '@/components/warsha/EligiblePromotionBanner';
 import { BookingDisputePanel } from '@/components/warsha/BookingDisputePanel';
 import { JobOperationsPanel } from '@/components/warsha/JobOperationsPanel';
 import { AppText } from '@/components/warsha/Typography';
@@ -38,6 +39,7 @@ export default function BookingDetails(){
     {booking.status==='rescheduling_requested'?<Section title={jt('awaitingCustomer')}><Row label={jt('originalSchedule')} value={formatBookingDateTime(booking.date,booking.time,localeFor(language),t('asap'))}/><Row label={jt('proposedSchedule')} value={booking.proposedDate&&booking.proposedTime?formatBookingDateTime(booking.proposedDate,booking.proposedTime,localeFor(language),t('asap')):'—'}/>{booking.providerRescheduleNote?<Row label={jt('reason')} value={booking.providerRescheduleNote}/>:null}<Pressable disabled={proposalBusy} onPress={()=>void respondProposal(true)} style={styles.primary}>{proposalBusy?<ActivityIndicator color={colors.background}/>:<AppText style={styles.primaryText}>{jt('accept')}</AppText>}</Pressable><Pressable disabled={proposalBusy} onPress={()=>void respondProposal(false)} style={styles.outline}><AppText>{jt('reject')}</AppText></Pressable></Section>:null}
     {booking.attachments.length?<Section title={t('attachments')}><ScrollView horizontal contentContainerStyle={styles.gallery}>{booking.attachments.map(item=>item.uri?<Image key={item.id} source={{uri:item.uri}} style={styles.attachment}/>:null)}</ScrollView></Section>:null}
     <Section title={t('priceSummary')}><Price label={t('servicePrice')} value={price?.servicePrice||price?.inspectionFee||booking.price}/><Price label={t('transportationFee')} value={price?.transportationFee??0}/><Price label={t('emergencySurcharge')} value={price?.emergencySurcharge??0}/><Price label={t('discount')} value={-(price?.discount??0)}/><Price label={t('estimatedTotal')} value={price?.estimatedTotal??booking.price}/><AppText style={styles.warning}>{t('estimateNotice')}</AppText></Section>
+    <EligiblePromotionBanner bookingId={booking.id} baseMinor={Math.round((price?.estimatedTotal??booking.price)*100)} onApplied={()=>bookings.reload()}/>
     <BookingPriceAdjustmentCard booking={booking} role="customer"/>
     <JobOperationsPanel booking={booking} role="customer" onBookingChanged={()=>bookings.reload()}/>
     <BookingDisputePanel booking={booking} role="customer"/>

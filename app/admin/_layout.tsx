@@ -50,6 +50,7 @@ function AdminGate() {
       <Stack.Screen name="search" />
       <Stack.Screen name="analytics" />
       <Stack.Screen name="configuration" />
+      <Stack.Screen name="campaigns" />
       <Stack.Screen name="incidents" />
       <Stack.Screen name="audit" />
     </Stack>

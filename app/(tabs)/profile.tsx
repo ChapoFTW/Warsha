@@ -8,6 +8,7 @@ import { BrandTextField } from '@/components/warsha/BrandUI';
 import { AppText } from '@/components/warsha/Typography';
 import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
 import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
+import { useGrowthText } from '@/src/growth/growth-translations';
 import { useAuth } from '@/src/auth/auth-context';
 import { authMessageKey } from '@/src/auth/auth-errors';
 import { useAuthText } from '@/src/auth/auth-translations';
@@ -37,6 +38,7 @@ export default function Profile() {
   const pt = useProviderText();
   const st = useSupportText();
   const dt = useDiscoveryText();
+  const gt = useGrowthText();
   const auth = useAuth();
   const provider = useProviderFoundation();
   const [name, setName] = useState('');
@@ -273,6 +275,7 @@ export default function Profile() {
     </View> : <Pressable disabled={provider.saving} onPress={() => void openProvider()} style={styles.primary}>{provider.saving ? <BrandLoadingMark size={20} color={colors.background}/> : <AppText style={styles.dark}>{provider.profile ? pt('providerMode') : pt('become')}</AppText>}</Pressable>}
     <Pressable onPress={() => router.push('/favourites')} style={styles.button}><AppText>{t('favourites')}</AppText></Pressable>
     <Pressable accessibilityRole="button" accessibilityLabel={dt.text('recentlyViewed')} onPress={() => router.push('/recently-viewed')} style={styles.button}><AppText>{dt.text('recentlyViewed')}</AppText></Pressable>
+    <Pressable accessibilityRole="button" accessibilityLabel={gt.text('referralTitle')} onPress={() => router.push('/referrals')} style={styles.button}><AppText>{gt.text('referralTitle')}</AppText></Pressable>
     <Pressable accessibilityRole="button" accessibilityLabel={dt.text('appearance')} onPress={() => router.push('/appearance')} style={styles.button}><AppText>{dt.text('appearance')}</AppText></Pressable>
     <Pressable accessibilityRole="button" accessibilityLabel={st.text('helpCenter')} onPress={() => router.push('/help')} style={styles.button}><AppText>{st.text('helpCenter')}</AppText></Pressable>
     <Pressable accessibilityRole="button" accessibilityLabel={st.text('myCases')} onPress={() => router.push('/support')} style={styles.button}><AppText>{st.text('myCases')}</AppText></Pressable>
