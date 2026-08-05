@@ -41,7 +41,8 @@
     "test:wps019": "node --no-warnings --experimental-strip-types scripts/wps019-customer-support.test.mts",
     "test:wps020": "node --no-warnings --experimental-strip-types scripts/wps020-search-discovery-appearance.test.mts",
     "audit:appearance": "node ./scripts/audit-appearance.mjs",
-    "test:wps021": "node --no-warnings --experimental-strip-types scripts/wps021-growth-referrals-promotions.test.mts"
+    "test:wps021": "node --no-warnings --experimental-strip-types scripts/wps021-growth-referrals-promotions.test.mts",
+    "test:wps022": "node --no-warnings --experimental-strip-types scripts/wps022-privacy-data-lifecycle.test.mts"
   },
   "dependencies": {
     "@expo-google-fonts/cairo": "^0.4.2",

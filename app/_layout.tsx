@@ -40,6 +40,7 @@ import { LocalizationProvider } from '@/src/i18n/localization';
 import { MarketplaceIntelligenceProvider } from '@/src/marketplace-intelligence/marketplace-context';
 import { NotificationProvider } from '@/src/notifications/notification-context';
 import { PaymentsProvider } from '@/src/payments/payment-context';
+import { PrivacyProvider } from '@/src/privacy/privacy-context';
 import { ProviderJobsProvider } from '@/src/provider-jobs/provider-job-context';
 import { ProviderFoundationProvider } from '@/src/providers/provider-context';
 import { ReviewProvider } from '@/src/reviews/review-context';
@@ -117,6 +118,8 @@ function ThemedRoot() {
           <Stack.Screen name="recently-viewed" />
           <Stack.Screen name="referrals" />
           <Stack.Screen name="appearance" />
+          <Stack.Screen name="privacy" />
+          <Stack.Screen name="privacy-delete" />
           <Stack.Screen name="notifications" />
           <Stack.Screen name="notification-preferences" />
           <Stack.Screen name="provider-mode" />
@@ -178,7 +181,9 @@ export default function RootLayout() {
                                       <NotificationProvider>
                                         <SupportProvider>
                                           <GrowthProvider>
-                                            <ThemedRoot />
+                                            <PrivacyProvider>
+                                              <ThemedRoot />
+                                            </PrivacyProvider>
                                           </GrowthProvider>
                                         </SupportProvider>
                                       </NotificationProvider>

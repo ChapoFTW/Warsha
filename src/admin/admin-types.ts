@@ -70,6 +70,16 @@ export type StaffCapability =
   | 'view_analytics'
   | 'export_operational_report'
   | 'manage_staff_roles'
+  // WPS-022 privacy. Holds sit in `security` rather than `accounts` because a
+  // hold suspends someone's right to have their data removed, and that belongs
+  // beside the other decisions of that weight. Retention review sits in
+  // `audit` because it is a read. None of these lets staff read the CONTENTS
+  // of a privacy request; no such capability exists.
+  | 'review_privacy_requests'
+  | 'manage_legal_holds'
+  | 'review_retention'
+  | 'view_data_inventory'
+  | 'review_privacy_incidents'
   | 'legacy_domain_staff_actions';
 
 export const staffCapabilities: readonly StaffCapability[] = [

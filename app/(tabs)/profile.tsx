@@ -9,6 +9,7 @@ import { AppText } from '@/components/warsha/Typography';
 import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
 import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
 import { useGrowthText } from '@/src/growth/growth-translations';
+import { usePrivacyText } from '@/src/privacy/privacy-translations';
 import { useAuth } from '@/src/auth/auth-context';
 import { authMessageKey } from '@/src/auth/auth-errors';
 import { useAuthText } from '@/src/auth/auth-translations';
@@ -39,6 +40,7 @@ export default function Profile() {
   const st = useSupportText();
   const dt = useDiscoveryText();
   const gt = useGrowthText();
+  const pvt = usePrivacyText();
   const auth = useAuth();
   const provider = useProviderFoundation();
   const [name, setName] = useState('');
@@ -279,6 +281,9 @@ export default function Profile() {
     <Pressable accessibilityRole="button" accessibilityLabel={dt.text('appearance')} onPress={() => router.push('/appearance')} style={styles.button}><AppText>{dt.text('appearance')}</AppText></Pressable>
     <Pressable accessibilityRole="button" accessibilityLabel={st.text('helpCenter')} onPress={() => router.push('/help')} style={styles.button}><AppText>{st.text('helpCenter')}</AppText></Pressable>
     <Pressable accessibilityRole="button" accessibilityLabel={st.text('myCases')} onPress={() => router.push('/support')} style={styles.button}><AppText>{st.text('myCases')}</AppText></Pressable>
+    {/* Privacy sits in the ordinary settings list, above sign out. Burying it
+        under a submenu is the standard way to make deletion hard to find. */}
+    <Pressable accessibilityRole="button" accessibilityLabel={pvt.text('privacyTitle')} onPress={() => router.push('/privacy')} style={styles.button}><AppText>{pvt.text('privacyTitle')}</AppText></Pressable>
     {auth.mode === 'supabase' ? <Pressable onPress={() => void auth.signOut()} style={styles.button}><AppText>{t('signOut')}</AppText></Pressable> : null}
     {notice ? <AppText accessibilityRole="alert" style={styles.notice}>{notice}</AppText> : null}
     {message ? <AppText accessibilityRole="alert" style={styles.error}>{message}</AppText> : null}
