@@ -1,107 +1,130 @@
 # Growth architecture (WPS-021)
 
-## The one-page version
+## Two independent systems
 
 ```
-                    ┌──────────────────┐
-                    │ referral_codes   │  one per account, immutable,
-                    │  CSPRNG, 31^10   │  revocable only by staff
-                    └────────┬─────────┘
-                             │ claim (server-validated, rate-limited)
-                             ▼
-                 ┌───────────────────────────┐
-                 │ referral_attributions     │  one per referred account, EVER
-                 │  status: pending          │  immutable once written
-                 └────────┬──────────────────┘
-                          │ booking reaches `completed`
-                          │ AND a WPS-007 price snapshot exists
-                          ▼
-              ┌────────────────────────────────┐
-              │ referral_reward_entitlements   │  NOT money. No balance.
-              │  status: recorded              │  Posts no ledger row.
-              └────────┬───────────────────────┘
-                       │ only if staff linked the rule to a campaign
-                       ▼
-            ┌──────────────────────────────────┐
-            │ campaign_eligibility_grants      │
-            └────────┬─────────────────────────┘
-                     │ customer opens a booking
-                     ▼
-        ┌────────────────────────────────────────────┐
-        │ private.evaluate_promotion_eligibility     │  12 conditions,
-        │  returns at most ONE offer, or nothing     │  one transaction
-        └────────┬───────────────────────────────────┘
-                 │ redeem (row lock, then re-evaluate)
-                 ▼
-        ┌───────────────────────┐
-        │ campaign_redemptions  │  unique(booking_id) — one promotion per booking
-        └────────┬──────────────┘
-                 ▼
-   ┌──────────────────────────────────────────────────┐
-   │ WPS-007 private.create_booking_price_snapshot    │
-   │   provider_gross = customer_total + promotion    │
-   │   → warsha_promotion_expense                     │
-   └──────────────────────────────────────────────────┘
+REFERRALS                                    ADMIN PROMOTIONS
+─────────                                    ────────────────
+
+staff approve a PROGRAMME once               staff approve a CAMPAIGN once
+        │                                             │
+        ▼                                             ▼
+┌──────────────────┐                        ┌──────────────────────┐
+│ referral_codes   │  CSPRNG, 31^10         │ growth_campaigns     │
+│ immutable        │                        │ immutable after draft│
+└────────┬─────────┘                        └──────────┬───────────┘
+         │ claim                                       │
+         ▼                                             │
+┌───────────────────────────┐                          │
+│ referral_attributions     │ one per account, EVER    │
+└────────┬──────────────────┘                          │
+         │ referred account completes a booking        │
+         │ carrying a WPS-007 price snapshot           │
+         ▼                                             │
+┌────────────────────────────────┐                     │
+│ referral_rewards               │  ◀── AUTOMATIC.     │
+│ status: available              │      No human.      │
+│ bounded, single-use, expiring  │                     │
+└────────┬───────────────────────┘                     │
+         │                                             │
+         │  evaluate_referral_benefit    evaluate_promotion_eligibility
+         │  (reads no campaign)          (reads no referral state)
+         │                                             │
+         └──────────────┬──────────────────────────────┘
+                        ▼
+          ┌──────────────────────────────┐
+          │ get_my_booking_benefit       │  returns AT MOST ONE
+          └──────────────┬───────────────┘
+                         ▼
+          ┌──────────────────────────────────┐
+          │ booking_benefit_redemptions      │
+          │ unique(booking_id) = the         │
+          │ stacking rule, as a constraint   │
+          └──────────────┬───────────────────┘
+                         ▼
+     ┌──────────────────────────────────────────────────┐
+     │ WPS-007 create_booking_price_snapshot            │
+     │   final_price_egp reduced                        │
+     │   price_breakdown.discount recorded              │
+     │   provider_gross = customer_total + promotion    │
+     │   → warsha_promotion_expense                     │
+     └──────────────────────────────────────────────────┘
 ```
 
-## Why the entitlement is inert
+Neither branch touches the other. An account that has never referred anybody can
+receive a promotion; an account that referred somebody receives its reward with
+no campaign in existence.
 
-The locked scope forbids a customer wallet, a credit balance, and booking
-credits. A referral must still reward somebody. Those two facts are only
-compatible if a reward is a **record that something was earned**, not a stored
-value.
+## Where the human decision sits
 
-An entitlement therefore has no amount, cannot be transferred, cannot be summed,
-and posts nothing. It becomes real only when staff have already approved a
-campaign to honour it. If nobody approved one, the entitlement sits in the
-owner's history marked *earned*, and Warsha owes nothing it has not authorised.
+Exactly once per system, **in advance**:
 
-The alternative — creating a campaign automatically when a referral qualifies —
-would mean the system approves its own spending. That is what
-[the dual-control rule](../wps/WPS-021-growth-referrals-promotions.md) exists to
-prevent, so it cannot be reintroduced through the back door.
+| System | The one human decision | What follows |
+| --- | --- | --- |
+| Referrals | Approve the programme (dual control) | Server grants every qualifying reward automatically |
+| Promotions | Approve the campaign (dual control) | Server evaluates every user automatically |
 
-## What a promotion is allowed to touch
+There is no per-referral approval and no per-user approval. Neither is
+"not built yet" — both are structurally absent, and pgTAP asserts that no
+per-referral approval ever appears in the staff audit trail.
 
-| Value | Effect of a promotion |
+## Why budget is reserved at grant time
+
+A reward reserves the **maximum it could be worth** the moment it is granted.
+
+Reserving at redemption instead would make the budget meaningless: a programme
+with a 10,000 EGP budget could grant a million rewards, because none had been
+spent yet. Reserving the ceiling means the budget bounds *outstanding
+liability*, which is the number that actually matters.
+
+The unused remainder is released on three paths:
+
+| Event | Released |
+| --- | --- |
+| Redeemed for less than the ceiling | `reserved − actual` |
+| Expired unused | The whole reservation |
+| Booking cancelled or refunded | The consumed amount; and if the programme says `restore`, the reward comes back and re-reserves |
+
+## What a benefit is allowed to touch
+
+| Value | Effect |
 | --- | --- |
 | Customer total | **Reduced** |
 | `promotion_minor` on the snapshot | Set to the discount |
-| Provider gross | **Unchanged** — the promotion is added back |
+| Provider gross | **Unchanged** — the benefit is added back |
 | Commission basis | **Unchanged** |
 | Provider net | **Unchanged** |
 | Payout eligibility | **Unchanged** |
 | WPS-008 ranking | **Untouched**, and asserted untouched |
 
-The redemption path writes two fields on the booking: `price_breakdown.discount`
-and a reduced `final_price_egp`. Both are required. Writing only the first
-leaves the customer paying full price and inflates provider gross above the job
-value, which would make Warsha fund a bonus rather than a discount — a defect
-caught by pgTAP during implementation and now asserted permanently.
+Redemption writes two fields: a reduced `final_price_egp` **and**
+`price_breakdown.discount`. Both are required — writing only the second leaves
+the customer paying full price and inflates provider gross above the job value,
+making Warsha fund a worker bonus rather than a customer discount. That was a
+real defect caught by pgTAP during implementation and is now asserted
+permanently.
 
-## Where each concern actually lives
+## Where each concern lives
 
 | Concern | Owner | WPS-021's part |
 | --- | --- | --- |
-| Money, ledger, refunds | `create_booking_price_snapshot` | Calls it |
-| Enforcement, bans, restrictions | WPS-016 | Records advisory signals only |
-| Notification delivery, preferences, quiet hours | WPS-014 | Five catalog rows |
-| Staff identity and capability | WPS-017/018 | Two capability rows |
-| Approval of irreversible actions | WPS-018 dual control | Consumes it |
-| Release control | WPS-017 flags and kill switches | Two flags, one switch |
+| Money, ledger, refunds | WPS-007 `create_booking_price_snapshot` | Calls it |
+| Enforcement, bans | WPS-016 | Advisory signals only, on its vocabulary |
+| Notifications | WPS-014 | Five catalog rows |
+| Staff identity, capability, dual control | WPS-017 / WPS-018 | Four capability rows |
+| Release control | WPS-017 flags and kill switches | Two flags, two switches |
 | Rate limiting | WPS-018 limiter | Four policy rows |
 | Observability | WPS-018 event sink | Five event keys |
 | Colour and theming | WPS-020 tokens | No literal of its own |
 
 ## Failure behaviour
 
-Every path fails to *no promotion*, never to a discount:
+Every path fails to *no benefit*, never to a discount:
 
-- flag absent → off
-- flag disabled → off
-- kill switch active → off
-- campaign missing, unapproved, expired, out of budget, over limit → no offer
-- eligibility evaluator raises → caught, returns `{ eligible: false }`
-- redemption raises → the booking is untouched, no counter moves
+- flag absent, disabled, or kill switch active → nothing
+- no approved programme or campaign → nothing
+- outside window, out of budget, over limit → nothing
+- evaluator raises → caught, returns `{ eligible: false }`
+- redemption raises → booking untouched, no counter moves
 
-There is no code path in which an error produces money leaving Warsha.
+There is no code path in which an error causes money to leave Warsha.

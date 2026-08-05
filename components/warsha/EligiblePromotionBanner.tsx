@@ -8,7 +8,7 @@ import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-con
 import { useGrowth } from '@/src/growth/growth-context';
 import { growthRepository } from '@/src/growth/growth-repository';
 import { useGrowthText } from '@/src/growth/growth-translations';
-import { formatMinorAsEgp, type EligiblePromotion } from '@/src/growth/growth-types';
+import { formatMinorAsEgp, type BookingBenefit } from '@/src/growth/growth-types';
 import { useLocalization } from '@/src/i18n/localization';
 
 type Props = {
@@ -19,16 +19,17 @@ type Props = {
 };
 
 /**
- * The only place a customer ever sees a promotion.
+ * The only place a customer ever sees a benefit on a booking.
  *
- * Nothing renders unless the SERVER returns an eligibility result. There is no
- * code entry, no campaign list, and no "you might qualify" state — a client
- * cannot tell the difference between "no campaign exists" and "you are not
- * eligible", which is what stops this surface from becoming a campaign
- * enumerator.
+ * A booking receives at most ONE benefit, and the server decides which: a
+ * referral reward the customer earned, or an admin campaign they qualify for.
+ * The two are labelled differently on purpose — "your referral reward" is
+ * something they worked for, "Warsha offer" is something Warsha chose to give.
  *
- * The banner states that Warsha funds the offer, because a customer seeing a
- * discount should not have to wonder whether their worker is absorbing it.
+ * Nothing renders unless the SERVER returns a result. There is no code entry,
+ * no campaign list, and no "you might qualify" state — a client cannot tell the
+ * difference between "nothing exists" and "you are not eligible", which is what
+ * stops this surface from becoming an enumerator.
  */
 export function EligiblePromotionBanner({ bookingId, baseMinor, onApplied }: Props) {
   const colors = useThemeColors();
@@ -37,7 +38,7 @@ export function EligiblePromotionBanner({ bookingId, baseMinor, onApplied }: Pro
   const gt = useGrowthText();
   const { accountKey, role } = useGrowth();
 
-  const [offer, setOffer] = useState<EligiblePromotion>({ eligible: false });
+  const [benefit, setBenefit] = useState<BookingBenefit>({ eligible: false });
   const [applied, setApplied] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -45,83 +46,87 @@ export function EligiblePromotionBanner({ bookingId, baseMinor, onApplied }: Pro
 
   useEffect(() => {
     const current = ++generation.current;
-    if (!accountKey || !bookingId || baseMinor < 1) {
-      setOffer({ eligible: false });
+    if (!accountKey || !bookingId || baseMinor < 2) {
+      setBenefit({ eligible: false });
       return;
     }
     void (async () => {
       try {
-        const result = await growthRepository.getEligiblePromotion(
+        const result = await growthRepository.getBookingBenefit(
           accountKey,
           bookingId,
           baseMinor,
           role,
         );
         if (current !== generation.current) return;
-        setOffer(result);
+        setBenefit(result);
       } catch {
-        // An eligibility failure must never break a booking. It resolves to
-        // "no offer", exactly as the server's own evaluator does.
+        // A benefit failure must never break a booking. It resolves to
+        // "no benefit", exactly as the server's own evaluator does.
         if (current !== generation.current) return;
-        setOffer({ eligible: false });
+        setBenefit({ eligible: false });
       }
     })();
   }, [accountKey, bookingId, baseMinor, role]);
 
   const onApply = useCallback(async () => {
-    if (!offer.eligible || busy) return;
+    if (!benefit.eligible || busy) return;
     setBusy(true);
     setError(null);
     try {
-      await growthRepository.redeemPromotion(
-        accountKey,
-        bookingId,
-        offer.campaignKey,
-        baseMinor,
-        role,
-      );
+      await growthRepository.redeemBookingBenefit(accountKey, bookingId, baseMinor, role);
       setApplied(true);
       onApplied?.();
     } catch {
-      setError(gt.text('promotionUnavailable'));
-      setOffer({ eligible: false });
+      setError(gt.text('benefitUnavailable'));
+      setBenefit({ eligible: false });
     } finally {
       setBusy(false);
     }
-  }, [offer, busy, accountKey, bookingId, baseMinor, role, onApplied, gt]);
+  }, [benefit, busy, accountKey, bookingId, baseMinor, role, onApplied, gt]);
 
-  if (!offer.eligible) return null;
+  if (!benefit.eligible) return null;
 
-  const title = gt.locale === 'ar' ? offer.titleAr : offer.titleEn;
-  const saves = `${gt.text('promotionSaves')} ${formatMinorAsEgp(offer.discountMinor)} ${gt.text('currency')}`;
+  const isReward = benefit.source === 'referral_reward';
+  const title = isReward
+    ? gt.text('benefitRewardTitle')
+    : gt.locale === 'ar'
+      ? benefit.titleAr
+      : benefit.titleEn;
+  const saves = `${gt.text('benefitSaves')} ${formatMinorAsEgp(benefit.discountMinor)} ${gt.text('currency')}`;
 
   return (
     <View
       style={styles.card}
       accessibilityLiveRegion="polite"
-      accessibilityLabel={`${gt.text('promotionTitle')}: ${title}. ${saves}`}>
+      accessibilityLabel={`${title}. ${saves}. ${gt.text('benefitFunded')}`}>
       <View style={[styles.row, isRTL && styles.reverse]}>
-        <MaterialIcons name="local-offer" size={18} color={colors.textPrimary} />
+        <MaterialIcons
+          name={isReward ? 'redeem' : 'local-offer'}
+          size={18}
+          color={colors.textPrimary}
+        />
         <AppText style={styles.title}>{title}</AppText>
       </View>
       <AppText style={styles.saves}>{saves}</AppText>
-      <AppText style={styles.funded}>{gt.text('promotionFunded')}</AppText>
+      <AppText style={styles.funded}>{gt.text('benefitFunded')}</AppText>
+      <AppText style={styles.funded}>{gt.text('benefitOnePerBooking')}</AppText>
 
       {applied ? (
         // Confirmed by an icon and a word, never by colour alone.
         <View style={[styles.row, isRTL && styles.reverse]}>
           <MaterialIcons name="check-circle-outline" size={17} color={colors.successText} />
-          <AppText style={styles.applied}>{gt.text('promotionApplied')}</AppText>
+          <AppText style={styles.applied}>{gt.text('benefitApplied')}</AppText>
         </View>
       ) : (
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={gt.text('promotionApply')}
+          accessibilityLabel={gt.text('benefitApply')}
           accessibilityState={{ disabled: busy }}
           disabled={busy}
           onPress={() => void onApply()}
           style={styles.action}>
-          <AppText style={styles.actionText}>{gt.text('promotionApply')}</AppText>
+          <AppText style={styles.actionText}>{gt.text('benefitApply')}</AppText>
         </Pressable>
       )}
 

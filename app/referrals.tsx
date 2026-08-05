@@ -10,21 +10,27 @@ import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-con
 import { useGrowth } from '@/src/growth/growth-context';
 import { useGrowthText } from '@/src/growth/growth-translations';
 import {
+  daysUntilExpiry,
+  effectiveRewardStatus,
+  formatMinorAsEgp,
   formatReferralCodeForDisplay,
   referralCodeAccessibilityLabel,
-  type RewardEntitlement,
+  type ReferralReward,
 } from '@/src/growth/growth-types';
 import { useLocalization } from '@/src/i18n/localization';
 
 /**
  * Customer and worker referrals.
  *
- * The screen is honest about two things that growth features usually blur. It
- * says out loud that signing up earns nothing, and it describes an earned reward
- * as earned rather than as a balance — because it is not money, and Warsha owes
- * nothing it has not approved.
+ * The screen is honest about three things growth features usually blur:
  *
- * There is no promo-code box here. The field below accepts an INVITE code, which
+ *   - signing up alone earns nothing, and it says so;
+ *   - a reward arrives AUTOMATICALLY, so nothing here suggests a person is
+ *     reviewing it or that it is waiting on a campaign;
+ *   - a reward is a discount Warsha pays for on a future booking, not a
+ *     balance.
+ *
+ * There is no promo-code box. The field below accepts an INVITE code, which
  * carries no discount and cannot be redeemed for one.
  */
 export default function ReferralsScreen() {
@@ -102,6 +108,7 @@ export default function ReferralsScreen() {
           <AppText style={styles.step}>2. {gt.text('howItWorksTwo')}</AppText>
           <AppText style={styles.step}>3. {gt.text('howItWorksThree')}</AppText>
           <AppText style={styles.notice}>{gt.text('noRewardForSignup')}</AppText>
+          <AppText style={styles.notice}>{gt.text('automaticNotice')}</AppText>
         </View>
 
         <View style={styles.card}>
@@ -118,9 +125,7 @@ export default function ReferralsScreen() {
           {summary.rewards.length === 0 ? (
             <AppText style={styles.hint}>{gt.text('rewardsEmpty')}</AppText>
           ) : (
-            summary.rewards.map(reward => (
-              <RewardRow key={reward.id} reward={reward} />
-            ))
+            summary.rewards.map(reward => <RewardRow key={reward.id} reward={reward} />)
           )}
           <AppText style={styles.hint}>{gt.text('rewardExplainer')}</AppText>
         </View>
@@ -166,23 +171,51 @@ export default function ReferralsScreen() {
     );
   }
 
-  function RewardRow({ reward }: { reward: RewardEntitlement }) {
-    const statusText =
-      reward.status === 'fulfilled'
-        ? gt.text('rewardFulfilled')
-        : reward.status === 'void'
-          ? gt.text('rewardVoid')
-          : gt.text('rewardRecorded');
+  function RewardRow({ reward }: { reward: ReferralReward }) {
+    const status = effectiveRewardStatus(reward);
+    const statusText = gt.rewardStatus(status);
+    const worth = `${gt.text('rewardWorth')} ${formatMinorAsEgp(reward.maxRewardMinor)} ${gt.text('currency')}`;
+
+    // Only a live reward shows an expiry. Saying "expires in 0 days" on a
+    // reward that already expired is worse than saying nothing.
+    const remaining = daysUntilExpiry(reward.expiresAt);
+    const expiry =
+      status !== 'available'
+        ? null
+        : remaining <= 1
+          ? gt.text('rewardExpiresToday')
+          : `${gt.text('rewardExpiresIn')} ${remaining} ${gt.text('rewardDays')}`;
+
     return (
       <View
-        style={[styles.rewardRow, isRTL && styles.reverse]}
-        accessibilityLabel={`${reward.ruleKey}: ${statusText}`}>
-        <MaterialIcons
-          name={reward.status === 'fulfilled' ? 'check-circle-outline' : 'schedule'}
-          size={17}
-          color={colors.textMuted}
-        />
-        <AppText style={styles.rewardText}>{statusText}</AppText>
+        style={styles.rewardRow}
+        accessibilityLabel={[statusText, worth, expiry].filter(Boolean).join('. ')}>
+        <View style={[styles.rewardHeader, isRTL && styles.reverse]}>
+          {/* State is carried by an icon AND a word, never by colour alone. */}
+          <MaterialIcons
+            name={
+              status === 'available'
+                ? 'redeem'
+                : status === 'consumed'
+                  ? 'check-circle-outline'
+                  : 'schedule'
+            }
+            size={17}
+            color={status === 'available' ? colors.successText : colors.textMuted}
+          />
+          <AppText style={styles.rewardStatus}>{statusText}</AppText>
+        </View>
+        <AppText style={styles.rewardWorth}>{worth}</AppText>
+        {expiry ? <AppText style={styles.hint}>{expiry}</AppText> : null}
+        {status === 'available' ? (
+          <AppText style={styles.hint}>{gt.text('rewardConditions')}</AppText>
+        ) : null}
+        {status === 'available' && Number(reward.minimumBookingMinor) > 0 ? (
+          <AppText style={styles.hint}>
+            {gt.text('rewardMinimum')}: {formatMinorAsEgp(reward.minimumBookingMinor)}{' '}
+            {gt.text('currency')}
+          </AppText>
+        ) : null}
       </View>
     );
   }
@@ -205,8 +238,10 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   stat: { flexGrow: 1, minWidth: 90, gap: spacing.xs },
   statValue: { fontSize: 22, fontWeight: typography.bold, color: colors.textPrimary },
   statLabel: { fontSize: 11, color: colors.textMuted },
-  rewardRow: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  rewardText: { fontSize: 13, color: colors.textPrimary },
+  rewardRow: { minHeight: 44, gap: spacing.xs, paddingVertical: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.borderDefault },
+  rewardHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  rewardStatus: { fontSize: 13, fontWeight: typography.semibold, color: colors.textPrimary },
+  rewardWorth: { fontSize: 13, color: colors.textPrimary },
   entryValue: { flexGrow: 1, minWidth: 140, minHeight: 44, paddingHorizontal: spacing.md, borderRadius: radii.md, borderWidth: 1, borderColor: colors.borderDefault, backgroundColor: colors.inputBackground, fontSize: 14, letterSpacing: 1, color: colors.textPrimary },
   rtlText: { textAlign: 'right' },
   state: { alignItems: 'center', padding: spacing.xxxl, gap: spacing.md },

@@ -13,6 +13,13 @@ import {
   type ReferralSummary,
 } from './growth-types';
 
+/**
+ * Referral state only. Booking benefits are read per booking by the banner,
+ * because a benefit depends on the booking's value and the context has no
+ * booking. Keeping them apart also keeps the referral system and the campaign
+ * system from sharing state they must not share.
+ */
+
 type GrowthValue = {
   ready: boolean;
   /** Null until an account exists. Every read below is scoped to it. */

@@ -2,12 +2,13 @@
 
 | Field | Value |
 | --- | --- |
-| Version | 1.0 |
-| Status | **LOCKED — IMPLEMENTED LOCALLY, MANUAL ACCEPTANCE PENDING** |
+| Version | 1.1 |
+| Status | **LOCKED — IMPLEMENTED LOCALLY, DISABLED BY DEFAULT, MANUAL ACCEPTANCE PENDING** |
+| Validation | Clean reset + 24 pgTAP files / 2,329 assertions `PASS`; 363 client checks |
 | Authority | Constitution → WPS-007 → WPS-008 → WPS-014 → WPS-016 → WPS-017 → WPS-018 → WPS-021 |
 | Engineering baseline | `docs/wes/WES-021-growth-referrals-promotions.md` |
 | Migration | `supabase/migrations/202608060001_wps021_growth_referrals_promotions.sql` |
-| Supersedes | The dormant `public.promo_codes` / `public.promo_code_uses` scaffold |
+| Supersedes | The dormant `promo_codes` and `wallets` scaffolds from `202607200002` |
 
 ---
 
@@ -23,451 +24,356 @@ decides what happens to an account, and WPS-021 may only observe and report. It
 is not an authority for ranking: WPS-008 orders workers, and nothing in WPS-021
 reaches that ordering.
 
-### 1.1 What WPS-021 adds
+### 1.1 Two independent systems
 
-| Capability | Audience |
-| --- | --- |
-| A personal referral code and share link | Customer and worker |
-| Immutable referral attribution | System |
-| Qualification on an authoritative completed event | System |
-| A recorded, bounded, auditable reward entitlement | Customer and worker |
-| Staff-created, staff-approved, Warsha-funded promotional campaigns | Staff only |
-| A single server-authoritative eligibility answer per booking | Customer |
-| Advisory growth-abuse signals | Staff only |
+These do not depend on each other, and neither reads the other's state.
+
+| | Referral programmes | Admin promotions |
+| --- | --- | --- |
+| What staff approve | The **programme**, once, in advance | The **campaign**, once, in advance |
+| Who receives it | An account that referred somebody who completed a job | Any account matching the campaign's stated criteria |
+| How the recipient is chosen | Automatically, on qualification | Automatically, per user, on eligibility |
+| Per-recipient human approval | **None** | **None** |
+| Requires the other system | No | No |
+
+An account that has never referred anybody can receive a promotion. An account
+that referred somebody receives its reward without any campaign existing.
 
 ### 1.2 What WPS-021 deliberately does not add
 
-Every item below was specified, considered, and refused. Each is refused in the
-document, in the schema, and in a negative test.
+Every item below was specified, considered, and refused — in the document, in
+the schema, and in a negative test.
 
 | Refused | Why |
 | --- | --- |
 | Customer-facing promo-code entry | A code box is an invitation to guess, share, and farm codes. Eligibility is a server decision, not a text field. |
-| Public campaign browsing | A campaign a customer can browse is a campaign a customer can enumerate, screenshot, and resell. |
-| Customer wallet or credit balance | No WPS-001…020 authority defines one. Inventing a balance would create a second money system beside WPS-007. |
-| Booking credits, campaign credits | Same reason. A credit is a liability, and WPS-021 has no authority to create liabilities. |
-| Influencer, affiliate, worker-created, or self-service codes | Every one of these makes a code a public bearer instrument. |
-| Automatic first-booking discount | An automatic discount is a promotion nobody approved. |
+| Public campaign browsing | A campaign a customer can browse is one they can enumerate, screenshot, and resell. |
+| Customer wallet or stored balance | No WPS-001…020 authority defines one. A balance would be a second money system beside WPS-007. |
+| Transferable credits | A transferable reward is a bearer instrument. |
+| Manual per-referral approval | A referral programme with a human queue behind it is not a referral programme. |
+| Reward for signup alone | See §4.3. |
+| Influencer, affiliate, worker-created, or self-service codes | Each makes a code a public bearer instrument. |
+| Automatic first-booking discount | Unless staff explicitly created and approved a campaign for it. |
 | Flash sales, countdowns, streaks, mystery rewards, gambling mechanics | Warsha exists to get work done safely at a fair price. Manufactured urgency is not fair pricing. |
-| A referral code that also functions as a promo code | These are separate concepts and must remain structurally separate. See §4.6. |
+| Opaque eligibility (behavioural score, inferred income, likelihood to convert, hidden personalization, paid ranking) | A customer must be able to be told why they qualified. |
 
 ---
 
 ## 2. The single most important rule
 
-> **A promotion is Warsha-funded. It reduces what the customer pays. It never
+> **Every benefit is Warsha-funded. It reduces what the customer pays. It never
 > reduces what the worker earns.**
 
-This is not a new rule. WPS-007 already implements it in
-`private.create_booking_price_snapshot`:
+WPS-007 already implements this in `private.create_booking_price_snapshot`:
 
 ```sql
 provider_gross_minor := customer_total_minor + promotion_minor - tax_minor;
 ```
 
-The promotion is *added back* to provider gross. Worker gross, the commission
+The benefit is *added back* to provider gross. Worker gross, the commission
 basis, provider net, and payout eligibility are arithmetically incapable of
-being reduced by a promotion. WPS-021 does not reimplement this. WPS-021 is
-**forbidden from bypassing it** — every promotion reaches the customer's price
-through the WPS-007 snapshot path and through no other route.
+being reduced. WPS-021 does not reimplement this and is **forbidden from
+bypassing it**: every benefit reaches the customer's price by reducing
+`final_price_egp` and recording `price_breakdown.discount`, then calling the
+WPS-007 snapshot — and by no other route.
 
 ---
 
 ## 3. Fail-closed posture
 
-Promotions are off. They are off by default, off in every environment, and off
-in a way that requires four independent affirmative conditions to become on.
+Both systems are off, independently, and each needs affirmative conditions to
+become on.
 
-| Gate | Authority | Default |
+| Gate | Referrals | Promotions |
 | --- | --- | --- |
-| `growth_promotions` feature flag | WPS-017 `private.staff_feature_flags` | `enabled=false`, `audience='none'` |
-| `growth_promotions` kill switch | WPS-017 `private.staff_kill_switches` | inactive, but restricts when active |
-| Campaign `status` | WPS-021 | `draft` |
-| Campaign approval | WPS-018 dual control | unapproved |
+| Feature flag | `growth_referrals` — `enabled=false, audience='none'` | `growth_promotions` — same |
+| Kill switch | `growth_referrals` — inactive, restricts only | `growth_promotions` — same |
+| Lifecycle | Programme starts as `draft` | Campaign starts as `draft` |
+| Approval | WPS-018 dual control | WPS-018 dual control |
 
-An unknown flag, a missing campaign, an unreadable configuration, or an
-exception anywhere in eligibility resolves to **no promotion**. There is no code
-path in which an error produces a discount.
-
-Referrals are separately flagged by `growth_referrals` and are likewise off
-until deliberately enabled.
+An unknown flag, a missing programme, an unreadable configuration, or an
+exception anywhere resolves to **no benefit**. There is no code path in which an
+error produces a discount.
 
 ---
 
-## 4. Referrals
+## 4. Referral programmes
 
 ### 4.1 Codes
-
-Every account may hold at most one referral code, for its lifetime.
 
 | Property | Rule |
 | --- | --- |
 | Uniqueness | Globally unique across customers and workers |
-| Generation | Cryptographically secure random bytes. No sequence, no counter, no timestamp, no account identifier, no derivation from any user attribute |
-| Alphabet | 28 characters, excluding `0 O 1 I L` — a code is read aloud and typed by hand |
-| Length | 10 characters — 28¹⁰ ≈ 2.96 × 10¹⁴ |
-| Immutability | The code text can never be changed, by anyone, including staff |
-| Revocation | Staff only, with a recorded reason. Revocation never deletes the code or its history |
-| Rotation | None. A rotated code would break attribution already recorded against it |
+| Generation | Cryptographically secure random bytes with rejection sampling. No sequence, counter, timestamp, or derivation from any user attribute |
+| Alphabet | 31 characters, excluding `0 O 1 I L` — a code is read aloud and typed by hand |
+| Length | 10 — 31¹⁰ ≈ 8.19 × 10¹⁴ |
+| Immutability | The code text can never change, by anyone, including staff |
+| Revocation | Staff only, with a recorded reason. Never deletes the code or its history |
+| Rotation | None. A rotated code would orphan recorded attribution |
 
-A code is created lazily on first request, not at signup, so an account that
-never opens the referral screen never occupies code space.
+Created lazily on first request, so an account that never opens the screen never
+occupies code space.
 
 ### 4.2 Attribution
-
-Attribution is the permanent record that account B arrived through account A's
-code.
 
 | Rule | Enforcement |
 | --- | --- |
 | One attribution per referred account, ever | Unique constraint on `referred_user_id` |
-| Attribution is immutable once written | Trigger; only status and qualification fields may advance |
-| Self-referral is impossible | Check constraint `referrer_user_id <> referred_user_id`, plus an explicit server check |
-| A revoked code cannot create new attribution | Server check at claim time |
-| Attribution can be claimed only by an account with no prior attribution | Unique constraint |
-| Attribution expires if it does not qualify | Bounded window, default 90 days |
+| Immutable once written | Trigger; only status and qualification fields advance |
+| Self-referral impossible | Check constraint, plus an explicit server check, plus an advisory signal |
+| A revoked code creates no new attribution | Server check at claim time |
+| Expires if it does not qualify | Bounded window, from the programme |
 
-Attribution is recorded at claim time and **does not** pay anything.
+Attribution pays nothing.
 
 ### 4.3 Qualification
 
 > **No reward for signing up. Ever.**
 
-A referral qualifies only when the referred account completes an authoritative
-qualifying event, defined as a booking reaching a **completed** state under
-WPS-012 with a WPS-007 price snapshot present.
+A referral qualifies only when the referred account completes a booking that
+reaches `completed` under WPS-012 **and** carries a WPS-007 price snapshot. A
+completed booking with no snapshot has no authoritative value and qualifies
+nothing.
 
-| Rule | Enforcement |
+The attribution is marked qualified whether or not a programme is running,
+because the fact happened.
+
+### 4.4 Automatic reward issuance
+
+> **Staff approve the programme once, in advance. Nobody approves an individual
+> referral.**
+
+When qualification succeeds and an approved, active programme matches, the
+server grants the reward **immediately and automatically**. There is no queue,
+no review, and no capability that gates an individual reward — asserted in
+pgTAP by requiring that no per-referral approval ever appears in the staff audit
+trail.
+
+A granted reward is:
+
+| Property | Rule |
 | --- | --- |
-| Qualification is idempotent | Unique idempotency key per attribution; repeated events are no-ops |
-| Qualification is triggered by the authoritative event, not by a client call | Server-side, invoked from booking completion |
-| A cancelled or disputed booking does not qualify | Status checked at qualification time |
-| Qualification happens at most once per attribution | Status transition guard |
+| Immediately usable | Status `available` on creation |
+| Bounded | Fixed amount, or a percentage with a mandatory ceiling |
+| Single-use | Consumed by exactly one booking |
+| Non-transferable | No policy, grant, or RPC moves one between accounts |
+| Expiring | Programme-defined window |
+| Not a balance | No amount anyone can spend elsewhere; posts no ledger row |
+| Snapshotted | Terms are frozen at grant time, so a later programme version cannot retroactively change what somebody earned |
 
-### 4.4 What a reward actually is
+Retries are idempotent: `unique (attribution_id, beneficiary_user_id)`. Duplicate
+qualification creates no duplicate reward and no duplicate budget reservation.
 
-This is the design decision that keeps WPS-021 inside its authority.
+### 4.5 What staff define, in advance
 
-A qualified referral writes an immutable **reward entitlement**. An entitlement
-is a record that an account has earned something. It is **not** money, not a
-balance, and not a credit. It has no financial effect of any kind on its own.
+A referral programme may specify: audience (customer or worker); qualifying
+event; eligible service and category; minimum booking amount; reward type, value
+and maximum; reward expiry; redemption conditions; per-referrer and
+per-referred-account limits; overall programme budget; environment; start and
+end time; and cancellation treatment.
 
-An entitlement becomes real in exactly one way: staff link a reward rule to an
-approved campaign, and the beneficiary later becomes eligible for that campaign
-on a qualifying booking. The discount is then applied by the WPS-007 snapshot
-path like any other promotion, funded by Warsha.
+Only an **approved and active** programme may grant a reward.
 
-If no campaign is linked, the entitlement is recorded, visible to its owner as
-earned, auditable by staff, and **explicitly unfulfilled**. Warsha owes nothing
-it has not approved.
+### 4.6 Budget is a real bound
 
-This is why WPS-021 needs no wallet. There is nothing to store a balance in
-because there is no balance — there is a history of earned entitlements and a
-separate, staff-controlled mechanism for honouring them.
+A reward reserves the **maximum it could be worth** at grant time, not at
+redemption. Reserving at redemption would let a programme grant unlimited
+rewards against a small budget because nothing had been spent yet. The unused
+remainder is released when the reward is redeemed for less, expires, or is
+reversed.
 
-### 4.5 Reward rules are bounded
+### 4.7 Referral codes are not promo codes
 
-| Bound | Value |
-| --- | --- |
-| Reward rules are staff-defined only | No self-service |
-| Maximum entitlements per referrer per rolling 30 days | Configured, default 10 |
-| Maximum lifetime entitlements per referrer | Configured, default 50 |
-| A rule names its beneficiary explicitly | `referrer`, `referred`, or `both` |
-| Every entitlement records the rule key and version that produced it | Immutable |
-
-### 4.6 Referral codes are not promo codes
-
-A referral code cannot be redeemed for a discount. It is not accepted anywhere a
-promotion is evaluated. It has no monetary value, no campaign association, and
-no price effect. Its only function is to attribute a new account to an existing
-one.
-
-This is enforced structurally: referral codes and campaigns live in different
-tables, the eligibility evaluator never reads the referral code table, and the
-claim function never reads the campaign table. A pgTAP assertion proves a
-referral code presented as a promotion produces nothing.
+A referral code cannot be redeemed for a discount, is not accepted anywhere a
+benefit is evaluated, and has no monetary value. Its only function is to
+attribute a new account to an existing one. Enforced structurally: the benefit
+evaluators never read the referral code table.
 
 ---
 
-## 5. Promotions
+## 5. Admin promotions
 
 ### 5.1 Campaigns are staff instruments
 
-A campaign is created by staff, approved by different staff, and activated
-deliberately. There is no other origin.
-
-| Lifecycle state | Meaning | Mutable? |
-| --- | --- | --- |
-| `draft` | Being written | Yes |
-| `scheduled` | Approved, window not yet open | **No** |
-| `active` | Approved, window open, redeemable | **No** |
-| `paused` | Temporarily suspended by staff | **No** |
-| `expired` | Window closed | **No** |
-| `cancelled` | Terminated by staff | **No** |
-
-Once a campaign leaves `draft` it is immutable. A change requires a **new
-version** — a new row with an incremented version, which must itself be approved.
-The immutability is enforced by trigger, not by convention, and the trigger
-rejects `DELETE` outright.
+Created by staff, approved by different staff, activated deliberately. Lifecycle:
+`draft` → `scheduled` / `active` → `paused` → `expired` / `cancelled`. Once a
+campaign leaves `draft` it is immutable; a change requires a new version, which
+must itself be approved. Enforced by trigger, which also rejects `DELETE`.
 
 ### 5.2 Approval requires a second person
 
-Activation consumes a WPS-018 dual-control approval. The creator cannot approve
-their own campaign — this is enforced in three independent places:
+Activation consumes a WPS-018 dual-control approval, and the creator cannot
+approve their own campaign. Enforced in three independent places: a table
+constraint (`approved_by <> requested_by`), a runtime check in
+`staff_approve_dual_control`, and an explicit creator check in
+`staff_activate_campaign` that applies even where dual control is disabled.
 
-1. `staff_dual_control_distinct_check` — a table constraint (`approved_by <> requested_by`)
-2. `public.staff_approve_dual_control` — an explicit runtime check
-3. `public.staff_activate_campaign` — an explicit check that the activator is not the creator
+The same three apply to referral programmes.
 
-Where dual control is disabled for the environment, the third check still
-applies, so a single actor can never both author and activate a campaign.
+### 5.3 Eligibility is transparent, and evaluated per user automatically
 
-### 5.3 Campaign parameters
+Once a campaign is approved, **no staff member approves an eligible user.** The
+server evaluates every authenticated user against criteria that are all stated
+facts about the account:
 
-| Parameter | Rule |
-| --- | --- |
-| `discount_type` | `percentage` or `fixed` |
-| `discount_value` | Percentage 1–50; fixed amount in minor units |
-| `max_discount_minor` | Mandatory ceiling for percentage campaigns |
-| `starts_at` / `ends_at` | Both required; end must follow start |
-| `budget_minor` | Mandatory. A campaign without a budget cannot be approved |
-| `global_redemption_limit` | Mandatory |
-| `per_account_limit` | Mandatory, ≥ 1 |
-| `audience` | `customer` or `worker` |
-| `service_keys` / `category_keys` / `city_keys` | Optional restrictions; empty means unrestricted |
-| `first_booking_only` | Optional |
-| `environment` | Bound at creation; a campaign is valid in one environment only |
+- completed booking count (minimum and maximum — "first completed booking" is
+  `max_completed_bookings = 0`)
+- account age
+- inactivity period
+- governorate, service, category
+- minimum booking amount
+- customer or worker audience
 
-### 5.4 Visibility is an eligibility result, never a row
+There is no behavioural score, no inferred value, no likelihood-to-convert, and
+no paid ranking. A pgTAP assertion requires zero occurrences of such columns.
 
-> **No promotion appears because a row exists.**
+### 5.4 Visibility is a result, never a row
 
-A customer sees a promotion only when the server returns an eligibility result
-confirming, in one transaction, all of the following:
+A customer sees a benefit only when the server confirms, in one transaction:
+the flag permits this audience; the kill switch is inactive; the campaign is
+approved and `active`; the time window is open; the environment matches; the
+account satisfies every criterion; the booking satisfies its restrictions;
+budget remains; the global and per-account limits are not reached; and no
+benefit is already applied to this booking.
 
-1. the `growth_promotions` feature flag permits this audience;
-2. the `growth_promotions` kill switch is inactive;
-3. the campaign is approved;
-4. the campaign status is `active`;
-5. the current time is inside `[starts_at, ends_at)`;
-6. the campaign environment equals the running environment;
-7. the authenticated customer satisfies audience, restriction, and grant rules;
-8. the booking satisfies service, category, city, and first-booking rules;
-9. remaining budget covers the computed discount;
-10. the global redemption limit is not reached;
-11. the per-account limit is not reached;
-12. no incompatible prior redemption exists for this booking.
+Any failure returns *no benefit*, with no reason disclosed. A client cannot
+enumerate campaigns and cannot distinguish "nothing exists" from "you are not
+eligible".
 
-Any single failure returns *no promotion*, with no reason disclosed to the
-client beyond eligibility being absent. A client cannot enumerate campaigns, and
-a client cannot distinguish "no campaign exists" from "you are not eligible".
+---
 
-### 5.5 Stacking
+## 6. Stacking
 
-The authoritative stacking rule is deliberately the simplest one that is safe:
-
-> **At most one promotion per booking.**
+> **At most one referral reward OR one admin promotion per booking. No stacking
+> between them at launch.**
 
 | Combination | Permitted |
 | --- | --- |
-| One promotion | Yes |
-| Two promotions | **No** |
-| Referral entitlement honoured through a campaign, plus a second campaign | **No** |
-| A promotion applied twice to one booking | **No** — unique constraint on `booking_id` |
-| A promotion producing a negative or zero customer total | **No** — WPS-007 rejects it |
-| Concurrent redemption of the last remaining budget | **No** — resolved by row lock |
+| One referral reward | Yes |
+| One admin promotion | Yes |
+| Both on one booking | **No** |
+| Two of either | **No** |
+| The same benefit twice | **No** |
+| A negative or zero customer total | **No** |
+| Concurrent redemption of the last budget | **No** |
 
-Unlimited stacking is not merely discouraged; a unique index on
-`campaign_redemptions(booking_id)` makes a second promotion on a booking
-impossible to write. Budget and redemption counters are updated under
-`select … for update` on the campaign row, so two concurrent redemptions of the
-final unit cannot both succeed.
+Enforced by `unique (booking_id)` on `booking_benefit_redemptions` plus a check
+that exactly one benefit source is named. A unique index cannot be raced and
+cannot be forgotten by a future caller.
 
-The customer total floor is WPS-007's existing `customer_total_minor >= 1`
-check. A promotion larger than the booking is clamped to the booking value
-before the snapshot is written, so a discount can never create a negative total
-or a payment owed by Warsha to the customer.
-
-### 5.6 Redemption is reversible with the booking
-
-A redemption is linked to the booking and to the price snapshot version it
-produced. When the booking is refunded or cancelled, WPS-007's existing
-`promotion_reversal_minor` computation reverses the Warsha-funded expense
-proportionally, and WPS-021 releases the corresponding budget back to the
-campaign. Budget released is recorded, never silently recalculated.
+Where both would qualify, the larger discount wins; a referral reward wins ties,
+because the customer earned it. Every discount is clamped one minor unit below
+the booking, so WPS-007 always has at least one unit to charge.
 
 ---
 
-## 6. The legacy `promo_codes` scaffold
+## 7. Cancellation and refund
 
-`public.promo_codes` and `public.promo_code_uses` have existed since
-`202607200002_operations.sql`. They are referenced by no application code, no
-test, and no RPC. `public.promo_codes` carries a policy granting `select` to
-every authenticated user on every active code.
+WPS-007's existing `promotion_reversal_minor` reverses the Warsha-funded expense
+proportionally. WPS-021 additionally:
 
-**Treatment: retired in place, not dropped.**
+- marks the redemption `reversed` and records the released amount;
+- releases the campaign or programme budget, so it cannot drift from the ledger;
+- clears the discount from the booking, so a later re-snapshot cannot reapply a
+  benefit no redemption row backs;
+- returns the referral reward to the customer if the programme's
+  `cancellation_treatment` is `restore` (the default) and it has not expired,
+  re-reserving its ceiling so the budget bound still holds.
 
-| Action | Reason |
+---
+
+## 8. Abuse signals
+
+WPS-021 detects. WPS-016 decides. Nothing here punishes, restricts, blocks, or
+changes trust state.
+
+| Growth condition | Recorded as (WPS-016 vocabulary) |
 | --- | --- |
-| Drop the `public_active_promos` policy | It let any signed-in account enumerate every active code |
-| Revoke all privileges from `anon`, `authenticated`, `public` | The tables become unreachable from PostgREST |
-| Enable RLS with **no policy** on both tables | Deny-by-default, not deny-by-grant |
-| Add `comment on table` marking them retired and naming WPS-021 | The next engineer must not have to guess |
-| **Do not drop the tables** | They exist on the hosted project. Dropping is irreversible and would discard any historical rows; retiring is reversible and loses nothing |
-| **Do not reuse them** | A second promotion system is exactly what this specification forbids |
+| Self-referral attempt | `duplicate_identity` |
+| Circular referral | `account_farming` |
+| Referral velocity / signup burst | `account_farming` |
+| Repeated redemption velocity | `abnormal_payment_behavior` |
 
-Regression coverage proves an authenticated customer can select neither table,
-and cannot enumerate `growth_campaigns` either.
-
----
-
-## 7. Abuse signals
-
-WPS-021 detects. WPS-016 decides. Nothing in WPS-021 punishes an account,
-restricts an account, blocks an account, or changes trust state.
-
-| Signal | Meaning |
-| --- | --- |
-| `growth_self_referral_attempt` | An account tried to claim its own code |
-| `growth_circular_referral` | A referred B and B's code was later claimed by A |
-| `growth_referral_velocity` | Attribution rate above the configured bound |
-| `growth_signup_burst` | Many attributions to one referrer in a short window |
-| `growth_duplicate_device` | Repeated attribution from one device fingerprint hash |
-| `growth_repeated_cancellation` | A referred account repeatedly cancels near-qualification |
-| `growth_synthetic_account` | Combined weak-signal heuristic |
-| `growth_promotion_velocity` | Redemption rate above the configured bound |
-
-Every signal is written through `private.record_trust_fraud_signal`, whose own
-comment reads *"Deliberately no enforcement here. Signals inform staff; they
-never punish."* WPS-021 adds no second fraud table and no automatic action.
-
-A signal never blocks a booking, never voids a completed qualification, and
-never reduces a worker's earnings.
+Growth specifics ride in `safe_detail.growthSignal`. The WPS-016 constraint was
+**not widened** — asserted in pgTAP. Duplicate qualification attempts are
+prevented outright by the unique key rather than merely signalled.
 
 ---
 
-## 8. Notifications
+## 9. Notifications, admin, analytics
 
-WPS-014 owns delivery. WPS-021 adds five catalog entries and inserts into
-`public.notifications` like every other producer.
+WPS-014 owns delivery; WPS-021 adds five catalog entries, none critical, none
+action-required, none quiet-hours-bypassing. Push remains disabled.
 
-| Event | Priority | Audience |
-| --- | --- | --- |
-| `referral_qualified` | important | all |
-| `referral_pending` | informational | all |
-| `promotion_available` | informational | customer |
-| `promotion_expiring` | informational | customer |
-| `promotion_redeemed` | informational | customer |
+WPS-017/018 own staff identity, capability, dual control, audit, session
+freshness, flags, kill switches, and environment isolation. Referral programmes
+and campaigns have **separate capabilities** — `manage_referral_programs`,
+`approve_referral_program`, `manage_growth_campaigns`, `approve_growth_campaign`
+— and therefore separate audit trails.
 
-All five are informational or important — none is `critical`, none is
-`action_required`, and none bypasses quiet hours. Each carries a `dedupe_key` so
-a retried producer cannot notify twice. Category preferences and quiet hours are
-respected by the existing `prepare_notification` trigger without WPS-021 doing
-anything special, which is the point of reusing it.
-
-Push remains disabled. These are in-app notifications only.
-
----
-
-## 9. Staff administration
-
-WPS-017 owns staff identity and capability. WPS-021 adds two capabilities in the
-existing `marketplace` domain and grants them to existing roles.
-
-| Capability | High risk | Dual control | Re-auth |
-| --- | --- | --- | --- |
-| `manage_growth_campaigns` | Yes | No | No |
-| `approve_growth_campaign` | Yes | **Yes** | **Yes** |
-
-Staff can draft, submit, activate, pause, cancel, list, inspect, and preview
-eligibility. Every action writes a `private.record_staff_audit` row naming the
-actor, capability, action, subject, and reason. There is no unaudited campaign
-mutation.
-
-Eligibility preview answers "would this account qualify" **without** creating a
-redemption, consuming budget, or notifying anyone.
-
----
-
-## 10. Analytics
-
-Five events, written through the WPS-018 `record_operational_event` sink under
-the existing `marketplace` category.
-
-| Event | Payload |
-| --- | --- |
-| `growth.referral_code_issued` | role only |
-| `growth.referral_claimed` | outcome only |
-| `growth.referral_qualified` | rule key only |
-| `growth.promotion_offered` | campaign key, discount minor |
-| `growth.promotion_redeemed` | campaign key, discount minor |
-
-No event carries a user identifier, a code, an email, a phone number, a device
-identifier, or an advertising identifier. The WPS-018
-`private.operational_payload_safe` allowlist rejects those key names at write
-time and drops the payload rather than the event.
-
-No profiling. No advertising identifiers. No third-party marketing provider. No
+Five analytics events go to the WPS-018 sink under the existing `marketplace`
+category. None carries a user identifier, code, email, phone, device identifier,
+or advertising identifier. No profiling, no third-party provider, and no
 analytics value reaches WPS-008 ranking.
 
 ---
 
-## 11. Localization and accessibility
+## 10. Localization and accessibility
 
-Full English and Egyptian Arabic across every growth surface, with RTL layout.
-The motto is unchanged: `YOUR WORK, OUR MISSION` / `شغلك مهمتنا`.
+Full English and Egyptian Arabic across every growth surface, with RTL. The
+motto is unchanged: `YOUR WORK, OUR MISSION` / `شغلك مهمتنا`.
 
-Accessibility requirements, audited in `docs/testing/WPS-021-ACCESSIBILITY-REVIEW.md`:
-
-- The referral code is selectable text with an accessible label reading the code
-  character by character, never an image.
-- Share controls carry explicit accessible labels and hints.
-- Reward state is conveyed by text and icon, never by colour alone.
-- Campaign and reward cards expose a single accessible summary rather than a
-  stream of unlabelled fragments.
-- The eligible-promotion banner announces itself through a live region and is
-  reachable in the focus order.
-- All touch targets meet the existing 44 × 44 minimum.
-- Every colour pair meets WCAG AA in both appearances, using the WPS-020
-  semantic tokens with no new literal.
+- The referral code is selectable text announced character by character, never
+  an image.
+- A reward announces its state, worth, and expiry as one accessible summary.
+- Reward and benefit state is conveyed by text **and** icon, never colour alone.
+- The benefit banner announces itself through a live region; its apply control
+  reports its disabled state.
+- Touch targets meet 44 × 44. Colour pairs meet WCAG AA in both appearances
+  using WPS-020 tokens, with no new literal.
+- No customer string says pending approval, waiting for a campaign, or eligible
+  for a future offer — because none of those is true, and each is asserted
+  absent.
 
 ---
 
-## 12. Security requirements
+## 11. Security
 
 | Requirement | Mechanism |
 | --- | --- |
 | Owner isolation | RLS on every customer-visible table, `auth.uid()` scoped |
-| No client enumeration of campaigns | No grant, no policy; access only through RPC |
+| No enumeration of programmes or campaigns | No grant, no policy; access only through RPC |
+| No reward enumeration by another account | Owner-only policy; asserted |
+| No reward transfer | Immutability trigger on `beneficiary_user_id`; no RPC moves one |
 | `SECURITY DEFINER` only where justified | Each such function documents why |
 | Empty `search_path` | Every function |
-| Minimal grants | `authenticated` only, on RPCs only |
-| Audit trails | Staff actions through `record_staff_audit`; attribution and rewards immutable by trigger |
+| Minimal grants | `authenticated`, `SELECT` only, on four owner-scoped tables |
+| Audit trails | Staff actions via `record_staff_audit`; attribution and rewards immutable |
 | Idempotency | Unique keys on claim, qualification, and redemption |
 | Bounded queries | Every list RPC takes a capped limit |
-| Rate limiting | Four new WPS-018 policies |
+| Rate limiting | Four WPS-018 policies |
 
 ---
 
-## 13. Deferred and refused, recorded
+## 12. Deferred and refused
 
 | Item | State | Why |
 | --- | --- | --- |
-| Entitlement fulfilment automation | Deferred | Requires a funding decision that is the owner's, not engineering's |
-| Deep-link invite handling | Deferred | The share link resolves to a web route; native deep-link association needs a device and a hosted domain |
-| Device fingerprinting | **Refused** | Warsha collects no device identifier. The duplicate-device signal is available only if a future WPS authorizes a hash source |
+| Reward expiry sweep scheduling | Function built and tested, unscheduled | No scheduler is enabled anywhere in Warsha |
+| Programme drafting UI | Deferred | Staff draft through the RPC; the screen manages lifecycle |
+| Deep-link invite handling | Deferred | Needs a hosted domain and a device |
+| Device fingerprinting | **Refused** | Warsha collects no device identifier |
 | Referral leaderboards | **Refused** | Competitive mechanics were excluded by the locked scope |
-| Promotion A/B testing | Not built | Not requested; would require a second ranking-adjacent system |
-| Worker-side promotional discounts | **Refused** | A worker discount would reduce worker compensation, which §2 forbids |
+| Worker-side promotional discounts | **Refused** | Would reduce worker compensation, which §2 forbids |
+| Stacking between the two systems | **Deferred** | §6 fixes one benefit per booking at launch |
 
 ---
 
-## 14. Acceptance state
+## 13. Acceptance state
 
 - Implemented locally on `feat/wps-021`.
 - Migration `202608060001` is local-only. **No hosted push was executed.**
-- Manual alpha suite: `docs/testing/WPS-021-MANUAL-ALPHA.md`. Every case is
-  **NOT RUN**.
+- Manual alpha: `docs/testing/WPS-021-MANUAL-ALPHA.md`. Every case **NOT RUN**.
 - Evidence: `docs/testing/WPS-021-ACCEPTANCE-EVIDENCE.md`.
-- Promotions and referrals both ship **disabled**. Enabling either is an
-  operational decision recorded through WPS-017, not a deployment side effect.
+- Both systems ship **disabled**. Enabling either is an operational decision
+  recorded through WPS-017, not a deployment side effect.

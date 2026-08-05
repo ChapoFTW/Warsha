@@ -9,19 +9,28 @@ import { useThemedStyles } from '@/src/appearance/appearance-context';
 import { useAdmin } from '@/src/admin/admin-context';
 import { growthRepository } from '@/src/growth/growth-repository';
 import { useGrowthText } from '@/src/growth/growth-translations';
-import { formatMinorAsEgp, type StaffCampaign } from '@/src/growth/growth-types';
+import {
+  formatMinorAsEgp,
+  type StaffCampaign,
+  type StaffReferralProgram,
+} from '@/src/growth/growth-types';
 
 /**
- * WPS-021 campaign administration.
+ * WPS-021 growth administration.
  *
- * Campaigns are staff instruments. This screen is the only place they are
- * visible at all, and even here they are read through `get_staff_campaigns`
- * rather than by selecting the table — no client role holds a grant on
- * `growth_campaigns`, including a staff member's.
+ * Two independent systems, shown separately because they are separate:
  *
- * Activation is not a button that works. It consumes a WPS-018 dual-control
- * approval, and the server refuses when the activator authored the campaign, so
- * a single person can never both write and fund a discount.
+ *   - REFERRAL PROGRAMMES. Approving one is the ONLY human decision in the
+ *     referral system. After that the server grants rewards automatically, and
+ *     there is deliberately no screen anywhere for approving an individual
+ *     referral, because no such step exists.
+ *   - PROMOTION CAMPAIGNS. Approving one is the only human decision there too;
+ *     the server then evaluates each user against the campaign's stated
+ *     criteria.
+ *
+ * Both are read through capability-gated RPCs rather than by selecting a table:
+ * no client role holds a grant on `growth_campaigns` or `referral_programs`,
+ * including a staff member's.
  */
 export default function AdminCampaignsScreen() {
   const styles = useThemedStyles(makeStyles);
@@ -29,6 +38,7 @@ export default function AdminCampaignsScreen() {
   const gt = useGrowthText();
 
   const [campaigns, setCampaigns] = useState<StaffCampaign[]>([]);
+  const [programs, setPrograms] = useState<StaffReferralProgram[]>([]);
   const [reason, setReason] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -37,14 +47,19 @@ export default function AdminCampaignsScreen() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      setCampaigns(await growthRepository.getStaffCampaigns(50));
+      if (can('manage_growth_campaigns')) {
+        setCampaigns(await growthRepository.getStaffCampaigns(50));
+      }
+      if (can('manage_referral_programs')) {
+        setPrograms(await growthRepository.getStaffReferralPrograms(50));
+      }
       setError(null);
     } catch {
       setError(text('errorDenied'));
     } finally {
       setLoading(false);
     }
-  }, [text]);
+  }, [can, text]);
 
   useEffect(() => {
     void load();
@@ -68,6 +83,8 @@ export default function AdminCampaignsScreen() {
 
   if (loading) return <BrandLoadingState label={text('a11yLoading')} />;
 
+  const blocked = !mayAct || busy || reason.trim().length < 3;
+
   return (
     <AdminShell title={gt.text('campaignsTitle')}>
       {error ? (
@@ -75,6 +92,92 @@ export default function AdminCampaignsScreen() {
           {error}
         </AppText>
       ) : null}
+
+      <AdminSection title={gt.text('programsTitle')}>
+        <AppText style={styles.detail}>{gt.text('programsSubtitle')}</AppText>
+        {programs.length === 0 ? (
+          <AppText style={styles.detail}>{gt.text('programsEmpty')}</AppText>
+        ) : (
+          programs.map(program => (
+            <View key={program.id} style={styles.card}>
+              <AdminRow
+                label={`${program.programKey} v${program.version}`}
+                value={gt.lifecycle(program.status)}
+              />
+              <AdminRow
+                label={gt.text('budgetUsed')}
+                value={`${formatMinorAsEgp(program.budgetConsumedMinor)} / ${formatMinorAsEgp(program.budgetMinor)} ${gt.text('currency')}`}
+              />
+              <AdminRow label={gt.text('rewardsGranted')} value={`${program.rewardCount}`} />
+              <AppText style={styles.detail}>
+                {program.status === 'draft'
+                  ? gt.text('needsApproval')
+                  : gt.text('immutableNotice')}
+              </AppText>
+
+              <View style={styles.actions}>
+                {program.status === 'draft' && can('approve_referral_program') ? (
+                  <BrandButton
+                    label={gt.text('activate')}
+                    disabled={blocked}
+                    onPress={() =>
+                      void act(() =>
+                        growthRepository.activateReferralProgram(program.id, reason.trim()),
+                      )
+                    }
+                  />
+                ) : null}
+                {program.status === 'active' && can('manage_referral_programs') ? (
+                  <BrandButton
+                    label={gt.text('pause')}
+                    disabled={blocked}
+                    onPress={() =>
+                      void act(() =>
+                        growthRepository.setReferralProgramState(
+                          program.id,
+                          'paused',
+                          reason.trim(),
+                        ),
+                      )
+                    }
+                  />
+                ) : null}
+                {program.status === 'paused' && can('manage_referral_programs') ? (
+                  <BrandButton
+                    label={gt.text('resume')}
+                    disabled={blocked}
+                    onPress={() =>
+                      void act(() =>
+                        growthRepository.setReferralProgramState(
+                          program.id,
+                          'active',
+                          reason.trim(),
+                        ),
+                      )
+                    }
+                  />
+                ) : null}
+                {['active', 'paused', 'scheduled'].includes(program.status) &&
+                can('manage_referral_programs') ? (
+                  <BrandButton
+                    label={gt.text('cancel')}
+                    disabled={blocked}
+                    onPress={() =>
+                      void act(() =>
+                        growthRepository.setReferralProgramState(
+                          program.id,
+                          'cancelled',
+                          reason.trim(),
+                        ),
+                      )
+                    }
+                  />
+                ) : null}
+              </View>
+            </View>
+          ))
+        )}
+      </AdminSection>
 
       <AdminSection title={gt.text('campaignsTitle')}>
         {campaigns.length === 0 ? (
@@ -84,27 +187,27 @@ export default function AdminCampaignsScreen() {
             <View key={campaign.id} style={styles.card}>
               <AdminRow
                 label={`${campaign.campaignKey} v${campaign.version}`}
-                value={gt.campaignStatus(campaign.status)}
+                value={gt.lifecycle(campaign.status)}
               />
               <AdminRow
-                label={gt.text('campaignBudget')}
+                label={gt.text('budgetUsed')}
                 value={`${formatMinorAsEgp(campaign.budgetConsumedMinor)} / ${formatMinorAsEgp(campaign.budgetMinor)} ${gt.text('currency')}`}
               />
               <AdminRow
-                label={gt.text('campaignRedemptions')}
+                label={gt.text('redemptions')}
                 value={`${campaign.redemptionCount} / ${campaign.globalRedemptionLimit}`}
               />
-              {campaign.status === 'draft' ? (
-                <AppText style={styles.detail}>{gt.text('campaignNeedsApproval')}</AppText>
-              ) : (
-                <AppText style={styles.detail}>{gt.text('campaignImmutable')}</AppText>
-              )}
+              <AppText style={styles.detail}>
+                {campaign.status === 'draft'
+                  ? gt.text('needsApproval')
+                  : gt.text('immutableNotice')}
+              </AppText>
 
               <View style={styles.actions}>
                 {campaign.status === 'draft' && can('approve_growth_campaign') ? (
                   <BrandButton
-                    label={gt.text('campaignActivate')}
-                    disabled={!mayAct || busy || reason.trim().length < 3}
+                    label={gt.text('activate')}
+                    disabled={blocked}
                     onPress={() =>
                       void act(() => growthRepository.activateCampaign(campaign.id, reason.trim()))
                     }
@@ -112,8 +215,8 @@ export default function AdminCampaignsScreen() {
                 ) : null}
                 {campaign.status === 'active' && can('manage_growth_campaigns') ? (
                   <BrandButton
-                    label={gt.text('campaignPause')}
-                    disabled={!mayAct || busy || reason.trim().length < 3}
+                    label={gt.text('pause')}
+                    disabled={blocked}
                     onPress={() =>
                       void act(() =>
                         growthRepository.setCampaignState(campaign.id, 'paused', reason.trim()),
@@ -123,8 +226,8 @@ export default function AdminCampaignsScreen() {
                 ) : null}
                 {campaign.status === 'paused' && can('manage_growth_campaigns') ? (
                   <BrandButton
-                    label={gt.text('campaignResume')}
-                    disabled={!mayAct || busy || reason.trim().length < 3}
+                    label={gt.text('resume')}
+                    disabled={blocked}
                     onPress={() =>
                       void act(() =>
                         growthRepository.setCampaignState(campaign.id, 'active', reason.trim()),
@@ -135,8 +238,8 @@ export default function AdminCampaignsScreen() {
                 {['active', 'paused', 'scheduled'].includes(campaign.status) &&
                 can('manage_growth_campaigns') ? (
                   <BrandButton
-                    label={gt.text('campaignCancel')}
-                    disabled={!mayAct || busy || reason.trim().length < 3}
+                    label={gt.text('cancel')}
+                    disabled={blocked}
                     onPress={() =>
                       void act(() =>
                         growthRepository.setCampaignState(campaign.id, 'cancelled', reason.trim()),
@@ -151,7 +254,7 @@ export default function AdminCampaignsScreen() {
       </AdminSection>
 
       <AdminSection title={text('configChangeReason')}>
-        {/* Every campaign action writes a staff audit row naming this reason. */}
+        {/* Every action above writes a staff audit row naming this reason. */}
         <BrandTextField
           label={text('configChangeReason')}
           value={reason}

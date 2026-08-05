@@ -1,9 +1,9 @@
-# WPS-021 manual alpha results
+﻿# WPS-021 manual alpha results
 
 | Field | Value |
 | --- | --- |
 | Suite | `docs/testing/WPS-021-MANUAL-ALPHA.md` |
-| Cases | 62 |
+| Cases | 68 |
 | Executed | **0** |
 | Status | **NOT RUN** |
 
@@ -23,11 +23,11 @@ happens these results stay as they are.
 | --- | --- | --- | --- |
 | 1 | Profile entry with flags off | NOT RUN | |
 | 2 | Direct route with flags off | NOT RUN | |
-| 3 | Booking with promotions off | NOT RUN | |
+| 3 | Booking with both flags off | NOT RUN | |
 | 4 | Referrals only | NOT RUN | |
 | 5 | Draft campaign | NOT RUN | |
-| 6 | Kill switch active | NOT RUN | |
-| 7 | Kill switch cleared | NOT RUN | |
+| 6 | Promotions kill switch | NOT RUN | |
+| 7 | Referral switch does not close campaigns | NOT RUN | |
 | 8 | Flag row absent | NOT RUN | |
 | 9 | First code issued | NOT RUN | |
 | 10 | Same code on reopen | NOT RUN | |
@@ -49,40 +49,46 @@ happens these results stay as they are.
 | 26 | Claim rate limit | NOT RUN | |
 | 27 | Screen reader announcement | NOT RUN | |
 | 28 | Arabic messages | NOT RUN | |
-| 29 | Pending invite visible | NOT RUN | |
+| 29 | Attribution earns nothing | NOT RUN | |
 | 30 | Incomplete booking earns nothing | NOT RUN | |
 | 31 | Cancelled booking earns nothing | NOT RUN | |
-| 32 | Completion qualifies | NOT RUN | |
-| 33 | Reward wording is not a balance | NOT RUN | |
-| 34 | Repeated completion is idempotent | NOT RUN | |
-| 35 | Expiry after the window | NOT RUN | |
-| 36 | "No reward for signup" is stated | NOT RUN | |
-| 37 | Banner appears when eligible | NOT RUN | |
-| 38 | Banner states Warsha funds it | NOT RUN | |
-| 39 | No banner when ineligible | NOT RUN | |
-| 40 | Applying updates the price | NOT RUN | |
-| 41 | Worker earnings unchanged | NOT RUN | |
-| 42 | Second application refused | NOT RUN | |
-| 43 | Concurrent application | NOT RUN | |
-| 44 | Cancellation releases budget | NOT RUN | |
-| 45 | Budget exhaustion | NOT RUN | |
-| 46 | Screen reader on the banner | NOT RUN | |
-| 47 | Applied state not colour-only | NOT RUN | |
-| 48 | Arabic and RTL banner | NOT RUN | |
-| 49 | No promo-code field exists | NOT RUN | |
-| 50 | No campaign browser exists | NOT RUN | |
-| 51 | No wallet or balance exists | NOT RUN | |
-| 52 | No urgency mechanics exist | NOT RUN | |
-| 53 | Referral code is not a promo code | NOT RUN | |
-| 54 | Motto unchanged | NOT RUN | |
-| 55 | Non-staff refused | NOT RUN | |
-| 56 | Staff without capability refused | NOT RUN | |
-| 57 | Draft created | NOT RUN | |
-| 58 | Author cannot self-activate | NOT RUN | |
-| 59 | Activation needs a second approver | NOT RUN | |
-| 60 | Dual control succeeds | NOT RUN | |
-| 61 | Activated campaign is immutable | NOT RUN | |
-| 62 | Every action audited | NOT RUN | |
+| 32 | Completion with no programme earns nothing | NOT RUN | |
+| 33 | AUTOMATIC reward on qualification | NOT RUN | |
+| 34 | Reward wording is not approval-pending | NOT RUN | |
+| 35 | Reward worth and expiry shown | NOT RUN | |
+| 36 | No per-referral staff audit entry | NOT RUN | |
+| 37 | Repeated completion is idempotent | NOT RUN | |
+| 38 | Attribution expiry | NOT RUN | |
+| 39 | How it works states automatic | NOT RUN | |
+| 40 | Per-referrer limit | NOT RUN | |
+| 41 | Reward banner appears automatically | NOT RUN | |
+| 42 | Banner labelled as referral reward | NOT RUN | |
+| 43 | Below programme minimum | NOT RUN | |
+| 44 | Applying updates the price | NOT RUN | |
+| 45 | Worker earnings unchanged | NOT RUN | |
+| 46 | Second application refused | NOT RUN | |
+| 47 | Consumed reward not reoffered | NOT RUN | |
+| 48 | Cancellation restores the reward | NOT RUN | |
+| 49 | Expired reward not offered | NOT RUN | |
+| 50 | Concurrent application | NOT RUN | |
+| 51 | Screen reader on the banner | NOT RUN | |
+| 52 | Arabic and RTL banner | NOT RUN | |
+| 53 | Non-referrer receives a campaign | NOT RUN | |
+| 54 | That account holds no rewards | NOT RUN | |
+| 55 | Only one benefit when both qualify | NOT RUN | |
+| 56 | One discount line on the booking | NOT RUN | |
+| 57 | Below completed-booking criterion | NOT RUN | |
+| 58 | Below account-age criterion | NOT RUN | |
+| 59 | Paused campaign | NOT RUN | |
+| 60 | Campaign budget exhaustion | NOT RUN | |
+| 61 | No promo-code field exists | NOT RUN | |
+| 62 | No campaign browser exists | NOT RUN | |
+| 63 | No wallet or balance exists | NOT RUN | |
+| 64 | Motto unchanged | NOT RUN | |
+| 65 | Staff gate refuses non-staff | NOT RUN | |
+| 66 | Creator cannot self-activate either | NOT RUN | |
+| 67 | Dual control required then satisfied | NOT RUN | |
+| 68 | Activated records are immutable | NOT RUN | |
 
 ## Summary
 
@@ -91,4 +97,4 @@ happens these results stay as they are.
 | PASS | 0 |
 | FAIL | 0 |
 | BLOCKED | 0 |
-| NOT RUN | 62 |
+| NOT RUN | 68 |

@@ -27,21 +27,54 @@ marketing campaign and type it in. Promotions reach people only through a
 server-side eligibility grant. If Warsha later needs shareable codes, that is a
 new WPS with its own abuse analysis — not a small addition to this one.
 
-## 2. A referral reward is an entitlement, not a balance
+## 2. A referral reward is an automatic, bounded, redeemable benefit
 
-**Decision.** Qualification records an inert entitlement. It has no amount, no
-transferability, and posts no ledger row. It becomes real only through a
-staff-approved campaign.
+> **Superseded 2026-08-05.** The original text of this section is preserved in
+> §2a below, because the reasoning that produced the wrong answer is worth
+> keeping.
 
-**Why.** The scope forbids a wallet, a credit balance, and booking credits, and
-WPS-007 is the sole financial authority. A stored reward value would be a
-liability — a second money system by another name. An entitlement is a fact
-about the past ("this person earned something"), which is safe to record.
+**Decision.** Qualification grants a reward **automatically**. The reward is
+immediately available, bounded by a fixed amount or a capped percentage,
+single-use, non-transferable, and expiring. It requires no campaign and no
+further human act.
 
-**Consequence, stated honestly.** An entitlement with no linked campaign stays
-unfulfilled indefinitely, and the referral screen says so in both languages.
-That is a product gap the owner must close with a funding decision. It is not a
-bug, and automating it would mean the system approving its own spending.
+**Why.** Staff approve the *programme* in advance, including its reward value,
+budget, limits, and expiry. That approval is the funding decision. Requiring a
+second, per-referral approval afterwards does not add control — the money was
+already authorised when the programme was approved — it only adds a queue
+between a customer and something they were told they earned.
+
+**How it stays inside WPS-007.** A reward carries no spendable balance and posts
+no ledger row. It is a permission to receive a discount on one future eligible
+booking, and that discount is applied by the WPS-007 snapshot path exactly like
+any other promotion. There is still no second money system, because there is
+still no balance.
+
+**How the budget stays real.** A reward reserves its ceiling at grant time, not
+at redemption. See `docs/architecture/growth-architecture.md`.
+
+### 2a. Superseded: the inert entitlement model
+
+The original design recorded an inert entitlement that only became real when
+staff later linked it to an approved promotion campaign.
+
+**The reasoning was:** the locked scope forbade a wallet, a credit balance, and
+booking credits, and WPS-007 is the sole financial authority — so a reward must
+not carry a stored value. An entitlement is a fact about the past, which is safe
+to record, and letting the system fund a reward on its own would be the system
+approving its own spending.
+
+**Why that was wrong.** The premise was right and the conclusion did not follow.
+Avoiding a stored balance does not require avoiding automatic issuance. A reward
+can be automatic *and* carry no balance, which is what §2 now does. The design
+also failed a plainer test: it made "you earned a reward" true and "you can use
+it" false at the same time, with no date attached to the second. And the fear of
+self-approval was misplaced — the spending was authorised when a human approved
+the programme, so the automation was executing a decision rather than making one.
+
+**What was removed.** `referral_reward_entitlements` and
+`campaign_eligibility_grants`, plus `growth_campaigns.requires_grant`. pgTAP
+asserts all three no longer exist, so the coupling cannot silently return.
 
 ## 3. `public.promo_codes` and `public.promo_code_uses` — retired in place
 

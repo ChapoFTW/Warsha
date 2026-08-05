@@ -36,12 +36,15 @@ export type StaffCapability =
   | 'view_safe_customer_profile'
   | 'view_safe_worker_profile'
   | 'view_contact_details'
-  // WPS-021 growth campaigns. In the `marketplace` domain, because
-  // staff_capabilities_domain_check has no `growth` member and widening a
-  // constraint on an applied migration to fit a new feature is how allowlists
-  // stop meaning anything.
+  // WPS-021 growth. Referral programmes and promotion campaigns are separate
+  // capabilities so the two systems keep independent audit trails. All four sit
+  // in the `marketplace` domain, because staff_capabilities_domain_check has no
+  // `growth` member and widening a constraint on an applied migration to fit a
+  // new feature is how allowlists stop meaning anything.
   | 'manage_growth_campaigns'
   | 'approve_growth_campaign'
+  | 'manage_referral_programs'
+  | 'approve_referral_program'
   | 'review_identity_verification'
   | 'review_certificates'
   | 'review_disputes'
