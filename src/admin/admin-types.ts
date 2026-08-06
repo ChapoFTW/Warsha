@@ -80,6 +80,26 @@ export type StaffCapability =
   | 'review_retention'
   | 'view_data_inventory'
   | 'review_privacy_incidents'
+  // WPS-023 worker vetting. All five sit in existing domains — `verification`
+  // for the four review and activation capabilities, `configuration` for the
+  // policy — because `staff_capabilities_domain_check` has no vetting member
+  // and widening an applied constraint to fit a new feature is how allowlists
+  // stop meaning anything.
+  //
+  // They are separate capabilities rather than one `review_workers` because
+  // capability must follow the WEIGHT of a decision: approving somebody and
+  // rejecting them are not the same authority, and `reject_worker_application`
+  // carries dual control while `review_worker_vetting` carries none.
+  //
+  // Deliberately NOT added to `staffCapabilities` below. That array is read by
+  // the WPS-017 suite, which asserts every member appears in the WPS-017
+  // migration; WPS-021's growth capabilities are absent from it for the same
+  // reason.
+  | 'review_worker_vetting'
+  | 'review_criminal_records'
+  | 'activate_worker'
+  | 'reject_worker_application'
+  | 'manage_vetting_policy'
   | 'legacy_domain_staff_actions';
 
 export const staffCapabilities: readonly StaffCapability[] = [

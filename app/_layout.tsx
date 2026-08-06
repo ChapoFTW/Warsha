@@ -20,6 +20,7 @@ import { useEffect, useMemo } from 'react';
 import { Platform, View } from 'react-native';
 import 'react-native-reanimated';
 
+import { AuthGate } from '@/components/warsha/AuthGate';
 import { ConfigurationError } from '@/components/warsha/ConfigurationError';
 import { LocalDataMigrationGate } from '@/components/warsha/LocalDataMigrationGate';
 import { NotificationBanner } from '@/components/warsha/NotificationBanner';
@@ -39,6 +40,7 @@ import { GrowthProvider } from '@/src/growth/growth-context';
 import { LocalizationProvider } from '@/src/i18n/localization';
 import { MarketplaceIntelligenceProvider } from '@/src/marketplace-intelligence/marketplace-context';
 import { NotificationProvider } from '@/src/notifications/notification-context';
+import { OnboardingProvider } from '@/src/onboarding/onboarding-context';
 import { PaymentsProvider } from '@/src/payments/payment-context';
 import { PrivacyProvider } from '@/src/privacy/privacy-context';
 import { ProviderJobsProvider } from '@/src/provider-jobs/provider-job-context';
@@ -104,8 +106,21 @@ function ThemedRoot() {
   return (
     <ThemeProvider value={navigationTheme}>
       <View style={{ flex: 1, backgroundColor: colors.canvas }}>
+        {/* WPS-023. Nothing operational renders until the session and the
+            onboarding state are both known, so no protected screen can appear
+            for a frame before the router corrects itself. */}
+        <AuthGate>
         <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.canvas } }}>
           <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="welcome" />
+          <Stack.Screen name="sign-in" />
+          <Stack.Screen name="create-account" />
+          <Stack.Screen name="legal/[topic]" />
+          <Stack.Screen name="onboarding/address" />
+          <Stack.Screen name="onboarding/worker" />
+          <Stack.Screen name="onboarding/identity" />
+          <Stack.Screen name="onboarding/certificate" />
+          <Stack.Screen name="worker-home" />
           <Stack.Screen name="search" />
           <Stack.Screen name="categories/[id]" />
           <Stack.Screen name="provider/[id]" />
@@ -133,6 +148,7 @@ function ThemedRoot() {
           <Stack.Screen name="support" />
           <Stack.Screen name="admin" />
         </Stack>
+        </AuthGate>
         <NotificationBanner />
         <ProviderModeOverlay />
         <StatusBar style={statusBarStyle(scheme)} />
@@ -182,7 +198,9 @@ export default function RootLayout() {
                                         <SupportProvider>
                                           <GrowthProvider>
                                             <PrivacyProvider>
-                                              <ThemedRoot />
+                                              <OnboardingProvider>
+                                                <ThemedRoot />
+                                              </OnboardingProvider>
                                             </PrivacyProvider>
                                           </GrowthProvider>
                                         </SupportProvider>
