@@ -14,12 +14,6 @@ import { useAuth } from '@/src/auth/auth-context';
 import { authMessageKey } from '@/src/auth/auth-errors';
 import { useAuthText } from '@/src/auth/auth-translations';
 import { isValidPhone, isValidSmsOtp, normalizePhone } from '@/src/auth/phone-auth';
-import {
-  createWorkerAuthFlow,
-  transitionWorkerAuthFlow,
-  workerAuthVisibleErrorKey,
-  workerOtpVisible,
-} from '@/src/auth/worker-auth-flow';
 import { supabaseTarget } from '@/src/config/environment';
 import { dataErrorKey, logDataError } from '@/src/data/data-errors';
 import { useLocalization } from '@/src/i18n/localization';
@@ -29,8 +23,18 @@ import { supabaseCustomerProfileRepository } from '@/src/repositories/supabase-u
 import { useDiscoveryText } from '@/src/discovery/discovery-translations';
 import { useSupportText } from '@/src/support/support-translations';
 
-type AuthPath = 'customer' | 'worker';
-
+/**
+ * WPS-024 correction. This screen carried a second authentication path —
+ * worker sign-in and worker registration by SMS code — beside the customer
+ * one. Supabase Phone Auth is disabled and no SMS provider is configured, so
+ * that path could not complete; it has been removed rather than left visible
+ * and broken.
+ *
+ * Workers and customers now register and sign in identically, with an email
+ * address, a password and a REQUIRED contact phone number that nobody is asked
+ * to verify. Confirming the number remains available as a deliberate, optional
+ * action below, and it still fails closed while Phone Auth is off.
+ */
 export default function Profile() {
   const colors = useThemeColors();
   const styles = useThemedStyles(makeStyles);
@@ -49,23 +53,17 @@ export default function Profile() {
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
   const [preferred, setPreferred] = useState<'en' | 'ar'>(language);
-  const [authPath, setAuthPath] = useState<AuthPath>('customer');
   const [register, setRegister] = useState(false);
-  const [workerRegister, setWorkerRegister] = useState(false);
-  const [workerFlow, setWorkerFlow] = useState(createWorkerAuthFlow);
   const [otpSent, setOtpSent] = useState(false);
   const [phoneEnrollment, setPhoneEnrollment] = useState(false);
   const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [notice, setNotice] = useState('');
-  const workerRequest = useRef(0);
-  const workerOtpIsVisible = workerOtpVisible(workerFlow);
-  const workerErrorKey = workerAuthVisibleErrorKey(workerFlow);
+  const phoneRequest = useRef(0);
 
-  const resetWorkerTransient = useCallback(() => {
-    workerRequest.current += 1;
-    setWorkerFlow(createWorkerAuthFlow());
+  const resetTransient = useCallback(() => {
+    phoneRequest.current += 1;
     setOtp('');
     setMessage('');
     setNotice('');
@@ -73,16 +71,15 @@ export default function Profile() {
   }, []);
 
   useFocusEffect(useCallback(() => {
-    resetWorkerTransient();
-    return () => { workerRequest.current += 1; };
-  }, [resetWorkerTransient]));
+    resetTransient();
+    return () => { phoneRequest.current += 1; };
+  }, [resetTransient]));
 
   useEffect(() => {
     setPassword('');
     setOtp('');
     setOtpSent(false);
-    setWorkerFlow(createWorkerAuthFlow());
-    workerRequest.current += 1;
+    phoneRequest.current += 1;
     setPhoneEnrollment(false);
     setNotice('');
     setMessage('');
@@ -114,74 +111,14 @@ export default function Profile() {
     setMessage('');
     try {
       if (register) {
-        const result = await auth.signUp(name, email, password, 'customer', preferred);
+        // WPS-024 correction. One registration, both roles, no OTP. The phone
+        // number is required contact information and is validated before the
+        // call; nothing here sends a code or waits for one.
+        const result = await auth.signUp(name, email, password, phone, 'customer', preferred);
         if (result.needsEmailConfirmation) setMessage(t('checkEmail'));
       } else await auth.signIn(email, password);
     } catch (error) { setMessage(t(authMessageKey(error))); }
     finally { setBusy(false); }
-  };
-
-  const sendWorkerOtp = async (resend = false) => {
-    const request = ++workerRequest.current;
-    setBusy(true);
-    setNotice('');
-    setWorkerFlow((state) => transitionWorkerAuthFlow(state, { type: resend ? 'RESEND_STARTED' : 'SEND_STARTED' }));
-    try {
-      await auth.requestWorkerOtp(phone, workerRegister, name, preferred);
-      if (workerRequest.current !== request) return;
-      setWorkerFlow((state) => transitionWorkerAuthFlow(
-        transitionWorkerAuthFlow(state, { type: resend ? 'RESEND_SUCCEEDED' : 'SEND_SUCCEEDED' }),
-        { type: 'OTP_PRESENTED' },
-      ));
-      setNotice(at('codeSent'));
-    } catch (error) {
-      if (workerRequest.current === request) setWorkerFlow((state) => transitionWorkerAuthFlow(state, {
-        type: resend ? 'RESEND_FAILED' : 'SEND_FAILED',
-        errorKey: authMessageKey(error),
-      }));
-    } finally {
-      if (workerRequest.current === request) setBusy(false);
-    }
-  };
-
-  const verifyWorkerOtp = async () => {
-    const request = ++workerRequest.current;
-    setBusy(true);
-    setNotice('');
-    setWorkerFlow((state) => transitionWorkerAuthFlow(state, { type: 'VERIFY_STARTED' }));
-    try {
-      await auth.verifyWorkerOtp(phone, otp, workerRegister, name);
-      if (workerRequest.current !== request) return;
-      setWorkerFlow((state) => transitionWorkerAuthFlow(state, { type: 'VERIFIED' }));
-      setOtp('');
-    } catch (error) {
-      if (workerRequest.current === request) setWorkerFlow((state) => transitionWorkerAuthFlow(state, {
-        type: 'VERIFY_FAILED',
-        errorKey: authMessageKey(error),
-      }));
-    } finally {
-      if (workerRequest.current === request) setBusy(false);
-    }
-  };
-
-  const changeWorkerPhone = (value: string) => {
-    workerRequest.current += 1;
-    setPhone(value);
-    setOtp('');
-    setNotice('');
-    setBusy(false);
-    setWorkerFlow((state) => transitionWorkerAuthFlow(state, { type: 'PHONE_CHANGED' }));
-  };
-
-  const changeWorkerOtp = (value: string) => {
-    setOtp(value);
-    setWorkerFlow((state) => transitionWorkerAuthFlow(state, { type: 'OTP_CHANGED' }));
-  };
-
-  const changeAuthPath = (path: AuthPath) => {
-    setAuthPath(path);
-    resetWorkerTransient();
-    setOtpSent(false);
   };
 
   const requestReset = async () => {
@@ -209,18 +146,28 @@ export default function Profile() {
   const openProvider = async () => {
     try {
       if (!provider.profile) {
-        if (auth.mode === 'supabase' && !auth.hasVerifiedPhone) {
-          setPhoneEnrollment(true);
-          setMessage('');
-          setNotice('');
-          return;
-        }
+        // WPS-024 correction. Becoming a worker no longer waits on a verified
+        // phone. It used to divert here into an SMS enrollment that could not
+        // complete, so the button read "Become a worker" and did nothing but
+        // ask for a code that never arrived. The server requires a contact
+        // number on file and says so plainly if one is missing.
         await provider.activate(name || t('professional'));
       } else await provider.setMode('provider');
       router.push('/provider-mode');
     } catch { setMessage(t('genericTryAgain')); }
   };
 
+  /**
+   * Confirming a phone number. Optional, explicit, and coupled to nothing.
+   *
+   * WPS-024 correction. These two used to activate the worker role on success,
+   * which made confirmation a precondition for working dressed up as a
+   * convenience. Nothing is granted here now: a number is confirmed, or it is
+   * not, and the account behaves the same either way.
+   *
+   * This is the surface `assertPhoneAuthAvailable` still guards, and it FAILS
+   * CLOSED while Supabase Phone Auth is disabled — which it is, everywhere.
+   */
   const sendPhoneEnrollmentOtp = async () => {
     setBusy(true);
     setMessage('');
@@ -228,9 +175,8 @@ export default function Profile() {
     try {
       const status = await auth.requestWorkerPhoneChange(phone);
       if (status === 'already_verified') {
-        await provider.activate(name || t('professional'));
         setPhoneEnrollment(false);
-        router.push('/provider-mode');
+        setNotice(t('nameSaved'));
         return;
       }
       setOtpSent(true);
@@ -246,11 +192,10 @@ export default function Profile() {
     setNotice('');
     try {
       await auth.verifyWorkerPhoneChange(phone, otp);
-      await provider.activate(name || t('professional'));
       setPhoneEnrollment(false);
       setOtpSent(false);
       setOtp('');
-      router.push('/provider-mode');
+      setNotice(t('nameSaved'));
     } catch (error) { setMessage(t(authMessageKey(error))); }
     finally { setBusy(false); }
   };
@@ -274,7 +219,13 @@ export default function Profile() {
       {otpSent && __DEV__ && supabaseTarget === 'local' ? <AppText style={styles.hint}>{at('localOtpHint')}</AppText> : null}
       <Pressable accessibilityRole="button" accessibilityLabel={at(otpSent ? 'verifyPhone' : 'sendOtp')} disabled={busy || (otpSent ? !isValidSmsOtp(otp) : !isValidPhone(phone))} onPress={() => void (otpSent ? finishPhoneEnrollment() : sendPhoneEnrollmentOtp())} style={styles.primary}>{busy ? otpSent ? <BrandLoadingMark size={20} color={colors.background}/> : <AppText style={styles.dark}>{at('sendingCode')}</AppText> : <AppText style={styles.dark}>{at(otpSent ? 'verifyPhone' : 'sendOtp')}</AppText>}</Pressable>
       {otpSent ? <Pressable accessibilityRole="button" accessibilityLabel={at('resendOtp')} disabled={busy} onPress={() => void sendPhoneEnrollmentOtp()} style={styles.textButton}><AppText style={styles.link}>{at('resendOtp')}</AppText></Pressable> : null}
-    </View> : <Pressable disabled={provider.saving} onPress={() => void openProvider()} style={styles.primary}>{provider.saving ? <BrandLoadingMark size={20} color={colors.background}/> : <AppText style={styles.dark}>{provider.profile ? pt('providerMode') : pt('become')}</AppText>}</Pressable>}
+    </View> : <>
+      <Pressable disabled={provider.saving} onPress={() => void openProvider()} style={styles.primary}>{provider.saving ? <BrandLoadingMark size={20} color={colors.background}/> : <AppText style={styles.dark}>{provider.profile ? pt('providerMode') : pt('become')}</AppText>}</Pressable>
+      {/* Confirming a number is an ordinary settings action, offered after the
+          things it does not gate. It is not shown as outstanding work, because
+          it is not: nothing waits on it. */}
+      {auth.mode === 'supabase' && !auth.hasVerifiedPhone ? <Pressable accessibilityRole="button" accessibilityLabel={at('phoneVerifyTitle')} onPress={() => { setPhoneEnrollment(true); setMessage(''); setNotice(''); }} style={styles.button}><AppText>{at('phoneVerifyTitle')}</AppText></Pressable> : null}
+    </>}
     <Pressable onPress={() => router.push('/favourites')} style={styles.button}><AppText>{t('favourites')}</AppText></Pressable>
     <Pressable accessibilityRole="button" accessibilityLabel={dt.text('recentlyViewed')} onPress={() => router.push('/recently-viewed')} style={styles.button}><AppText>{dt.text('recentlyViewed')}</AppText></Pressable>
     <Pressable accessibilityRole="button" accessibilityLabel={gt.text('referralTitle')} onPress={() => router.push('/referrals')} style={styles.button}><AppText>{gt.text('referralTitle')}</AppText></Pressable>
@@ -289,33 +240,21 @@ export default function Profile() {
     {message ? <AppText accessibilityRole="alert" style={styles.error}>{message}</AppText> : null}
   </Page>;
 
+  // WPS-024 correction. One form. A worker and a customer register and sign in
+  // the same way, so there is nothing left for a role switcher to switch.
   return <Page>
-    <View style={[styles.switcher, isRTL && styles.reverse]}>
-      {(['customer', 'worker'] as AuthPath[]).map((path) => <Pressable key={path} onPress={() => changeAuthPath(path)} style={[styles.switchOption, authPath === path && styles.switchActive]}><AppText style={authPath === path && styles.dark}>{at(path === 'customer' ? 'customerAccount' : 'workerAccount')}</AppText></Pressable>)}
-    </View>
-    {authPath === 'customer' ? <>
-      <AppText style={styles.title}>{register ? t('signUp') : t('signIn')}</AppText>
-      {register ? <Field label={t('fullName')} value={name} onChangeText={setName} rtl={isRTL}/> : null}
-      <Field label={t('email')} value={email} onChangeText={setEmail} rtl={isRTL} keyboardType="email-address" autoCapitalize="none" autoCorrect={false}/>
-      <Field label={t('password')} value={password} onChangeText={setPassword} secureTextEntry rtl={isRTL}/>
-      {message ? <AppText accessibilityRole="alert" style={styles.error}>{message}</AppText> : null}
-      <Pressable disabled={busy || !email || password.length < 6} onPress={() => void loginCustomer()} style={styles.primary}>{busy ? <BrandLoadingMark size={20} color={colors.background}/> : <AppText style={styles.dark}>{register ? t('signUp') : t('signIn')}</AppText>}</Pressable>
-      {!register ? <Pressable accessibilityRole="button" accessibilityLabel={t('forgotPassword')} disabled={busy || !email.trim()} onPress={() => void requestReset()} style={styles.textButton}><AppText style={styles.link}>{t('forgotPassword')}</AppText></Pressable> : null}
-      <Pressable onPress={() => setRegister((value) => !value)} style={styles.button}><AppText>{register ? t('signIn') : t('signUp')}</AppText></Pressable>
-    </> : <>
-      <AppText style={styles.title}>{at(workerRegister ? 'workerCreate' : 'workerSignIn')}</AppText>
-      {workerRegister ? <Field label={at('workerName')} value={name} onChangeText={setName} rtl={isRTL}/> : null}
-      <Field label={at('phone')} value={phone} onChangeText={changeWorkerPhone} rtl={isRTL} keyboardType="phone-pad" autoCapitalize="none" autoCorrect={false}/>
-      <AppText style={styles.hint}>{at('phoneHint')}</AppText>
-      {isValidPhone(phone) ? <AppText style={styles.hint}>{at('sendCodePreview')} {normalizePhone(phone)}.</AppText> : null}
-      {workerOtpIsVisible ? <Field label={at('otp')} value={otp} onChangeText={changeWorkerOtp} rtl={isRTL} keyboardType="number-pad" maxLength={6}/> : null}
-      {workerOtpIsVisible && __DEV__ && supabaseTarget === 'local' ? <AppText style={styles.hint}>{at('localOtpHint')}</AppText> : null}
-      {notice ? <AppText accessibilityRole="alert" style={styles.notice}>{notice}</AppText> : null}
-      {workerErrorKey ? <AppText accessibilityRole="alert" style={styles.error}>{t(workerErrorKey)}</AppText> : null}
-      <Pressable disabled={busy || (workerOtpIsVisible ? !isValidSmsOtp(otp) : !isValidPhone(phone) || workerRegister && name.trim().length < 2)} onPress={() => void (workerOtpIsVisible ? verifyWorkerOtp() : sendWorkerOtp())} style={styles.primary}>{workerFlow.stage === 'VERIFYING' ? <BrandLoadingMark size={20} color={colors.background}/> : busy ? <AppText style={styles.dark}>{at('sendingCode')}</AppText> : <AppText style={styles.dark}>{at(workerOtpIsVisible ? 'verifyOtp' : 'sendOtp')}</AppText>}</Pressable>
-      {workerOtpIsVisible ? <Pressable disabled={busy} onPress={() => void sendWorkerOtp(true)} style={styles.textButton}><AppText style={styles.link}>{at('resendOtp')}</AppText></Pressable> : null}
-      <Pressable onPress={() => { setWorkerRegister((value) => !value); resetWorkerTransient(); }} style={styles.button}><AppText>{at(workerRegister ? 'existingWorker' : 'newWorker')}</AppText></Pressable>
-    </>}
+    <AppText style={styles.title}>{register ? t('signUp') : t('signIn')}</AppText>
+    {register ? <Field label={t('fullName')} value={name} onChangeText={setName} rtl={isRTL}/> : null}
+    <Field label={t('email')} value={email} onChangeText={setEmail} rtl={isRTL} keyboardType="email-address" autoCapitalize="none" autoCorrect={false}/>
+    <Field label={t('password')} value={password} onChangeText={setPassword} secureTextEntry rtl={isRTL}/>
+    {register ? <>
+      <Field label={at('phone')} value={phone} onChangeText={setPhone} rtl={isRTL} keyboardType="phone-pad" autoCapitalize="none" autoCorrect={false}/>
+      <AppText style={styles.hint}>{at('phoneContactHint')}</AppText>
+    </> : null}
+    {message ? <AppText accessibilityRole="alert" style={styles.error}>{message}</AppText> : null}
+    <Pressable disabled={busy || !email || password.length < 6 || (register && (name.trim().length < 2 || !isValidPhone(normalizePhone(phone))))} onPress={() => void loginCustomer()} style={styles.primary}>{busy ? <BrandLoadingMark size={20} color={colors.background}/> : <AppText style={styles.dark}>{register ? t('signUp') : t('signIn')}</AppText>}</Pressable>
+    {!register ? <Pressable accessibilityRole="button" accessibilityLabel={t('forgotPassword')} disabled={busy || !email.trim()} onPress={() => void requestReset()} style={styles.textButton}><AppText style={styles.link}>{t('forgotPassword')}</AppText></Pressable> : null}
+    <Pressable onPress={() => setRegister((value) => !value)} style={styles.button}><AppText>{register ? t('signIn') : t('signUp')}</AppText></Pressable>
   </Page>;
 }
 

@@ -93,11 +93,31 @@ ok(migrationSql.includes('on conflict(customer_id, local_source_id) do update'),
 ok(migrationSql.includes('security definer') && migrationSql.includes("set search_path = ''"), 'import RPC has hardened execution context');
 
 const authContext = readFileSync('src/auth/auth-context.tsx', 'utf8');
-ok(authContext.includes('shouldCreateUser: registration'), 'existing-worker and registration OTP paths remain distinct');
-ok(authContext.includes('auth.updateUser({ phone: normalized })'), 'customer-to-worker phone enrollment remains covered');
-ok(authContext.includes("type: 'phone_change'"), 'customer upgrade verifies the phone-change OTP');
+// WPS-024 correction. Registration no longer creates an account by SMS code,
+// so there is no `shouldCreateUser` to keep distinct. What must stay true is
+// that registration touches no OTP primitive at all.
+ok(!authContext.includes('signInWithOtp'), 'REGISTRATION CREATES NO ACCOUNT BY SMS CODE');
+ok(!authContext.includes('requestWorkerOtp') && !authContext.includes('verifyWorkerOtp'),
+  'the registration and sign-in OTP pair is gone');
+ok(authContext.includes('contact_phone: normalized'),
+  'registration carries the contact number as metadata, not as an auth factor');
+ok(authContext.includes('auth.updateUser({ phone: normalized })'), 'phone confirmation remains covered');
+ok(authContext.includes("type: 'phone_change'"), 'phone confirmation verifies the phone-change OTP');
 ok(authContext.includes('await assertPhoneAuthAvailable(normalized)'), 'phone requests preflight server capability');
-ok(authContext.includes("requireCurrentUser('phone-change-verify')"), 'upgrade validates the resulting server session');
+ok(authContext.includes("requireCurrentUser('phone-change-verify')"), 'confirmation validates the resulting server session');
+
+// The preflight belongs to the phone-change flow and to nothing else. If it
+// ever reappears above `signUp`, registration is depending on Phone Auth again.
+ok(authContext.indexOf('assertPhoneAuthAvailable(normalized)') > authContext.indexOf('signUp:'),
+  'THE PHONE CAPABILITY PREFLIGHT SITS BELOW SIGN-UP, NOT INSIDE IT');
+const signUpBody = authContext.slice(
+  authContext.indexOf('signUp: async'),
+  authContext.indexOf('requestWorkerPhoneChange:'),
+);
+ok(!signUpBody.includes('assertPhoneAuthAvailable'),
+  'SIGN-UP DOES NOT PREFLIGHT PHONE AUTH');
+ok(!signUpBody.includes('Otp') && !signUpBody.includes('otp'),
+  'SIGN-UP CONTAINS NO OTP CALL');
 
 const rootLayout = readFileSync('app/_layout.tsx', 'utf8');
 for (const stale of ['booking/new/[providerId]', 'booking/[id]', 'addresses', 'provider-job/[id]']) {

@@ -19,11 +19,17 @@ type Value = {
   user: User | null;
   loading: boolean;
   recoveryStatus: RecoveryStatus;
+  /**
+   * Whether the account has PROVEN it holds its number.
+   *
+   * False for everybody while Supabase Phone Auth is disabled, and that is
+   * correct rather than a defect. It gates the explicit verify-phone surface
+   * and nothing else — registration, activation and onboarding do not read it,
+   * because a contact number is required and a proven one is not.
+   */
   hasVerifiedPhone: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (name: string, email: string, password: string, role?: AccountRole, language?: 'en' | 'ar') => Promise<{ needsEmailConfirmation: boolean }>;
-  requestWorkerOtp: (phone: string, registration: boolean, name: string, language?: 'en' | 'ar') => Promise<void>;
-  verifyWorkerOtp: (phone: string, token: string, registration: boolean, name: string) => Promise<void>;
+  signUp: (name: string, email: string, password: string, phone: string, role?: AccountRole, language?: 'en' | 'ar') => Promise<{ needsEmailConfirmation: boolean }>;
   requestWorkerPhoneChange: (phone: string) => Promise<'code_sent' | 'already_verified'>;
   verifyWorkerPhoneChange: (phone: string, token: string) => Promise<void>;
   requestPasswordReset: (email: string) => Promise<void>;
@@ -40,7 +46,7 @@ type RecoveryParameters = {
 
 const Context = createContext<Value | null>(null);
 
-async function requireCurrentUser(operation: 'worker-otp-verify' | 'phone-change-request' | 'phone-change-verify') {
+async function requireCurrentUser(operation: 'phone-change-request' | 'phone-change-verify') {
   const { data, error } = await getSupabaseClient().auth.getUser();
   if (error) throw sanitizeAuthError(error, operation);
   if (!data.user) throw new SafeAuthError('authSessionExpired');
@@ -156,50 +162,56 @@ export function AuthProvider({ children }: PropsWithChildren) {
         if (error) throw error;
       } catch (error) { throw sanitizeAuthError(error, 'password-sign-in'); }
     },
-    signUp: async (name, email, password, role = 'customer', language = 'en') => {
+    /**
+     * Registration, for a customer and for a worker alike.
+     *
+     * WPS-024 correction. There is no OTP here and no capability preflight,
+     * because registration does not depend on Supabase Phone Auth and must
+     * succeed while it is disabled.
+     *
+     * The phone number is REQUIRED and is validated to the same Egyptian mobile
+     * shape everywhere else in the application uses — but it is COLLECTED, not
+     * verified. It travels as `contact_phone` in the sign-up metadata, and
+     * `private.handle_new_user` re-checks the shape and writes it to the
+     * profile. It deliberately does NOT go in the `phone` field of the sign-up
+     * call: that would ask Supabase to treat it as an authentication factor and
+     * send a code nobody can receive.
+     */
+    signUp: async (name, email, password, phone, role = 'customer', language = 'en') => {
+      const normalized = normalizePhone(phone);
+      if (!isValidPhone(normalized)) throw new SafeAuthError('authInvalidPhone');
       if (environment.dataMode === 'mock') return { needsEmailConfirmation: false };
       try {
         const acceptedAt = new Date().toISOString();
-        const { data, error } = await getSupabaseClient().auth.signUp({ email, password, options: { data: { display_name: name, preferred_language: language, account_role: role, terms_accepted_at: acceptedAt, privacy_accepted_at: acceptedAt } } });
+        const { data, error } = await getSupabaseClient().auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              display_name: name,
+              preferred_language: language,
+              account_role: role,
+              contact_phone: normalized,
+              terms_accepted_at: acceptedAt,
+              privacy_accepted_at: acceptedAt,
+            },
+          },
+        });
         if (error) throw error;
         return { needsEmailConfirmation: !data.session };
       } catch (error) { throw sanitizeAuthError(error, 'sign-up'); }
     },
-    requestWorkerOtp: async (phone, registration, name, language = 'en') => {
-      if (environment.dataMode === 'mock') return;
-      const normalized = normalizePhone(phone);
-      if (!isValidPhone(normalized) || registration && name.trim().length < 2) throw new SafeAuthError('authInvalidPhone');
-      return runAuthSingleFlight(`worker:${registration}:${normalized}`, async () => {
-        try {
-          await assertPhoneAuthAvailable(normalized);
-          const acceptedAt = new Date().toISOString();
-          const { error } = await getSupabaseClient().auth.signInWithOtp({
-            phone: normalized,
-            options: {
-              shouldCreateUser: registration,
-              data: registration ? { display_name: name.trim(), preferred_language: language, account_role: 'provider', terms_accepted_at: acceptedAt, privacy_accepted_at: acceptedAt } : undefined,
-            },
-          });
-          if (error) throw error;
-        } catch (error) { throw sanitizeAuthError(error, 'worker-otp-request'); }
-      });
-    },
-    verifyWorkerOtp: async (phone, token, registration, name) => {
-      if (environment.dataMode === 'mock') return;
-      const normalized = normalizePhone(phone);
-      if (!isValidPhone(normalized) || !isValidSmsOtp(token)) throw new SafeAuthError('authInvalidOtp');
-      try {
-        const client = getSupabaseClient();
-        const { error } = await client.auth.verifyOtp({ phone: normalized, token: token.trim(), type: 'sms' });
-        if (error) throw error;
-        const verifiedUser = await requireCurrentUser('worker-otp-verify');
-        if (!verifiedUser.phone_confirmed_at) throw new SafeAuthError('authInvalidOtp');
-        if (registration) {
-          const { error: activationError } = await client.rpc('activate_provider_role', { p_display_name: name.trim() });
-          if (activationError) throw activationError;
-        }
-      } catch (error) { throw sanitizeAuthError(error, 'worker-otp-verify'); }
-    },
+    /**
+     * Verify a phone number, or change it. The ONLY remaining OTP surface.
+     *
+     * This is where `assertPhoneAuthAvailable` still belongs and still runs:
+     * an explicit, user-initiated request to prove a handset. It FAILS CLOSED
+     * while Supabase Phone Auth is disabled — which is every environment today
+     * — and that refusal is correct, because the alternative is a screen that
+     * waits forever for a code no provider was asked to send.
+     *
+     * Registration does not call this. Nothing blocks on it.
+     */
     requestWorkerPhoneChange: async (phone) => {
       if (environment.dataMode === 'mock') return 'code_sent';
       const normalized = normalizePhone(phone);

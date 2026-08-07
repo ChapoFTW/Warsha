@@ -864,6 +864,106 @@ select is((select count(*)::integer from public.account_onboarding
   0, 'NO ACCOUNT WAS SILENTLY ACTIVATED BY THE MIGRATION');
 select ok((select count(*) >= 0 from public.account_onboarding where worker_state = 'manual_review'),
   'pre-existing workers were placed in manual review');
+
+-- ---------------------------------------------------------------------------
+-- WPS-024 CORRECTION: registration does not depend on Phone Auth
+-- ---------------------------------------------------------------------------
+--
+-- The locked decision: a phone number is REQUIRED CONTACT INFORMATION, and
+-- proving the handset is not required to register as a customer or as a worker.
+-- Supabase Phone Auth stays disabled and no SMS provider is configured, so
+-- every assertion below runs in exactly the state production launches in.
+
+-- An email-and-password registration, with a number nobody has confirmed.
+insert into auth.users (id, instance_id, aud, role, email, encrypted_password,
+                        email_confirmed_at, created_at, updated_at,
+                        raw_app_meta_data, raw_user_meta_data)
+values
+  ('a2400000-0000-4000-8000-000000000001','00000000-0000-0000-0000-000000000000',
+   'authenticated','authenticated','wps024.worker@example.com','x', now(), now(), now(), '{}',
+   jsonb_build_object('display_name','WPS024 Worker','account_role','provider',
+                      'contact_phone','+201230000101')),
+  ('a2400000-0000-4000-8000-000000000002','00000000-0000-0000-0000-000000000000',
+   'authenticated','authenticated','wps024.customer@example.com','x', now(), now(), now(), '{}',
+   jsonb_build_object('display_name','WPS024 Customer','account_role','customer',
+                      'contact_phone','+201230000102'))
+on conflict (id) do nothing;
+
+select is((select phone from public.profiles where id='a2400000-0000-4000-8000-000000000001'),
+  '+201230000101',
+  'A WORKER REGISTERS WITH A CONTACT NUMBER WHILE PHONE AUTH IS DISABLED');
+select is((select phone from public.profiles where id='a2400000-0000-4000-8000-000000000002'),
+  '+201230000102',
+  'A CUSTOMER REGISTERS WITH A CONTACT NUMBER WHILE PHONE AUTH IS DISABLED');
+
+-- The number is stored. It is not evidence, and nothing claims it is.
+select is((select count(*)::integer from auth.users
+           where id in ('a2400000-0000-4000-8000-000000000001',
+                        'a2400000-0000-4000-8000-000000000002')
+             and phone_confirmed_at is not null),
+  0, 'NEITHER REGISTRATION IS TREATED AS A VERIFIED PHONE');
+select is((select count(*)::integer from auth.users
+           where id in ('a2400000-0000-4000-8000-000000000001',
+                        'a2400000-0000-4000-8000-000000000002')
+             and phone is not null),
+  0, 'NO REGISTRATION WRITES AN AUTHENTICATION PHONE IDENTITY');
+
+-- A worker profile exists, created by the registration itself.
+select isnt((select id from public.provider_profiles
+             where user_id='a2400000-0000-4000-8000-000000000001'), null,
+  'WORKER REGISTRATION PRODUCES A WORKER PROFILE WITHOUT AN SMS CODE');
+
+-- Role activation is reachable. It used to raise 'Verified phone required'.
+select lives_ok(
+  $q$select set_config('request.jwt.claim.sub','a2400000-0000-4000-8000-000000000002',true);
+     select public.activate_provider_role('WPS024 Customer')$q$,
+  'A CUSTOMER CAN BECOME A WORKER WITH NO VERIFIED PHONE');
+
+-- The gate is renamed, and it means what it says.
+select ok(private.worker_activation_gates('a2400000-0000-4000-8000-000000000001')
+            ? 'phone_number_provided',
+  'the activation gate asks whether a number was PROVIDED');
+select ok(not (private.worker_activation_gates('a2400000-0000-4000-8000-000000000001')
+            ? 'verified_phone'),
+  'NO GATE CLAIMS A VERIFIED PHONE, BECAUSE NOTHING VERIFIES ONE');
+select is((private.worker_activation_gates('a2400000-0000-4000-8000-000000000001')
+            ->>'phone_number_provided')::boolean, true,
+  'a registered worker satisfies the contact-number gate');
+
+-- Validation still applies. A number that is not an Egyptian mobile is refused
+-- rather than stored, so a contact detail is always dialable or absent.
+insert into auth.users (id, instance_id, aud, role, email, encrypted_password,
+                        email_confirmed_at, created_at, updated_at,
+                        raw_app_meta_data, raw_user_meta_data)
+values ('a2400000-0000-4000-8000-000000000003','00000000-0000-0000-0000-000000000000',
+   'authenticated','authenticated','wps024.badphone@example.com','x', now(), now(), now(), '{}',
+   jsonb_build_object('display_name','Bad Phone','contact_phone','555-1234'))
+on conflict (id) do nothing;
+select is((select phone from public.profiles where id='a2400000-0000-4000-8000-000000000003'),
+  null, 'A MALFORMED CONTACT NUMBER IS DROPPED, NEVER STORED');
+
+-- An account with no number on file cannot become a worker. Required contact
+-- information is still required.
+select throws_ok(
+  $q$select set_config('request.jwt.claim.sub','a2400000-0000-4000-8000-000000000003',true);
+     select public.activate_provider_role('Bad Phone')$q$,
+  '22023', null,
+  'A WORKER WITHOUT A CONTACT NUMBER IS STILL REFUSED');
+
+-- Uniqueness, preserved from what auth.users.phone used to guarantee.
+select throws_ok(
+  $q$update public.profiles set phone='+201230000101'
+     where id='a2400000-0000-4000-8000-000000000002'$q$,
+  '23505', null,
+  'TWO ACCOUNTS CANNOT SHARE A CONTACT NUMBER');
+
+-- The OTP infrastructure is kept and stays governed. Deleting the limit and
+-- rediscovering the need for it after enabling an SMS provider is the failure
+-- this assertion exists to prevent.
+select is((select enabled from private.rate_limit_policies
+           where policy_key='auth_otp_request'), true,
+  'THE OTP RATE LIMIT SURVIVES THE CORRECTION, READY FOR AN EXPLICIT FLOW');
+
 reset role;
 
 select * from finish();

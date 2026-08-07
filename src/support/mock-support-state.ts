@@ -137,7 +137,9 @@ export const mockHelpArticles: MockArticle[] = [
     summary: { en: 'Optional proof of training in a specific trade.', ar: 'إثبات اختياري لتدريب في صنعة معينة.' } },
   { slug: 'signing-in', categoryKey: 'account_help', audience: 'all', surfaces: ['account', 'settings'], tags: ['login', 'password', 'otp'], related: ['account-security', 'change-your-phone-number'], sortOrder: 10,
     title: { en: 'Signing in', ar: 'تسجيل الدخول' },
-    summary: { en: 'Customers use email and password. Workers use a phone number.', ar: 'الزباين بإيميل وباسورد. الصنايعية برقم التليفون.' } },
+    // WPS-024 correction. Everyone signs in the same way. The phone number is
+    // contact information, and Mock says exactly what the database says.
+    summary: { en: 'Everyone signs in with an email address and a password.', ar: 'الكل بيدخل بالإيميل والباسورد.' } },
   { slug: 'account-security', categoryKey: 'account_help', audience: 'all', surfaces: ['account', 'settings'], tags: ['security', 'password', 'safety'], related: ['signing-in', 'staying-safe'], sortOrder: 20,
     title: { en: 'Keeping your account safe', ar: 'حماية حسابك' },
     summary: { en: 'Warsha will never ask you for your password or your code.', ar: 'وارشة عمرها ما هتطلب منك الباسورد ولا الكود.' } },

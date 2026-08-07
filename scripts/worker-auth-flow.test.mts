@@ -45,11 +45,54 @@ assert.equal(workerAuthVisibleErrorKey(verified), null, 'successful OTP clears a
 assert.deepEqual(transitionWorkerAuthFlow(invalidCode, { type: 'PATH_SWITCHED' }), fresh, 'switching Customer/Worker clears transient auth state');
 assert.deepEqual(transitionWorkerAuthFlow(invalidCode, { type: 'REMOUNTED' }), fresh, 'screen remount does not restore stale error');
 
-const profile = readFileSync('app/(tabs)/profile.tsx', 'utf8');
-assert.match(profile, /useFocusEffect/, 'route focus resets worker transient state');
-assert.match(profile, /onChangeText=\{changeWorkerPhone\}/, 'phone edits use the stage-clearing handler');
-assert.match(profile, /workerErrorKey \?/, 'worker UI renders only stage-scoped error state');
-assert.match(profile, /workerFlow\.stage === 'VERIFYING' \? <BrandLoadingMark size=\{20\}/, 'button loading mark is restrained and verification-only');
-assert.match(profile, /busy \? <AppText style=\{styles\.dark\}>\{at\('sendingCode'\)\}/, 'send-in-progress keeps an action label instead of a giant logo');
+// ---------------------------------------------------------------------------
+// WPS-024 correction: the state machine is RETAINED, and is wired to nothing
+// ---------------------------------------------------------------------------
+//
+// Everything above still passes because the module is unchanged. It is kept
+// deliberately: a future verify-phone or step-up flow will need exactly this,
+// and rewriting a correct state machine from memory later is how the
+// stale-error and race behaviour it encodes gets lost.
+//
+// What changed is that no REGISTRATION surface may drive it. These assertions
+// are the ones that would fail if somebody reintroduced an SMS code as a
+// condition of getting an account.
 
-console.log('Worker auth stage regression tests passed: phone, send, OTP, resend, verify, switch, and remount states.');
+const profile = readFileSync('app/(tabs)/profile.tsx', 'utf8');
+const createAccount = readFileSync('app/create-account.tsx', 'utf8');
+const signIn = readFileSync('app/sign-in.tsx', 'utf8');
+
+assert.match(profile, /useFocusEffect/, 'route focus resets transient auth state');
+
+for (const [name, source] of [
+  ['the profile screen', profile],
+  ['the create-account screen', createAccount],
+  ['the sign-in screen', signIn],
+] as const) {
+  assert.doesNotMatch(source, /requestWorkerOtp|verifyWorkerOtp/,
+    `${name} drives no registration or sign-in OTP`);
+  assert.doesNotMatch(source, /transitionWorkerAuthFlow/,
+    `${name} does not run the OTP stage machine`);
+}
+
+// Registration collects a phone number and validates it. Collection is the
+// requirement; proving the handset is not.
+assert.match(createAccount, /isValidPhone\(normalizePhone\(phone\)\)/,
+  'registration validates the required contact number');
+assert.match(createAccount, /auth\.signUp\(/, 'registration uses email and password');
+assert.doesNotMatch(createAccount, /isValidSmsOtp/,
+  'REGISTRATION ASKS FOR NO VERIFICATION CODE');
+assert.doesNotMatch(signIn, /isValidSmsOtp/,
+  'SIGNING IN ASKS FOR NO VERIFICATION CODE');
+
+// The one surviving OTP surface, and it is not a gate: nothing is activated,
+// granted or unlocked by confirming a number.
+const enrollment = profile.slice(
+  profile.indexOf('const finishPhoneEnrollment'),
+  profile.indexOf('if (auth.loading'),
+);
+assert.ok(enrollment.length > 0, 'the phone confirmation handler is present');
+assert.doesNotMatch(enrollment, /provider\.activate/,
+  'CONFIRMING A PHONE NUMBER GRANTS NOTHING');
+
+console.log('Worker auth stage regression tests passed: state machine retained, registration OTP-free.');

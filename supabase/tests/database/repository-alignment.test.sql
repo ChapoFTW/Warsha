@@ -36,11 +36,16 @@ insert into auth.users(
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub','91000000-0000-0000-0000-000000000003',true);
+-- WPS-024 correction. The BEHAVIOUR under test is unchanged — an account with
+-- no phone number on file still cannot become a worker — but the reason moved.
+-- It used to be 'Verified phone required', which demanded an SMS code from a
+-- provider Warsha never configured, so no account could satisfy it. A phone
+-- number is now required CONTACT INFORMATION, and this fixture has none.
 select throws_ok(
   $$select public.activate_provider_role('Email-only worker')$$,
-  '42501',
-  'Verified phone required',
-  'new email-only account cannot activate a worker role'
+  '22023',
+  'Contact phone number required',
+  'new account with no contact number cannot activate a worker role'
 );
 
 select set_config('request.jwt.claim.sub','91000000-0000-0000-0000-000000000002',true);

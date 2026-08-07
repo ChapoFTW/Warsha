@@ -50,7 +50,7 @@ const captureWarningKeys: Record<CaptureWarning, OnboardingCopyKey> = {
 /** Each actionable gate gets the sentence for the step that satisfies it. */
 const gateKeys: Record<string, OnboardingCopyKey> = {
   worker_role_selected: 'roleQuestion',
-  verified_phone: 'stateOnboardingIncomplete',
+  phone_number_provided: 'stateOnboardingIncomplete',
   worker_agreement_accepted: 'workerAgreementTitle',
   document_processing_accepted: 'workerDocumentConsent',
   legal_name_complete: 'identityLegalName',

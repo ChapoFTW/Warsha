@@ -146,7 +146,7 @@ export function canAppeal(state: WorkerState | null): boolean {
 /** Gates the worker can act on, in the order the application asks for them. */
 const GATE_ORDER = [
   'worker_role_selected',
-  'verified_phone',
+  'phone_number_provided',
   'worker_agreement_accepted',
   'document_processing_accepted',
   'legal_name_complete',

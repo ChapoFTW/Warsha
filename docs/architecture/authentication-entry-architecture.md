@@ -149,3 +149,62 @@ route to serve three links on the gateway would widen the signed-out surface
 that WPS-023 exists to narrow — for a benefit measured in three paragraphs. The
 static screens say what Warsha can honestly say today and stop, and point at the
 full Help Center once signed in.
+
+---
+
+## The authentication method (WPS-024 correction)
+
+Superseded by WPS-024. WPS-001 registered customers by email and password and
+workers by phone and an SMS code; WPS-023 inherited that split.
+
+**Everyone now registers and signs in with an email address and a password.**
+Email verification remains required, enforced by Supabase Auth itself.
+
+A phone number is **required contact information** on every account. It is
+collected at registration, validated to the Egyptian mobile shape, stored
+uniquely, and **not verified**.
+
+### Why the split had to go
+
+It could not work. Supabase Phone Auth is disabled and no SMS provider is
+configured, so the worker path ended at a code that was never sent. Three
+separate server-side rules enforced the same impossible requirement:
+
+| Rule | Effect |
+| --- | --- |
+| `activate_provider_role` raised `Verified phone required` | No worker could be activated |
+| `verified_phone` activation gate | No worker could complete onboarding |
+| `is_provider_publicly_discoverable` | No approved worker could ever appear in search |
+
+All three now ask `private.account_contact_phone(user_id) is not null` — one
+definition, in one function, because it was previously three slightly different
+inline expressions and that is how a rule ends up enforced in two places and not
+the third.
+
+### The two facts, kept apart
+
+- `public.profiles.phone` — a contact detail somebody typed. Required.
+- `auth.users.phone_confirmed_at` — proof of possession. **Null for every
+  account.**
+
+The activation gate was renamed `verified_phone` → `phone_number_provided`
+rather than redefined, because a gate whose name claims verification would be
+believed by the next person to read it.
+
+`account_contact_phone` reads both stores deliberately: `profiles.phone` is
+written once by the insert trigger, while `auth.users.phone` is what Supabase
+updates when somebody confirms a number through `updateUser`, and nothing syncs
+that back.
+
+### What still requires Phone Auth, and still fails closed
+
+`assertPhoneAuthAvailable()` survives and guards exactly three things:
+confirming a number, changing a number, and any future high-risk step-up that is
+explicitly approved. It is absent from `signUp`, and
+`scripts/device-p1-regressions.test.mts` asserts that it stays absent.
+
+Confirming a number grants nothing. It used to activate the worker role, which
+made verification a precondition dressed as a convenience.
+
+Full reasoning, alternatives and the reversal path:
+[phone-verification-deferral](../decisions/phone-verification-deferral.md).

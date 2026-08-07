@@ -11,7 +11,7 @@ import { useThemedStyles } from '@/src/appearance/appearance-context';
 import { useAuth } from '@/src/auth/auth-context';
 import { authMessageKey } from '@/src/auth/auth-errors';
 import { useAuthText } from '@/src/auth/auth-translations';
-import { isValidPhone, isValidSmsOtp, normalizePhone } from '@/src/auth/phone-auth';
+import { isValidPhone, normalizePhone } from '@/src/auth/phone-auth';
 import { useLocalization } from '@/src/i18n/localization';
 import { useOnboarding } from '@/src/onboarding/onboarding-context';
 import { useOnboardingText } from '@/src/onboarding/onboarding-translations';
@@ -39,43 +39,37 @@ export default function CreateAccount() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
-  const [otp, setOtp] = useState('');
-  const [otpSent, setOtpSent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [notice, setNotice] = useState('');
 
-  const createCustomer = async () => {
+  /**
+   * WPS-024 correction. One registration path for both roles: name, email,
+   * password and a phone number.
+   *
+   * The phone number is REQUIRED and validated, and it is not verified. Warsha
+   * needs to be able to reach a customer whose worker is at the door and a
+   * worker whose job has moved — that is a contact detail, and it is collected
+   * as one. Proving the handset is a separate, explicit action that does not
+   * stand between somebody and an account.
+   */
+  const createAccount = async (choice: AccountRoleChoice) => {
     setBusy(true);
     setMessage('');
     try {
-      const result = await auth.signUp(name.trim(), email.trim(), password, 'customer', language);
+      const result = await auth.signUp(
+        name.trim(), email.trim(), password, phone,
+        choice === 'worker' ? 'provider' : 'customer', language,
+      );
       if (result.needsEmailConfirmation) {
+        // Email verification remains required. Nothing further can happen
+        // until it is done, so the role is recorded after the first session.
         setNotice(t('checkEmail'));
         return;
       }
       // The role is recorded server-side. The client's choice is an input to
       // that call, never the authority for it.
-      await onboarding.selectRole('customer');
-    } catch (error) {
-      setMessage(t(authMessageKey(error)));
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const createWorker = async () => {
-    setBusy(true);
-    setMessage('');
-    try {
-      if (otpSent) {
-        await auth.verifyWorkerOtp(phone, otp, true, name.trim());
-        await onboarding.selectRole('worker');
-      } else {
-        await auth.requestWorkerOtp(phone, true, name.trim(), language);
-        setOtpSent(true);
-        setNotice(at('codeSent'));
-      }
+      await onboarding.selectRole(choice);
     } catch (error) {
       setMessage(t(authMessageKey(error)));
     } finally {
@@ -142,63 +136,46 @@ export default function CreateAccount() {
             style={{ textAlign: isRTL ? 'right' : 'left' }}
           />
 
-          {role === 'customer' ? (
-            <>
-              <BrandTextField
-                label={t('email')}
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-                textContentType="emailAddress"
-              />
-              <BrandTextField
-                label={t('password')}
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-                textContentType="newPassword"
-              />
-              <BrandButton
-                label={ot.text('createAccount')}
-                loading={busy}
-                disabled={busy || name.trim().length < 2 || !email.trim() || password.length < 6}
-                onPress={() => void createCustomer()}
-              />
-            </>
-          ) : (
-            <>
-              <BrandTextField
-                label={at('phone')}
-                value={phone}
-                onChangeText={(value) => { setPhone(value); setOtpSent(false); }}
-                keyboardType="phone-pad"
-                autoCapitalize="none"
-                autoCorrect={false}
-                helper={at('phoneHint')}
-              />
-              {otpSent ? (
-                <BrandTextField
-                  label={at('otp')}
-                  value={otp}
-                  onChangeText={setOtp}
-                  keyboardType="number-pad"
-                  maxLength={6}
-                />
-              ) : null}
-              <AppText style={styles.note}>{ot.text('roleWorkerHint')}</AppText>
-              <BrandButton
-                label={at(otpSent ? 'verifyOtp' : 'sendOtp')}
-                loading={busy}
-                disabled={
-                  busy || name.trim().length < 2
-                  || (otpSent ? !isValidSmsOtp(otp) : !isValidPhone(normalizePhone(phone)))
-                }
-                onPress={() => void createWorker()}
-              />
-            </>
-          )}
+          <BrandTextField
+            label={t('email')}
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+            textContentType="emailAddress"
+          />
+          <BrandTextField
+            label={t('password')}
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            textContentType="newPassword"
+          />
+          <BrandTextField
+            label={at('phone')}
+            value={phone}
+            onChangeText={setPhone}
+            keyboardType="phone-pad"
+            autoCapitalize="none"
+            autoCorrect={false}
+            textContentType="telephoneNumber"
+            helper={at('phoneContactHint')}
+          />
+
+          {role === 'worker' ? (
+            <AppText style={styles.note}>{ot.text('roleWorkerHint')}</AppText>
+          ) : null}
+
+          <BrandButton
+            label={ot.text('createAccount')}
+            loading={busy}
+            disabled={
+              busy || name.trim().length < 2 || !email.trim() || password.length < 6
+              || !isValidPhone(normalizePhone(phone))
+            }
+            onPress={() => void createAccount(role)}
+          />
         </View>
 
         {notice ? <AppText accessibilityRole="alert" style={styles.notice}>{notice}</AppText> : null}
@@ -207,7 +184,7 @@ export default function CreateAccount() {
         <BrandButton
           label={ot.text('roleQuestion')}
           variant="ghost"
-          onPress={() => { setRole(null); setMessage(''); setNotice(''); setOtpSent(false); }}
+          onPress={() => { setRole(null); setMessage(''); setNotice(''); }}
         />
       </ScrollView>
     </SafeAreaView>

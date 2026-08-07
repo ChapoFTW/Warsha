@@ -315,6 +315,73 @@ accuracy. Fixed to match within a line, and covered by a test.
 
 ---
 
+## Registration authentication correction
+
+WPS-024 also corrects the authentication method. **Phone numbers are required
+contact information; phone OTP verification is not required to register.**
+Customers and workers authenticate with email and password, email verification
+remains required, and Supabase Phone Auth stays disabled.
+
+This was a defect, not a relaxation. Three server-side rules independently
+required `auth.users.phone_confirmed_at`, which only an SMS code from an
+unconfigured provider can set:
+
+| Rule | Effect before the correction |
+| --- | --- |
+| `activate_provider_role` | Raised `Verified phone required` — no worker could be activated |
+| `verified_phone` activation gate | No worker could complete onboarding |
+| `is_provider_publicly_discoverable` | **No approved worker could ever appear in search** |
+
+The third is the one worth dwelling on: a worker who completed onboarding,
+passed staff review and was approved would simply never have appeared, with
+nothing in the verification record to explain why.
+
+### Proven, against the live schema
+
+Every assertion below runs with Phone Auth disabled — the state production
+launches in.
+
+| Claim | Evidence |
+| --- | --- |
+| Customer registration succeeds with Phone Auth disabled | pgTAP, contact number stored |
+| Worker registration succeeds with Phone Auth disabled | pgTAP, worker profile created without an SMS code |
+| Required phone validation still applies | pgTAP — a malformed number is dropped, never stored |
+| No OTP is sent during registration | `signUp` body asserted free of any OTP call and of the capability preflight |
+| The phone number is not treated as verified | pgTAP — `phone_confirmed_at` null, no auth phone identity written |
+| Explicit OTP flows still fail closed | `assertPhoneAuthAvailable` retained on confirm/change only |
+| Uniqueness preserved | pgTAP — two accounts cannot share a contact number (`23505`) |
+| Required contact information is still required | pgTAP — an account with no number is refused (`22023`) |
+| No authentication or RLS authority weakened | No policy removed, no grant added, no capability relaxed |
+
+`verified_phone` was **renamed** to `phone_number_provided` rather than
+redefined. A gate whose name claims verification, passing for an unverified
+number, is a lie the next reader would believe.
+
+### What the suite caught
+
+Two failures that were the tests doing their job, not noise:
+
+1. **Four pgTAP fixtures set `auth.users.phone` after insert**, so
+   `public.profiles.phone` stayed null and discovery broke. The fix was not to
+   edit the fixtures — it exposed a real divergence, because
+   `updateUser({ phone })` also updates `auth.users` without syncing the profile.
+   `private.account_contact_phone` now reads both stores, and is the single
+   definition all three call sites use.
+2. **`repository-alignment` asserted the old error verbatim.** The behaviour
+   under test — an account with no number cannot become a worker — is preserved;
+   the assertion now names the authority that actually enforces it.
+
+### Not claimed
+
+No SMS provider was configured. Supabase Phone Auth was not enabled. The confirm
+and change flows remain **unavailable** in every environment, and that refusal is
+the correct behaviour rather than an outstanding defect.
+
+Reasoning, alternatives and the reversal path:
+[phone-verification-deferral](../decisions/phone-verification-deferral.md).
+
+---
+
 ## Manual acceptance
 
 **Not claimed.** 96 cases, 0 executed. See

@@ -1,5 +1,26 @@
 import type { TranslationKey } from '@/src/i18n/translations';
 
+/**
+ * The OTP entry state machine. Currently wired to NO SCREEN, and kept anyway.
+ *
+ * WPS-024 removed the SMS code from registration and sign-in: phone numbers are
+ * required contact information, not an authentication factor, and Supabase
+ * Phone Auth is disabled. Nothing in the application drives these transitions
+ * today.
+ *
+ * It is retained rather than deleted because the three flows WPS-024 keeps the
+ * OTP infrastructure for — confirm a number, change a number, and any future
+ * high-risk step-up — need exactly this behaviour, and most of it is not
+ * obvious. A stale invalid-code error must not render at phone entry; editing
+ * the number must clear the code; a send failure must never surface
+ * invalid-code copy; a late response from an abandoned attempt must not
+ * resurrect its stage. Every one of those is a bug somebody already found, and
+ * rewriting this from memory in six months would find them all again.
+ *
+ * `scripts/worker-auth-flow.test.mts` covers the transitions and asserts that
+ * no registration surface drives them.
+ */
+
 export type WorkerAuthStage = 'PHONE_ENTRY' | 'CODE_SENT' | 'OTP_ENTRY' | 'VERIFYING' | 'VERIFIED';
 type WorkerAuthErrorScope = 'phone' | 'otp';
 

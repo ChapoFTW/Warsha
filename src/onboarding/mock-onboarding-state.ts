@@ -58,7 +58,7 @@ type MockAccount = {
 const accounts = new Map<string, MockAccount>();
 
 const WORKER_GATES = [
-  'authenticated_account', 'verified_phone', 'verified_email_if_present',
+  'authenticated_account', 'phone_number_provided', 'verified_email_if_present',
   'worker_role_selected', 'legal_name_complete', 'profile_photo', 'biography',
   'services_configured', 'service_area_configured', 'current_address_provided',
   'national_id_front_uploaded', 'national_id_back_uploaded', 'national_id_approved',
@@ -123,7 +123,7 @@ export function mockSelectRole(accountKey: string, role: AccountRoleChoice): Onb
     }
     account.state.gates = gatesFrom({
       authenticated_account: true,
-      verified_phone: true,
+      phone_number_provided: true,
       verified_email_if_present: true,
       worker_role_selected: true,
       not_banned: true,

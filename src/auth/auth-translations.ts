@@ -9,6 +9,10 @@ const copy = {
     workerName: 'Name customers will see',
     phone: 'Phone number',
     phoneHint: 'Enter an Egyptian mobile number, for example 01012345678.',
+    // WPS-024 correction. Says what the number is FOR and, by saying nothing
+    // about a code, does not promise one. Registration sends no SMS.
+    phoneContactHint: 'How your worker or customer reaches you on the day. For example 01012345678.',
+    phoneNotVerified: 'Not confirmed yet',
     sendCodePreview: 'We’ll send the code to',
     localOtpHint: 'Local development code: 123456.',
     otp: 'Enter verification code',
@@ -19,7 +23,9 @@ const copy = {
     resendOtp: 'Resend code',
     codeSent: 'Verification code sent.',
     phoneVerifyTitle: 'Verify your phone',
-    phoneRequired: 'Verify an Egyptian mobile number before creating a worker profile.',
+    // Confirming is optional and additional. It is never a condition of
+    // registering, working or being paid, and this line must not imply it is.
+    phoneRequired: 'Confirming your number is optional. Your account works without it.',
     existingWorker: 'Already have a worker account?',
     newWorker: 'New to Warsha as a worker?',
   },
@@ -31,6 +37,8 @@ const copy = {
     workerName: 'الاسم اللي هيشوفه العميل',
     phone: 'رقم الموبايل',
     phoneHint: 'اكتب رقم موبايل مصري، زي 01012345678.',
+    phoneContactHint: 'الرقم اللي الفني أو العميل هيوصلك عليه يوم الشغل. زي 01012345678.',
+    phoneNotVerified: 'لسه غير مؤكد',
     sendCodePreview: 'هنبعت الكود على',
     localOtpHint: 'كود التطوير المحلي: 123456.',
     otp: 'اكتب كود التحقق',
@@ -41,7 +49,7 @@ const copy = {
     resendOtp: 'إعادة إرسال الكود',
     codeSent: 'تم إرسال كود التحقق.',
     phoneVerifyTitle: 'أكد رقم موبايلك',
-    phoneRequired: 'أكد رقم موبايل مصري قبل إنشاء ملف الفني.',
+    phoneRequired: 'تأكيد الرقم اختياري. حسابك شغال من غيره.',
     existingWorker: 'عندك حساب فني بالفعل؟',
     newWorker: 'أول مرة تشتغل على ورشة؟',
   },
