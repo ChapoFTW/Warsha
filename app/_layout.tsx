@@ -38,6 +38,7 @@ import { MarketplaceDataProvider } from '@/src/data/marketplace-context';
 import { DiscoveryProvider } from '@/src/discovery/discovery-context';
 import { GrowthProvider } from '@/src/growth/growth-context';
 import { LocalizationProvider } from '@/src/i18n/localization';
+import { LegalProvider } from '@/src/legal/legal-context';
 import { MarketplaceIntelligenceProvider } from '@/src/marketplace-intelligence/marketplace-context';
 import { NotificationProvider } from '@/src/notifications/notification-context';
 import { OnboardingProvider } from '@/src/onboarding/onboarding-context';
@@ -116,6 +117,9 @@ function ThemedRoot() {
           <Stack.Screen name="sign-in" />
           <Stack.Screen name="create-account" />
           <Stack.Screen name="legal/[topic]" />
+          <Stack.Screen name="legal/index" />
+          <Stack.Screen name="legal/consent" />
+          <Stack.Screen name="legal/document/[key]" />
           <Stack.Screen name="onboarding/address" />
           <Stack.Screen name="onboarding/worker" />
           <Stack.Screen name="onboarding/identity" />
@@ -199,7 +203,9 @@ export default function RootLayout() {
                                           <GrowthProvider>
                                             <PrivacyProvider>
                                               <OnboardingProvider>
-                                                <ThemedRoot />
+                                                <LegalProvider>
+                                                  <ThemedRoot />
+                                                </LegalProvider>
                                               </OnboardingProvider>
                                             </PrivacyProvider>
                                           </GrowthProvider>

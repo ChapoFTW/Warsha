@@ -13,5 +13,8 @@
     "**/*.ts",
     "**/*.tsx",
     "**/*.mts"
+  ],
+  "exclude": [
+    "supabase/functions/**/index.ts"
   ]
 }

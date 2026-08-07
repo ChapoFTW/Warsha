@@ -99,6 +99,26 @@ export default function AdminHomeScreen() {
         ) : null}
       </AdminSection>
 
+      {/*
+        WPS-024 governance. These screens existed as routes before they were
+        reachable, which meant a staff surface nobody could navigate to — the
+        registry and the health of every external provider were one direct URL
+        away from being unfindable. Capability-gated exactly as the server is.
+      */}
+      {can('review_legal_governance') || can('review_worker_vetting') ? (
+        <AdminSection title="Governance">
+          {can('review_legal_governance') ? (
+            <AdminRow label="Legal governance" icon="gavel" onPress={() => router.push('/admin/legal')} />
+          ) : null}
+          {can('review_legal_governance') ? (
+            <AdminRow label="External providers" icon="cloud-queue" onPress={() => router.push('/admin/providers')} />
+          ) : null}
+          {can('review_worker_vetting') ? (
+            <AdminRow label="Worker vetting" icon="badge" onPress={() => router.push('/admin/vetting')} />
+          ) : null}
+        </AdminSection>
+      ) : null}
+
       <AdminSection title={text('reauthRequired')} hint={text('reauthDetail')}>
         <View style={styles.actions}>
           <BrandButton

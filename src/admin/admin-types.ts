@@ -100,6 +100,14 @@ export type StaffCapability =
   | 'activate_worker'
   | 'reject_worker_application'
   | 'manage_vetting_policy'
+  // WPS-024 governance. `review_legal_governance` sees counts and register
+  // state and carries no risk flags; publishing a version and changing a
+  // subprocessor both carry dual control, because each one changes what every
+  // account is bound by. Omitted from `staffCapabilities` for the same reason
+  // as the WPS-021 and WPS-023 entries above.
+  | 'review_legal_governance'
+  | 'publish_legal_version'
+  | 'manage_subprocessors'
   | 'legacy_domain_staff_actions';
 
 export const staffCapabilities: readonly StaffCapability[] = [

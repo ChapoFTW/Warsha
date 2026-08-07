@@ -27,6 +27,9 @@
       "bundleIdentifier": "com.warsha.app",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
+      },
+      "config": {
+        "googleMapsApiKey": "$GOOGLE_MAPS_IOS_RENDER_KEY"
       }
     },
     "android": {
@@ -37,7 +40,12 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.warsha.app"
+      "package": "com.warsha.app",
+      "config": {
+        "googleMaps": {
+          "apiKey": "$GOOGLE_MAPS_ANDROID_RENDER_KEY"
+        }
+      }
     },
     "web": {
       "output": "static",
@@ -67,7 +75,25 @@
           "microphonePermission": false
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Warsha uses the camera to capture your identity document during worker verification.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Warsha uses your location only while you are choosing an address, to place the map pin.",
+          "locationWhenInUsePermission": "Warsha uses your location only while you are choosing an address, to place the map pin.",
+          "isIosBackgroundLocationEnabled": false,
+          "isAndroidBackgroundLocationEnabled": false,
+          "isAndroidForegroundServiceEnabled": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": false,
