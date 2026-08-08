@@ -55,11 +55,18 @@ predates WPS-024, which modified neither that file nor that assertion.
 `.hbc` artefacts are scanned, not skipped.
 
 The finding that fired in the previous build has not been fixed — it has moved.
-The guard literal is still packed contiguously in the Hermes string table:
+The guard literal is still packed contiguously in the Hermes string table.
+
+The `|` below is editorial, and it is the whole point: it marks where the
+terminated guard literal ends and the unrelated adjacent string-table bytes
+begin. It is not present in the bundle. Rendering these runs without it — as
+this document originally did — reproduced a byte sequence that Warsha's own
+secret scanner matches, so the evidence for a false positive became a finding
+of its own.
 
 ```
-sb_secret_allocateCallbackTitleFontSizeformat-color-marker-cancelAnima…   (Android)
-sb_secret_allocateCallbackTitleFontSize\x2d0a9133e39524f138be6d4db9f48…   (iOS)
+sb_secret_ | allocateCallbackTitleFontSizeformat-color-marker-cancelAnima…   (Android)
+sb_secret_ | allocateCallbackTitleFontSize\x2d0a9133e39524f138be6d4db9f48…   (iOS)
 ```
 
 The discriminator requires a **digit** inside the identifier-class run

@@ -27,6 +27,7 @@
 
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { createHash } from 'node:crypto';
+import { createRequire } from 'node:module';
 import { join } from 'node:path';
 
 import { canonicalText, sha256Hex, utf8Bytes } from '../src/legal/legal-hash.ts';
@@ -822,13 +823,110 @@ check(!/EXPO_PUBLIC_[A-Z_]*(SERVICE_ACCOUNT|SERVICE_ROLE|PRIVATE)/.test(
   [appConfig, ...clientSources].join('\n')),
   'NO SERVER CREDENTIAL SHAPE IS EXPOSED UNDER AN EXPO_PUBLIC_ NAME');
 
-// The Maps render key is a build-time placeholder, never a committed value.
-check(/\$GOOGLE_MAPS_ANDROID_RENDER_KEY/.test(appConfig),
-  'the Android Maps render key is a build-time placeholder');
-check(/\$GOOGLE_MAPS_IOS_RENDER_KEY/.test(appConfig),
-  'the iOS Maps render key is a build-time placeholder');
+// The Maps render keys are injected at config-evaluation time, never committed.
+//
+// A static app.json cannot interpolate `$VAR`, so asserting that the string
+// "$GOOGLE_MAPS_ANDROID_RENDER_KEY" appears somewhere proves nothing about what
+// reaches AndroidManifest.xml — that assertion passed for a build in which the
+// literal dollar-sign string was the key. The dynamic config is therefore
+// evaluated for real below, with synthetic values: no true key is read here,
+// so nothing secret can reach this suite's output.
+const dynamicAppConfig = codeOf('app.config.js');
 check(!/\bAIza[0-9A-Za-z_-]{35}\b/.test(appConfig),
   'NO REAL GOOGLE API KEY IS COMMITTED IN THE APP CONFIG');
+check(!/\bAIza[0-9A-Za-z_-]{35}\b/.test(dynamicAppConfig),
+  'NO REAL GOOGLE API KEY IS COMMITTED IN THE DYNAMIC APP CONFIG');
+check(!/EXPO_PUBLIC_[A-Z_]*(?:MAPS|RENDER)/.test(dynamicAppConfig),
+  'NO MAPS RENDER KEY IS EXPOSED UNDER AN EXPO_PUBLIC_ NAME');
+
+const ANDROID_KEY_VAR = 'GOOGLE_MAPS_ANDROID_RENDER_KEY';
+const IOS_KEY_VAR = 'GOOGLE_MAPS_IOS_RENDER_KEY';
+const ANDROID_STUB = 'android-render-key-stub';
+const IOS_STUB = 'ios-render-key-stub';
+
+type EvaluatedConfig = {
+  ios?: { config?: { googleMapsApiKey?: unknown } };
+  android?: { config?: { googleMaps?: { apiKey?: unknown } } };
+};
+
+const evaluateAppConfig = createRequire(import.meta.url)(
+  join(root, 'app.config.js'),
+) as (arg: { config: unknown }) => EvaluatedConfig;
+
+const staticExpoConfig = JSON.parse(appConfig).expo as unknown;
+
+/** Evaluate the dynamic config under an exact environment, then restore it. */
+function evaluateWith(env: Record<string, string | undefined>): EvaluatedConfig {
+  const saved: Record<string, string | undefined> = {
+    [ANDROID_KEY_VAR]: process.env[ANDROID_KEY_VAR],
+    [IOS_KEY_VAR]: process.env[IOS_KEY_VAR],
+  };
+  const apply = (values: Record<string, string | undefined>): void => {
+    for (const [name, value] of Object.entries(values)) {
+      if (value === undefined) delete process.env[name];
+      else process.env[name] = value;
+    }
+  };
+  try {
+    apply(env);
+    // A fresh clone each time: the factory must not depend on prior mutation.
+    return evaluateAppConfig({ config: JSON.parse(JSON.stringify(staticExpoConfig)) });
+  } finally {
+    apply(saved);
+  }
+}
+
+const resolved = evaluateWith({
+  [ANDROID_KEY_VAR]: ANDROID_STUB,
+  [IOS_KEY_VAR]: IOS_STUB,
+});
+const resolvedAndroid = resolved.android?.config?.googleMaps?.apiKey;
+const resolvedIos = resolved.ios?.config?.googleMapsApiKey;
+
+check(typeof resolvedAndroid === 'string' && resolvedAndroid.length > 0,
+  'the dynamic config resolves a non-empty Android Maps render key');
+check(typeof resolvedIos === 'string' && resolvedIos.length > 0,
+  'the dynamic config resolves a non-empty iOS Maps render key');
+check(!String(resolvedAndroid).includes('$') && !String(resolvedIos).includes('$'),
+  'NO RESOLVED MAPS KEY IS STILL AN UNINTERPOLATED $PLACEHOLDER');
+check(resolvedAndroid === ANDROID_STUB,
+  `Android resolves from ${ANDROID_KEY_VAR} alone`);
+check(resolvedIos === IOS_STUB,
+  `iOS resolves from ${IOS_KEY_VAR} alone`);
+check(resolvedAndroid !== resolvedIos,
+  'the two platforms resolve independently of one another');
+
+// Absent, empty and whitespace-only must all stop the build rather than ship a
+// tileless map. The thrown message must name the variable and reveal no value.
+for (const missingVar of [ANDROID_KEY_VAR, IOS_KEY_VAR]) {
+  for (const [label, value] of [
+    ['absent', undefined],
+    ['empty', ''],
+    ['whitespace-only', '   '],
+  ] as const) {
+    let threw = false;
+    let message = '';
+    try {
+      evaluateWith({
+        [ANDROID_KEY_VAR]: ANDROID_STUB,
+        [IOS_KEY_VAR]: IOS_STUB,
+        [missingVar]: value,
+      });
+    } catch (error) {
+      threw = true;
+      message = error instanceof Error ? error.message : String(error);
+    }
+    check(threw, `CONFIG EVALUATION FAILS WHEN ${missingVar} IS ${label.toUpperCase()}`);
+    check(message.includes(missingVar),
+      `the ${label} failure for ${missingVar} names the variable`);
+    check(!message.includes(ANDROID_STUB) && !message.includes(IOS_STUB),
+      `the ${label} failure for ${missingVar} PRINTS NO KEY VALUE`);
+  }
+}
+
+check(process.env[ANDROID_KEY_VAR] === undefined
+  || typeof process.env[ANDROID_KEY_VAR] === 'string',
+  'the suite restores the ambient environment after evaluating the config');
 
 const secretBoundary = codeOf('supabase', 'functions', '_shared', 'provider-secrets.ts');
 check(/Deno\.env\.get/.test(secretBoundary), 'secrets are read from the environment');

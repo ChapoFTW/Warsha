@@ -48,12 +48,32 @@ const KNOWN_LOCAL_DEMO = [
 // real private key does not carry the regex tail `[\s\S]{0,40}MIG` and a real
 // Supabase key is not this specific Hermes string. Each literal is assembled
 // from parts so this file does not itself become a match.
+// Each entry below is ANCHORED: it ends on a character outside the credential
+// character class (an ellipsis, a backslash, a regex tail). That is what makes
+// it safe. A neutralizer that stopped mid-class could shadow a real key whose
+// value happened to start with the benign prefix, leaving an orphaned tail the
+// pattern no longer sees. Ending outside the class means the literal only ever
+// cancels the exact documented run and never a value that continues past it.
 const KNOWN_BENIGN_LITERALS = [
   // scripts/audit-bundle.mjs Apple p8 pattern source, as committed in c88957a.
   '-----BEGIN PRIVATE ' + 'KEY-----[\\s\\S]{0,40}MIG',
   // The Hermes literal collision documented in WPS-018-SECURITY-REVIEW.md: two
   // unrelated bundle strings abutting, which is the whole point of that finding.
   'sb_secret_' + 'allocateCallbackButtonInCustomViewebsocket',
+
+  // The same collision, reshuffled by a later build and quoted as evidence in
+  // WPS-024-ACCEPTANCE-EVIDENCE.md. Committed un-separated in 7e5ddf4, where it
+  // is permanent.
+  //
+  // The working tree was fixed first — the document now renders these runs with
+  // an editorial `|` marking where the terminated guard literal ends — but a
+  // tree fix ALONE cannot clear this scanner and never could. History is scanned
+  // as patches, and a patch that removes a line reproduces that line with a `-`
+  // in front of it. Committing the correction therefore re-adds both strings to
+  // history a second time. Neutralizing by exact value is the only mechanism
+  // that terminates, which is what this list was built for.
+  'sb_secret_' + 'allocateCallbackTitleFontSizeformat-color-marker-cancelAnima…',
+  'sb_secret_' + 'allocateCallbackTitleFontSize\\x2d',
 ];
 
 const SKIP_EXT = new Set(['.png', '.jpg', '.jpeg', '.pdf', '.ico', '.webp', '.ttf', '.otf', '.hbc']);
