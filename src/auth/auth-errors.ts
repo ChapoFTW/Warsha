@@ -16,6 +16,9 @@ export type AuthFailure =
   | 'authServerError'
   | 'authSignupServerError'
   | 'authEmailUnconfirmed'
+  | 'authEmailDeliveryRestricted'
+  | 'authEmailDeliveryFailed'
+  | 'authSignupUnavailable'
   | 'authRateLimited'
   | 'authConfigurationError'
   | 'authError';
@@ -57,12 +60,15 @@ const SAFE_MESSAGES: Record<AuthFailure, string> = {
   authServerError: 'The authentication server failed.',
   authSignupServerError: 'The account creation service failed.',
   authEmailUnconfirmed: 'The email is not confirmed.',
+  authEmailDeliveryRestricted: 'The email delivery service rejected the recipient.',
+  authEmailDeliveryFailed: 'The confirmation request could not be sent.',
+  authSignupUnavailable: 'The signup request could not be completed.',
   authRateLimited: 'The authentication request was rate limited.',
   authConfigurationError: 'Authentication is not configured.',
   authError: 'Authentication failed.',
 };
 
-function classify(error: unknown, operation: AuthOperation = 'unknown'): AuthFailure {
+export function classifyAuthFailure(error: unknown, operation: AuthOperation = 'unknown'): AuthFailure {
   if (error instanceof SafeAuthError) return error.translationKey;
   const candidate = error as Partial<AuthError> & { code?: string; status?: number; name?: string };
   const code = String(candidate?.code ?? '').toLowerCase();
@@ -78,6 +84,26 @@ function classify(error: unknown, operation: AuthOperation = 'unknown'): AuthFai
   if (code === 'otp_disabled' || code === 'invalid_otp' || /token.*invalid|invalid.*token/i.test(message)) return 'authInvalidOtp';
   if (code === 'email_not_confirmed' || /email not confirmed/i.test(message)) return 'authEmailUnconfirmed';
   if (status === 429 || code.includes('rate_limit') || code.includes('over_request')) return 'authRateLimited';
+  if (
+    operation === 'sign-up'
+    && (code === 'email_address_not_authorized' || /email address not authorized/i.test(message))
+  ) return 'authEmailDeliveryRestricted';
+  if (
+    operation === 'sign-up'
+    && (
+      code === 'email_provider_disabled'
+      || code === 'email_send_failed'
+      || /error sending (?:confirmation )?email|smtp/i.test(message)
+    )
+  ) return 'authEmailDeliveryFailed';
+  if (
+    operation === 'sign-up'
+    && (
+      code === 'user_already_exists'
+      || code === 'email_exists'
+      || /user already registered|already.*registered/i.test(message)
+    )
+  ) return 'authSignupUnavailable';
   if (status === 401 || code === 'session_not_found' || code === 'refresh_token_not_found') return 'authSessionExpired';
   if (code === 'configuration_error' || /supabase mode requires/i.test(message)) return 'authConfigurationError';
   if (status >= 500 || code === 'unexpected_failure') {
@@ -90,7 +116,7 @@ function classify(error: unknown, operation: AuthOperation = 'unknown'): AuthFai
 
 export function safeAuthDiagnostic(operation: AuthOperation, error: unknown) {
   const candidate = error as { code?: unknown; status?: unknown };
-  const failure = classify(error, operation);
+  const failure = classifyAuthFailure(error, operation);
   const code = typeof candidate?.code === 'string' && /^[a-z0-9_]{1,64}$/i.test(candidate.code)
     ? candidate.code
     : undefined;
@@ -109,7 +135,7 @@ export function safeAuthDiagnostic(operation: AuthOperation, error: unknown) {
 }
 
 export function sanitizeAuthError(error: unknown, operation: AuthOperation = 'unknown'): SafeAuthError {
-  const safe = error instanceof SafeAuthError ? error : new SafeAuthError(classify(error, operation));
+  const safe = error instanceof SafeAuthError ? error : new SafeAuthError(classifyAuthFailure(error, operation));
   if (__DEV__) console.warn('[Warsha auth]', safeAuthDiagnostic(operation, error));
   return safe;
 }

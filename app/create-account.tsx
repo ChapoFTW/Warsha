@@ -79,9 +79,9 @@ export default function CreateAccount() {
         choice === 'worker' ? 'provider' : 'customer', language,
       );
       if (choice === 'customer' && result.needsEmailConfirmation) {
-        // Email verification remains required. Nothing further can happen
-        // until it is done, so the role is recorded after the first session.
-        setNotice(t('checkEmail'));
+        // Supabase may return an obfuscated user for an existing address, so
+        // this branch cannot prove account creation, sending, or delivery.
+        setNotice(at('customerConfirmationPending'));
         return;
       }
       // The role is recorded server-side. The client's choice is an input to

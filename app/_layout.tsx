@@ -153,6 +153,7 @@ function ThemedRoot() {
           <Stack.Screen name="provider-earnings" />
           <Stack.Screen name="provider-job" />
           <Stack.Screen name="reset-password" />
+          <Stack.Screen name="auth/confirm" />
           <Stack.Screen name="help/index" />
           <Stack.Screen name="support/index" />
           <Stack.Screen name="admin" />

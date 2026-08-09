@@ -25,7 +25,7 @@ Do not copy the Supabase `service_role` secret, secret key, database password, a
 
 1. In **Authentication → Providers → Email**, enable Email authentication.
 2. Choose whether **Confirm email** is enabled. When enabled, new users must click the emailed confirmation link before signing in.
-3. Configure the mobile authentication redirect URLs as described below. Password signup/sign-in works without a redirect, but password recovery must explicitly redirect back into the app.
+3. Configure the mobile authentication redirect URLs as described below. Customer signup and password recovery both supply explicit callbacks into the app.
 4. Apply migrations with `npx supabase login`, `npx supabase link --project-ref YOUR_PROJECT_REF`, then `npx supabase db push`.
 5. Load the idempotent fictional development seed with `npx supabase db reset` locally, or `npx supabase db execute --file supabase/seed.sql --linked` against a disposable development project.
 5. Populate approved providers and their services. Only provider rows with `is_published = true` are visible in Supabase mode.
@@ -93,3 +93,32 @@ The Expo configuration already declares `"scheme": "warsha"` in `app.json`. A cu
 The app always supplies the generated callback as `redirectTo` when requesting a reset. Do not rely on `http://localhost:3000`: the hosted Supabase Site URL is not changed by the mobile app, and localhost is only an unsuitable fallback when a mobile reset request omits its explicit redirect. Configure the hosted Site URL separately for any real website that may be added later.
 
 After changing the dashboard allow-list, restart Expo, request a new password-reset email, and use only the newest link. Previously issued or already-used recovery links can be rejected as expired.
+
+## Customer confirmation delivery
+
+Customer signup keeps **Confirm email** enabled. Warsha supplies
+`Linking.createURL('auth/confirm')` as `emailRedirectTo`, so development and
+production native builds return through `warsha://auth/confirm`; Expo Go uses
+its generated `exp://` URL; web uses the current web origin and
+`/auth/confirm`. Keep `warsha://**` and development-only `exp://**` in the
+hosted Redirect URLs list. Add each real web origin explicitly when Warsha has
+one, and make the production web origin the hosted Site URL.
+
+The confirmation template must use `{{ .ConfirmationURL }}` (or a correctly
+constructed `{{ .RedirectTo }}` link). A template hard-coded to
+`{{ .SiteURL }}` ignores the callback supplied by the app.
+
+Supabase's default SMTP service is only a setup aid. It sends only to addresses
+belonging to members of the project's team, is currently limited to two
+messages per hour, is best-effort, and has no delivery SLA. Warsha development
+and production customer authentication therefore require custom SMTP before
+email delivery can pass acceptance. Configure it in **Supabase Dashboard →
+Project Settings → Authentication → SMTP Settings**, using a dedicated
+authentication sending domain with SPF, DKIM, and DMARC. Never place the SMTP
+password in this repository or an `EXPO_PUBLIC_*` variable.
+
+The public signup response cannot prove account creation, sending, or delivery:
+Supabase can return an obfuscated user (including plausible timestamps) for a
+duplicate signup to prevent account enumeration. Warsha therefore reports only
+that confirmation is required. An actual inbox test remains required after
+SMTP and redirect configuration.

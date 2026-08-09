@@ -114,7 +114,9 @@ export default function Profile() {
         // number is required contact information and is validated before the
         // call; nothing here sends a code or waits for one.
         const result = await auth.signUp(name, email, password, phone, 'customer', preferred);
-        if (result.needsEmailConfirmation) setMessage(t('checkEmail'));
+        if (result.needsEmailConfirmation) {
+          setMessage(at('customerConfirmationPending'));
+        }
       } else await auth.signIn(email, password);
     } catch (error) { setMessage(t(authMessageKey(error))); }
     finally { setBusy(false); }

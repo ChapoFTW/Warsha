@@ -8,13 +8,18 @@ import { getSupabaseClient } from '@/src/lib/supabase';
 
 import { SafeAuthError, sanitizeAuthError } from './auth-errors';
 import { classifySignInIdentity, visibleContactEmail } from './auth-identifier';
+import {
+  customerSignUpResult,
+  readAuthCallbackParameters,
+  type CustomerSignUpResult,
+} from './email-confirmation';
 import { assertPhoneAuthAvailable } from './phone-auth-capability';
 import { isValidPhone, isValidSmsOtp, normalizePhone } from './phone-auth';
 import { runAuthSingleFlight } from './auth-request-guard';
 import { registerWorker, signInWorker } from './worker-auth-client';
 
 export type AccountRole = 'customer' | 'provider';
-type RecoveryStatus = 'checking' | 'idle' | 'processing' | 'ready' | 'invalid';
+type CallbackStatus = 'checking' | 'idle' | 'processing' | 'ready' | 'invalid';
 type Value = {
   mode: 'mock' | 'supabase';
   session: Session | null;
@@ -22,7 +27,8 @@ type Value = {
   /** A communication email. Null for trusted synthetic worker identities. */
   visibleEmail: string | null;
   loading: boolean;
-  recoveryStatus: RecoveryStatus;
+  recoveryStatus: CallbackStatus;
+  emailConfirmationStatus: CallbackStatus;
   /**
    * Whether the account has PROVEN it holds its number.
    *
@@ -33,19 +39,12 @@ type Value = {
    */
   hasVerifiedPhone: boolean;
   signIn: (identifier: string, password: string) => Promise<void>;
-  signUp: (name: string, email: string | null, password: string, phone: string, role?: AccountRole, language?: 'en' | 'ar') => Promise<{ needsEmailConfirmation: boolean; accountId: string | null }>;
+  signUp: (name: string, email: string | null, password: string, phone: string, role?: AccountRole, language?: 'en' | 'ar') => Promise<CustomerSignUpResult>;
   requestWorkerPhoneChange: (phone: string) => Promise<'code_sent' | 'already_verified'>;
   verifyWorkerPhoneChange: (phone: string, token: string) => Promise<void>;
   requestPasswordReset: (email: string) => Promise<void>;
   finishPasswordRecovery: () => Promise<void>;
   signOut: () => Promise<void>;
-};
-
-type RecoveryParameters = {
-  accessToken?: string;
-  refreshToken?: string;
-  type?: string;
-  error?: string;
 };
 
 const Context = createContext<Value | null>(null);
@@ -57,27 +56,12 @@ async function requireCurrentUser(operation: 'phone-change-request' | 'phone-cha
   return data.user;
 }
 
-function readRecoveryParameters(url: string): RecoveryParameters {
-  const queryStart = url.indexOf('?');
-  const fragmentStart = url.indexOf('#');
-  const queryEnd = fragmentStart >= 0 ? fragmentStart : url.length;
-  const query = queryStart >= 0 ? url.slice(queryStart + 1, queryEnd) : '';
-  const fragment = fragmentStart >= 0 ? url.slice(fragmentStart + 1) : '';
-  const parameters = new URLSearchParams(query);
-  const fragmentParameters = new URLSearchParams(fragment);
-  fragmentParameters.forEach((value, key) => parameters.set(key, value));
-  return {
-    accessToken: parameters.get('access_token') ?? undefined,
-    refreshToken: parameters.get('refresh_token') ?? undefined,
-    type: parameters.get('type') ?? undefined,
-    error: parameters.get('error') ?? parameters.get('error_code') ?? parameters.get('error_description') ?? undefined,
-  };
-}
-
 export function AuthProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(environment.dataMode === 'supabase');
-  const [recoveryStatus, setRecoveryStatus] = useState<RecoveryStatus>(environment.dataMode === 'supabase' ? 'checking' : 'idle');
+  const [recoveryStatus, setRecoveryStatus] = useState<CallbackStatus>(environment.dataMode === 'supabase' ? 'checking' : 'idle');
+  const [emailConfirmationStatus, setEmailConfirmationStatus] = useState<CallbackStatus>(
+    environment.dataMode === 'supabase' ? 'checking' : 'idle');
   const callbackHandled = useRef(false);
 
   useEffect(() => {
@@ -85,6 +69,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     if (environment.dataMode === 'mock') {
       setLoading(false);
       setRecoveryStatus('idle');
+      setEmailConfirmationStatus('idle');
       return () => { active = false; };
     }
 
@@ -92,31 +77,46 @@ export function AuthProvider({ children }: PropsWithChildren) {
     const openResetScreen = () => {
       if (active) router.replace('/reset-password');
     };
-    const handleRecoveryUrl = async (url: string | null) => {
+    const openEmailConfirmationScreen = () => {
+      if (active) router.replace('/auth/confirm');
+    };
+    const handleAuthUrl = async (url: string | null) => {
       if (!active || !url) return;
-      const parameters = readRecoveryParameters(url);
-      const targetsResetScreen = url.split(/[?#]/, 1)[0].toLowerCase().includes('reset-password');
-      const isRecovery = parameters.type === 'recovery' || targetsResetScreen && Boolean(parameters.accessToken || parameters.refreshToken || parameters.error);
-      if (!isRecovery || callbackHandled.current) return;
+      const parameters = readAuthCallbackParameters(url);
+      if (!parameters.kind || callbackHandled.current) return;
       callbackHandled.current = true;
-      if (parameters.error || !parameters.accessToken || !parameters.refreshToken) {
-        setRecoveryStatus('invalid');
-        openResetScreen();
+      const setStatus = parameters.kind === 'recovery'
+        ? setRecoveryStatus
+        : setEmailConfirmationStatus;
+      const openScreen = parameters.kind === 'recovery'
+        ? openResetScreen
+        : openEmailConfirmationScreen;
+      if (
+        parameters.error
+        || (!parameters.code && (!parameters.accessToken || !parameters.refreshToken))
+      ) {
+        setStatus('invalid');
+        openScreen();
         return;
       }
-      setRecoveryStatus('processing');
+      setStatus('processing');
       try {
-        const { error } = await client.auth.setSession({ access_token: parameters.accessToken, refresh_token: parameters.refreshToken });
+        const { error } = parameters.code
+          ? await client.auth.exchangeCodeForSession(parameters.code)
+          : await client.auth.setSession({
+              access_token: parameters.accessToken!,
+              refresh_token: parameters.refreshToken!,
+            });
         if (error) throw error;
         if (active) {
-          setRecoveryStatus('ready');
-          openResetScreen();
+          setStatus('ready');
+          openScreen();
         }
       } catch (error) {
         sanitizeAuthError(error, 'session');
         if (active) {
-          setRecoveryStatus('invalid');
-          openResetScreen();
+          setStatus('invalid');
+          openScreen();
         }
       }
     };
@@ -140,9 +140,12 @@ export function AuthProvider({ children }: PropsWithChildren) {
         openResetScreen();
       }
     });
-    const linkSubscription = Linking.addEventListener('url', ({ url }) => { void handleRecoveryUrl(url); });
-    void Linking.getInitialURL().then((url) => handleRecoveryUrl(url)).finally(() => {
-      if (active) setRecoveryStatus((current) => current === 'checking' ? 'idle' : current);
+    const linkSubscription = Linking.addEventListener('url', ({ url }) => { void handleAuthUrl(url); });
+    void Linking.getInitialURL().then((url) => handleAuthUrl(url)).finally(() => {
+      if (active) {
+        setRecoveryStatus((current) => current === 'checking' ? 'idle' : current);
+        setEmailConfirmationStatus((current) => current === 'checking' ? 'idle' : current);
+      }
     });
 
     return () => {
@@ -159,6 +162,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     visibleEmail: visibleContactEmail(session?.user),
     loading,
     recoveryStatus,
+    emailConfirmationStatus,
     hasVerifiedPhone: Boolean(session?.user.phone && session.user.phone_confirmed_at),
     signIn: async (identifier, password) => {
       const identity = classifySignInIdentity(identifier);
@@ -205,7 +209,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
       const normalized = normalizePhone(phone);
       if (!isValidPhone(normalized)) throw new SafeAuthError('authInvalidPhone');
       if (environment.dataMode === 'mock') {
-        return { needsEmailConfirmation: false, accountId: 'mock-user' };
+        return {
+          needsEmailConfirmation: false,
+          accountId: 'mock-user',
+        };
       }
       try {
         if (role === 'provider') {
@@ -231,6 +238,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
           email: email.trim(),
           password,
           options: {
+            emailRedirectTo: Linking.createURL('auth/confirm'),
             data: {
               display_name: name,
               preferred_language: language,
@@ -242,10 +250,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
           },
         });
         if (error) throw error;
-        return {
-          needsEmailConfirmation: !data.session,
-          accountId: data.user?.id ?? data.session?.user.id ?? null,
-        };
+        return customerSignUpResult({
+          session: data.session,
+          user: data.user ? {
+            id: data.user.id,
+            confirmation_sent_at: data.user.confirmation_sent_at,
+          } : null,
+        });
       } catch (error) {
         throw sanitizeAuthError(error, role === 'provider' ? 'worker-sign-up' : 'sign-up');
       }
@@ -314,7 +325,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         if (error) throw error;
       } catch (error) { throw sanitizeAuthError(error, 'sign-out'); }
     },
-  }), [loading, recoveryStatus, session]);
+  }), [emailConfirmationStatus, loading, recoveryStatus, session]);
 
   return <Context.Provider value={value}>{children}</Context.Provider>;
 }

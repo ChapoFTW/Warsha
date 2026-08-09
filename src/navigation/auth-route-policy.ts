@@ -3,6 +3,7 @@ export const PUBLIC_ROUTES = [
   '/sign-in',
   '/create-account',
   '/reset-password',
+  '/auth/confirm',
   '/legal',
 ] as const;
 export const publicAuthRoutePrefixes = PUBLIC_ROUTES;
