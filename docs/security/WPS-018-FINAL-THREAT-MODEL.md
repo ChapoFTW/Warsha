@@ -26,7 +26,7 @@ something that was reasoned about.
 | Admin code in a customer build | Verified present; it holds no secret and grants no access | **Accepted and documented.** A bundled route is never treated as a security boundary. |
 | Tampered client | Every action re-authorized server-side by capability and RLS | A determined user can call any RPC as themselves. That is the design assumption. |
 | Local storage theft | Sessions in `expo-secure-store`, Keychain/Keystore-backed | A rooted or jailbroken device is out of scope |
-| No OTA rollback | Deliberate; mitigation is server-side flags and switches | A client bug that cannot be neutralised server-side is slow to fix. Recorded in the rollback plan. |
+| Production has no OTA rollback; Preview has a channel-scoped compatible-update rollback | Deliberate; mitigation is server-side flags and switches, plus Preview rollback for runtime-compatible changes | A native or Production client bug that cannot be neutralised server-side still requires a new binary. Recorded in the rollback plan. |
 
 ### Web client
 

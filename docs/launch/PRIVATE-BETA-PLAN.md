@@ -51,7 +51,7 @@ nothing except that we cannot supply demand.
 | Call relay | No telephony provider |
 | Emergency requests | Needs an operational response we cannot yet staff |
 | Rescue Mode | Same |
-| Over-the-air updates | Deliberately not enabled |
+| Over-the-air updates | Internal Preview channel only; Production disabled |
 
 Cash-only means the commission is collected as cash commission debt under
 WPS-007. Every participant is told this in plain language before they join.

@@ -33,6 +33,22 @@ bound to `development` with `staff_bind_platform_environment()` after migration
 `202608180001` is pushed; a clean migration replay deliberately remains `local`.
 Separate staging and production projects do not yet exist.
 
+## Installed application lanes
+
+Distribution lanes are not backend environments. The Preview/QA binary is an
+internet-reachable internal release that deliberately uses the hosted
+**development** backend until a separate staging project exists.
+
+| Lane | EAS profile | Update channel | EAS variable environment | Backend |
+| --- | --- | --- | --- | --- |
+| Development | `development` | `development` | `development` | `warsha-development` |
+| Preview / QA | `preview` | `preview` | `preview` | `warsha-development` |
+| Production | `production` | `production` | `production` | Future production project; not configured |
+
+Preview must never be described as the staging backend merely because EAS calls
+its variable namespace `preview`. Its URL is validated against project ref
+`lrhipbcapzfxuwixfoog` before every QA build or update.
+
 ## Separation rules
 
 1. **Separate projects.** Each hosted environment is its own Supabase project

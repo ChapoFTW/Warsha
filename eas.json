@@ -23,8 +23,11 @@
     "preview": {
       "extends": "base",
       "distribution": "internal",
-      "channel": "staging",
+      "channel": "preview",
       "environment": "preview",
+      "android": {
+        "buildType": "apk"
+      },
       "env": {
         "EXPO_PUBLIC_ADMIN_SURFACE": "enabled"
       }

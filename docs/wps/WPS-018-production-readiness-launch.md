@@ -196,10 +196,12 @@ and permission copy are configured. Store submission, screenshots, descriptions,
 content rating, and phased rollout are **prepared, not performed** — no
 submission is made by this work.
 
-Over-the-air updates are deliberately not enabled. Universal and app links
-require a verified domain Warsha does not yet control; only the custom scheme
-works today, and that is recorded as a blocker rather than configured against an
-unverified domain.
+The later QA distribution work enables over-the-air updates only for standalone
+internal Preview builds on the isolated `preview` channel. Production OTA
+delivery remains disabled, and this configuration change publishes no update.
+Universal and app links require a verified domain Warsha does not yet control;
+only the custom scheme works today, and that is recorded as a blocker rather
+than configured against an unverified domain.
 
 Web hosting is undecided. `docs/launch/PRODUCTION-LAUNCH-PLAN.md` records the
 options, what each must define (CSP, headers, cache policy, redirects, auth

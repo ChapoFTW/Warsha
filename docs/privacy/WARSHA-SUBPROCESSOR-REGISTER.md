@@ -12,7 +12,7 @@ Third parties that can hold or see Warsha personal data.
 | Party | Role | Data it can hold | Where | Notes |
 | --- | --- | --- | --- | --- |
 | **Supabase** | Database, auth, storage, realtime | Everything. Postgres rows, `auth.users`, all 13 storage buckets | Hosted region per project settings | The primary processor. All personal data lives here |
-| **Expo** (EAS) | Build and update service | Build artefacts and source. **No runtime user data** | Expo infrastructure | Over-the-air updates are **not enabled**; see WPS-018 |
+| **Expo** (EAS) | Build and update service | Build artefacts, source, update artefacts, and technical delivery requests. **No Warsha account or marketplace payloads** | Expo infrastructure | Preview EAS Update is configured on an isolated internal channel; Production OTA remains disabled |
 | **Google Fonts** (`@expo-google-fonts`) | Typeface packages | None | Bundled at build time | Fonts are vendored into the bundle, not fetched at runtime |
 
 ## Explicitly not present
@@ -60,9 +60,10 @@ Controls in place:
 
 ### Expo
 
-Build-time only. The app is built from source and shipped as a binary. No user
-data passes through Expo at runtime, and over-the-air updates are disabled — a
-WPS-018 launch blocker that WPS-022 does not remove.
+The app is built from source and shipped as a binary. Internal Preview builds
+may request and download application-code updates from Expo's isolated
+Preview channel. Those requests do not carry Warsha account, booking, message,
+document, or payment payloads. Production OTA delivery remains disabled.
 
 ## Data location
 

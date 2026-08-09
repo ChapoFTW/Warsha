@@ -47,7 +47,14 @@ Read-only permissions, concurrency cancellation, lockfile-exact `npm ci`, and
   never mint the same one.
 - `runtimeVersion` follows the app version: a native change forces a new binary
   rather than silently mismatching.
-- Over-the-air updates are **not enabled**. Every client change is a build.
+- Preview over-the-air updates are enabled only on the `preview` channel. A
+  JS/TS/style/compatible-asset change may use that channel after the explicit
+  OTA compatibility review in `qa-preview-runbook.md`.
+- A native dependency, config plugin, permission, manifest/plist value, SDK,
+  icon, splash, or other native/config change requires an app-version bump and
+  a new Preview binary. Never publish it as an OTA update.
+- Production remains on the separate `production` channel. This runbook does
+  not authorize publishing a Preview update to Production.
 
 ## Release types
 

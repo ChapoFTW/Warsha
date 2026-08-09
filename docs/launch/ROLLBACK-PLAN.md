@@ -64,12 +64,14 @@ early rather than late.
 - Google Play permits a rollback to a previous release for new installs.
 - Apple does not, in general. The route back is a new build through review,
   which is hours to days.
-- Over-the-air updates are **not enabled**, so there is no instant client fix.
+- Production over-the-air updates are **not enabled**. Internal Preview has a
+  separate channel and can roll back only a runtime-compatible Preview update;
+  native/config changes still require a replacement binary.
 
-The practical consequence: **a mobile client bug is mitigated server-side, not by
-shipping.** Kill switches and flags exist precisely because the mobile rollback
-path is slow. Any client change that cannot be neutralised from the server is a
-change that needs more care before it ships.
+The practical consequence for Production and native defects remains: **a mobile
+client bug is mitigated server-side, not by shipping.** Kill switches and flags
+exist precisely because the store rollback path is slow. Preview OTA rollback
+does not replace that control.
 
 ## Layer 4 — schema
 

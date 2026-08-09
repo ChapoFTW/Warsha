@@ -309,10 +309,14 @@ match(appJson, /"bundleIdentifier": "com\.warsha\.app"/, 'the iOS bundle identif
 match(appJson, /"package": "com\.warsha\.app"/, 'the Android application id is set');
 match(appJson, /"runtimeVersion"/, 'a runtime version policy is set');
 match(appJson, /"scheme": "warsha"/, 'the deep link scheme is set');
-notMatch(appJson, /"updates"/, 'over-the-air updates are not enabled');
+match(appJson, /"updates"/, 'EAS Update is configured');
+match(appJson, /https:\/\/u\.expo\.dev\/6c8fbcda-6bb2-40b2-b8db-3b0ce127525f/,
+  'updates are bound to the Warsha EAS project');
 for (const profile of ['development', 'preview', 'production']) {
   ok(easJson.includes(`"${profile}"`), `the ${profile} build profile exists`);
 }
+match(easJson, /"preview"[\s\S]*"channel": "preview"/,
+  'the Preview build receives only the Preview channel');
 match(easJson, /"appVersionSource": "remote"/, 'build numbers are managed remotely');
 notMatch(easJson, /SERVICE_ROLE|SECRET|PASSWORD/, 'no secret is written into the build profiles');
 

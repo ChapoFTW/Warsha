@@ -13,7 +13,7 @@ Status: **NOTHING HAS BEEN SUBMITTED.** No listing exists on either store.
 | EAS project | configured in `app.json` |
 | Build numbers | EAS remote, auto-incremented on production builds |
 | Runtime version | tracks the app version |
-| Over-the-air updates | **not enabled** |
+| Over-the-air updates | Preview internal channel only; Production **not enabled** |
 
 The Android application id and the upload keystore are permanent. Changing
 either means a new listing and losing every install and review.
