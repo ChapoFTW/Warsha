@@ -1,5 +1,6 @@
 import type { Category, Provider, PublicPortfolioItem, Service } from '@/src/data/marketplace-types';
 import { getSupabaseClient } from '@/src/lib/supabase';
+import { publicSpecialties } from '@/src/providers/profession-taxonomy';
 
 import type { WarshaDataAdapter } from './types';
 
@@ -64,7 +65,7 @@ function mapProvider(row: Record<string, unknown>): Provider {
     serviceRadius: Number(row.service_radius_km),
     languages: Array.isArray(row.languages) ? row.languages.map(String) : [],
     about: String(row.about ?? ''),
-    skills: Array.isArray(row.specialties) ? row.specialties.map(String) : [],
+    skills: publicSpecialties(Array.isArray(row.specialties) ? row.specialties.map(String) : []),
     certifications: [],
     services,
     portfolio: (Array.isArray(row.portfolio) ? row.portfolio : []).map(value => mapPortfolio(value as Record<string, unknown>)),

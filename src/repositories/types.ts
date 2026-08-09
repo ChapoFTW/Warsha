@@ -4,5 +4,5 @@ export interface MarketplaceRepository{listCategories():Promise<Category[]>;list
 export interface FavouriteRepository{list():Promise<string[]>;add(providerId:string):Promise<void>;remove(providerId:string):Promise<void>}
 export interface AddressRepository{list():Promise<Address[]>;add(input:Omit<Address,'id'>):Promise<Address>;update(id:string,input:Omit<Address,'id'>):Promise<Address>;remove(id:string):Promise<void>;setDefault(id:string):Promise<void>}
 export interface BookingRepository{list():Promise<Booking[]>;create(input:NewBooking):Promise<Booking>;cancel(id:string,reason:string):Promise<Booking>;reschedule(id:string,date:string,time:string):Promise<Booking>}
-export type CustomerProfile={id:string;displayName:string;preferredLanguage:'en'|'ar';email:string};
-export interface CustomerProfileRepository{get(email:string):Promise<CustomerProfile>;update(input:Pick<CustomerProfile,'displayName'|'preferredLanguage'>):Promise<CustomerProfile>}
+export type CustomerProfile={id:string;displayName:string;preferredLanguage:'en'|'ar';phone:string};
+export interface CustomerProfileRepository{get():Promise<CustomerProfile>;update(input:Pick<CustomerProfile,'displayName'|'preferredLanguage'>):Promise<CustomerProfile>}

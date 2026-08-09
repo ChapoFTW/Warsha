@@ -1,38 +1,168 @@
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { BrandButton, BrandCard, BrandTextField, StateBadge } from '@/components/warsha/BrandUI';
+import { AddressLocationPicker, type AddressLocationPickerCopy } from '@/components/warsha/AddressLocationPicker';
+import { BrandButton, BrandCard, BrandLoadingState, BrandTextField } from '@/components/warsha/BrandUI';
+import { OnboardingFieldMeta } from '@/components/warsha/OnboardingFieldMeta';
 import { AppText } from '@/components/warsha/Typography';
 import { spacing, typography, type ThemeColors } from '@/constants/theme';
 import { useAddresses } from '@/src/addresses/address-context';
 import { useThemedStyles } from '@/src/appearance/appearance-context';
-import { useLocalization } from '@/src/i18n/localization';
 import { useOnboarding } from '@/src/onboarding/onboarding-context';
 import { useOnboardingText } from '@/src/onboarding/onboarding-translations';
-import { locationCapability } from '@/src/onboarding/location-provider';
-import { isValidCoordinate } from '@/src/onboarding/onboarding-types';
+import type { PinSource } from '@/src/onboarding/onboarding-types';
+import { useProviderFoundation } from '@/src/providers/provider-context';
+import type { PinPosition } from '@/src/providers/map-renderer-types';
+import type { ProviderAreaInput } from '@/src/providers/provider-types';
+import { useWorkerText } from '@/src/worker/worker-copy';
 
 /**
- * Confirming a service location.
- *
- * The rule this screen enforces, from WPS-023: GPS permission is optional and
- * a confirmed pin is mandatory. Those are compatible because placing the pin
- * manually is a first-class path, not a fallback — it is presented as the
- * working option, and the two provider-backed options are shown as
- * unavailable rather than hidden.
- *
- * Hiding them would be the easier design and the worse one. Somebody who
- * expects "use my location" and cannot find it assumes the app is broken;
- * somebody who sees it greyed out with a reason knows where they stand.
+ * One route and one location infrastructure, with two deliberately separate
+ * presentations. A worker establishes a private matching coordinate. A
+ * customer describes a destination where a booked worker must arrive.
  */
-export default function CustomerAddressOnboarding() {
+export default function AddressOnboardingRoute() {
+  const { returnTo } = useLocalSearchParams<{ returnTo?: string }>();
+  const onboarding = useOnboarding();
+  const provider = useProviderFoundation();
+  const wt = useWorkerText();
+  const returnToWorker = returnTo === 'worker' || onboarding.state.intendedRole === 'worker';
+
+  if (returnToWorker && provider.loading) {
+    return <SafeAreaView style={{ flex: 1 }}><BrandLoadingState label={wt.text('workLocationTitle')} /></SafeAreaView>;
+  }
+
+  if (returnToWorker) {
+    return <WorkerCurrentLocationFlow area={provider.profile?.areas[0] ?? null} />;
+  }
+
+  return <CustomerDestinationAddressFlow />;
+}
+
+function WorkerCurrentLocationFlow({ area }: { area: ProviderAreaInput | null }) {
   const styles = useThemedStyles(makeStyles);
-  const { isRTL } = useLocalization();
+  const wt = useWorkerText();
   const ot = useOnboardingText();
   const onboarding = useOnboarding();
   const addresses = useAddresses();
+  const [pin, setPin] = useState<PinPosition | null>(null);
+  const [pinSource, setPinSource] = useState<PinSource | null>(null);
+  const [formattedAddress, setFormattedAddress] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState('');
 
+  const pickerCopy: AddressLocationPickerCopy = {
+    useCurrentLocation: wt.text('useCurrentLocation'),
+    chooseOnMap: wt.text('chooseLocationOnMap'),
+    searchAddress: wt.text('searchAddress'),
+    searchPlaceholder: wt.text('searchAddressPlaceholder'),
+    locationSaved: wt.text('locationSaved'),
+    locationFailed: wt.text('locationFailed'),
+    locationPermissionDenied: wt.text('locationPermissionDenied'),
+    locationServicesDisabled: wt.text('locationServicesDisabled'),
+    locationDeviceUnavailable: wt.text('locationDeviceUnavailable'),
+    noSearchResults: wt.text('locationNoResults'),
+    providerUnavailable: wt.text('locationProviderUnavailable'),
+    permissionOptional: wt.text('locationPermissionOptional'),
+    mapUnavailable: wt.text('locationProviderUnavailable'),
+    mapDragHint: wt.text('mapDragHint'),
+    loading: wt.text('locationLoading'),
+  };
+
+  const confirm = async () => {
+    if (!area || !pin || !pinSource) {
+      setMessage(wt.text('locationRequired'));
+      return;
+    }
+    setBusy(true);
+    setMessage('');
+    try {
+      const internalAddressLine = formattedAddress?.trim()
+        || [area.district, area.governorate].filter(Boolean).join(', ');
+      const created = await addresses.add({
+        label: 'Work location',
+        governorate: area.governorate,
+        district: area.district,
+        street: internalAddressLine,
+        building: '',
+        floor: '',
+        apartment: '',
+        landmark: '',
+        instructions: '',
+        isDefault: true,
+      });
+      const confirmed = await onboarding.confirmAddress({
+        addressId: created.id,
+        latitude: pin.latitude,
+        longitude: pin.longitude,
+        pinSource,
+      });
+      if (!confirmed) setMessage(ot.text('genericError'));
+      else router.replace('/onboarding/worker');
+    } catch {
+      setMessage(ot.text('genericError'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <SafeAreaView style={styles.safe}>
+      <ScrollView contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
+        <AppText accessibilityRole="header" style={styles.title}>{wt.text('workLocationTitle')}</AppText>
+        <OnboardingFieldMeta
+          label={wt.text('workLocationTitle')}
+          required
+          privateField
+          purpose={wt.text('workLocationIntro')}
+        />
+
+        {area ? (
+          <BrandCard style={styles.areaCard}>
+            <AppText style={styles.sectionTitle}>{wt.text('selectedWorkArea')}</AppText>
+            <View style={styles.areaRow}>
+              <AppText style={styles.areaLabel}>{wt.text('governorate')}</AppText>
+              <AppText style={styles.areaValue}>{area.governorate}</AppText>
+            </View>
+            <View style={styles.areaRow}>
+              <AppText style={styles.areaLabel}>{wt.text('district')}</AppText>
+              <AppText style={styles.areaValue}>{area.district}</AppText>
+            </View>
+          </BrandCard>
+        ) : (
+          <BrandCard><AppText style={styles.error}>{wt.text('workAreaMissing')}</AppText></BrandCard>
+        )}
+
+        <AddressLocationPicker
+          value={pin}
+          copy={pickerCopy}
+          onChange={(position, source, address) => {
+            setPin(position);
+            setPinSource(source);
+            setFormattedAddress(address);
+            setMessage('');
+          }}
+        />
+
+        <BrandButton
+          label={wt.text('continueJourney')}
+          loading={busy}
+          disabled={busy || !area || !pin || !pinSource}
+          onPress={() => void confirm()}
+        />
+        {message ? <AppText accessibilityRole="alert" style={styles.error}>{message}</AppText> : null}
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+function CustomerDestinationAddressFlow() {
+  const styles = useThemedStyles(makeStyles);
+  const ot = useOnboardingText();
+  const onboarding = useOnboarding();
+  const addresses = useAddresses();
   const [governorate, setGovernorate] = useState('');
   const [district, setDistrict] = useState('');
   const [street, setStreet] = useState('');
@@ -41,18 +171,33 @@ export default function CustomerAddressOnboarding() {
   const [apartment, setApartment] = useState('');
   const [landmark, setLandmark] = useState('');
   const [notes, setNotes] = useState('');
-  const [latitude, setLatitude] = useState('');
-  const [longitude, setLongitude] = useState('');
+  const [pin, setPin] = useState<PinPosition | null>(null);
+  const [pinSource, setPinSource] = useState<PinSource | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
 
-  const parsedLatitude = latitude.trim() === '' ? null : Number(latitude);
-  const parsedLongitude = longitude.trim() === '' ? null : Number(longitude);
-  const coordinatesValid = isValidCoordinate(parsedLatitude, parsedLongitude);
+  const pickerCopy: AddressLocationPickerCopy = {
+    useCurrentLocation: ot.text('addressUseLocation'),
+    chooseOnMap: ot.text('addressChooseMap'),
+    searchAddress: ot.text('addressSearch'),
+    searchPlaceholder: ot.text('addressSearchPlaceholder'),
+    locationSaved: ot.text('addressLocationSaved'),
+    locationFailed: ot.text('addressLocationFailed'),
+    locationPermissionDenied: ot.text('addressLocationPermissionDenied'),
+    locationServicesDisabled: ot.text('addressLocationServicesDisabled'),
+    locationDeviceUnavailable: ot.text('addressLocationDeviceUnavailable'),
+    noSearchResults: ot.text('addressNoSearchResults'),
+    providerUnavailable: ot.text('addressLocationUnavailableNote'),
+    permissionOptional: ot.text('addressPermissionOptional'),
+    mapUnavailable: ot.text('addressLocationUnavailableNote'),
+    mapDragHint: ot.text('addressMapDragHint'),
+    loading: ot.text('addressLocationLoading'),
+  };
+
   const detailsComplete = governorate.trim().length > 0 && street.trim().length > 0;
 
   const confirm = async () => {
-    if (!coordinatesValid || parsedLatitude === null || parsedLongitude === null) {
+    if (!pin || !pinSource || !detailsComplete) {
       setMessage(ot.text('addressPinInvalid'));
       return;
     }
@@ -73,9 +218,9 @@ export default function CustomerAddressOnboarding() {
       });
       const confirmed = await onboarding.confirmAddress({
         addressId: created.id,
-        latitude: parsedLatitude,
-        longitude: parsedLongitude,
-        pinSource: 'manual_pin',
+        latitude: pin.latitude,
+        longitude: pin.longitude,
+        pinSource,
         building: building.trim() || null,
         floor: floor.trim() || null,
         apartment: apartment.trim() || null,
@@ -83,6 +228,7 @@ export default function CustomerAddressOnboarding() {
         serviceNotes: notes.trim() || null,
       });
       if (!confirmed) setMessage(ot.text('genericError'));
+      else router.replace('/');
     } catch {
       setMessage(ot.text('genericError'));
     } finally {
@@ -90,48 +236,22 @@ export default function CustomerAddressOnboarding() {
     }
   };
 
-  if (onboarding.state.addressConfirmed) {
-    return (
-      <SafeAreaView style={styles.safe}>
-        <ScrollView contentContainerStyle={styles.page}>
-          <AppText accessibilityRole="header" style={styles.title}>
-            {ot.text('addressConfirmed')}
-          </AppText>
-          <StateBadge label={ot.text('addressConfirmed')} tone="success" />
-          <AppText style={styles.hint}>{ot.text('a11yPinConfirmed')}</AppText>
-        </ScrollView>
-      </SafeAreaView>
-    );
-  }
-
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
         <AppText accessibilityRole="header" style={styles.title}>{ot.text('addressTitle')}</AppText>
         <AppText style={styles.hint}>{ot.text('addressIntro')}</AppText>
 
-        <BrandCard style={styles.card}>
-          <AppText style={styles.sectionTitle}>{ot.text('addressPlaceOnMap')}</AppText>
-          {/* Shown, not hidden, and shown with the reason. */}
-          <View style={[styles.pathRow, isRTL && styles.reverse]}>
-            <AppText style={styles.pathLabel}>{ot.text('addressUseLocation')}</AppText>
-            <StateBadge
-              label={ot.text('addressUnavailable')}
-              tone={locationCapability.deviceLocation ? 'success' : 'neutral'}
-              compact
-            />
-          </View>
-          <View style={[styles.pathRow, isRTL && styles.reverse]}>
-            <AppText style={styles.pathLabel}>{ot.text('addressSearch')}</AppText>
-            <StateBadge
-              label={ot.text('addressUnavailable')}
-              tone={locationCapability.addressSearch ? 'success' : 'neutral'}
-              compact
-            />
-          </View>
-          <AppText style={styles.note}>{ot.text('addressLocationUnavailableNote')}</AppText>
-          <AppText style={styles.note}>{ot.text('addressPermissionOptional')}</AppText>
-        </BrandCard>
+        <AddressLocationPicker
+          value={pin}
+          copy={pickerCopy}
+          onChange={(position, source, address) => {
+            setPin(position);
+            setPinSource(source);
+            if (address && !street.trim()) setStreet(address);
+            setMessage('');
+          }}
+        />
 
         <View style={styles.form}>
           <BrandTextField label={ot.text('addressGovernorate')} value={governorate} onChangeText={setGovernorate} />
@@ -142,23 +262,10 @@ export default function CustomerAddressOnboarding() {
           <BrandTextField label={ot.text('addressApartment')} value={apartment} onChangeText={setApartment} />
           <BrandTextField label={ot.text('addressLandmark')} value={landmark} onChangeText={setLandmark} />
           <BrandTextField label={ot.text('addressNotes')} value={notes} onChangeText={setNotes} multiline />
-          <BrandTextField
-            label={ot.text('addressLatitude')}
-            value={latitude}
-            onChangeText={setLatitude}
-            keyboardType="numbers-and-punctuation"
-            helper={ot.text('addressPinRequired')}
-          />
-          <BrandTextField
-            label={ot.text('addressLongitude')}
-            value={longitude}
-            onChangeText={setLongitude}
-            keyboardType="numbers-and-punctuation"
-          />
           <BrandButton
             label={ot.text('addressConfirm')}
             loading={busy}
-            disabled={busy || !coordinatesValid || !detailsComplete}
+            disabled={busy || !pin || !pinSource || !detailsComplete}
             onPress={() => void confirm()}
           />
         </View>
@@ -171,15 +278,14 @@ export default function CustomerAddressOnboarding() {
 
 const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.canvas },
-  page: { padding: spacing.xl, gap: spacing.lg, maxWidth: 560, width: '100%', alignSelf: 'center' },
+  page: { padding: spacing.xl, paddingBottom: spacing.xxxl, gap: spacing.lg, maxWidth: 560, width: '100%', alignSelf: 'center' },
   title: { fontSize: 24, fontWeight: typography.bold, color: colors.textPrimary },
   sectionTitle: { fontSize: 16, fontWeight: typography.semibold, color: colors.textPrimary },
-  hint: { color: colors.textSecondary },
-  note: { color: colors.textMuted, fontSize: 13, lineHeight: 19 },
-  card: { gap: spacing.sm },
-  pathRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
-  reverse: { flexDirection: 'row-reverse' },
-  pathLabel: { flex: 1, color: colors.textSecondary },
+  hint: { color: colors.textSecondary, lineHeight: 22 },
+  areaCard: { gap: spacing.md },
+  areaRow: { gap: spacing.xs },
+  areaLabel: { color: colors.textMuted, fontSize: 13 },
+  areaValue: { color: colors.textPrimary, fontSize: 16, fontWeight: typography.semibold },
   form: { gap: spacing.md },
   error: { color: colors.errorText },
 });

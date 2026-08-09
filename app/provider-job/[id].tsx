@@ -51,7 +51,7 @@ export default function ProviderJobDetails(){
   </ScrollView></SafeAreaView>;
   function Price({label,value,strong}:{label:string;value:number;strong?:boolean}){return <View style={[styles.row,isRTL&&styles.reverse]}><AppText style={strong&&styles.lineLabel}>{label}</AppText><AppText style={strong&&styles.lineLabel}>{formatNumber(value,language)} {t('currency')}</AppText></View>}
 }
-function actions(status:BookingStatus){return['pending_provider_approval','accepted'].filter(item=>item===status)}
+function actions(status:BookingStatus){return['pending_provider_approval','accepted','confirmed','provider_on_the_way','provider_arrived','job_started','work_in_progress'].filter(item=>item===status)}
 function valid(panel:Panel,note:string,date:string,time:string){if(panel==='complete')return true;if(panel==='late')return Number(time)>=1&&Number(time)<=240;if(panel==='propose')return /^\d{4}-\d{2}-\d{2}$/.test(date)&&/^\d{2}:\d{2}$/.test(time)&&note.trim().length>=3;return note.trim().length>=3}
 function Button(label:string,onPress:()=>void,busy=false,disabled=false){
   const colors = useThemeColors();

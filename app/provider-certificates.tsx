@@ -60,7 +60,7 @@ export default function ProviderCertificatesScreen() {
 
         <View style={styles.card}>
           <View style={[styles.row, isRTL && styles.reverse]}><View style={styles.iconBox}><MaterialIcons name="workspace-premium" size={27} color={colors.background} /></View><View style={styles.grow}><AppText style={styles.title}>{wt('skillCertificate')}</AppText><AppText style={styles.muted}>{wt('skillCertificateHelp')}</AppText></View></View>
-          <Pressable accessibilityRole="button" onPress={() => router.push('/provider-verification')} style={styles.outline}><AppText>{wt('openVerification')}</AppText></Pressable>
+          <Pressable accessibilityRole="button" onPress={() => router.push('/worker/verification')} style={styles.outline}><AppText>{wt('openVerification')}</AppText></Pressable>
         </View>
 
         <View style={styles.card}>

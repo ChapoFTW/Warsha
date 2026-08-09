@@ -109,14 +109,14 @@ export function NotificationProvider({ children }: PropsWithChildren) {
       const id = route.resourceId;
       switch (route.routeType) {
         case 'marketplace_request': if (id) router.push({ pathname: '/marketplace-request/[id]', params: { id } }); break;
-        case 'worker_opportunities': router.push('/worker-quotes'); break;
-        case 'worker_quote': if (id) router.push({ pathname: '/worker-quote/[id]', params: { id } }); break;
-        case 'booking': if (id) router.push(notificationMode === 'worker' ? { pathname: '/provider-job/[id]', params: { id } } : { pathname: '/booking/[id]', params: { id } }); break;
+        case 'worker_opportunities': router.push('/worker/requests'); break;
+        case 'worker_quote': if (id) router.push({ pathname: '/worker/requests/[id]', params: { id } }); break;
+        case 'booking': if (id) router.push(notificationMode === 'worker' ? { pathname: '/worker/jobs/[id]', params: { id } } : { pathname: '/booking/[id]', params: { id } }); break;
         case 'conversation': if (id) router.push({ pathname: '/conversation/[bookingId]', params: { bookingId: id } }); break;
         case 'provider_profile': if (id) router.push({ pathname: '/provider/[id]', params: { id } }); break;
         case 'booking_payment': if (id) router.push({ pathname: '/booking/[id]', params: { id, focusPayment: '1' } }); break;
         case 'worker_earnings': router.push('/provider-earnings'); break;
-        case 'verification': router.push('/provider-verification'); break;
+        case 'verification': router.push('/worker/verification'); break;
         case 'booking_review': if (id) router.push({ pathname: '/booking/[id]', params: { id, focusReview: '1' } }); break;
         case 'booking_dispute': if (id) router.push({ pathname: '/booking/[id]', params: { id, focusDispute: '1' } }); break;
         case 'preferences': router.push('/notification-preferences'); break;

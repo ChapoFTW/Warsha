@@ -3,6 +3,7 @@ import Storage from 'expo-sqlite/kv-store';
 
 import { environment } from '@/src/config/environment';
 import { getSupabaseClient } from '@/src/lib/supabase';
+import { mockSyncProviderGates } from '@/src/onboarding/mock-onboarding-state';
 
 import {
   emptyProviderDraft,
@@ -203,6 +204,7 @@ const mockRepository: ProviderRepository = {
   async save(accountId, value, submit) {
     const next = { ...value, status: submit ? 'submitted' as const : value.status };
     await Storage.setItem(providerStorageKey(accountId), JSON.stringify(next));
+    mockSyncProviderGates(accountId, next);
     return next;
   },
   async setAvailability(accountId, isAvailable) {
@@ -224,13 +226,16 @@ const mockRepository: ProviderRepository = {
     if (current.avatarPath && current.avatarPath !== destination.uri) {
       try { const old = new File(current.avatarPath); if (old.exists) old.delete(); } catch { /* best effort */ }
     }
+    mockSyncProviderGates(accountId, next);
     return { storagePath: destination.uri, previewUrl: destination.uri };
   },
   async deleteAvatar(accountId) {
     const current = await mockLoad(accountId);
     if (!current) throw new Error('Provider profile not found');
     const old = current.avatarPath;
-    await Storage.setItem(providerStorageKey(accountId), JSON.stringify({ ...current, avatarPath: '', avatarUrl: '' }));
+    const next = { ...current, avatarPath: '', avatarUrl: '' };
+    await Storage.setItem(providerStorageKey(accountId), JSON.stringify(next));
+    mockSyncProviderGates(accountId, next);
     if (old) try { const file = new File(old); if (file.exists) file.delete(); } catch { /* best effort */ }
   },
   listPortfolio: mockPortfolio,

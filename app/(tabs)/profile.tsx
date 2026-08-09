@@ -12,6 +12,7 @@ import { useGrowthText } from '@/src/growth/growth-translations';
 import { usePrivacyText } from '@/src/privacy/privacy-translations';
 import { useAuth } from '@/src/auth/auth-context';
 import { authMessageKey } from '@/src/auth/auth-errors';
+import { classifySignInIdentity } from '@/src/auth/auth-identifier';
 import { useAuthText } from '@/src/auth/auth-translations';
 import { isValidPhone, isValidSmsOtp, normalizePhone } from '@/src/auth/phone-auth';
 import { supabaseTarget } from '@/src/config/environment';
@@ -30,10 +31,10 @@ import { useSupportText } from '@/src/support/support-translations';
  * that path could not complete; it has been removed rather than left visible
  * and broken.
  *
- * Workers and customers now register and sign in identically, with an email
- * address, a password and a REQUIRED contact phone number that nobody is asked
- * to verify. Confirming the number remains available as a deliberate, optional
- * action below, and it still fails closed while Phone Auth is off.
+ * Customer registration stays email/password. Worker-first registration lives
+ * on the dedicated create-account screen and uses phone/password through the
+ * trusted auth broker. This signed-out form still registers customers only,
+ * while its sign-in field accepts either customer email or worker phone.
  */
 export default function Profile() {
   const colors = useThemeColors();
@@ -89,22 +90,20 @@ export default function Profile() {
   // object mid phone-enrollment, and an identity-based rerun would wipe the
   // phone number the user is typing.
   const signedIn = Boolean(auth.user);
-  const userEmail = auth.user?.email ?? '';
-  const userPhone = auth.user?.phone ?? '';
   useEffect(() => {
     let active = true;
-    if (auth.mode === 'supabase' && signedIn) void supabaseCustomerProfileRepository.get(userEmail).then((profile) => {
+    if (auth.mode === 'supabase' && signedIn) void supabaseCustomerProfileRepository.get().then((profile) => {
       if (active) {
         setName(profile.displayName);
         setPreferred(profile.preferredLanguage);
-        setPhone((current) => current || userPhone);
+        setPhone((current) => current || profile.phone);
       }
     }).catch((error) => {
       logDataError('profile', error);
       if (active) setMessage(t(dataErrorKey(error)));
     });
     return () => { active = false; };
-  }, [auth.mode, signedIn, userEmail, userPhone, t]);
+  }, [auth.mode, signedIn, auth.user?.id, t]);
 
   const loginCustomer = async () => {
     setBusy(true);
@@ -122,10 +121,11 @@ export default function Profile() {
   };
 
   const requestReset = async () => {
-    if (!email.trim() || busy) return;
+    const identity = classifySignInIdentity(email);
+    if (identity?.kind !== 'customer_email' || busy) return;
     setBusy(true);
     setMessage('');
-    try { await auth.requestPasswordReset(email.trim()); setMessage(t('resetSent')); }
+    try { await auth.requestPasswordReset(identity.email); setMessage(t('resetSent')); }
     catch (error) { setMessage(t(authMessageKey(error))); }
     finally { setBusy(false); }
   };
@@ -203,8 +203,8 @@ export default function Profile() {
   if (auth.loading || provider.loading) return <Page><BrandLoadingMark color={colors.white}/></Page>;
 
   if (auth.mode === 'mock' || auth.user) return <Page>
-    <AppText style={styles.title}>{auth.mode === 'mock' ? 'Warsha Demo' : (name || auth.user?.email || auth.user?.phone || t('profile'))}</AppText>
-    <AppText style={styles.muted}>{auth.user?.email ?? auth.user?.phone ?? ''}</AppText>
+    <AppText style={styles.title}>{auth.mode === 'mock' ? 'Warsha Demo' : (name || t('profile'))}</AppText>
+    <AppText style={styles.muted}>{phone || auth.visibleEmail || ''}</AppText>
     {editing ? <>
       <Field label={t('fullName')} value={name} onChangeText={setName} rtl={isRTL}/>
       <Pressable accessibilityRole="button" accessibilityLabel={t('saveName')} disabled={busy || name.trim().length < 2} onPress={() => void save()} style={styles.primary}>{busy ? <BrandLoadingMark size={20} color={colors.background}/> : <AppText style={styles.dark}>{t('saveName')}</AppText>}</Pressable>
@@ -240,12 +240,13 @@ export default function Profile() {
     {message ? <AppText accessibilityRole="alert" style={styles.error}>{message}</AppText> : null}
   </Page>;
 
-  // WPS-024 correction. One form. A worker and a customer register and sign in
-  // the same way, so there is nothing left for a role switcher to switch.
+  // This compact profile form creates customer accounts only. Sign-in accepts
+  // the same role-appropriate identifier as the dedicated sign-in screen.
   return <Page>
     <AppText style={styles.title}>{register ? t('signUp') : t('signIn')}</AppText>
     {register ? <Field label={t('fullName')} value={name} onChangeText={setName} rtl={isRTL}/> : null}
-    <Field label={t('email')} value={email} onChangeText={setEmail} rtl={isRTL} keyboardType="email-address" autoCapitalize="none" autoCorrect={false}/>
+    <Field label={register ? t('email') : at('signInIdentifier')} value={email} onChangeText={setEmail} rtl={isRTL} keyboardType={register ? 'email-address' : 'default'} autoCapitalize="none" autoCorrect={false}/>
+    {!register ? <AppText style={styles.hint}>{at('phonePasswordHint')}</AppText> : null}
     <Field label={t('password')} value={password} onChangeText={setPassword} secureTextEntry rtl={isRTL}/>
     {register ? <>
       <Field label={at('phone')} value={phone} onChangeText={setPhone} rtl={isRTL} keyboardType="phone-pad" autoCapitalize="none" autoCorrect={false}/>
@@ -253,7 +254,7 @@ export default function Profile() {
     </> : null}
     {message ? <AppText accessibilityRole="alert" style={styles.error}>{message}</AppText> : null}
     <Pressable disabled={busy || !email || password.length < 6 || (register && (name.trim().length < 2 || !isValidPhone(normalizePhone(phone))))} onPress={() => void loginCustomer()} style={styles.primary}>{busy ? <BrandLoadingMark size={20} color={colors.background}/> : <AppText style={styles.dark}>{register ? t('signUp') : t('signIn')}</AppText>}</Pressable>
-    {!register ? <Pressable accessibilityRole="button" accessibilityLabel={t('forgotPassword')} disabled={busy || !email.trim()} onPress={() => void requestReset()} style={styles.textButton}><AppText style={styles.link}>{t('forgotPassword')}</AppText></Pressable> : null}
+    {!register && classifySignInIdentity(email)?.kind === 'customer_email' ? <Pressable accessibilityRole="button" accessibilityLabel={t('forgotPassword')} disabled={busy} onPress={() => void requestReset()} style={styles.textButton}><AppText style={styles.link}>{t('forgotPassword')}</AppText></Pressable> : null}
     <Pressable onPress={() => setRegister((value) => !value)} style={styles.button}><AppText>{register ? t('signIn') : t('signUp')}</AppText></Pressable>
   </Page>;
 }

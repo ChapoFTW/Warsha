@@ -58,9 +58,9 @@ system** appearance, unless the case says otherwise.
 | # | Case | Status |
 | --- | --- | --- |
 | C-01 | Customer sign-in with email and password | NOT RUN |
-| C-02 | Worker sign-in with phone and OTP | NOT RUN |
+| C-02 | Worker sign-in with phone and password; no OTP is requested or sent | NOT RUN |
 | C-03 | Wrong password message does not reveal whether the account exists | NOT RUN |
-| C-04 | Unknown email message does not reveal whether the account exists | NOT RUN |
+| C-04 | Unknown email or worker phone does not reveal whether the account exists | NOT RUN |
 | C-05 | Password reset email arrives and the deep link opens the reset screen | NOT RUN |
 | C-06 | Role question appears before any registration field | NOT RUN |
 | C-07 | Role options announce selected state to a screen reader | NOT RUN |

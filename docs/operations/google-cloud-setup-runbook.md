@@ -20,7 +20,7 @@ Related: [External Provider Registry](../architecture/external-provider-registry
 | Integration | Google product | Billing | Warsha secret |
 | --- | --- | --- | --- |
 | Identity text extraction | Cloud Vision API | Per image, after a monthly free tier | `GOOGLE_CLOUD_VISION_SERVICE_ACCOUNT` |
-| Address search and geocoding | Places API, Geocoding API | Per request | `GOOGLE_MAPS_SERVER_KEY` |
+| Address search and geocoding | Places API (New), Geocoding API | Per request | `GOOGLE_MAPS_SERVER_KEY` |
 | Map rendering on the device | Maps SDK for Android / iOS | Free to render | **publishable render key, not a secret** |
 
 The third row is the one people get wrong. See
@@ -39,18 +39,20 @@ The third row is the one people get wrong. See
 3. **A budget and a budget alert**, configured before the first key is issued.
    A leaked Places key with no budget alert is a bill nobody notices for a
    month.
-4. **Two projects, not one** — `warsha-staging` and `warsha-production`. A
-   single project shared between them means a staging load test spends
-   production budget and a staging key restriction has to be loose enough for
-   both.
+4. **One Google project per hosted environment.** Development, staging and
+   production never share credentials or budgets. A shared project means a
+   development or staging test spends production budget and forces production
+   key restrictions to be unnecessarily broad.
 
 ---
 
 ## Step 1 — Create the projects
 
 ```
+gcloud projects create warsha-development --name="Warsha (development)"
 gcloud projects create warsha-staging  --name="Warsha (staging)"
 gcloud projects create warsha-production --name="Warsha (production)"
+gcloud beta billing projects link warsha-development --billing-account=<ACCOUNT_ID>
 gcloud beta billing projects link warsha-staging   --billing-account=<ACCOUNT_ID>
 gcloud beta billing projects link warsha-production --billing-account=<ACCOUNT_ID>
 ```
@@ -64,7 +66,7 @@ and Warsha uses four:
 
 ```
 gcloud services enable vision.googleapis.com        --project=<PROJECT>
-gcloud services enable places-backend.googleapis.com --project=<PROJECT>
+gcloud services enable places.googleapis.com         --project=<PROJECT>
 gcloud services enable geocoding-backend.googleapis.com --project=<PROJECT>
 gcloud services enable maps-android-backend.googleapis.com --project=<PROJECT>
 gcloud services enable maps-ios-backend.googleapis.com     --project=<PROJECT>
@@ -129,7 +131,7 @@ secrets.
 
 ```
 gcloud services api-keys create --display-name="Warsha Maps (server)" \
-  --api-target=service=places-backend.googleapis.com \
+  --api-target=service=places.googleapis.com \
   --api-target=service=geocoding-backend.googleapis.com \
   --project=<PROJECT>
 ```
@@ -225,7 +227,7 @@ because only the server key is a secret.
 
 ## Step 6 — Turn it on in Warsha
 
-Configuring a credential does not enable anything. Three gates, all of which
+Configuring a credential does not enable anything. Three runtime gates, all of which
 must pass, and they are read from the database rather than decided in code:
 
 ```
@@ -234,15 +236,32 @@ provider_enabled(key) = registry says 'active'
                     AND feature flag is enabled for this environment
 ```
 
-1. **Move the registry row.** `implemented_awaiting_credential` → `active`.
-   The register describes what is true, so it moves after the credential
-   exists, not before.
-2. **Enable the feature flag** for the environment — `identity_extraction` or
-   `location_provider`.
-3. **Reconcile the Subprocessor Register.** `staff_sync_provider_status()`
-   moves the subprocessor from `approved_not_integrated` to `in_use`. It
-   refuses to promote a provider whose flag is still off, so the published
-   register can never claim a supplier is receiving data before it is.
+1. **Bind the hosted project once.** A Security Administrator calls
+   `staff_bind_platform_environment('local', '<environment>', '<project-ref>',
+   '<reason>')`. The permanent hosted development project binds to
+   `development`, never to local or staging.
+2. **Publish the human-approved material legal versions.** Each exact
+   `document:version:environment` publication consumes a dual-control approval.
+   Follow the [Google Maps material-change checklist](./google-maps-material-change-checklist.md).
+3. **Activate the registry row.** The intended activator requests
+   `manage_subprocessors / activate_external_provider /
+   google_maps_platform:<environment>`. A different authorized person approves,
+   then `staff_activate_external_provider()` consumes it and changes
+   `implemented_awaiting_credential` to `active`. It does not enable a flag or
+   alter a kill switch.
+4. **Exercise the server integration through Warsha's provider boundary.** The
+   current public proxy remains fail-closed until the feature flag is enabled;
+   do not bypass it with a direct Google call. If Places and Geocoding must be
+   proved before any rollout, add a separately reviewed staff-only preflight
+   boundary rather than weakening `provider_enabled()`.
+5. **Enable the feature flag** for the current environment with
+   `staff_set_feature_flag()`. The RPC rejects attempts to mutate another
+   environment's state.
+6. **Reconcile the Subprocessor Register.** The intended activator requests
+   `manage_subprocessors / sync_subprocessor_in_use /
+   google_maps_platform:<environment>:in_use`; a second person approves, and
+   `staff_sync_provider_status()` consumes that approval before changing the
+   subprocessor to `in_use`.
 
 **Enabling a subprocessor is a material change to the Privacy Policy**: a new
 immutable version, a change summary, and renewed acceptance before it takes
@@ -261,11 +280,11 @@ transcribed ground truth, and it refuses to invent either.
 
 | | Development | Staging | Production |
 | --- | --- | --- | --- |
-| Vision service account | Not configured; extraction unavailable, manual entry used | `warsha-staging` | `warsha-production` |
-| Maps server key | Not configured; search unavailable, pin always available | `warsha-staging` | `warsha-production` |
-| Render keys | Placeholder; map area shows the unavailable notice | Staging keys, debug fingerprint | Production keys, Play app-signing fingerprint |
+| Vision service account | Not configured; extraction unavailable, manual entry used | Future `warsha-staging` | Future `warsha-production` |
+| Maps server key | Present in Supabase secrets; provider still disabled | Future staging credential | Future production credential |
+| Render keys | Configured for development builds; activation still gated | Future staging keys, debug fingerprint | Future production keys, Play app-signing fingerprint |
 | Vision billing | None | Free tier expected | Budgeted, alerted |
-| Registry status | `implemented_awaiting_credential` | `active` once measured | `active` once measured on staging |
+| Maps registry status | `implemented_awaiting_credential` until dual-controlled activation | Future | Future, only after staging evidence |
 
 A developer with no Google account gets a working application. Extraction and
 address search report unavailable, manual entry and manual pin placement work,

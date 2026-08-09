@@ -56,9 +56,10 @@ worker vetting lifecycle that no upload, no extraction and no client can move.
 
 ## 2. What WPS-023 does not do
 
-It creates no second authentication system. WPS-001's email/password and
-phone/OTP flows are the flows, unchanged, with their sanitized error handling
-intact.
+It creates no second authentication system. Supabase email/password Auth stays
+the credential authority. Customers provide their email; workers provide phone
+and password while a trusted broker owns an opaque UUID-derived Auth email.
+Supabase Phone Auth and SMS OTP are not used.
 
 It creates no second provider identity. `public.provider_profiles` remains the
 worker record and `private.provider_verification_identities` remains the
@@ -180,7 +181,7 @@ already publicly discoverable.
 
 ## 6. Customer registration and location
 
-Registration requires a display name, email, password, and — before any
+Customer registration requires a display name, email, password, phone, and — before any
 operational booking — a **confirmed service address with a confirmed map pin**.
 It does not require a National ID, a certificate, a biography, or any worker
 configuration. Email and phone uniqueness stay server-authoritative, and error
@@ -212,14 +213,24 @@ loop. WPS-022 governs retention, export and deletion.
 
 ## 7. Worker registration
 
-All customer fundamentals, plus: legal full name, verified phone, current
-residential address, service area, services, specialties, profile photo,
+Worker-first registration requires full name, a unique contact phone, and a
+password. It has no email field, email-confirmation step, phone OTP, or SMS.
+After account creation, onboarding additionally requires legal full name,
+current residential address, service area, services, specialties, profile photo,
 biography, experience, availability, National ID front and back, confirmed
 identity fields, an official criminal-record certificate with its issue date,
 worker terms, and document-processing consent.
 
+The trusted `worker-auth` Edge boundary generates a UUIDv4 credential identifier
+and derives `worker.<uuid>@auth.warsha.invalid`. The address is used only inside
+Supabase email/password Auth. `private.worker_auth_identities` maps the unique
+contact phone to that credential and is executable only through service-role
+RPCs; neither clients nor staff can read it. The broker returns session tokens,
+never the address. Application contact-email projections return `null`, and
+worker notification preferences disable email and SMS delivery.
+
 This reuses WPS-010's worker profile architecture. There is no second provider
-profile.
+profile, and provider-profile IDs still come from the table UUID default.
 
 **National ID registration governorate is never treated as current residence or
 service area.** It records where somebody was registered, not where they live
@@ -385,7 +396,7 @@ A worker account exists immediately. Worker capability stays **fail-closed**
 until every gate passes. A gate that is missing evaluates to `false`, so an
 incomplete account is never accidentally activated by a gate nobody wrote.
 
-Twenty-four gates cover: authenticated account, verified phone, worker role
+Twenty-four gates cover: authenticated account, contact phone present, worker role
 selected, legal name, profile photo, biography, services, service area, current
 address, both ID sides uploaded, both approved, identity fields confirmed,
 certificate uploaded, certificate approved, worker agreements, document-processing

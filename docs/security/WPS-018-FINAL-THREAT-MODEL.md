@@ -61,7 +61,7 @@ flag, not prevented.
 | Threat | Control | Residual |
 | --- | --- | --- |
 | Credential stuffing | GoTrue throttling; policy recorded in the limiter table | Not independently verified |
-| OTP interception | No SMS provider is enabled | **Blocks worker sign-in entirely** (G21) |
+| Worker credential abuse | Phone/password broker is rate-limited and returns generic failures | Synthetic Auth identity is service-role-only and never a contact projection |
 | Session fixation | GoTrue session handling; `session_id` used for revocation | — |
 | Privilege via metadata | No authorization decision reads user metadata | — |
 

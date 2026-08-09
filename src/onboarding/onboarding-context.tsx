@@ -11,6 +11,7 @@ import {
 
 import { useAuth } from '@/src/auth/auth-context';
 import { logDataError } from '@/src/data/data-errors';
+import { accountHydrationReady, canRefreshAccountInline } from '@/src/navigation/worker-route-policy';
 
 import { onboardingRepository } from './onboarding-repository';
 import {
@@ -41,12 +42,13 @@ import {
 
 type OnboardingValue = {
   ready: boolean;
+  refreshing: boolean;
   accountKey: string | null;
   state: OnboardingState;
   candidates: IdentityCandidate[];
   route: RouteTarget;
   error: boolean;
-  selectRole: (role: AccountRoleChoice) => Promise<boolean>;
+  selectRole: (role: AccountRoleChoice, expectedAccountKey?: string) => Promise<boolean>;
   confirmAddress: (input: {
     addressId: string;
     latitude: number;
@@ -65,18 +67,23 @@ type OnboardingValue = {
     dateOfBirth: string;
     expiryDate: string | null;
   }) => Promise<string | null>;
+  recordCapture: (input: {
+    documentId: string;
+    captureSource: 'camera' | 'library' | 'file';
+    contentHash: string | null;
+    qualityFlags: string[];
+    pageSide: 'front' | 'back';
+  }) => Promise<boolean>;
   submitIdentity: () => Promise<boolean>;
   submitCriminalRecord: (input: {
-    storagePath: string;
+    uri: string;
     mimeType: string;
     fileSizeBytes: number;
     contentHash: string | null;
     issueDate: string;
-    documentReference: string | null;
-    declaredName: string;
   }) => Promise<boolean>;
   submitAppeal: (statement: string) => Promise<boolean>;
-  reload: () => void;
+  reload: () => Promise<void>;
 };
 
 const OnboardingContext = createContext<OnboardingValue | null>(null);
@@ -87,11 +94,13 @@ export function OnboardingProvider({ children }: PropsWithChildren) {
 
   const [loadedAccount, setLoadedAccount] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [state, setState] = useState<OnboardingState>(emptyOnboardingState);
   const [candidates, setCandidates] = useState<IdentityCandidate[]>([]);
   const [error, setError] = useState(false);
 
   const generation = useRef(0);
+  const loadedAccountRef = useRef<string | null>(null);
   const accountRef = useRef<string | null>(accountKey);
   accountRef.current = accountKey;
 
@@ -103,17 +112,28 @@ export function OnboardingProvider({ children }: PropsWithChildren) {
       setState(emptyOnboardingState);
       setCandidates([]);
       setLoadedAccount(null);
+      loadedAccountRef.current = null;
       setError(false);
       setReady(true);
       return;
     }
 
-    setReady(false);
+    // A refresh for the same authenticated account must not tear down the
+    // root navigator. Keep the last authoritative worker state visible and
+    // let the onboarding screen show progress inline until the replacement
+    // state arrives. Initial hydration and account changes still fail closed.
+    const preservesMountedAccount = canRefreshAccountInline({
+      activeAccountKey: key,
+      loadedAccountKey: loadedAccountRef.current,
+    });
+    if (preservesMountedAccount) setRefreshing(true);
+    else setReady(false);
     try {
       const next = await onboardingRepository.state(key);
       if (current !== generation.current || accountRef.current !== key) return;
       setState(next);
       setLoadedAccount(key);
+      loadedAccountRef.current = key;
       setError(false);
 
       // Candidates are secondary. A failure to read them must not make the
@@ -140,9 +160,13 @@ export function OnboardingProvider({ children }: PropsWithChildren) {
       setState(emptyOnboardingState);
       setCandidates([]);
       setLoadedAccount(key);
+      loadedAccountRef.current = key;
       setError(true);
     } finally {
-      if (current === generation.current) setReady(true);
+      if (current === generation.current) {
+        setReady(true);
+        setRefreshing(false);
+      }
     }
   }, []);
 
@@ -151,13 +175,22 @@ export function OnboardingProvider({ children }: PropsWithChildren) {
   }, [accountKey, load]);
 
   const run = useCallback(
-    async <T,>(label: string, operation: (key: string) => Promise<T>): Promise<T | null> => {
-      const key = accountRef.current;
+    async <T,>(
+      label: string,
+      operation: (key: string) => Promise<T>,
+      expectedAccountKey?: string,
+    ): Promise<T | null> => {
+      const key = expectedAccountKey ?? accountRef.current;
       if (!key) return null;
       try {
         const result = await operation(key);
-        if (accountRef.current !== key) return null;
-        void load();
+        // Registration can establish the Supabase session before React has
+        // committed the corresponding AuthContext render. Its explicit user
+        // ID is safe to use for the role RPC; the repository verifies that it
+        // still matches the authenticated server user. State is reloaded only
+        // once this provider is rendering that same account.
+        if (accountRef.current === key) await load();
+        else if (expectedAccountKey === undefined) return null;
         return result;
       } catch (reason) {
         logDataError(`onboarding.${label}`, reason);
@@ -169,19 +202,29 @@ export function OnboardingProvider({ children }: PropsWithChildren) {
 
   const visibleState = loadedAccount === accountKey ? state : emptyOnboardingState;
   const signedIn = mode === 'mock' || Boolean(user);
+  const accountReady = accountHydrationReady({
+    activeAccountKey: accountKey,
+    loadedAccountKey: loadedAccount,
+    settled: ready,
+  });
 
   const value = useMemo<OnboardingValue>(
     () => ({
       // Auth hydration counts. Until the session is known, the account is not
       // known, and neither is the route.
-      ready: ready && !authLoading,
+      ready: accountReady && !authLoading,
+      refreshing,
       accountKey,
       state: visibleState,
       candidates: loadedAccount === accountKey ? candidates : [],
       route: routeFor(loadedAccount === accountKey && !error ? visibleState : null, signedIn),
       error,
-      selectRole: async (role) =>
-        (await run('selectRole', (key) => onboardingRepository.selectRole(key, role))) !== null,
+      selectRole: async (role, expectedAccountKey) =>
+        (await run(
+          'selectRole',
+          (key) => onboardingRepository.selectRole(key, role),
+          expectedAccountKey,
+        )) !== null,
       confirmAddress: async (input) =>
         (await run('confirmAddress', (key) => onboardingRepository.confirmAddress(key, input))) !== null,
       acceptAgreements: async (workerAgreement, documentProcessing) =>
@@ -189,6 +232,8 @@ export function OnboardingProvider({ children }: PropsWithChildren) {
           onboardingRepository.acceptAgreements(key, workerAgreement, documentProcessing))) !== null,
       confirmIdentityFields: async (input) =>
         run('confirmIdentityFields', (key) => onboardingRepository.confirmIdentityFields(key, input)),
+      recordCapture: async (input) =>
+        (await run('recordCapture', (key) => onboardingRepository.recordCapture(key, input))) !== null,
       submitIdentity: async () =>
         (await run('submitIdentity', (key) => onboardingRepository.submitIdentity(key))) !== null,
       submitCriminalRecord: async (input) =>
@@ -196,9 +241,9 @@ export function OnboardingProvider({ children }: PropsWithChildren) {
           onboardingRepository.submitCriminalRecord(key, input))) !== null,
       submitAppeal: async (statement) =>
         (await run('submitAppeal', (key) => onboardingRepository.submitAppeal(key, statement))) !== null,
-      reload: () => void load(),
+      reload: load,
     }),
-    [ready, authLoading, accountKey, visibleState, loadedAccount, candidates, error, signedIn, run, load],
+    [accountReady, authLoading, accountKey, visibleState, loadedAccount, candidates, error, signedIn, refreshing, run, load],
   );
 
   return <OnboardingContext.Provider value={value}>{children}</OnboardingContext.Provider>;

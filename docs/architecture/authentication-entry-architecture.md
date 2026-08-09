@@ -152,19 +152,27 @@ full Help Center once signed in.
 
 ---
 
-## The authentication method (WPS-024 correction)
+## The authentication method (worker phone/password correction)
 
 Superseded by WPS-024. WPS-001 registered customers by email and password and
 workers by phone and an SMS code; WPS-023 inherited that split.
 
-**Everyone now registers and signs in with an email address and a password.**
-Email verification remains required, enforced by Supabase Auth itself.
+Customers register and sign in with email/password, with their existing email
+confirmation behaviour unchanged. Workers register and sign in with
+phone/password and never see or supply an email address.
+
+Supabase Auth still uses its email/password provider internally. The public
+`worker-auth` Edge boundary generates a UUIDv4, derives a reserved
+`worker.<uuid>@auth.warsha.invalid` identity, and stores the phone mapping in
+`private.worker_auth_identities`. Only two service-role RPCs can preflight or
+resolve that mapping. The broker returns session tokens, not the synthetic
+address. Client and staff contact projections explicitly return no worker email.
 
 A phone number is **required contact information** on every account. It is
 collected at registration, validated to the Egyptian mobile shape, stored
 uniquely, and **not verified**.
 
-### Why the split had to go
+### Why Phone Auth stays out of the path
 
 It could not work. Supabase Phone Auth is disabled and no SMS provider is
 configured, so the worker path ended at a code that was never sent. Three
@@ -196,7 +204,7 @@ written once by the insert trigger, while `auth.users.phone` is what Supabase
 updates when somebody confirms a number through `updateUser`, and nothing syncs
 that back.
 
-### What still requires Phone Auth, and still fails closed
+### Optional Phone Auth remains separate and fails closed
 
 `assertPhoneAuthAvailable()` survives and guards exactly three things:
 confirming a number, changing a number, and any future high-risk step-up that is

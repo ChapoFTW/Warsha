@@ -7,9 +7,11 @@ import { environment } from '@/src/config/environment';
 import { getSupabaseClient } from '@/src/lib/supabase';
 
 import { SafeAuthError, sanitizeAuthError } from './auth-errors';
+import { classifySignInIdentity, visibleContactEmail } from './auth-identifier';
 import { assertPhoneAuthAvailable } from './phone-auth-capability';
 import { isValidPhone, isValidSmsOtp, normalizePhone } from './phone-auth';
 import { runAuthSingleFlight } from './auth-request-guard';
+import { registerWorker, signInWorker } from './worker-auth-client';
 
 export type AccountRole = 'customer' | 'provider';
 type RecoveryStatus = 'checking' | 'idle' | 'processing' | 'ready' | 'invalid';
@@ -17,6 +19,8 @@ type Value = {
   mode: 'mock' | 'supabase';
   session: Session | null;
   user: User | null;
+  /** A communication email. Null for trusted synthetic worker identities. */
+  visibleEmail: string | null;
   loading: boolean;
   recoveryStatus: RecoveryStatus;
   /**
@@ -28,8 +32,8 @@ type Value = {
    * because a contact number is required and a proven one is not.
    */
   hasVerifiedPhone: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (name: string, email: string, password: string, phone: string, role?: AccountRole, language?: 'en' | 'ar') => Promise<{ needsEmailConfirmation: boolean }>;
+  signIn: (identifier: string, password: string) => Promise<void>;
+  signUp: (name: string, email: string | null, password: string, phone: string, role?: AccountRole, language?: 'en' | 'ar') => Promise<{ needsEmailConfirmation: boolean; accountId: string | null }>;
   requestWorkerPhoneChange: (phone: string) => Promise<'code_sent' | 'already_verified'>;
   verifyWorkerPhoneChange: (phone: string, token: string) => Promise<void>;
   requestPasswordReset: (email: string) => Promise<void>;
@@ -152,18 +156,38 @@ export function AuthProvider({ children }: PropsWithChildren) {
     mode: environment.dataMode,
     session,
     user: session?.user ?? null,
+    visibleEmail: visibleContactEmail(session?.user),
     loading,
     recoveryStatus,
     hasVerifiedPhone: Boolean(session?.user.phone && session.user.phone_confirmed_at),
-    signIn: async (email, password) => {
+    signIn: async (identifier, password) => {
+      const identity = classifySignInIdentity(identifier);
+      if (!identity) throw new SafeAuthError('authInvalidCredentials');
       if (environment.dataMode === 'mock') return;
       try {
-        const { error } = await getSupabaseClient().auth.signInWithPassword({ email, password });
+        if (identity.kind === 'customer_email') {
+          const { error } = await getSupabaseClient().auth.signInWithPassword({
+            email: identity.email,
+            password,
+          });
+          if (error) throw error;
+          return;
+        }
+        const tokens = await signInWorker(identity.phone, password);
+        const { error } = await getSupabaseClient().auth.setSession({
+          access_token: tokens.accessToken,
+          refresh_token: tokens.refreshToken,
+        });
         if (error) throw error;
-      } catch (error) { throw sanitizeAuthError(error, 'password-sign-in'); }
+      } catch (error) {
+        throw sanitizeAuthError(error,
+          identity.kind === 'worker_phone' ? 'worker-password-sign-in' : 'password-sign-in');
+      }
     },
     /**
-     * Registration, for a customer and for a worker alike.
+     * Customers stay on direct email/password registration. Workers cross the
+     * trusted worker-auth boundary, which mints a UUID-derived internal email
+     * and returns session tokens without exposing that identity as contact.
      *
      * WPS-024 correction. There is no OTP here and no capability preflight,
      * because registration does not depend on Supabase Phone Auth and must
@@ -180,11 +204,31 @@ export function AuthProvider({ children }: PropsWithChildren) {
     signUp: async (name, email, password, phone, role = 'customer', language = 'en') => {
       const normalized = normalizePhone(phone);
       if (!isValidPhone(normalized)) throw new SafeAuthError('authInvalidPhone');
-      if (environment.dataMode === 'mock') return { needsEmailConfirmation: false };
+      if (environment.dataMode === 'mock') {
+        return { needsEmailConfirmation: false, accountId: 'mock-user' };
+      }
       try {
+        if (role === 'provider') {
+          const tokens = await registerWorker({
+            fullName: name.trim(),
+            phone: normalized,
+            password,
+            language,
+          });
+          const { data, error } = await getSupabaseClient().auth.setSession({
+            access_token: tokens.accessToken,
+            refresh_token: tokens.refreshToken,
+          });
+          if (error) throw error;
+          return {
+            needsEmailConfirmation: false,
+            accountId: data.user?.id ?? data.session?.user.id ?? null,
+          };
+        }
+        if (!email?.trim()) throw new SafeAuthError('authInvalidCredentials');
         const acceptedAt = new Date().toISOString();
         const { data, error } = await getSupabaseClient().auth.signUp({
-          email,
+          email: email.trim(),
           password,
           options: {
             data: {
@@ -198,8 +242,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
           },
         });
         if (error) throw error;
-        return { needsEmailConfirmation: !data.session };
-      } catch (error) { throw sanitizeAuthError(error, 'sign-up'); }
+        return {
+          needsEmailConfirmation: !data.session,
+          accountId: data.user?.id ?? data.session?.user.id ?? null,
+        };
+      } catch (error) {
+        throw sanitizeAuthError(error, role === 'provider' ? 'worker-sign-up' : 'sign-up');
+      }
     },
     /**
      * Verify a phone number, or change it. The ONLY remaining OTP surface.

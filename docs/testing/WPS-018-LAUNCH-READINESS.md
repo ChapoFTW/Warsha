@@ -47,7 +47,7 @@ Eight items, none of them code.
 | --- | --- | --- | --- |
 | G19 | **0 of 486 manual cases executed** | Nobody has confirmed the product works for a person | Owner |
 | G20 | **No hosted staging project** | The environment model is enforced in code with nowhere to enforce it. Two WPS-018 manual cases are structurally blocked by this. | Operations Manager |
-| G21 | **No SMS provider** | Workers cannot sign in on a real handset. The worker side of the marketplace does not function. | Operations Manager |
+| G21 | **No SMS provider** | Closed as an auth blocker: workers now use phone plus password through the trusted identity broker; no SMS is required. | Operations Manager |
 | G22 | **No verified backup, no restore ever performed** | Recoverability is unproven and RTO is unknown. Storage objects are not covered at all. | Security Administrator |
 | G23 | **No legal review** | Terms, privacy policy, refund and dispute policy all unreviewed | Owner |
 | G24 | **No company structure or tax position** | Warsha cannot lawfully take money or issue receipts | Owner |
@@ -124,7 +124,7 @@ Recording this plainly, because the blockers above are not a verdict on the work
 ## Recommended order
 
 1. Create the staging project (G20) — it unblocks G22, G30, and two manual cases.
-2. Select an SMS provider (G21) — without it there is no worker side.
+2. Keep Supabase Phone Auth disabled unless a separately approved optional verification use case receives an SMS provider; worker registration and sign-in do not need one (G21 closed for auth).
 3. Perform a restore drill (G22) — the only way RTO stops being a guess.
 4. Roster humans (G25).
 5. Execute the 234-case beta subset (G19), on real devices (G26).

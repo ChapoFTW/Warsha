@@ -3,7 +3,7 @@
   "short_name": "Warsha",
   "description": "YOUR WORK, OUR MISSION",
   "lang": "en",
-  "dir": "auto",
+  "dir": "ltr",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

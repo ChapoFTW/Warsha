@@ -32,7 +32,7 @@ rendered_hash      the hash the client says it displayed
 acceptance_hash    sha256(user|doc|version|content_hash|language|instant)
 source_surface     where they were when they decided
 account_role       what they were at the time
-environment        local | staging | production
+environment        local | development | staging | production
 accepted_at        clock_timestamp(), not now()
 ```
 

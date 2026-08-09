@@ -7,6 +7,8 @@ import {
   workerAuthVisibleErrorKey,
   workerOtpVisible,
 } from '../src/auth/worker-auth-flow.ts';
+import { classifySignInIdentity } from '../src/auth/auth-identifier.ts';
+import { workerSyntheticEmail } from '../supabase/functions/_shared/worker-auth-identity.ts';
 
 const fresh = createWorkerAuthFlow();
 assert.equal(fresh.stage, 'PHONE_ENTRY', 'fresh worker sign-in starts at phone entry');
@@ -79,7 +81,8 @@ for (const [name, source] of [
 // requirement; proving the handset is not.
 assert.match(createAccount, /isValidPhone\(normalizePhone\(phone\)\)/,
   'registration validates the required contact number');
-assert.match(createAccount, /auth\.signUp\(/, 'registration uses email and password');
+assert.match(createAccount, /choice === 'worker' \? null : email\.trim\(\)/,
+  'worker registration sends no user-facing email to the auth provider');
 assert.doesNotMatch(createAccount, /isValidSmsOtp/,
   'REGISTRATION ASKS FOR NO VERIFICATION CODE');
 assert.doesNotMatch(signIn, /isValidSmsOtp/,
@@ -95,4 +98,64 @@ assert.ok(enrollment.length > 0, 'the phone confirmation handler is present');
 assert.doesNotMatch(enrollment, /provider\.activate/,
   'CONFIRMING A PHONE NUMBER GRANTS NOTHING');
 
-console.log('Worker auth stage regression tests passed: state machine retained, registration OTP-free.');
+// ---------------------------------------------------------------------------
+// Worker phone/password broker
+// ---------------------------------------------------------------------------
+assert.deepEqual(classifySignInIdentity('01012345678'), {
+  kind: 'worker_phone', phone: '+201012345678',
+}, 'worker phone is normalized into the broker identity');
+assert.deepEqual(classifySignInIdentity('CUSTOMER@EXAMPLE.COM'), {
+  kind: 'customer_email', email: 'customer@example.com',
+}, 'customer email remains a direct sign-in identity');
+assert.equal(classifySignInIdentity('not-an-identity'), null,
+  'malformed identifiers fail before any auth request');
+
+const firstCredential = '4ca0e6f2-9cf0-4bce-8dc7-c97b09cfc113';
+const secondCredential = '9ddcb865-bced-45fd-b707-f539f24e1567';
+assert.equal(workerSyntheticEmail(firstCredential),
+  'worker.4ca0e6f29cf04bce8dc7c97b09cfc113@auth.warsha.invalid',
+  'synthetic email derives only from a UUIDv4 credential identifier');
+assert.notEqual(workerSyntheticEmail(firstCredential), workerSyntheticEmail(secondCredential),
+  'distinct UUID credentials cannot produce the same synthetic identity');
+assert.throws(() => workerSyntheticEmail('A Worker Name'),
+  'display text cannot become a synthetic auth identity');
+
+const authContext = readFileSync('src/auth/auth-context.tsx', 'utf8');
+const broker = readFileSync('supabase/functions/worker-auth/index.ts', 'utf8');
+const workerMigration = readFileSync(
+  'supabase/migrations/202608150001_worker_phone_password_auth.sql', 'utf8');
+const repository = readFileSync('src/repositories/supabase-user-repositories.ts', 'utf8');
+const profileRepository = repository.slice(
+  repository.indexOf('supabaseCustomerProfileRepository'),
+  repository.indexOf('async function listBookings'),
+);
+
+assert.match(authContext, /identity\.kind === 'customer_email'[\s\S]*signInWithPassword/,
+  'customers still sign in directly with email and password');
+assert.match(authContext, /signInWorker\(identity\.phone, password\)/,
+  'workers sign in through phone/password mapping');
+assert.match(authContext, /registerWorker\([\s\S]*auth\.setSession/,
+  'worker registration receives a session without an email-confirmation dependency');
+assert.match(authContext, /accountId:\s*data\.user\?\.id/,
+  'worker registration returns the established session account for role selection');
+assert.match(createAccount, /selectRole\(choice, result\.accountId \?\? undefined\)/,
+  'post-registration role selection is pinned to the newly authenticated account');
+assert.match(broker, /crypto\.randomUUID\(\)/,
+  'the trusted broker, not display text, generates the collision-safe credential ID');
+assert.match(broker, /email_confirm: true/,
+  'the internal password credential is immediately usable');
+assert.doesNotMatch(broker.slice(broker.indexOf('function sessionResponse'),
+  broker.indexOf('function databaseRateLimited')), /email/i,
+  'the broker session response does not expose the synthetic email');
+assert.doesNotMatch(broker, /signInWithOtp|verifyOtp|phone_confirm\s*:|sms\.signIn/i,
+  'worker registration and sign-in never call Phone Auth or SMS');
+assert.match(workerMigration, /revoke all on private\.worker_auth_identities from public, anon, authenticated, service_role/,
+  'no client or staff role can read the phone mapping directly');
+assert.match(workerMigration, /grant execute on function public\.resolve_worker_auth_identity\(text\) to service_role/,
+  'only the Edge service role can resolve phone to internal identity');
+assert.doesNotMatch(profile, /auth\.user\?\.email|auth\.user\.email/,
+  'profile UI never renders the raw Auth email');
+assert.doesNotMatch(profileRepository, /auth\.getUser|user\?\.email|email:/,
+  'profile repository never materializes the Auth email');
+
+console.log('Worker auth regression tests passed: phone/password broker, no worker email UI, registration OTP-free.');

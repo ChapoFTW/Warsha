@@ -63,7 +63,7 @@ equal(safeAuthDiagnostic('phone-change-request', new Error('completely unknown')
 
 // --- Sanitized logging contract ---
 const diagnostic = safeAuthDiagnostic('phone-change-request', Object.assign(new Error('Authorization: Bearer secret-token; otp=123456'), { status: 422, code: 'phone_exists' }));
-equal(Object.keys(diagnostic).sort().join(','), 'code,environment,message,mode,operation,retryable,status', 'diagnostics expose only the approved safe fields');
+equal(Object.keys(diagnostic).sort().join(','), 'code,environment,failure,message,mode,operation,retryable,status', 'diagnostics expose only the approved safe fields');
 ok(!JSON.stringify(diagnostic).includes('secret-token') && !JSON.stringify(diagnostic).includes('123456'), 'diagnostics never serialize tokens, headers, or OTP values');
 
 // --- Customer-to-worker upgrade flow ---
@@ -71,7 +71,7 @@ ok(authContextSource.includes("if (currentUser.phone_confirmed_at && normalizePh
 ok(authContextSource.includes("requestWorkerPhoneChange: (phone: string) => Promise<'code_sent' | 'already_verified'>"), 'phone-change request reports whether a code was actually sent');
 ok(authContextSource.includes("verifyOtp({ phone: normalized, token: token.trim(), type: 'phone_change' })"), 'customer upgrade verifies via phone_change, preserving the email session');
 ok(profileSource.includes("status === 'already_verified'"), 'profile recovers a stale session by continuing when the phone is already verified');
-ok(profileSource.includes('setPhone((current) => current || userPhone)'), 'a session refresh cannot wipe a phone number mid-entry');
+ok(profileSource.includes('setPhone((current) => current || profile.phone)'), 'a session refresh cannot wipe a phone number mid-entry');
 ok(!profileSource.includes('[auth.mode, auth.user, t]'), 'the profile effect keys on primitive session values, not user object identity');
 
 // --- UX states on the profile screen ---

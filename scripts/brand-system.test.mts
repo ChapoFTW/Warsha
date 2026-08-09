@@ -124,9 +124,21 @@ for (const [asset, size] of expectedAssets) {
   assert.deepEqual(pngDimensions(asset), { width: size, height: size }, `${asset} has the expected dimensions`);
 }
 assert.doesNotMatch(appConfig, /warsha-brand-/, 'Expo config contains no legacy asset path');
-for (const asset of [...expectedAssets.keys()].filter((path) => path.startsWith('assets/'))) {
+for (const asset of [...expectedAssets.keys()].filter(
+  (path) => path.startsWith('assets/') && !path.endsWith('warsha-current-approved-splash.png'),
+)) {
   assert.match(appConfig, new RegExp(asset.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), `${asset} is referenced by Expo config`);
 }
+const expoConfig = JSON.parse(appConfig).expo;
+const splashPlugin = expoConfig.plugins.find(
+  (plugin: unknown) => Array.isArray(plugin) && plugin[0] === 'expo-splash-screen',
+)?.[1];
+assert.equal(splashPlugin.image, './assets/images/warsha-current-approved-icon.png',
+  'native splash uses the existing 1024 px approved mark');
+assert.equal(splashPlugin.dark.image, './assets/images/warsha-current-approved-icon.png',
+  'dark native splash uses the same approved mark');
+assert.equal(splashPlugin.imageWidth, 240, 'native splash keeps the approved display width');
+assert.equal(splashPlugin.resizeMode, 'contain', 'native splash preserves the mark aspect ratio');
 
 const manifest = read('public/manifest.webmanifest');
 assert.match(manifest, /"theme_color": "#080808"/, 'web manifest uses the locked theme color');

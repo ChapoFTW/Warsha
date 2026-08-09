@@ -27,8 +27,11 @@ do that to real people?" a question rather than a fact.
 | Backups | None | None | Daily | Daily plus PITR |
 | Who may deploy | Anyone | Anyone | Operations Manager | Two approvers |
 
-Status today: **only `local` exists.** `development`, `staging`, and `production`
-projects have not been created. That is gap G20 and it blocks private beta.
+Status today: local Docker and the permanent hosted development project exist.
+The hosted project is `warsha-development` (`lrhipbcapzfxuwixfoog`). It must be
+bound to `development` with `staff_bind_platform_environment()` after migration
+`202608180001` is pushed; a clean migration replay deliberately remains `local`.
+Separate staging and production projects do not yet exist.
 
 ## Separation rules
 
@@ -108,6 +111,7 @@ that was performed.
   `docs/operations/backup-runbook.md`.
 - `expected_project_ref` is set on the platform configuration so an operator can
   confirm which project they are pointed at.
-- The environment row is set deliberately and the change appears in the
-  immutable history.
+- The environment row is bound with `staff_bind_platform_environment()`, and
+  both the exact reason and project ref appear in immutable environment and
+  staff-audit history.
 - A named owner exists for that environment.

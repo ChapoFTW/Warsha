@@ -10,6 +10,7 @@ import { useAuth } from '@/src/auth/auth-context';
 import { useLocalPreferences } from '@/src/data/local-preferences';
 import type { Provider } from '@/src/data/marketplace-types';
 import { useLocalization } from '@/src/i18n/localization';
+import { professionLabel } from '@/src/providers/profession-taxonomy';
 
 import {
   initialProviderMediaState,
@@ -23,7 +24,7 @@ import { AppText } from './Typography';
 export function ProviderCard({ item, width }: { item: Provider; width: number }) {
   const colors = useThemeColors();
   const styles = useThemedStyles(makeStyles);
-  const { t, isRTL } = useLocalization();
+  const { t, isRTL, language } = useLocalization();
   const { user, mode } = useAuth();
   const { isFavourite, toggleFavourite } = useLocalPreferences();
   const [mediaState, setMediaState] = useState(() => initialProviderMediaState(item.image));
@@ -81,7 +82,7 @@ export function ProviderCard({ item, width }: { item: Provider; width: number })
         <ProviderTrustIndicators identityVerified={item.verified} skillCertificateVerified={item.skillCertificateVerified} compact />
 
         <View style={[styles.meta, isRTL && styles.reverse]}>
-          <AppText numberOfLines={1} style={styles.profession}>{t(item.profession)}</AppText>
+          <AppText numberOfLines={1} style={styles.profession}>{professionLabel(item.profession, language)}</AppText>
           <AppText style={styles.profession}>{item.distance.toFixed(1)} km</AppText>
         </View>
 

@@ -85,7 +85,8 @@ const activeMottoFiles = ['app/+html.tsx','public/manifest.webmanifest','src/i18
 const activeMottoText = activeMottoFiles.map(read).join('\n');
 notMatch(activeMottoText, /YOUR WORK\. OUR MISSION\.|YOUR BUSINESS\. MORE JOBS\.|Warsha finishes your work safely, for the fairest price\./, 'active surfaces contain no superseded motto');
 const config = read('app.json');
-match(config, /warsha-current-approved-splash\.png/, 'Expo config selects approved splash asset');
+match(config, /warsha-current-approved-icon\.png/, 'Expo config selects the approved high-resolution icon for native splash rendering');
+notMatch(config, /warsha-current-approved-splash\.png/, 'Expo config does not enlarge the obsolete 512px splash raster');
 notMatch(config, /warsha-brand-splash\.png/, 'Expo config does not select legacy splash asset');
 ok(read('scripts/brand-system.test.mts').includes('YOUR WORK, OUR MISSION'), 'brand regression locks the English motto');
 ok(read('scripts/brand-system.test.mts').includes('شغلك مهمتنا'), 'brand regression locks the Arabic motto');

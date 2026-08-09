@@ -1,6 +1,10 @@
 {
   "expo": {
     "name": "Warsha",
+    "locales": {
+      "en": "./locales/en.json",
+      "ar": "./locales/ar.json"
+    },
     "slug": "Warsha",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -25,8 +29,14 @@
       "supportsTablet": true,
       "backgroundColor": "#080808",
       "bundleIdentifier": "com.warsha.app",
+      "icon": {
+        "light": "./assets/images/warsha-current-approved-icon.png",
+        "dark": "./assets/images/warsha-current-approved-icon.png",
+        "tinted": "./assets/images/warsha-current-approved-icon.png"
+      },
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleAllowMixedLocalizations": true
       },
       "config": {
         "googleMapsApiKey": "$GOOGLE_MAPS_IOS_RENDER_KEY"
@@ -56,17 +66,27 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/warsha-current-approved-splash.png",
+          "image": "./assets/images/warsha-current-approved-icon.png",
           "imageWidth": 240,
           "resizeMode": "contain",
-          "backgroundColor": "#080808",
+          "backgroundColor": "#F4F2EE",
           "dark": {
-            "image": "./assets/images/warsha-current-approved-splash.png",
+            "image": "./assets/images/warsha-current-approved-icon.png",
             "backgroundColor": "#080808"
           }
         }
       ],
       "expo-sqlite",
+      [
+        "expo-localization",
+        {
+          "supportedLocales": {
+            "ios": ["en", "ar"],
+            "android": ["en", "ar"]
+          },
+          "supportsRTL": true
+        }
+      ],
       [
         "expo-image-picker",
         {
@@ -101,9 +121,6 @@
     },
     "runtimeVersion": {
       "policy": "appVersion"
-    },
-    "updates": {
-      "url": "https://u.expo.dev/6c8fbcda-6bb2-40b2-b8db-3b0ce127525f"
     }
   }
 }

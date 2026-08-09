@@ -3,6 +3,7 @@ import type { PropsWithChildren } from 'react';
 
 import { darkColors, lightColors } from '@/constants/appearance';
 import { appearanceStorageKey } from '@/src/appearance/appearance-types';
+import { languageExplicitKey, languageStorageKey } from '@/src/i18n/language-preference';
 
 /**
  * The web document shell.
@@ -31,6 +32,18 @@ const bootstrapAppearance = `
     if (themeColor) themeColor.setAttribute('content', canvas);
     var colorScheme = document.querySelector('meta[name="color-scheme"]');
     if (colorScheme) colorScheme.setAttribute('content', scheme);
+
+    var storedLanguage = window.localStorage.getItem(${JSON.stringify(languageStorageKey)});
+    var explicitLanguage = window.localStorage.getItem(${JSON.stringify(languageExplicitKey)}) === 'true';
+    var preferredLanguage = explicitLanguage && (storedLanguage === 'ar' || storedLanguage === 'en')
+      ? storedLanguage
+      : ((navigator.languages && navigator.languages[0]) || navigator.language || 'en');
+    var language = String(preferredLanguage).toLowerCase().split(/[-_]/)[0] === 'ar' ? 'ar' : 'en';
+    document.documentElement.lang = language;
+    document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
+    document.title = language === 'ar' ? 'ورشة' : 'Warsha';
+    var manifest = document.querySelector('link[rel="manifest"]');
+    if (manifest) manifest.setAttribute('href', language === 'ar' ? '/manifest.ar.webmanifest' : '/manifest.webmanifest');
   } catch (error) {
     // A blocked localStorage must never stop the page rendering. The default
     // background stands and the app corrects it on hydration.
@@ -49,9 +62,10 @@ export default function RootHtml({ children }: PropsWithChildren) {
         <meta name="theme-color" content={darkColors.canvas} />
         <meta name="color-scheme" content="light dark" />
         <meta name="description" content="YOUR WORK, OUR MISSION" />
+        <title>Warsha</title>
         <meta property="og:site_name" content="Warsha" />
         <meta property="og:description" content="YOUR WORK, OUR MISSION" />
-        <link rel="manifest" href="/manifest.webmanifest" />
+        <link id="warsha-manifest" rel="manifest" href="/manifest.webmanifest" />
         <link rel="icon" href="/warsha-current-approved-192.png" />
         <link rel="apple-touch-icon" href="/warsha-current-approved-192.png" />
         <ScrollViewStyleReset />

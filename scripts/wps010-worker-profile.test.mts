@@ -19,12 +19,13 @@ const read = (path: string) => readFileSync(path, 'utf8');
 const complete = {
   ...emptyProviderDraft,
   avatarPath: 'private/avatar.jpg',
+  profession: 'plumbing',
   about: 'I repair home plumbing carefully and explain the work clearly.',
   services: [{ serviceId: 'service-1', name: 'Leak repair' }],
   areas: [{ governorate: 'Cairo', district: 'Maadi', radiusKm: 15 }],
 };
 
-assert.deepEqual(providerChecklist(complete, true), { photo: true, introduction: true, services: true, area: true, verification: true });
+assert.deepEqual(providerChecklist(complete, true), { photo: true, professions: true, services: true, area: true, verification: true });
 assert.equal(providerCompletion(complete, true), 100, 'plain five-item checklist reaches 100%');
 assert.equal(providerChecklist(emptyProviderDraft, false).verification, false, 'draft does not invent verification');
 assert.throws(() => validatePortfolioItem({ title: 'x', description: '', status: 'draft' }), /title/);
@@ -97,7 +98,9 @@ assert.match(migration, /create policy portfolio_owner_manage/, 'portfolio metad
 assert.match(migration, /create policy certifications_owner_read/, 'certificate metadata owner access is fixed');
 assert.match(migration, /phone_confirmed_at is not null/, 'discovery requires confirmed phone');
 assert.match(migration, /v\.status = 'approved'/, 'discovery requires approved identity');
-assert.match(migration, /pg_catalog\.length\(pg_catalog\.btrim\(p\.about\)\) between 20 and 500/, 'discovery requires bounded biography');
+const onboardingCorrection = read('supabase/migrations/202608160001_wps025_worker_onboarding_product_corrections.sql');
+assert.doesNotMatch(onboardingCorrection, /btrim\(p\.about\)/, 'optional biography is not a discovery requirement');
+assert.match(onboardingCorrection, /btrim\(p\.profession_key\)/, 'discovery requires the worker profession identity');
 assert.match(migration, /p_content_hash !~ '\^\[0-9a-f\]\{32\}\$'/, 'portfolio registration requires a content fingerprint');
 
 const catalog = migration.slice(migration.lastIndexOf('create or replace function public.get_marketplace_catalog'));
@@ -111,13 +114,15 @@ assert.doesNotMatch(repository, /catch[^}]+mockRepository/s, 'Supabase failures 
 assert.match(repository, /file\.md5/, 'portfolio uses file-content fingerprinting');
 assert.match(repository, /upsert: false/g, 'private media uses immutable staging objects');
 
-const providerMode = read('app/provider-mode.tsx');
+const providerMode = read('app/worker/profile.tsx');
 const portfolioScreen = read('app/provider-portfolio.tsx');
 const certificateScreen = read('app/provider-certificates.tsx');
 const publicScreen = read('app/provider/[id].tsx');
 const localization = read('src/i18n/worker-profile-translations.ts');
-assert.match(providerMode, /allowsEditing: true/, 'profile photo offers SDK 54 crop support');
-assert.match(providerMode, /accessibilityRole="tab"/, 'worker profile sections expose tab semantics');
+const workerPhotoPicker = read('components/warsha/WorkerPhotoPicker.tsx');
+assert.doesNotMatch(workerPhotoPicker, /allowsEditing: true/, 'profile photo never invokes the native crop activity');
+assert.match(workerPhotoPicker, /context\.crop\(/, 'profile photo is center-cropped in the Warsha preview flow');
+assert.doesNotMatch(providerMode, /accessibilityRole="tab"/, 'worker profile is one focused screen rather than a hidden tab system');
 assert.match(portfolioScreen, /accessibilityRole="alert"/, 'portfolio privacy warning is announced');
 assert.match(portfolioScreen, /selectionLimit: remaining/, 'portfolio image count is bounded at selection');
 assert.match(certificateScreen, /copyToCacheDirectory: true/, 'SDK 54 document selection is immediately readable');
@@ -126,7 +131,7 @@ assert.match(publicScreen, /requestQuote/, 'Request a Quote remains the profile 
 assert.doesNotMatch(publicScreen, /bookNow|create_customer_booking/, 'profile does not make direct fixed booking primary');
 assert.match(localization, /صور الشغل/, 'Egyptian Arabic profile copy exists');
 assert.match([providerMode, portfolioScreen, certificateScreen, publicScreen].join('\n'), /isRTL/, 'worker and public screens handle RTL');
-assert.match([providerMode, portfolioScreen, certificateScreen].join('\n'), /maxWidth: 720/, 'forms retain a bounded small-screen-safe layout');
+assert.match([providerMode, portfolioScreen, certificateScreen].join('\n'), /maxWidth: (?:680|720)/, 'forms retain a bounded small-screen-safe layout');
 
 const reviewMigration = read('supabase/migrations/202607270001_reviews_ratings.sql');
 assert.match(reviewMigration, /status = 'completed'/, 'existing review submission remains completed-booking gated');

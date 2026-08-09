@@ -1,0 +1,12 @@
+{
+  "ios": {
+    "CFBundleDisplayName": "ورشة",
+    "CFBundleName": "ورشة",
+    "NSCameraUsageDescription": "تستخدم ورشة الكاميرا فقط عند اختيارك التقاط صورة لطلب خدمة أو مستند تحقق للفني.",
+    "NSLocationWhenInUseUsageDescription": "تستخدم ورشة موقعك فقط أثناء اختيار عنوان أو موقع العمل.",
+    "NSPhotoLibraryUsageDescription": "تستخدم ورشة الصور التي تختارها فقط لطلبات الخدمة والتحقق من الفني."
+  },
+  "android": {
+    "app_name": "ورشة"
+  }
+}

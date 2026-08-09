@@ -246,19 +246,89 @@ export const providerClients = {
  * Warsha never requests background location and the config plugin does not
  * declare it, so the OS cannot grant one.
  */
-export async function requestDeviceFix(): Promise<{ latitude: number; longitude: number } | null> {
-  if (environment.dataMode === 'mock') return null;
+export type DeviceFixResult =
+  | { outcome: 'succeeded'; position: { latitude: number; longitude: number } }
+  | { outcome: 'permission_denied'; canAskAgain: boolean }
+  | { outcome: 'services_disabled' }
+  | { outcome: 'provider_unavailable' }
+  | { outcome: 'timed_out' }
+  | { outcome: 'location_error'; code: string };
+
+const DEVICE_FIX_TIMEOUT_MS = 15_000;
+
+function classifyLocationError(error: unknown): DeviceFixResult {
+  const source = error && typeof error === 'object' ? error as { code?: unknown; message?: unknown } : null;
+  const code = typeof source?.code === 'string' ? source.code : 'native_location_error';
+  const message = typeof source?.message === 'string' ? source.message.toLowerCase() : '';
+  if (message.includes('services are disabled') || message.includes('unsatisfied device settings')) {
+    return { outcome: 'services_disabled' };
+  }
+  if (message.includes('location is unavailable')
+      || message.includes('current location is unavailable')
+      || message.includes('current location is unknown')
+      || message.includes('location request has been rejected')) {
+    return { outcome: 'provider_unavailable' };
+  }
+  return { outcome: 'location_error', code };
+}
+
+export async function requestDeviceFix(): Promise<DeviceFixResult> {
+  if (environment.dataMode === 'mock') {
+    return { outcome: 'location_error', code: 'mock_mode' };
+  }
   try {
     const Location = await import('expo-location');
+    const initialProvider = await Location.getProviderStatusAsync();
+    if (!initialProvider.locationServicesEnabled) return { outcome: 'services_disabled' };
+
     const permission = await Location.requestForegroundPermissionsAsync();
-    if (!permission.granted) return null;
-    const position = await Location.getCurrentPositionAsync({
-      accuracy: Location.Accuracy.Balanced,
-    });
-    return { latitude: position.coords.latitude, longitude: position.coords.longitude };
-  } catch {
-    // A refused or unavailable fix is an ordinary outcome. Manual pin
-    // placement is the guaranteed path and it is already on screen.
-    return null;
+    if (!permission.granted) {
+      return { outcome: 'permission_denied', canAskAgain: permission.canAskAgain };
+    }
+
+    const provider = await Location.getProviderStatusAsync();
+    if (!provider.locationServicesEnabled) return { outcome: 'services_disabled' };
+    const providerSignals = [provider.gpsAvailable, provider.networkAvailable, provider.passiveAvailable]
+      .filter((value): value is boolean => typeof value === 'boolean');
+    if (providerSignals.length > 0 && providerSignals.every(value => !value)) {
+      return { outcome: 'provider_unavailable' };
+    }
+
+    // A recent coarse fix is enough to seed the pin and avoids making an
+    // emulator wait for a fresh satellite/network update it may never emit.
+    const lastKnown = await Location.getLastKnownPositionAsync({
+      maxAge: 5 * 60_000,
+      requiredAccuracy: 1_000,
+    }).catch(() => null);
+    if (lastKnown) {
+      return {
+        outcome: 'succeeded',
+        position: { latitude: lastKnown.coords.latitude, longitude: lastKnown.coords.longitude },
+      };
+    }
+
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const current = await Promise.race([
+      Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
+        .then(position => ({ kind: 'position' as const, position }))
+        .catch(error => ({ kind: 'error' as const, error })),
+      new Promise<{ kind: 'timeout' }>(resolve => {
+        timer = setTimeout(() => resolve({ kind: 'timeout' }), DEVICE_FIX_TIMEOUT_MS);
+      }),
+    ]);
+    if (timer) clearTimeout(timer);
+    if (current.kind === 'timeout') return { outcome: 'timed_out' };
+    if (current.kind === 'error') return classifyLocationError(current.error);
+    return {
+      outcome: 'succeeded',
+      position: {
+        latitude: current.position.coords.latitude,
+        longitude: current.position.coords.longitude,
+      },
+    };
+  } catch (error) {
+    // Preserve the category. The UI still offers the other paths, while Metro
+    // can now distinguish permission, provider and native-module failures.
+    return classifyLocationError(error);
   }
 }

@@ -1,0 +1,12 @@
+{
+  "ios": {
+    "CFBundleDisplayName": "Warsha",
+    "CFBundleName": "Warsha",
+    "NSCameraUsageDescription": "Warsha uses the camera only when you choose to capture a booking photo or worker verification document.",
+    "NSLocationWhenInUseUsageDescription": "Warsha uses your location only while you are choosing an address or work location.",
+    "NSPhotoLibraryUsageDescription": "Warsha uses selected photos only for service requests and worker verification."
+  },
+  "android": {
+    "app_name": "Warsha"
+  }
+}

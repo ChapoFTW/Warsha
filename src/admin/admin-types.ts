@@ -145,7 +145,7 @@ export const dualControlCapabilities: readonly StaffCapability[] = [
   'approve_permanent_ban', 'initiate_refund', 'approve_configuration', 'manage_staff_roles',
 ] as const;
 
-export type StaffEnvironment = 'local' | 'staging' | 'production';
+export type StaffEnvironment = 'local' | 'development' | 'staging' | 'production';
 
 export type StaffSession = {
   isStaff: boolean;

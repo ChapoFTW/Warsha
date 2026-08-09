@@ -41,7 +41,7 @@ Severity: **B** blocks private beta · **P** blocks production · **W** watch.
 | --- | --- | --- | --- | --- |
 | G19 | **All manual suites are NOT RUN** | B | WPS-007 through WPS-018: 0 of ~600 cases executed. This is the single largest blocker. | Owner |
 | G20 | No hosted staging project | B | One Supabase project exists. The environment model is enforced in code but has nowhere to be enforced. | Operations Manager |
-| G21 | No SMS provider | B | Worker phone OTP cannot be delivered. Workers cannot sign in on a real device. | Operations Manager |
+| G21 | No SMS provider | CLOSED FOR AUTH | Worker registration/sign-in uses phone plus password without SMS; optional phone verification remains unavailable. | Operations Manager |
 | G22 | No backup verification | B | Supabase plan and PITR availability unconfirmed; no restore has ever been performed. A backup that has never been restored is a hope. | Security Administrator |
 | G23 | No legal review of any document | B | Terms, privacy policy, worker and customer terms, refund and dispute policy all absent or unreviewed. | Owner |
 | G24 | No company structure or tax position | B | Egyptian entity, invoicing, and tax treatment unresolved. | Owner |

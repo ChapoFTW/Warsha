@@ -41,6 +41,11 @@ equal(isValidSmsOtp('12345a'), false, 'non-numeric OTP is rejected');
 equal(safeAuthDiagnostic('worker-otp-verify', { code: 'otp_expired', status: 403 }).message, 'The OTP has expired.', 'expired OTP is distinct');
 equal(safeAuthDiagnostic('worker-otp-verify', { code: 'invalid_otp', status: 403 }).message, 'The OTP is invalid.', 'invalid OTP is distinct');
 equal(safeAuthDiagnostic('worker-otp-request', { code: 'over_request_rate_limit', status: 429 }).message, 'The authentication request was rate limited.', 'rate limits are actionable');
+const signUpServerFailure = safeAuthDiagnostic('sign-up', { code: 'unexpected_failure', status: 500 });
+equal(signUpServerFailure.failure, 'authSignupServerError', 'sign-up server failures have an operation-specific user state');
+equal(signUpServerFailure.code, 'unexpected_failure', 'diagnostics preserve the real safe server code');
+equal(signUpServerFailure.status, 500, 'diagnostics preserve the real HTTP status');
+equal(signUpServerFailure.message, 'The account creation service failed.', 'sign-up failures are not described as sign-in failures');
 const redacted = safeAuthDiagnostic('worker-otp-request', new Error('Authorization: Bearer secret-token'));
 equal(redacted.message.includes('secret-token'), false, 'diagnostics do not serialize raw messages or headers');
 equal(readPhoneAuthAvailability({ external: { phone: true } }), true, 'enabled phone provider is accepted');
@@ -127,9 +132,13 @@ ok(rootLayout.includes('<Stack.Screen name="booking"'), 'booking child navigator
 ok(rootLayout.includes('<Stack.Screen name="provider-job"'), 'provider-job child navigator is declared by segment');
 
 const appConfig = readFileSync('app.json', 'utf8');
-for (const asset of ['warsha-current-approved-icon.png', 'warsha-current-approved-adaptive-foreground.png', 'warsha-current-approved-monochrome.png', 'warsha-current-approved-notification.png', 'warsha-current-approved-favicon.png', 'warsha-current-approved-splash.png']) {
+for (const asset of ['warsha-current-approved-icon.png', 'warsha-current-approved-adaptive-foreground.png', 'warsha-current-approved-monochrome.png', 'warsha-current-approved-notification.png', 'warsha-current-approved-favicon.png']) {
   ok(appConfig.includes(asset), `${asset} is wired into Expo app config`);
 }
+equal((appConfig.match(/warsha-current-approved-icon\.png/g) ?? []).length, 6,
+  'the 1024 px approved icon is used for the app icon, iOS variants, and both splash themes');
+ok(!appConfig.includes('warsha-current-approved-splash.png'),
+  'the 512 px splash raster is not enlarged by the native launch screen');
 const brandRenderer = readFileSync('scripts/render-brand-assets.ps1', 'utf8');
 ok(brandRenderer.includes('Draw-CurrentMark'), 'approved Current mark renderer is used');
 ok(!brandRenderer.includes('YOUR BUSINESS. MORE JOBS.'), 'obsolete business tagline is absent');

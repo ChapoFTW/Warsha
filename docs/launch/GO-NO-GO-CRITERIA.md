@@ -17,7 +17,7 @@ Verdict today — **private beta: NO-GO. Production: NO-GO.**
 | --- | --- | --- |
 | P01 | Minimum manual subset executed and signed (see MASTER-MANUAL-TEST-PLAN) | **NO — 0 of 214 cases run** |
 | P02 | A customer can request, receive a quote, book, and complete on a real handset | **NO — no device testing** |
-| P03 | A worker can sign in by phone OTP on a real handset on a real network | **NO — no SMS provider** |
+| P03 | A worker can sign in with phone and password on a real handset without OTP | **NOT RUN — implementation automated evidence passes; device execution pending** |
 | P04 | A dispute can be opened, worked, and resolved end to end | NO — not manually verified |
 | P05 | Egyptian Arabic and RTL verified on device by a native speaker | NO |
 | P06 | Cash commission debt is correct after ten real bookings | NO |

@@ -9,6 +9,7 @@ import {
   providerStorageKey,
   providerVerificationStorageKey,
 } from './provider-account-scope';
+import { publicSpecialties } from './profession-taxonomy';
 import type { PortfolioItem, ProviderCertificate, ProviderDraft } from './provider-types';
 
 function parse<T>(raw: string | null, fallback: T): T {
@@ -35,7 +36,7 @@ export async function syncMockProviderCatalog(accountId = 'mock-user') {
     providers.push(provider);
   }
   const complete = Boolean(
-    profile.avatarPath && profile.about.trim().length >= 20 && profile.services.length
+    profile.avatarPath && profile.profession.trim() && profile.services.length
     && profile.areas.some(area => area.governorate.trim() && area.radiusKm >= 1),
   );
   const discoverable = Boolean(
@@ -60,7 +61,7 @@ export async function syncMockProviderCatalog(accountId = 'mock-user') {
   provider.serviceRadius = profile.serviceRadiusKm;
   provider.languages = profile.languages;
   provider.about = profile.about;
-  provider.skills = profile.specialties;
+  provider.skills = publicSpecialties(profile.specialties);
   provider.services = profile.services.map(item => previousServices.get(item.serviceId) ?? {
     id: item.serviceId,
     name: item.name,

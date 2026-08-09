@@ -15,8 +15,8 @@
       "developmentClient": true,
       "distribution": "internal",
       "channel": "development",
+      "environment": "development",
       "env": {
-        "EXPO_PUBLIC_DATA_MODE": "mock",
         "EXPO_PUBLIC_ADMIN_SURFACE": "enabled"
       }
     },
@@ -24,6 +24,7 @@
       "extends": "base",
       "distribution": "internal",
       "channel": "staging",
+      "environment": "preview",
       "env": {
         "EXPO_PUBLIC_ADMIN_SURFACE": "enabled"
       }
@@ -32,6 +33,7 @@
       "extends": "base",
       "autoIncrement": true,
       "channel": "production",
+      "environment": "production",
       "env": {}
     }
   },

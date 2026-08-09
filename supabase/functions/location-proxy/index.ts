@@ -72,12 +72,12 @@ Deno.serve(async (request) => {
   const { data: userData, error: userError } = await asCaller.auth.getUser();
   if (userError || !userData?.user?.id) return json({ error: 'Authentication required' }, 401);
 
-  const { data: providerKey } = await asService
-    .schema('private').rpc('provider_for_role', { p_role: LOCATION_ROLE })
-    .then((r) => ({ data: r.data as string | null }))
+  const { data: runtime } = await asService
+    .rpc('edge_provider_runtime', { p_role: LOCATION_ROLE })
+    .then((r) => ({ data: r.data as { providerKey?: string; enabled?: boolean } | null }))
     .catch(() => ({ data: null }));
 
-  const provider = resolveMapProvider(providerKey);
+  const provider = resolveMapProvider(runtime?.providerKey);
   if (!provider) return unavailable('provider_unavailable');
 
   let body: {
@@ -101,14 +101,20 @@ Deno.serve(async (request) => {
   // They fail independently, so a disabled or unconfigured search provider must
   // still let the client draw the map somebody is about to drop a pin on.
   if (body.operation === 'render_descriptor') {
-    return json({ available: true, descriptor: provider.renderMap() });
+    return json({
+      available: true,
+      descriptor: {
+        ...provider.renderMap(),
+        // Safe capability metadata, never the credential value. The database
+        // cannot inspect Edge Function secrets, so both answers are needed:
+        // DB gates say whether calls are allowed; this says whether they can
+        // actually be authenticated at the provider.
+        serverCredentialAvailable: provider.isConfigured(),
+      },
+    });
   }
 
-  const { data: enabled } = await asService
-    .schema('private').rpc('provider_enabled_for_role', { p_role: LOCATION_ROLE })
-    .then((r) => ({ data: r.data as boolean | null }))
-    .catch(() => ({ data: null }));
-  if (enabled !== true) {
+  if (runtime?.enabled !== true) {
     await recordHealth(asService, provider, String(body.operation ?? 'unknown'),
       { kind: 'refused_disabled' });
     return unavailable('provider_disabled');
@@ -201,7 +207,7 @@ async function recordHealth(
     ? { latencyMs: outcome.latencyMs, attempts: outcome.attempts }
     : { latencyMs: null, attempts: 0 };
   try {
-    await client.schema('private').rpc('record_provider_health', {
+    await client.rpc('edge_record_provider_health', {
       p_provider_key: provider.providerKey,
       p_operation: operation,
       p_provider_version: provider.providerVersion,

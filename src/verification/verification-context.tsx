@@ -19,6 +19,7 @@ import { realtimeService } from '@/src/realtime/realtime-service';
 import { verificationRepository } from './verification-repository';
 import type {
   ProviderVerification,
+  VerificationDocument,
   VerificationDocumentType,
 } from './verification-types';
 
@@ -35,7 +36,7 @@ type Value = {
   action: VerificationDocumentType | 'submit' | 'remove' | 'review' | null;
   error: TranslationKey | null;
   reload: (silent?: boolean) => Promise<void>;
-  upload: (type: VerificationDocumentType, input: UploadInput) => Promise<void>;
+  upload: (type: VerificationDocumentType, input: UploadInput) => Promise<VerificationDocument>;
   remove: (documentId: string) => Promise<void>;
   submit: (nationalId: string, hasSkillCertificate: boolean) => Promise<void>;
   simulateReview: (
@@ -171,7 +172,7 @@ export function VerificationProvider({ children }: PropsWithChildren) {
     const targetScope = scope;
     const targetProvider = providerId;
     if (!targetScope || !targetProvider) throw new Error('Authentication required');
-    if (locks.current.has(key)) return;
+    if (locks.current.has(key)) return undefined;
     locks.current.add(key);
     setAction(nextAction);
     try {
@@ -182,6 +183,7 @@ export function VerificationProvider({ children }: PropsWithChildren) {
       setVerification(next);
       setLoadedScope(targetScope);
       setError(null);
+      return next;
     } catch (reason) {
       if (scopeRef.current === targetScope) setError(dataErrorKey(reason));
       throw reason;
@@ -200,21 +202,26 @@ export function VerificationProvider({ children }: PropsWithChildren) {
     action,
     error,
     reload,
-    upload: (type, input) =>
-      run(`upload:${type}`, type, id => verificationRepository.upload(id, type, input)),
-    remove: documentId =>
-      run(`remove:${documentId}`, 'remove', id =>
-        verificationRepository.remove(id, documentId)),
-    submit: (nationalId, hasSkillCertificate) =>
-      run('submit', 'submit', id =>
-        verificationRepository.submit(id, nationalId, hasSkillCertificate)),
-    simulateReview: status =>
-      run(`review:${status}`, 'review', async id => {
+    upload: async (type, input) => {
+      const next = await run(`upload:${type}`, type, id => verificationRepository.upload(id, type, input));
+      const document = next?.documents.find(item => item.type === type);
+      if (!document) throw new Error('Verification upload is already running');
+      return document;
+    },
+    remove: async documentId => {
+      await run(`remove:${documentId}`, 'remove', id => verificationRepository.remove(id, documentId));
+    },
+    submit: async (nationalId, hasSkillCertificate) => {
+      await run('submit', 'submit', id => verificationRepository.submit(id, nationalId, hasSkillCertificate));
+    },
+    simulateReview: async status => {
+      await run(`review:${status}`, 'review', async id => {
         if (!verificationRepository.simulateReview) {
           throw new Error('Mock review is unavailable');
         }
         return verificationRepository.simulateReview(id, status);
-      }),
+      });
+    },
   }), [action, error, loading, refreshing, reload, run, visible]);
 
   return <Context.Provider value={value}>{children}</Context.Provider>;

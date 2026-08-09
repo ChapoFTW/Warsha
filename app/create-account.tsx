@@ -43,9 +43,26 @@ export default function CreateAccount() {
   const [message, setMessage] = useState('');
   const [notice, setNotice] = useState('');
 
+  const openSignIn = async () => {
+    setBusy(true);
+    setMessage('');
+    try {
+      // Role selection can be visible for an authenticated but incomplete
+      // account. An explicit sign-in action means switch accounts; retaining
+      // that session would make AuthGate return here immediately.
+      if (auth.user) await auth.signOut();
+      router.replace('/sign-in');
+    } catch (error) {
+      setMessage(t(authMessageKey(error)));
+    } finally {
+      setBusy(false);
+    }
+  };
+
   /**
-   * WPS-024 correction. One registration path for both roles: name, email,
-   * password and a phone number.
+   * Customers register with name, email, password and phone. Workers register
+   * with name, phone and password; the trusted broker owns the hidden Auth
+   * identity and no worker email confirmation exists.
    *
    * The phone number is REQUIRED and validated, and it is not verified. Warsha
    * needs to be able to reach a customer whose worker is at the door and a
@@ -58,10 +75,10 @@ export default function CreateAccount() {
     setMessage('');
     try {
       const result = await auth.signUp(
-        name.trim(), email.trim(), password, phone,
+        name.trim(), choice === 'worker' ? null : email.trim(), password, phone,
         choice === 'worker' ? 'provider' : 'customer', language,
       );
-      if (result.needsEmailConfirmation) {
+      if (choice === 'customer' && result.needsEmailConfirmation) {
         // Email verification remains required. Nothing further can happen
         // until it is done, so the role is recorded after the first session.
         setNotice(t('checkEmail'));
@@ -69,7 +86,8 @@ export default function CreateAccount() {
       }
       // The role is recorded server-side. The client's choice is an input to
       // that call, never the authority for it.
-      await onboarding.selectRole(choice);
+      const roleRecorded = await onboarding.selectRole(choice, result.accountId ?? undefined);
+      if (!roleRecorded) throw new Error('Unable to record the account role.');
     } catch (error) {
       setMessage(t(authMessageKey(error)));
     } finally {
@@ -112,8 +130,10 @@ export default function CreateAccount() {
           <BrandButton
             label={ot.text('signIn')}
             variant="ghost"
-            onPress={() => router.replace('/sign-in')}
+            loading={busy}
+            onPress={() => void openSignIn()}
           />
+          {message ? <AppText accessibilityRole="alert" style={styles.error}>{message}</AppText> : null}
         </ScrollView>
       </SafeAreaView>
     );
@@ -136,15 +156,17 @@ export default function CreateAccount() {
             style={{ textAlign: isRTL ? 'right' : 'left' }}
           />
 
-          <BrandTextField
-            label={t('email')}
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoCorrect={false}
-            textContentType="emailAddress"
-          />
+          {role === 'customer' ? (
+            <BrandTextField
+              label={t('email')}
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+              textContentType="emailAddress"
+            />
+          ) : null}
           <BrandTextField
             label={t('password')}
             value={password}
@@ -164,14 +186,18 @@ export default function CreateAccount() {
           />
 
           {role === 'worker' ? (
-            <AppText style={styles.note}>{ot.text('roleWorkerHint')}</AppText>
+            <>
+              <AppText style={styles.note}>{at('workerRegistrationNoEmail')}</AppText>
+              <AppText style={styles.note}>{ot.text('roleWorkerHint')}</AppText>
+            </>
           ) : null}
 
           <BrandButton
             label={ot.text('createAccount')}
             loading={busy}
             disabled={
-              busy || name.trim().length < 2 || !email.trim() || password.length < 6
+              busy || name.trim().length < 2
+              || (role === 'customer' && !email.trim()) || password.length < 6
               || !isValidPhone(normalizePhone(phone))
             }
             onPress={() => void createAccount(role)}

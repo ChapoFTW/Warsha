@@ -26,6 +26,7 @@ const workerStateKeys: Record<WorkerState, OnboardingCopyKey> = {
   // Somebody told "you are live" who cannot yet take a job would reasonably
   // think the product is broken.
   approved: 'stateApproved',
+  provisionally_active: 'stateProvisionallyActive',
   active: 'stateActive',
   suspended: 'stateSuspended',
 };
@@ -55,7 +56,7 @@ const gateKeys: Record<string, OnboardingCopyKey> = {
   document_processing_accepted: 'workerDocumentConsent',
   legal_name_complete: 'identityLegalName',
   profile_photo: 'workerHomeProfile',
-  biography: 'workerHomeProfile',
+  professions_configured: 'workerHomeProfile',
   services_configured: 'workerHomeProfile',
   service_area_configured: 'workerHomeProfile',
   current_address_provided: 'addressTitle',

@@ -89,7 +89,7 @@ export type ProviderCertificateInput = Pick<ProviderCertificate, 'type' | 'title
 
 export type ProviderChecklist = {
   photo: boolean;
-  introduction: boolean;
+  professions: boolean;
   services: boolean;
   area: boolean;
   verification: boolean;
@@ -116,10 +116,17 @@ export const emptyProviderDraft: ProviderDraft = {
   agreementAccepted: false,
 };
 
+/**
+ * `radius_km` remains a required storage compatibility field. New worker UI
+ * does not ask for or imply a personal travel radius: the schema maximum
+ * makes matching waves and job location, not this value, the limiting policy.
+ */
+export const MARKETPLACE_MANAGED_RADIUS_KM = 250;
+
 export function providerChecklist(value: ProviderDraft, identityApproved: boolean): ProviderChecklist {
   return {
     photo: Boolean(value.avatarPath),
-    introduction: value.about.trim().length >= 20,
+    professions: Boolean(value.profession.trim()),
     services: value.services.length > 0,
     area: Boolean(value.areas.some(area => area.governorate.trim() && area.radiusKm >= 1)),
     verification: identityApproved,

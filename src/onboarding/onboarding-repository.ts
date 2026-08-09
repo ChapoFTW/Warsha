@@ -1,3 +1,5 @@
+import { File } from 'expo-file-system';
+
 import { environment } from '@/src/config/environment';
 import { getSupabaseClient } from '@/src/lib/supabase';
 
@@ -48,7 +50,12 @@ export const onboardingRepository = {
 
   async selectRole(accountKey: string | null, role: AccountRoleChoice): Promise<OnboardingState> {
     if (environment.dataMode === 'mock') return mockSelectRole(requireAccount(accountKey), role);
-    const { data, error } = await getSupabaseClient().rpc('select_my_account_role', { p_role: role });
+    const expectedAccount = requireAccount(accountKey);
+    const client = getSupabaseClient();
+    const { data: authData, error: authError } = await client.auth.getUser();
+    if (authError) throw authError;
+    if (authData.user?.id !== expectedAccount) throw new Error('The active account changed.');
+    const { data, error } = await client.rpc('select_my_account_role', { p_role: role });
     if (error) throw error;
     return { ...emptyOnboardingState, ...(data as Partial<OnboardingState>) };
   },
@@ -163,13 +170,11 @@ export const onboardingRepository = {
   async submitCriminalRecord(
     accountKey: string | null,
     input: {
-      storagePath: string;
+      uri: string;
       mimeType: string;
       fileSizeBytes: number;
       contentHash: string | null;
       issueDate: string;
-      documentReference: string | null;
-      declaredName: string;
     },
   ): Promise<OnboardingState> {
     if (environment.dataMode === 'mock') {
@@ -177,16 +182,32 @@ export const onboardingRepository = {
         requireAccount(accountKey), input.mimeType, input.fileSizeBytes, input.issueDate,
       );
     }
-    const { error } = await getSupabaseClient().rpc('submit_my_criminal_record', {
-      p_storage_path: input.storagePath,
+    const client = getSupabaseClient();
+    const { data: auth, error: authError } = await client.auth.getUser();
+    if (authError || !auth.user) throw authError ?? new Error('Authentication required');
+    const file = new File(input.uri);
+    if (!file.exists || !file.size || file.size !== input.fileSizeBytes) {
+      throw new Error('Invalid certificate file');
+    }
+    const extension = input.mimeType === 'application/pdf' ? 'pdf'
+      : input.mimeType === 'image/png' ? 'png'
+        : input.mimeType === 'image/heic' ? 'heic' : 'jpg';
+    const path = `${auth.user.id}/certificate/${Date.now()}-${Math.random().toString(36).slice(2, 12)}.${extension}`;
+    const { error: uploadError } = await client.storage
+      .from('worker-criminal-records')
+      .upload(path, await file.arrayBuffer(), { contentType: input.mimeType, upsert: false });
+    if (uploadError) throw uploadError;
+    const { error } = await client.rpc('submit_my_criminal_record', {
+      p_storage_path: path,
       p_mime_type: input.mimeType,
-      p_file_size_bytes: input.fileSizeBytes,
-      p_content_hash: input.contentHash,
+      p_size_bytes: input.fileSizeBytes,
       p_issue_date: input.issueDate,
-      p_document_reference: input.documentReference,
-      p_declared_name: input.declaredName,
+      p_content_hash: input.contentHash,
     });
-    if (error) throw error;
+    if (error) {
+      await client.storage.from('worker-criminal-records').remove([path]);
+      throw error;
+    }
     return this.state(accountKey);
   },
 

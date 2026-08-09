@@ -15,6 +15,7 @@ import { useLocalization } from "@/src/i18n/localization";
 import type { Language } from "@/src/i18n/translations";
 import { useMarketplaceText } from "@/src/marketplace-intelligence/marketplace-translations";
 import { useWorkerProfileText } from "@/src/i18n/worker-profile-translations";
+import { professionLabel } from "@/src/providers/profession-taxonomy";
 
 const servicePricingLabels: Record<Language, Record<Service["pricingType"], string>> = {
   en: { fixed: "Fixed price", starting: "Starting from", hourly: "Hourly", inspection: "Inspection fee", quote: "Quote required" },
@@ -25,7 +26,7 @@ export default function ProviderProfileScreen() {
   const { getProvider } = useMarketplaceData();
   const { isFavourite, toggleFavourite } = useLocalPreferences();
   const { user, mode } = useAuth();
-  const { t, isRTL } = useLocalization();
+  const { t, isRTL, language } = useLocalization();
   const mt = useMarketplaceText();
   const wt = useWorkerProfileText();
   const provider = getProvider(id);
@@ -83,7 +84,7 @@ export default function ProviderProfileScreen() {
                 professionalCertificateVerified={provider.professionalCertificateVerified}
               />
               <AppText style={styles.muted}>
-                {t(provider.profession)} — {provider.location}
+                {professionLabel(provider.profession, language)} — {provider.location}
               </AppText>
             </View>
           </View>
@@ -104,14 +105,14 @@ export default function ProviderProfileScreen() {
           <Section title={t("serviceArea")}>
             <Info
               icon="location-on"
-              text={`${provider.location} — ${provider.serviceRadius} km radius`}
+              text={provider.location}
             />
           </Section>
-          <Section title={t("about")}>
+          {provider.about.trim() ? <Section title={t("about")}>
             <AppText style={styles.copy}>{provider.about}</AppText>
-          </Section>
+          </Section> : null}
           {provider.experienceSummary ? <Section title={wt("workerProvided")}><AppText style={styles.copy}>{provider.experienceSummary}</AppText><AppText style={styles.muted}>{wt("selfDeclared")}</AppText></Section> : null}
-          <Section title={t("skills")}>
+          {provider.skills.length ? <Section title={t("skills")}>
             <View style={styles.wrap}>
               {provider.skills.map((skill) => (
                 <View key={skill} style={styles.tag}>
@@ -119,7 +120,7 @@ export default function ProviderProfileScreen() {
                 </View>
               ))}
             </View>
-          </Section>
+          </Section> : null}
           <Section title={t("servicesAndPrices")}>
             {provider.services.map((service) => (
               <ServiceRow key={service.id} service={service} />

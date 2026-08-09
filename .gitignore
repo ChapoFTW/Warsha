@@ -26,6 +26,7 @@ expo-env.d.ts
 npm-debug.*
 yarn-debug.*
 yarn-error.*
+.claude/settings.local.json
 
 # macOS
 .DS_Store

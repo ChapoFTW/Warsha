@@ -274,6 +274,8 @@ is(helpSurfaceForRoute('/booking/123'), 'booking', 'a booking screen asks for bo
 is(helpSurfaceForRoute('/conversation/123'), 'chat', 'a chat screen asks for messaging help');
 is(helpSurfaceForRoute('/provider-earnings'), 'earnings', 'the earnings screen asks for earnings help');
 is(helpSurfaceForRoute('/provider-verification'), 'verification', 'the verification screen asks for verification help');
+is(helpSurfaceForRoute('/worker/verification'), 'verification', 'the canonical worker verification screen asks for verification help');
+is(helpSurfaceForRoute('/worker/requests/quote-1'), 'marketplace', 'canonical worker requests ask for marketplace help');
 is(helpSurfaceForRoute('/'), 'help_center', 'an unmapped route falls back to the general help centre');
 
 // ---------------------------------------------------------------------------
@@ -396,8 +398,8 @@ has(caseScreen, /accessibilityRole="alert"|error=\{actionError/, 'errors reach a
 // 14. Wiring
 // ---------------------------------------------------------------------------
 has(rootLayout, /<SupportProvider>/, 'the support provider is mounted');
-has(rootLayout, /Stack\.Screen name="help"/, 'the help centre is registered as a route');
-has(rootLayout, /Stack\.Screen name="support"/, 'the support surface is registered as a route');
+has(rootLayout, /Stack\.Screen name="help\/index"/, 'the help centre index is registered as a route');
+has(rootLayout, /Stack\.Screen name="support\/index"/, 'the support index is registered as a route');
 has(readFileSync('app/(tabs)/profile.tsx', 'utf8'), /router\.push\('\/help'\)/, 'the profile tab reaches the help centre');
 has(readFileSync('app/(tabs)/profile.tsx', 'utf8'), /router\.push\('\/support'\)/, 'the profile tab reaches support cases');
 has(readFileSync('src/notifications/notification-context.tsx', 'utf8'),

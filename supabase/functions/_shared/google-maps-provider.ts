@@ -34,7 +34,7 @@ import {
 } from './map-provider.ts';
 
 export const MAPS_PROVIDER_KEY = 'google_maps_platform';
-export const MAPS_PROVIDER_VERSION = 'places/v1+geocoding/v1';
+export const MAPS_PROVIDER_VERSION = 'places-new/v1+geocoding/v1';
 
 /** Egypt. Results are biased here rather than filtered: a bias degrades
  * gracefully near a border, a hard filter returns nothing and looks broken. */
@@ -57,6 +57,12 @@ function worthRetrying(status: number | null): boolean {
 async function call<T>(
   url: string,
   mapper: (payload: any) => T | null,
+  options?: {
+    method: 'GET' | 'POST';
+    body?: Record<string, unknown>;
+    fieldMask: string;
+    keyInHeader: true;
+  },
 ): Promise<MapsOutcome<T>> {
   const key = readSecret('mapsServerKey');
   if (!key) return { kind: 'refused_no_credential' };
@@ -72,7 +78,19 @@ async function call<T>(
     const timer = setTimeout(() => controller.abort(), MAPS_TIMEOUT_MS);
     let response: Response;
     try {
-      response = await fetch(`${url}&key=${encodeURIComponent(key)}`, { signal: controller.signal });
+      const requestUrl = options?.keyInHeader
+        ? url
+        : `${url}${url.includes('?') ? '&' : '?'}key=${encodeURIComponent(key)}`;
+      response = await fetch(requestUrl, {
+        signal: controller.signal,
+        method: options?.method ?? 'GET',
+        headers: options ? {
+          'content-type': 'application/json',
+          'x-goog-api-key': key,
+          'x-goog-fieldmask': options.fieldMask,
+        } : undefined,
+        body: options?.body ? JSON.stringify(options.body) : undefined,
+      });
     } catch (error) {
       clearTimeout(timer);
       if (controller.signal.aborted) {
@@ -129,19 +147,35 @@ export const googleMapsProvider: MapProvider = {
   },
 
   autocomplete(input: string, sessionToken: string): Promise<MapsOutcome<PlaceSuggestion[]>> {
-    const url = 'https://maps.googleapis.com/maps/api/place/autocomplete/json'
-      + `?input=${encodeURIComponent(input)}`
-      + `&components=country:${REGION}`
-      + `&sessiontoken=${encodeURIComponent(sessionToken)}`
-      + '&language=ar';
+    const url = 'https://places.googleapis.com/v1/places:autocomplete';
     return call(url, (payload) => {
-      const predictions = Array.isArray(payload.predictions) ? payload.predictions : [];
+      const predictions = Array.isArray(payload.suggestions) ? payload.suggestions : [];
       if (predictions.length === 0) return null;
-      return predictions.slice(0, 8).map((p: any): PlaceSuggestion => ({
-        placeId: String(p.place_id ?? ''),
-        primary: String(p.structured_formatting?.main_text ?? p.description ?? ''),
-        secondary: String(p.structured_formatting?.secondary_text ?? ''),
+      return predictions.slice(0, 5).map((suggestion: any): PlaceSuggestion => ({
+        placeId: String(suggestion.placePrediction?.placeId ?? ''),
+        primary: String(
+          suggestion.placePrediction?.structuredFormat?.mainText?.text
+          ?? suggestion.placePrediction?.text?.text
+          ?? '',
+        ),
+        secondary: String(suggestion.placePrediction?.structuredFormat?.secondaryText?.text ?? ''),
       })).filter((p: PlaceSuggestion) => p.placeId.length > 0);
+    }, {
+      method: 'POST',
+      keyInHeader: true,
+      fieldMask: [
+        'suggestions.placePrediction.placeId',
+        'suggestions.placePrediction.text.text',
+        'suggestions.placePrediction.structuredFormat.mainText.text',
+        'suggestions.placePrediction.structuredFormat.secondaryText.text',
+      ].join(','),
+      body: {
+        input,
+        includedRegionCodes: [REGION],
+        languageCode: 'ar',
+        regionCode: 'EG',
+        sessionToken,
+      },
     });
   },
 
@@ -149,23 +183,24 @@ export const googleMapsProvider: MapProvider = {
     // `fields` is not an optimisation. Places bills by field group, and asking
     // for everything would both cost more and pull back reviews, photographs and
     // opening hours that Warsha has no business holding.
-    const url = 'https://maps.googleapis.com/maps/api/place/details/json'
-      + `?place_id=${encodeURIComponent(placeId)}`
-      + `&sessiontoken=${encodeURIComponent(sessionToken)}`
-      + '&fields=formatted_address,geometry/location,place_id'
-      + '&language=ar';
+    const url = `https://places.googleapis.com/v1/places/${encodeURIComponent(placeId)}`
+      + `?sessionToken=${encodeURIComponent(sessionToken)}`
+      + '&languageCode=ar&regionCode=EG';
     return call(url, (payload) => {
-      const result = payload.result;
-      const location = result?.geometry?.location;
-      if (!result || typeof location?.lat !== 'number' || typeof location?.lng !== 'number') {
+      const location = payload?.location;
+      if (typeof location?.latitude !== 'number' || typeof location?.longitude !== 'number') {
         return null;
       }
       return {
-        placeId: String(result.place_id ?? placeId),
-        formattedAddress: String(result.formatted_address ?? ''),
-        latitude: location.lat,
-        longitude: location.lng,
+        placeId: String(payload.id ?? placeId),
+        formattedAddress: String(payload.formattedAddress ?? ''),
+        latitude: location.latitude,
+        longitude: location.longitude,
       };
+    }, {
+      method: 'GET',
+      keyInHeader: true,
+      fieldMask: 'id,formattedAddress,location',
     });
   },
 

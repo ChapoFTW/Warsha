@@ -10,6 +10,7 @@ import { useAdmin } from '@/src/admin/admin-context';
 import { environmentTone } from '@/src/admin/admin-types';
 
 import { BrandCard, StateBadge } from './BrandUI';
+import { GlobalPreferenceControls } from './GlobalPreferenceControls';
 import { AppText } from './Typography';
 
 /**
@@ -39,7 +40,11 @@ export function AdminShell({
   const environment = session.environment ?? 'local';
   const environmentLabel = environment === 'production'
     ? text('environmentProduction')
-    : environment === 'staging' ? text('environmentStaging') : text('environmentLocal');
+    : environment === 'staging'
+      ? text('environmentStaging')
+      : environment === 'development'
+        ? text('environmentDevelopment')
+        : text('environmentLocal');
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
@@ -57,6 +62,7 @@ export function AdminShell({
           <AppText numberOfLines={1} style={styles.title}>{title}</AppText>
           <AppText numberOfLines={2} style={styles.subtitle}>{subtitle ?? text('platformSubtitle')}</AppText>
         </View>
+        <GlobalPreferenceControls embedded />
         <View
           accessible
           accessibilityLabel={`${text('a11yEnvironment')}: ${environmentLabel}`}>

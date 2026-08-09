@@ -89,6 +89,81 @@ function sqlCodeOf(...parts: string[]): string {
 const migration = sqlCodeOf(
   'supabase', 'migrations', '202608080001_wps023_authentication_role_onboarding_worker_vetting.sql',
 );
+const registrationConflictFix = sqlCodeOf(
+  'supabase', 'migrations', '202608130001_fix_worker_signup_conflict_target.sql',
+);
+const providerProfileIdDefaultFix = sqlCodeOf(
+  'supabase', 'migrations', '202608140001_restore_provider_profile_id_default.sql',
+);
+const workerPhonePasswordMigration = sqlCodeOf(
+  'supabase', 'migrations', '202608150001_worker_phone_password_auth.sql',
+);
+const workerAuthBroker = codeOf('supabase', 'functions', 'worker-auth', 'index.ts');
+const authContextSource = codeOf('src', 'auth', 'auth-context.tsx');
+const createAccountSource = codeOf('app', 'create-account.tsx');
+const signInSource = codeOf('app', 'sign-in.tsx');
+const profileSource = codeOf('app', '(tabs)', 'profile.tsx');
+const profileRepositorySource = codeOf('src', 'repositories', 'supabase-user-repositories.ts');
+const customerProfileRepositorySource = profileRepositorySource.slice(
+  profileRepositorySource.indexOf('supabaseCustomerProfileRepository'),
+  profileRepositorySource.indexOf('async function listBookings'),
+);
+check(
+  /create or replace function private\.handle_new_user\([\s\S]*?on conflict\s*\(user_id\)\s*where user_id is not null\s*do nothing/.test(
+    registrationConflictFix,
+  ),
+  'worker registration matches the partial provider user uniqueness predicate',
+);
+check(
+  providerProfileIdDefaultFix.trim().replace(/\s+/g, ' ') ===
+    'alter table public.provider_profiles alter column id set default pg_catalog.gen_random_uuid();',
+  'the hosted provider-profile ID repair restores only the authoritative UUID default',
+);
+check(/create table if not exists private\.worker_auth_identities/.test(workerPhonePasswordMigration),
+  'worker phone-to-credential mapping is private');
+check(/revoke all on private\.worker_auth_identities from public, anon, authenticated, service_role/.test(workerPhonePasswordMigration),
+  'worker auth mapping has no direct client, staff, or service table read');
+check(/grant execute on function public\.prepare_worker_auth_registration\(text,uuid\) to service_role/.test(workerPhonePasswordMigration),
+  'only service role can preflight worker registration');
+check(/grant execute on function public\.resolve_worker_auth_identity\(text\) to service_role/.test(workerPhonePasswordMigration),
+  'only service role can resolve worker phone identity');
+check(/private\.worker_auth_registrations/.test(workerPhonePasswordMigration)
+  && /worker_identity_id/.test(workerPhonePasswordMigration)
+  && /for update/.test(workerPhonePasswordMigration),
+  'auth trigger consumes a service-created reservation rather than trusting display metadata');
+check(/on conflict\s*\(user_id\)\s*where user_id is not null\s*do nothing/.test(workerPhonePasswordMigration),
+  'new worker auth migration preserves the corrected partial conflict target');
+check(!/alter table public\.provider_profiles alter column id/.test(workerPhonePasswordMigration),
+  'worker auth does not revisit provider-profile ID authority');
+check(/crypto\.randomUUID\(\)/.test(workerAuthBroker)
+  && /workerSyntheticEmail\(credentialId\)/.test(workerAuthBroker),
+  'trusted Edge broker generates a UUID synthetic identity');
+check(/email_confirm:\s*true/.test(workerAuthBroker)
+  && !/inviteUserByEmail|resend/.test(workerAuthBroker),
+  'internal credential is usable without sending worker email confirmation');
+check(!/signInWithOtp|verifyOtp|phone_confirm\s*:/.test(workerAuthBroker),
+  'worker broker has no Phone Auth or OTP operation');
+check(/action:\s*'sign_in'[\s\S]*phone[\s\S]*password/.test(workerAuthBroker),
+  'worker broker accepts phone and password sign-in');
+check(/identity\.kind === 'customer_email'[\s\S]*signInWithPassword/.test(authContextSource),
+  'customer email/password sign-in remains direct');
+check(/signInWorker\(identity\.phone, password\)/.test(authContextSource),
+  'worker sign-in routes through secure phone mapping');
+check(/role === 'provider'[\s\S]*registerWorker/.test(authContextSource),
+  'worker registration routes through trusted auth layer');
+check(/role === 'customer' \? \(/.test(createAccountSource)
+  && /choice === 'worker' \? null : email\.trim\(\)/.test(createAccountSource),
+  'worker create-account UI renders no email field and passes no email');
+check(/signInIdentifier/.test(signInSource) && /phonePasswordHint/.test(signInSource),
+  'sign-in copy presents customer email or worker phone plus password');
+check(!/auth\.user\??\.email/.test(profileSource),
+  'profile UI never renders the raw synthetic Auth email');
+check(!/auth\.getUser|user\??\.email|email:/.test(customerProfileRepositorySource),
+  'profile repository cannot materialize synthetic email');
+check(/private\.account_contact_email\(p_user_id\)/.test(workerPhonePasswordMigration),
+  'staff contact view passes through synthetic-email redaction');
+check(/export_included, staff_capability[\s\S]*'worker_auth_identities'[\s\S]*false, null/.test(workerPhonePasswordMigration),
+  'private mapping is excluded from user export and staff capabilities');
 
 // ---------------------------------------------------------------------------
 // Routing: authentication-first entry
@@ -160,15 +235,15 @@ const gatedState: OnboardingState = {
   gates: {
     national_id_front_uploaded: false,
     national_id_approved: false,
-    biography: false,
+    professions_configured: false,
     not_banned: true,
   },
-  outstandingGates: ['national_id_approved', 'national_id_front_uploaded', 'biography'],
+  outstandingGates: ['national_id_approved', 'national_id_front_uploaded', 'professions_configured'],
 };
 const shown = actionableGates(gatedState);
 check(!shown.includes('national_id_approved'), 'the outstanding list hides staff-only gates');
 check(shown.includes('national_id_front_uploaded'), 'the outstanding list keeps actionable gates');
-check(shown.indexOf('biography') < shown.indexOf('national_id_front_uploaded'),
+check(shown.indexOf('professions_configured') < shown.indexOf('national_id_front_uploaded'),
   'outstanding gates are ordered by the flow, not alphabetically');
 check(actionableGates(null).length === 0, 'an unknown state lists no gates');
 
@@ -364,6 +439,8 @@ check(/accessibilityRole="header"/.test(welcome), 'the gateway has an accessible
 const gate = read('components', 'warsha', 'AuthGate.tsx');
 const gateCode = codeOf('components', 'warsha', 'AuthGate.tsx');
 check(/if \(!ready\)/.test(gateCode), 'the gate renders nothing operational until ready');
+check(/routeAfterHydration/.test(gateCode),
+  'new-session routing waits for every account-scoped authority');
 check(/BrandLoadingMark/.test(gate), 'the loading state is the brand mark');
 // The loading state must not impersonate a signed-in app. Scoped to the branch
 // that actually renders it — `/(tabs)` appears in the route table, which is a
@@ -404,7 +481,7 @@ check(!/scaleX/.test(codeOf('components', 'warsha', 'AuthGate.tsx')),
   'THE LOGO IS NEVER MIRRORED IN RTL');
 
 // Confirmation is a deliberate act, never a typed phrase.
-const certificateScreen = read('app', 'onboarding', 'certificate.tsx');
+const certificateScreen = read('app', 'worker', 'verification.tsx');
 check(/accessibilityRole="checkbox"/.test(certificateScreen),
   'the certificate acknowledgement is an accessible checkbox');
 check(!/type (DELETE|CONFIRM|DELETE MY)/i.test(certificateScreen),
@@ -420,27 +497,27 @@ check(/roleWorkerHint/.test(createAccount),
   'the worker option says an application starts before the choice is made');
 
 const addressScreen = read('app', 'onboarding', 'address.tsx');
-check(/addressLocationUnavailableNote/.test(addressScreen),
-  'the address screen says why the provider paths are unavailable');
-check(/addressPermissionOptional/.test(addressScreen),
-  'the address screen states that location permission is optional');
-check(/locationCapability/.test(addressScreen),
-  'the address screen reads the real capability rather than assuming one');
+check(/CustomerDestinationAddressFlow/.test(addressScreen) && /addressTitle/.test(addressScreen),
+  'customer onboarding retains its destination-address presentation');
+check(/WorkerCurrentLocationFlow/.test(addressScreen) && /workLocationTitle/.test(addressScreen),
+  'worker onboarding has a separate private work-location presentation');
+check(/AddressLocationPicker/.test(addressScreen),
+  'both presentations reuse the provider-aware location infrastructure');
 
 const workerScreen = read('app', 'onboarding', 'worker.tsx');
-check(/actionableGates/.test(workerScreen), 'the worker screen shows only actionable gates');
+check(/workerJourneyProgress/.test(workerScreen), 'the worker screen shows one guided worker-owned step');
 check(/stateNoTimePromise/.test(workerScreen), 'the worker screen makes no time promise');
 check(!/\b\d+\s*(hours|days|hrs)\b/i.test(codeOf('app', 'onboarding', 'worker.tsx')),
   'NO REVIEW TURNAROUND IS PROMISED ANYWHERE ON THE APPLICATION SCREEN');
-check(/workerHomeBookAsCustomer/.test(workerScreen),
-  'a pending worker can still book a service as a customer');
+check(!/requestService/.test(workerScreen),
+  'a pending worker stays in the continuous guided journey');
 
-const workerHome = read('app', 'worker-home.tsx');
-check(/workerHomeOpportunities/.test(workerHome), 'the worker home leads with work');
-check(/showsCustomerModeAction/.test(workerHome), 'the worker home offers customer mode conditionally');
-const workerHomeCode = codeOf('app', 'worker-home.tsx');
-check(workerHomeCode.indexOf('workerHomeOpportunities') < workerHomeCode.indexOf('workerHomeBookAsCustomer'),
-  'CUSTOMER MODE IS SECONDARY TO THE WORK ON THE WORKER HOME');
+const workerHome = read('app', 'worker', 'index.tsx');
+check(/workerDashboardPriority/.test(workerHome), 'the worker home leads with the current work state');
+check(/requestService/.test(workerHome), 'the worker home offers an explicit service-request action');
+const workerHomeCode = codeOf('app', 'worker', 'index.tsx');
+check(workerHomeCode.indexOf('<PrimaryTaskCard') < workerHomeCode.indexOf('styles.customerCard'),
+  'REQUESTING A SERVICE IS SECONDARY TO THE WORKER PRIMARY TASK');
 
 const vettingScreen = codeOf('app', 'admin', 'vetting.tsx');
 check(/subjectRef/.test(vettingScreen), 'the staff queue renders an opaque reference');

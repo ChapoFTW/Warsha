@@ -20,6 +20,7 @@ import type {
   PinSource,
   WorkerState,
 } from './onboarding-types';
+import type { ProviderDraft } from '@/src/providers/provider-types';
 
 /**
  * Type-only import above, and the blank state restated below rather than
@@ -59,7 +60,7 @@ const accounts = new Map<string, MockAccount>();
 
 const WORKER_GATES = [
   'authenticated_account', 'phone_number_provided', 'verified_email_if_present',
-  'worker_role_selected', 'legal_name_complete', 'profile_photo', 'biography',
+  'worker_role_selected', 'legal_name_complete', 'profile_photo', 'professions_configured',
   'services_configured', 'service_area_configured', 'current_address_provided',
   'national_id_front_uploaded', 'national_id_back_uploaded', 'national_id_approved',
   'identity_fields_confirmed', 'criminal_record_uploaded', 'criminal_record_approved',
@@ -102,6 +103,18 @@ function ensure(accountKey: string): MockAccount {
 export function mockOnboardingState(accountKey: string): OnboardingState {
   const account = ensure(accountKey);
   return { ...account.state, gates: { ...account.state.gates }, outstandingGates: [...account.state.outstandingGates] };
+}
+
+/** Keep Mock on the same derived profile gates the database computes. */
+export function mockSyncProviderGates(accountKey: string, profile: ProviderDraft): void {
+  const account = ensure(accountKey);
+  if (account.state.intendedRole !== 'worker') return;
+  account.state.gates.profile_photo = Boolean(profile.avatarPath);
+  account.state.gates.professions_configured = Boolean(profile.profession.trim());
+  account.state.gates.services_configured = profile.services.length > 0;
+  account.state.gates.service_area_configured = profile.areas.some(area =>
+    Boolean(area.governorate.trim()) && area.radiusKm >= 1 && area.radiusKm <= 250);
+  recompute(account);
 }
 
 export function mockSelectRole(accountKey: string, role: AccountRoleChoice): OnboardingState {

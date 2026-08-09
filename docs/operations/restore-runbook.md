@@ -57,7 +57,7 @@ ledger does not balance, the platform stays closed.**
 ### Auth
 
 - A customer can sign in with email and password.
-- A worker can sign in by phone OTP.
+- A worker can sign in with phone and password without an OTP or visible email.
 - A staff member can reach the operations home.
 - Sessions from before the restore point behave predictably.
 

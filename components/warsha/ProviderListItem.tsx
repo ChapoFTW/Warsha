@@ -2,15 +2,86 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
+
 import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
 import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
-import type { Provider } from '@/src/data/marketplace-types';
+import { useAuth } from '@/src/auth/auth-context';
 import { useLocalPreferences } from '@/src/data/local-preferences';
-import { useAuth } from '@/src/auth/auth-context'; import { useLocalization } from '@/src/i18n/localization';
-import { AppText } from './Typography';
-import { ProviderTrustIndicators } from './ProviderTrustIndicators';
+import type { Provider } from '@/src/data/marketplace-types';
+import { useLocalization } from '@/src/i18n/localization';
+import { professionLabel } from '@/src/providers/profession-taxonomy';
 
-export function ProviderListItem({provider}:{provider:Provider}){
+import { ProviderTrustIndicators } from './ProviderTrustIndicators';
+import { AppText } from './Typography';
+
+export function ProviderListItem({ provider }: { provider: Provider }) {
   const colors = useThemeColors();
-  const styles = useThemedStyles(makeStyles);const{t,isRTL}=useLocalization();const{user,mode}=useAuth();const{isFavourite,toggleFavourite}=useLocalPreferences();return <Pressable accessibilityRole="button" onPress={()=>router.push({pathname:'/provider/[id]',params:{id:provider.id}})} style={[styles.card,isRTL&&styles.reverse]}><Image source={{uri:provider.image}} contentFit="cover" style={styles.image}/><View style={styles.body}><View style={[styles.nameRow,isRTL&&styles.reverse]}><AppText numberOfLines={1} style={styles.name}>{provider.name}</AppText></View><ProviderTrustIndicators identityVerified={provider.verified} skillCertificateVerified={provider.skillCertificateVerified} compact/><AppText style={styles.profession}>{t(provider.profession)} · {provider.distance.toFixed(1)} km</AppText><View style={[styles.rating,isRTL&&styles.reverse]}><MaterialIcons name="star" size={15} color={colors.white}/><AppText style={styles.ratingText}>{provider.rating}</AppText><AppText style={styles.muted}>({provider.reviewCount} {t('reviews')})</AppText></View><View style={[styles.bottom,isRTL&&styles.reverse]}><View style={[styles.availability,isRTL&&styles.reverse]}><View style={[styles.dot,!provider.available&&styles.dotOffline]}/><AppText style={styles.muted}>{provider.available?t('available'):provider.responseTime}</AppText></View><AppText style={styles.price}>{t('startsAt')} {provider.price} EGP</AppText></View></View><Pressable accessibilityLabel={t('toggleFavourite')} hitSlop={8} onPress={(event)=>{event.stopPropagation();void (mode==='supabase'&&!user?router.push('/(tabs)/profile'):toggleFavourite(provider.id))}} style={styles.favourite}><MaterialIcons name={isFavourite(provider.id)?'favorite':'favorite-border'} size={20} color={colors.textPrimary}/></Pressable></Pressable>}
-const makeStyles = (colors: ThemeColors) => StyleSheet.create({card:{flexDirection:'row',alignItems:'center',gap:spacing.lg,padding:spacing.lg,borderRadius:radii.lg,borderWidth:1,borderColor:colors.borderSoft,backgroundColor:colors.surface},reverse:{flexDirection:'row-reverse'},image:{width:86,height:110,borderRadius:radii.md,backgroundColor:colors.surfaceElevated},body:{flex:1,gap:5},nameRow:{flexDirection:'row',alignItems:'center',gap:5},name:{fontSize:17,fontWeight:typography.semibold,flexShrink:1},profession:{fontSize:12,color:colors.textSecondary},rating:{flexDirection:'row',alignItems:'center',gap:3},ratingText:{fontSize:12,fontWeight:typography.semibold},muted:{fontSize:11,color:colors.textMuted},bottom:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginTop:3,gap:spacing.sm},availability:{flexDirection:'row',alignItems:'center',gap:4,flexShrink:1},dot:{width:6,height:6,borderRadius:3,backgroundColor:colors.success},dotOffline:{backgroundColor:colors.textMuted},price:{fontSize:12,fontWeight:typography.bold},favourite:{width:44,height:44,alignItems:'center',justifyContent:'center'}});
+  const styles = useThemedStyles(makeStyles);
+  const { t, isRTL, language } = useLocalization();
+  const { user, mode } = useAuth();
+  const { isFavourite, toggleFavourite } = useLocalPreferences();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      onPress={() => router.push({ pathname: '/provider/[id]', params: { id: provider.id } })}
+      style={[styles.card, isRTL && styles.reverse]}>
+      <Image source={{ uri: provider.image }} contentFit="cover" style={styles.image} />
+      <View style={styles.body}>
+        <View style={[styles.nameRow, isRTL && styles.reverse]}>
+          <AppText numberOfLines={1} style={styles.name}>{provider.name}</AppText>
+        </View>
+        <ProviderTrustIndicators
+          identityVerified={provider.verified}
+          skillCertificateVerified={provider.skillCertificateVerified}
+          compact
+        />
+        <AppText style={styles.profession}>
+          {professionLabel(provider.profession, language)} · {provider.distance.toFixed(1)} km
+        </AppText>
+        <View style={[styles.rating, isRTL && styles.reverse]}>
+          <MaterialIcons name="star" size={15} color={colors.white} />
+          <AppText style={styles.ratingText}>{provider.rating}</AppText>
+          <AppText style={styles.muted}>({provider.reviewCount} {t('reviews')})</AppText>
+        </View>
+        <View style={[styles.bottom, isRTL && styles.reverse]}>
+          <View style={[styles.availability, isRTL && styles.reverse]}>
+            <View style={[styles.dot, !provider.available && styles.dotOffline]} />
+            <AppText style={styles.muted}>{provider.available ? t('available') : provider.responseTime}</AppText>
+          </View>
+          <AppText style={styles.price}>{t('startsAt')} {provider.price} EGP</AppText>
+        </View>
+      </View>
+      <Pressable
+        accessibilityLabel={t('toggleFavourite')}
+        hitSlop={8}
+        onPress={(event) => {
+          event.stopPropagation();
+          void (mode === 'supabase' && !user
+            ? router.push('/(tabs)/profile')
+            : toggleFavourite(provider.id));
+        }}
+        style={styles.favourite}>
+        <MaterialIcons name={isFavourite(provider.id) ? 'favorite' : 'favorite-border'} size={20} color={colors.textPrimary} />
+      </Pressable>
+    </Pressable>
+  );
+}
+
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
+  card: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg, padding: spacing.lg, borderRadius: radii.lg, borderWidth: 1, borderColor: colors.borderSoft, backgroundColor: colors.surface },
+  reverse: { flexDirection: 'row-reverse' },
+  image: { width: 86, height: 110, borderRadius: radii.md, backgroundColor: colors.surfaceElevated },
+  body: { flex: 1, gap: 5 },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  name: { fontSize: 17, fontWeight: typography.semibold, flexShrink: 1 },
+  profession: { fontSize: 12, color: colors.textSecondary },
+  rating: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  ratingText: { fontSize: 12, fontWeight: typography.semibold },
+  muted: { fontSize: 11, color: colors.textMuted },
+  bottom: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 3, gap: spacing.sm },
+  availability: { flexDirection: 'row', alignItems: 'center', gap: 4, flexShrink: 1 },
+  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.success },
+  dotOffline: { backgroundColor: colors.textMuted },
+  price: { fontSize: 12, fontWeight: typography.bold },
+  favourite: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+});

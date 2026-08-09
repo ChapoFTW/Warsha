@@ -12,7 +12,7 @@ import {
 } from '@expo-google-fonts/inter';
 import { useFonts } from 'expo-font';
 import { ThemeProvider } from '@react-navigation/native';
-import { Stack } from 'expo-router';
+import { Stack, usePathname } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import * as SystemUI from 'expo-system-ui';
@@ -22,6 +22,7 @@ import 'react-native-reanimated';
 
 import { AuthGate } from '@/components/warsha/AuthGate';
 import { ConfigurationError } from '@/components/warsha/ConfigurationError';
+import { GlobalPreferenceControls } from '@/components/warsha/GlobalPreferenceControls';
 import { LocalDataMigrationGate } from '@/components/warsha/LocalDataMigrationGate';
 import { NotificationBanner } from '@/components/warsha/NotificationBanner';
 import { ProviderModeOverlay } from '@/components/warsha/ProviderModeOverlay';
@@ -37,7 +38,7 @@ import { LocalPreferencesProvider } from '@/src/data/local-preferences';
 import { MarketplaceDataProvider } from '@/src/data/marketplace-context';
 import { DiscoveryProvider } from '@/src/discovery/discovery-context';
 import { GrowthProvider } from '@/src/growth/growth-context';
-import { LocalizationProvider } from '@/src/i18n/localization';
+import { LocalizationProvider, useLocalization } from '@/src/i18n/localization';
 import { LegalProvider } from '@/src/legal/legal-context';
 import { MarketplaceIntelligenceProvider } from '@/src/marketplace-intelligence/marketplace-context';
 import { NotificationProvider } from '@/src/notifications/notification-context';
@@ -63,6 +64,9 @@ void SplashScreen.preventAutoHideAsync();
  */
 function ThemedRoot() {
   const { colors, scheme } = useAppearance();
+  const { isRTL } = useLocalization();
+  const pathname = usePathname();
+  const shellOwnsPreferences = pathname === '/' || pathname === '/worker' || pathname.startsWith('/admin');
 
   const navigationTheme = useMemo(() => ({
     dark: scheme === 'dark',
@@ -106,7 +110,7 @@ function ThemedRoot() {
 
   return (
     <ThemeProvider value={navigationTheme}>
-      <View style={{ flex: 1, backgroundColor: colors.canvas }}>
+      <View style={{ flex: 1, backgroundColor: colors.canvas, direction: isRTL ? 'rtl' : 'ltr' }}>
         {/* WPS-023. Nothing operational renders until the session and the
             onboarding state are both known, so no protected screen can appear
             for a frame before the router corrects itself. */}
@@ -124,6 +128,7 @@ function ThemedRoot() {
           <Stack.Screen name="onboarding/worker" />
           <Stack.Screen name="onboarding/identity" />
           <Stack.Screen name="onboarding/certificate" />
+          <Stack.Screen name="worker" />
           <Stack.Screen name="worker-home" />
           <Stack.Screen name="search" />
           <Stack.Screen name="categories/[id]" />
@@ -148,11 +153,12 @@ function ThemedRoot() {
           <Stack.Screen name="provider-earnings" />
           <Stack.Screen name="provider-job" />
           <Stack.Screen name="reset-password" />
-          <Stack.Screen name="help" />
-          <Stack.Screen name="support" />
+          <Stack.Screen name="help/index" />
+          <Stack.Screen name="support/index" />
           <Stack.Screen name="admin" />
         </Stack>
         </AuthGate>
+        {!shellOwnsPreferences ? <GlobalPreferenceControls /> : null}
         <NotificationBanner />
         <ProviderModeOverlay />
         <StatusBar style={statusBarStyle(scheme)} />

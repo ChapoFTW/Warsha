@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -7,6 +8,8 @@ import { BrandButton } from '@/components/warsha/BrandUI';
 import { AppText } from '@/components/warsha/Typography';
 import { spacing, typography, type ThemeColors } from '@/constants/theme';
 import { useThemedStyles } from '@/src/appearance/appearance-context';
+import { useAuth } from '@/src/auth/auth-context';
+import { authMessageKey } from '@/src/auth/auth-errors';
 import { useLocalization } from '@/src/i18n/localization';
 import { useOnboardingText } from '@/src/onboarding/onboarding-translations';
 
@@ -24,8 +27,29 @@ import { useOnboardingText } from '@/src/onboarding/onboarding-translations';
  */
 export default function Welcome() {
   const styles = useThemedStyles(makeStyles);
-  const { isRTL } = useLocalization();
+  const { isRTL, t } = useLocalization();
   const ot = useOnboardingText();
+  const auth = useAuth();
+  const [signingIn, setSigningIn] = useState(false);
+  const [message, setMessage] = useState('');
+
+  const openSignIn = async () => {
+    setSigningIn(true);
+    setMessage('');
+    try {
+      // A blocked or role-incomplete account can legitimately be routed to
+      // this public-looking gateway while its Supabase session still exists.
+      // "Sign in" is explicit account-switch intent, so end that session
+      // before entering the public form; otherwise AuthGate correctly sends
+      // the authenticated account straight back here.
+      if (auth.user) await auth.signOut();
+      router.replace('/sign-in');
+    } catch (error) {
+      setMessage(t(authMessageKey(error)));
+    } finally {
+      setSigningIn(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -45,7 +69,8 @@ export default function Welcome() {
           <BrandButton
             label={ot.text('signIn')}
             accessibilityLabel={ot.text('signIn')}
-            onPress={() => router.push('/sign-in')}
+            loading={signingIn}
+            onPress={() => void openSignIn()}
           />
           <BrandButton
             label={ot.text('createAccount')}
@@ -54,6 +79,8 @@ export default function Welcome() {
             onPress={() => router.push('/create-account')}
           />
         </View>
+
+        {message ? <AppText accessibilityRole="alert" style={styles.error}>{message}</AppText> : null}
 
         <View style={[styles.links, isRTL && styles.reverse]}>
           <BrandButton
@@ -92,6 +119,7 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   intro: { gap: spacing.sm, maxWidth: 520 },
   title: { fontSize: 28, fontWeight: typography.bold, textAlign: 'center', color: colors.textPrimary },
   subtitle: { textAlign: 'center', color: colors.textSecondary },
+  error: { textAlign: 'center', color: colors.errorText, maxWidth: 420 },
   actions: { width: '100%', maxWidth: 420, gap: spacing.md },
   links: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: spacing.xs },
   reverse: { flexDirection: 'row-reverse' },

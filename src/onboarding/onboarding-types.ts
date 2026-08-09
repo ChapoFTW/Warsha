@@ -22,6 +22,7 @@ export type WorkerState =
   | 'criminal_record_required'
   | 'criminal_record_submitted'
   | 'criminal_record_under_review'
+  | 'provisionally_active'
   | 'correction_required'
   | 'manual_review'
   | 'rejected'
@@ -151,7 +152,7 @@ const GATE_ORDER = [
   'document_processing_accepted',
   'legal_name_complete',
   'profile_photo',
-  'biography',
+  'professions_configured',
   'services_configured',
   'service_area_configured',
   'current_address_provided',

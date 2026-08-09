@@ -13,8 +13,11 @@ Legal review: **not performed**.
 A phone number is **REQUIRED CONTACT INFORMATION** on every Warsha account.
 
 Phone OTP verification is **NOT required** to register — not for a customer, not
-for a worker. Customers and workers authenticate with **email and password**, and
-**email verification remains required**.
+for a worker. Customers authenticate with **email and password**, preserving
+their existing email-confirmation behaviour. Workers authenticate with **phone
+and password** in the product and have no user-facing email or confirmation
+step. A trusted server boundary owns a UUID-derived synthetic email solely to
+use Supabase's email/password credential provider.
 
 Supabase Phone Auth stays **disabled**. No SMS provider is configured, and none
 is required to launch.

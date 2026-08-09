@@ -493,7 +493,9 @@ prose(shell, /suppressedLabel/, 'a suppressed metric renders as hidden, never as
 prose(shell, /StateBadge/, 'status is rendered with a labelled badge, not colour alone');
 equal(environmentTone('production'), 'error', 'production reads as the strongest tone');
 equal(environmentTone('staging'), 'warning', 'staging reads as a warning tone');
+equal(environmentTone('development'), 'neutral', 'development is distinct and reads as a neutral tone');
 equal(environmentTone('local'), 'neutral', 'local reads as a neutral tone');
+prose(shell, /environmentDevelopment/, 'the operations shell labels development explicitly');
 
 // Formatting stays Egypt-appropriate.
 match(formatEgpMinor('128450', 'en'), /EGP/, 'English money is labelled EGP');

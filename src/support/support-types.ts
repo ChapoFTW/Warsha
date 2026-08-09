@@ -303,10 +303,10 @@ export function supportAttachmentExtension(mimeType: string): string | null {
 export function helpSurfaceForRoute(pathname: string): SupportSurface {
   if (pathname.startsWith('/booking')) return 'booking';
   if (pathname.startsWith('/conversation')) return 'chat';
-  if (pathname.startsWith('/provider-verification')) return 'verification';
+  if (pathname.startsWith('/worker/verification') || pathname.startsWith('/provider-verification')) return 'verification';
   if (pathname.startsWith('/provider-portfolio') || pathname.startsWith('/provider-certificates')) return 'portfolio';
   if (pathname.startsWith('/provider-earnings')) return 'earnings';
-  if (pathname.startsWith('/marketplace-request') || pathname.startsWith('/worker-quote')) return 'marketplace';
+  if (pathname.startsWith('/marketplace-request') || pathname.startsWith('/worker-quote') || pathname.startsWith('/worker/requests')) return 'marketplace';
   if (pathname.startsWith('/notification')) return 'notification';
   if (pathname.startsWith('/support')) return 'settings';
   return 'help_center';

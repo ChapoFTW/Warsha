@@ -30,8 +30,10 @@ equal(subtractMinor('100000', calculateCommissionMinor('100000')), '90000', 'pro
 equal(addMinor('90000', '10000'), '100000', 'money components add exactly');
 equal(formatMinor('125000', 'en'), 'EGP 1,250', 'English whole-pound display omits fake decimals');
 equal(formatMinor('125050', 'en'), 'EGP 1,250.50', 'English piastres display only when present');
-equal(formatMinor('125000', 'ar'), '١٬٢٥٠ ج.م', 'Egyptian Arabic display uses localized digits');
+equal(formatMinor('125000', 'ar'), '\u0661\u066C\u0662\u0665\u0660 \u062C.\u0645', 'Egyptian Arabic display uses localized digits');
+equal(formatMinor('125050', 'ar'), '\u0661\u066C\u0662\u0665\u0660\u066B\u0665\u0660 \u062C.\u0645', 'Egyptian Arabic piastres use localized digits and separator');
+equal(formatMinor('1000000000', 'en'), 'EGP 10,000,000', 'the largest supported amount formats without a BigInt Intl conversion');
 throws(() => minor('-1'), 'negative authoritative money is rejected');
 throws(() => egpDecimalToMinor('1.001'), 'sub-piastre input is rejected');
 
-console.log('Payment money tests passed: 11 assertions.');
+console.log('Payment money tests passed: 13 assertions.');

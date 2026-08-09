@@ -148,7 +148,7 @@ both asserted structurally.
 | Route | Purpose |
 | --- | --- |
 | `app/welcome.tsx` | Signed-out gateway |
-| `app/sign-in.tsx` | Email/password and phone/OTP |
+| `app/sign-in.tsx` | Customer email/password or worker phone/password through the trusted identity broker |
 | `app/create-account.tsx` | Role question, then registration |
 | `app/legal/[topic].tsx` | Static Help / Privacy / Terms, no network |
 | `app/onboarding/address.tsx` | Customer address + pin confirmation |

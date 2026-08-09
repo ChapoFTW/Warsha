@@ -11,7 +11,7 @@ import { useDiscovery } from '@/src/discovery/discovery-context';
 import { useDiscoveryText } from '@/src/discovery/discovery-translations';
 import type { DiscoveryProviderCard } from '@/src/discovery/discovery-types';
 import { useLocalization } from '@/src/i18n/localization';
-import type { TranslationKey } from '@/src/i18n/translations';
+import { professionLabel } from '@/src/providers/profession-taxonomy';
 
 import { AppText } from './Typography';
 
@@ -25,7 +25,7 @@ import { AppText } from './Typography';
 export function DiscoveryResultCard({ provider }: { provider: DiscoveryProviderCard }) {
   const colors = useThemeColors();
   const styles = useThemedStyles(makeStyles);
-  const { t, isRTL } = useLocalization();
+  const { t, isRTL, language } = useLocalization();
   const dt = useDiscoveryText();
   const { user, mode } = useAuth();
   const { isFavourite, toggleFavourite } = useLocalPreferences();
@@ -53,7 +53,7 @@ export function DiscoveryResultCard({ provider }: { provider: DiscoveryProviderC
       <View style={styles.body}>
         <AppText numberOfLines={1} style={styles.name}>{provider.displayName}</AppText>
         <AppText numberOfLines={1} style={styles.profession}>
-          {t(provider.professionKey as TranslationKey)}
+          {professionLabel(provider.professionKey, language)}
           {provider.areaLabel ? ` · ${provider.areaLabel}` : ''}
           {provider.distanceKm !== null ? ` · ${provider.distanceKm} ${dt.text('kilometresAway')}` : ''}
         </AppText>

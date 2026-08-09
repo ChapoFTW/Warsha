@@ -44,7 +44,9 @@
     "test:wps021": "node --no-warnings --experimental-strip-types scripts/wps021-growth-referrals-promotions.test.mts",
     "test:wps022": "node --no-warnings --experimental-strip-types scripts/wps022-privacy-data-lifecycle.test.mts",
     "test:wps023": "node --no-warnings --experimental-strip-types scripts/wps023-authentication-onboarding-vetting.test.mts",
-    "test:wps024": "node --no-warnings --experimental-strip-types scripts/wps024-legal-compliance-governance.test.mts"
+    "test:wps024": "node --no-warnings --experimental-strip-types scripts/wps024-legal-compliance-governance.test.mts",
+    "test:wps025": "node --no-warnings --experimental-strip-types scripts/wps025-worker-experience.test.mts",
+    "test:platform-preferences": "node --no-warnings --experimental-strip-types scripts/cross-platform-preferences-routing.test.mts"
   },
   "dependencies": {
     "@expo-google-fonts/cairo": "^0.4.2",
@@ -66,6 +68,7 @@
     "expo-image-manipulator": "~14.0.8",
     "expo-image-picker": "~17.0.11",
     "expo-linking": "~8.0.12",
+    "expo-localization": "~17.0.9",
     "expo-location": "~19.0.8",
     "expo-router": "~6.0.24",
     "expo-secure-store": "~15.0.8",

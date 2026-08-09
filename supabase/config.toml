@@ -22,5 +22,7 @@ max_frequency = "2s"
 enabled = true
 api_key = "local-test-only-no-real-sms"
 sender = "WarshaLocal"
+[functions.worker-auth]
+verify_jwt = false
 [storage]
 enabled = true

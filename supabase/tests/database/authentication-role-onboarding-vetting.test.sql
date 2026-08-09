@@ -52,6 +52,7 @@ select has_table('private','worker_onboarding_evidence','staff evidence is priva
 select has_table('private','worker_identity_extractions','extraction candidates are private');
 select has_table('private','worker_criminal_record_review','certificate assessments are private');
 select has_table('private','worker_vetting_policies','the versioned policy exists');
+select has_table('private','worker_auth_identities','the trusted worker phone mapping exists');
 
 select has_function('private','worker_activation_gates',array['uuid'],'the activation gates exist');
 select has_function('private','worker_capability_active',array['uuid'],'the single worker permission answer exists');
@@ -65,6 +66,31 @@ select has_function('public','confirm_my_service_address',
   'address confirmation exists');
 select has_function('public','staff_worker_vetting_decision',
   array['uuid','text','text','text','text'],'staff decisions exist');
+select has_function('public','prepare_worker_auth_registration',array['text','uuid'],
+  'the service-side worker registration preflight exists');
+select has_function('public','resolve_worker_auth_identity',array['text'],
+  'the service-side worker phone resolver exists');
+
+select is(has_function_privilege('anon','public.prepare_worker_auth_registration(text,uuid)','EXECUTE'),
+  false, 'ANON CANNOT PREFLIGHT WORKER REGISTRATION DIRECTLY');
+select is(has_function_privilege('authenticated','public.prepare_worker_auth_registration(text,uuid)','EXECUTE'),
+  false, 'AUTHENTICATED CLIENTS CANNOT PREFLIGHT WORKER REGISTRATION DIRECTLY');
+select is(has_function_privilege('anon','public.resolve_worker_auth_identity(text)','EXECUTE'),
+  false, 'ANON CANNOT RESOLVE A WORKER PHONE TO AN AUTH IDENTITY');
+select is(has_function_privilege('authenticated','public.resolve_worker_auth_identity(text)','EXECUTE'),
+  false, 'AUTHENTICATED CLIENTS CANNOT RESOLVE A WORKER PHONE TO AN AUTH IDENTITY');
+select is(has_function_privilege('service_role','public.resolve_worker_auth_identity(text)','EXECUTE'),
+  true, 'THE EDGE SERVICE ROLE CAN RESOLVE A WORKER PHONE');
+select is(
+  (select count(*)::integer from information_schema.role_table_grants
+   where table_schema='private' and table_name='worker_auth_identities'
+     and grantee in ('PUBLIC','anon','authenticated','service_role')),
+  0, 'NO API ROLE CAN READ THE WORKER AUTH MAPPING TABLE DIRECTLY');
+select is(
+  (select count(*)::integer from information_schema.role_table_grants
+   where table_schema='private' and table_name='worker_auth_registrations'
+     and grantee in ('PUBLIC','anon','authenticated','service_role')),
+  0, 'NO API ROLE CAN READ THE TRUSTED REGISTRATION RESERVATIONS');
 
 -- Every WPS-023 function carries an empty search_path.
 select is(
@@ -874,15 +900,89 @@ select ok((select count(*) >= 0 from public.account_onboarding where worker_stat
 -- Supabase Phone Auth stays disabled and no SMS provider is configured, so
 -- every assertion below runs in exactly the state production launches in.
 
--- An email-and-password registration, with a number nobody has confirmed.
+-- A fresh reset sees the corrected base migration and therefore already has
+-- this default. Hosted applied the original base migration, where provider IDs
+-- were also profile IDs, then the decoupling migration removed the foreign key
+-- without supplying the new independent-ID default. Recreate that exact drift
+-- before proving the forward repair and the complete auth trigger path.
+create temporary table provider_profile_ids_before on commit drop as
+select id from public.provider_profiles;
+
+alter table public.provider_profiles alter column id drop default;
+select is(
+  (select column_default from information_schema.columns
+   where table_schema='public' and table_name='provider_profiles' and column_name='id'),
+  null,
+  'THE HOSTED-EQUIVALENT PROVIDER ID COLUMN HAS NO DEFAULT');
+
+insert into private.worker_auth_registrations(credential_id,phone,expires_at)
+values ('c2400000-0000-4000-8000-000000000000','+201230000100',now()+interval '10 minutes');
+
+select throws_ok(
+  $q$insert into auth.users (id, instance_id, aud, role, email, encrypted_password,
+                             email_confirmed_at, created_at, updated_at,
+                             raw_app_meta_data, raw_user_meta_data)
+     values ('a2400000-0000-4000-8000-000000000000',
+             '00000000-0000-0000-0000-000000000000',
+             'authenticated','authenticated',
+             'worker.c2400000000040008000000000000000@auth.warsha.invalid','x',
+             now(),now(),now(),
+             jsonb_build_object('worker_synthetic_identity',true,
+                                'worker_identity_id','c2400000-0000-4000-8000-000000000000'),
+             jsonb_build_object('display_name','Missing Default Worker',
+                                'account_role','provider',
+                                'contact_phone','+201230000100',
+                                'worker_identity_id','c2400000-0000-4000-8000-000000000000'))$q$,
+  '23502', null,
+  'HOSTED-STYLE WORKER SIGN-UP FAILS WHEN THE PROVIDER ID DEFAULT IS ABSENT');
+
+delete from private.worker_auth_registrations
+where credential_id='c2400000-0000-4000-8000-000000000000';
+
+alter table public.provider_profiles
+  alter column id set default pg_catalog.gen_random_uuid();
+select ok(
+  (select column_default ~ 'gen_random_uuid'
+   from information_schema.columns
+   where table_schema='public' and table_name='provider_profiles' and column_name='id'),
+  'THE FORWARD REPAIR RESTORES GENERATED PROVIDER IDS');
+
+-- A fresh schema also carries an older full unique constraint, but hosted has
+-- only the intended partial index. Remove the redundant constraint inside this
+-- test transaction so the worker insert exercises the hosted conflict arbiter.
+alter table public.provider_profiles
+  drop constraint if exists provider_profiles_user_id_key;
+
+select ok(
+  exists (
+    select 1 from pg_indexes
+    where schemaname = 'public' and tablename = 'provider_profiles'
+      and indexname = 'provider_profiles_user_id_unique'
+      and indexdef ~* 'where.*user_id is not null'),
+  'THE HOSTED PARTIAL PROVIDER USER-ID UNIQUE INDEX IS PRESENT');
+
+select matches(
+  pg_temp.code_of('private', 'handle_new_user'),
+  'on conflict\s*\(user_id\)\s*where user_id is not null\s*do nothing',
+  'WORKER SIGN-UP CONFLICT INFERENCE MATCHES THE PARTIAL USER-ID UNIQUE INDEX');
+
+-- A broker-created worker identity and an unchanged customer registration,
+-- both with contact numbers nobody has confirmed.
+insert into private.worker_auth_registrations(credential_id,phone,expires_at)
+values ('c2400000-0000-4000-8000-000000000001','+201230000101',now()+interval '10 minutes');
+
 insert into auth.users (id, instance_id, aud, role, email, encrypted_password,
                         email_confirmed_at, created_at, updated_at,
                         raw_app_meta_data, raw_user_meta_data)
 values
   ('a2400000-0000-4000-8000-000000000001','00000000-0000-0000-0000-000000000000',
-   'authenticated','authenticated','wps024.worker@example.com','x', now(), now(), now(), '{}',
+   'authenticated','authenticated',
+   'worker.c2400000000040008000000000000001@auth.warsha.invalid','x', now(), now(), now(),
+   jsonb_build_object('worker_synthetic_identity',true,
+                      'worker_identity_id','c2400000-0000-4000-8000-000000000001'),
    jsonb_build_object('display_name','WPS024 Worker','account_role','provider',
-                      'contact_phone','+201230000101')),
+                      'contact_phone','+201230000101',
+                      'worker_identity_id','c2400000-0000-4000-8000-000000000001')),
   ('a2400000-0000-4000-8000-000000000002','00000000-0000-0000-0000-000000000000',
    'authenticated','authenticated','wps024.customer@example.com','x', now(), now(), now(), '{}',
    jsonb_build_object('display_name','WPS024 Customer','account_role','customer',
@@ -895,6 +995,28 @@ select is((select phone from public.profiles where id='a2400000-0000-4000-8000-0
 select is((select phone from public.profiles where id='a2400000-0000-4000-8000-000000000002'),
   '+201230000102',
   'A CUSTOMER REGISTERS WITH A CONTACT NUMBER WHILE PHONE AUTH IS DISABLED');
+
+select is((select count(*)::integer from private.worker_auth_identities
+           where user_id='a2400000-0000-4000-8000-000000000001'
+             and phone='+201230000101'
+             and credential_id='c2400000-0000-4000-8000-000000000001'),
+  1, 'WORKER REGISTRATION CREATES EXACTLY ONE PHONE-TO-CREDENTIAL MAPPING');
+select is((select count(*)::integer from private.worker_auth_identities
+           where user_id='a2400000-0000-4000-8000-000000000002'),
+  0, 'CUSTOMER REGISTRATION CREATES NO WORKER AUTH MAPPING');
+select is(public.resolve_worker_auth_identity('+201230000101'),
+  'worker.c2400000000040008000000000000001@auth.warsha.invalid',
+  'THE TRUSTED RESOLVER MAPS WORKER PHONE TO THE OPAQUE PASSWORD IDENTITY');
+select is(private.account_contact_email('a2400000-0000-4000-8000-000000000001'),
+  null, 'THE SYNTHETIC WORKER EMAIL IS NEVER A CONTACT EMAIL');
+select is(private.account_contact_email('a2400000-0000-4000-8000-000000000002'),
+  'wps024.customer@example.com', 'CUSTOMER CONTACT EMAIL IS UNCHANGED');
+select is((select email_enabled from public.notification_preferences
+           where user_id='a2400000-0000-4000-8000-000000000001'),
+  false, 'SYNTHETIC EMAIL DELIVERY IS DISABLED');
+select is((select sms_enabled from public.notification_preferences
+           where user_id='a2400000-0000-4000-8000-000000000001'),
+  false, 'WORKER REGISTRATION ENABLES NO SMS DELIVERY');
 
 -- The number is stored. It is not evidence, and nothing claims it is.
 select is((select count(*)::integer from auth.users
@@ -912,6 +1034,16 @@ select is((select count(*)::integer from auth.users
 select isnt((select id from public.provider_profiles
              where user_id='a2400000-0000-4000-8000-000000000001'), null,
   'WORKER REGISTRATION PRODUCES A WORKER PROFILE WITHOUT AN SMS CODE');
+select is((select count(*)::integer from public.provider_profiles
+           where user_id='a2400000-0000-4000-8000-000000000001'),
+  1, 'WORKER REGISTRATION PRODUCES EXACTLY ONE WORKER PROFILE');
+select is((select count(*)::integer from public.provider_profiles
+           where user_id='a2400000-0000-4000-8000-000000000002'),
+  0, 'CUSTOMER REGISTRATION DOES NOT PRODUCE A WORKER PROFILE');
+select is((select count(*)::integer from provider_profile_ids_before old
+           where not exists (select 1 from public.provider_profiles current
+                             where current.id=old.id)),
+  0, 'RESTORING THE DEFAULT DOES NOT CHANGE ANY EXISTING PROVIDER ID');
 
 -- Role activation is reachable. It used to raise 'Verified phone required'.
 select lives_ok(
@@ -929,6 +1061,44 @@ select ok(not (private.worker_activation_gates('a2400000-0000-4000-8000-00000000
 select is((private.worker_activation_gates('a2400000-0000-4000-8000-000000000001')
             ->>'phone_number_provided')::boolean, true,
   'a registered worker satisfies the contact-number gate');
+
+update public.provider_profiles
+set profession_key='plumbing', about=''
+where user_id='a2400000-0000-4000-8000-000000000001';
+select is((private.worker_activation_gates('a2400000-0000-4000-8000-000000000001')
+            ->>'professions_configured')::boolean, true,
+  'A CANONICAL PROFESSION SATISFIES WORKER PROFILE COMPLETENESS WITH NO BIOGRAPHY');
+select ok(not (private.worker_activation_gates('a2400000-0000-4000-8000-000000000001')
+            ? 'biography'),
+  'THE OPTIONAL BIOGRAPHY IS NOT AN ACTIVATION GATE');
+select ok(pg_catalog.strpos(
+  pg_temp.code_of('private','is_provider_publicly_discoverable'), 'btrim(p.about)') = 0,
+  'AN EMPTY OPTIONAL BIOGRAPHY DOES NOT BLOCK PUBLIC DISCOVERABILITY');
+
+-- Prove the activation rule excludes this address as contact rather than
+-- accidentally passing because Auth marked the internal password provider
+-- usable. This temporary update is rolled back with the suite.
+update auth.users set email_confirmed_at=null
+where id='a2400000-0000-4000-8000-000000000001';
+select is((private.worker_activation_gates('a2400000-0000-4000-8000-000000000001')
+            ->>'verified_email_if_present')::boolean, true,
+  'WORKER ACTIVATION HAS NO SYNTHETIC EMAIL-CONFIRMATION DEPENDENCY');
+select is((select phone_confirmed_at from auth.users
+           where id='a2400000-0000-4000-8000-000000000001'),
+  null, 'WORKER PHONE_CONFIRMED_AT STAYS NULL');
+
+select throws_ok(
+  $q$insert into auth.users (id, instance_id, aud, role, email, encrypted_password,
+                             email_confirmed_at, created_at, updated_at,
+                             raw_app_meta_data, raw_user_meta_data)
+     values ('a2400000-0000-4000-8000-000000000004',
+             '00000000-0000-0000-0000-000000000000','authenticated','authenticated',
+             'untrusted.worker@example.com','x',now(),now(),now(),'{}',
+             jsonb_build_object('display_name','Untrusted Worker',
+                                'account_role','provider',
+                                'contact_phone','+201230000104'))$q$,
+  '42501', null,
+  'CLIENT-CONTROLLED METADATA CANNOT BYPASS THE TRUSTED WORKER AUTH BROKER');
 
 -- Validation still applies. A number that is not an Egyptian mobile is refused
 -- rather than stored, so a contact detail is always dialable or absent.

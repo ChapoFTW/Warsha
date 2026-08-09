@@ -51,6 +51,9 @@ export const supabaseTarget = classifySupabaseTarget(environment.dataMode, envir
 
 export function assertSupabaseConfiguration() {
   if (supabaseConfigurationMissing) {
-    throw new Error('Supabase mode requires EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY.');
+    throw new Error(
+      'Supabase mode requires EXPO_PUBLIC_SUPABASE_URL and either '
+      + 'EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY or EXPO_PUBLIC_SUPABASE_ANON_KEY.',
+    );
   }
 }

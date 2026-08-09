@@ -1,4 +1,3 @@
-import Storage from 'expo-sqlite/kv-store';
 import {
   createContext,
   type PropsWithChildren,
@@ -13,6 +12,7 @@ import {
 import { useAuth } from '@/src/auth/auth-context';
 import { dataErrorKey, logDataError } from '@/src/data/data-errors';
 import type { TranslationKey } from '@/src/i18n/translations';
+import { accountHydrationReady } from '@/src/navigation/worker-route-policy';
 import { emitMockRealtime } from '@/src/realtime/realtime-service';
 
 import { providerRepository } from './provider-repository';
@@ -57,12 +57,10 @@ type Value = {
 };
 
 const Context = createContext<Value | null>(null);
-const MODE_KEY = 'warsha:selected-app-mode:v2';
 
 export function ProviderFoundationProvider({ children }: PropsWithChildren) {
   const { mode: dataMode, user } = useAuth();
   const accountKey = dataMode === 'mock' ? 'mock-user' : user?.id ?? null;
-  const modeStorageKey = `${MODE_KEY}:${accountKey ?? 'guest'}`;
   const accountRef = useRef(accountKey);
   accountRef.current = accountKey;
   const mounted = useRef(true);
@@ -99,14 +97,15 @@ export function ProviderFoundationProvider({ children }: PropsWithChildren) {
     }
     setLoading(true);
     try {
-      const [next, savedMode] = await Promise.all([
-        providerRepository.load(target),
-        Storage.getItem(modeStorageKey),
-      ]);
+      const next = await providerRepository.load(target);
       const assets = next ? await loadAssets(target) : { nextPortfolio: [], nextCertificates: [] };
       if (mounted.current && accountRef.current === target && generation.current === request) {
         setProfile(next); setPortfolio(assets.nextPortfolio); setCertificates(assets.nextCertificates);
-        setLoadedAccount(target); setModeState(savedMode === 'provider' && next ? 'provider' : 'customer'); setError(null);
+        // Mode is intentionally session-scoped. AuthGate initializes it from
+        // the account's intended role after both account providers hydrate.
+        // Persisting customer mode is what made workers reopen on customer
+        // discovery after a restart.
+        setLoadedAccount(target); setModeState('customer'); setError(null);
       }
     } catch (reason) {
       logDataError('provider foundation', reason);
@@ -117,7 +116,7 @@ export function ProviderFoundationProvider({ children }: PropsWithChildren) {
     } finally {
       if (mounted.current && accountRef.current === target && generation.current === request) setLoading(false);
     }
-  }, [accountKey, loadAssets, modeStorageKey]);
+  }, [accountKey, loadAssets]);
 
   useEffect(() => {
     generation.current += 1; locks.current.clear(); setProfile(null); setPortfolio([]);
@@ -128,6 +127,11 @@ export function ProviderFoundationProvider({ children }: PropsWithChildren) {
   const visibleProfile = loadedAccount === accountKey ? profile : null;
   const visiblePortfolio = useMemo(() => loadedAccount === accountKey ? portfolio : [], [accountKey, loadedAccount, portfolio]);
   const visibleCertificates = useMemo(() => loadedAccount === accountKey ? certificates : [], [accountKey, certificates, loadedAccount]);
+  const accountReady = accountHydrationReady({
+    activeAccountKey: accountKey,
+    loadedAccountKey: loadedAccount,
+    settled: !loading,
+  });
 
   const run = useCallback(async <T,>(
     key: string,
@@ -158,7 +162,7 @@ export function ProviderFoundationProvider({ children }: PropsWithChildren) {
     portfolio: visiblePortfolio,
     certificates: visibleCertificates,
     mode: visibleProfile ? mode : 'customer',
-    loading,
+    loading: !accountReady,
     saving,
     error,
     reload,
@@ -170,7 +174,6 @@ export function ProviderFoundationProvider({ children }: PropsWithChildren) {
     },
     activate: name => run('activation', id => providerRepository.activate(id, name), next => {
       setProfile(next);
-      void Storage.setItem(modeStorageKey, 'provider');
       setModeState('provider');
     }),
     save: (nextProfile, submit) => run('save', id => providerRepository.save(id, nextProfile, submit), setProfile),
@@ -178,7 +181,6 @@ export function ProviderFoundationProvider({ children }: PropsWithChildren) {
     setMode: async next => {
       const target = accountKey;
       if (!target || next === 'provider' && !visibleProfile) return;
-      await Storage.setItem(modeStorageKey, next);
       if (accountRef.current === target) setModeState(next);
     },
     replaceAvatar: async input => {
@@ -208,7 +210,7 @@ export function ProviderFoundationProvider({ children }: PropsWithChildren) {
       return providerRepository.simulateCertificateReview(id, certificateId, approved);
     }, setCertificates),
   }), [
-    accountKey, error, loadAssets, loading, mode, modeStorageKey, reload, run, saving,
+    accountKey, accountReady, error, loadAssets, mode, reload, run, saving,
     visibleCertificates, visiblePortfolio, visibleProfile,
   ]);
 

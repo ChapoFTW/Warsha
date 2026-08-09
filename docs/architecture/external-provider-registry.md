@@ -172,13 +172,21 @@ version, a change summary, and renewed acceptance before it takes effect.
 calls a provider absent from this register, because `provider_enabled()`
 returns false for an unknown key.
 
+Registry activation is also not a table edit. `staff_activate_external_provider()`
+requires `manage_subprocessors`, fresh reauthentication, an approval bound to
+`provider:environment`, an environment-compatible registry row, a disabled
+environment flag, and an independent kill switch. It atomically changes the
+status, writes the immutable `enabled` event and staff audit, and consumes the
+approval exactly once. It never accepts a credential value.
+
 ## Keeping the two registers honest
 
 `staff_sync_provider_status()` moves a subprocessor between
 `approved_not_integrated` and `in_use` to match what is actually enabled. It
 refuses to promote a provider whose flag is still off, so the published
 Subprocessor Register can never claim a supplier is receiving data before it
-is. Capability-gated on `manage_subprocessors`, which carries dual control.
+is. Promotion to `in_use` consumes a separate approval bound to
+`provider:environment:in_use`; restrictive demotion remains immediate.
 
 ## Related
 

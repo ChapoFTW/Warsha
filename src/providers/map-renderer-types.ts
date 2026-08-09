@@ -34,6 +34,8 @@ export type MapRenderDescriptor = {
   providerKey: string;
   rendererKey: string;
   requiresPublishableRenderKey: boolean;
+  /** Presence only. The server credential value never crosses this boundary. */
+  serverCredentialAvailable: boolean;
   attribution: string;
   defaultViewport: {
     latitude: number;

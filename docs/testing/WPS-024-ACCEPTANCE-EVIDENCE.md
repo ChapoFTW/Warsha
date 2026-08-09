@@ -326,8 +326,11 @@ accuracy. Fixed to match within a line, and covered by a test.
 
 WPS-024 also corrects the authentication method. **Phone numbers are required
 contact information; phone OTP verification is not required to register.**
-Customers and workers authenticate with email and password, email verification
-remains required, and Supabase Phone Auth stays disabled.
+Customers remain on email/password with the existing email-confirmation rule.
+Workers register and sign in with phone/password in the product, without an
+email field or confirmation step. A trusted Edge broker generates a UUID-based
+`.invalid` email solely for Supabase email/password Auth and never returns it as
+contact data. Supabase Phone Auth stays disabled.
 
 This was a defect, not a relaxation. Three server-side rules independently
 required `auth.users.phone_confirmed_at`, which only an SMS code from an
@@ -355,6 +358,9 @@ launches in.
 | Required phone validation still applies | pgTAP — a malformed number is dropped, never stored |
 | No OTP is sent during registration | `signUp` body asserted free of any OTP call and of the capability preflight |
 | The phone number is not treated as verified | pgTAP — `phone_confirmed_at` null, no auth phone identity written |
+| Worker has no email-confirmation dependency | broker uses admin creation without mail delivery; activation explicitly excludes trusted synthetic identities from the contact-email gate |
+| Worker signs in with phone and password | service-role-only phone mapping plus broker password sign-in regression |
+| Synthetic email is not surfaced | client profile DTO contains phone but no email; staff contact projection returns null for trusted synthetic workers |
 | Explicit OTP flows still fail closed | `assertPhoneAuthAvailable` retained on confirm/change only |
 | Uniqueness preserved | pgTAP — two accounts cannot share a contact number (`23505`) |
 | Required contact information is still required | pgTAP — an account with no number is refused (`22023`) |
@@ -380,9 +386,10 @@ Two failures that were the tests doing their job, not noise:
 
 ### Not claimed
 
-No SMS provider was configured. Supabase Phone Auth was not enabled. The confirm
-and change flows remain **unavailable** in every environment, and that refusal is
-the correct behaviour rather than an outstanding defect.
+No SMS provider was configured. Supabase Phone Auth was not enabled. Worker
+registration and sign-in do not call OTP endpoints, and `phone_confirmed_at`
+remains null. Optional confirm/change flows remain unavailable and are not an
+authentication, onboarding, activation, or discovery dependency.
 
 Reasoning, alternatives and the reversal path:
 [phone-verification-deferral](../decisions/phone-verification-deferral.md).

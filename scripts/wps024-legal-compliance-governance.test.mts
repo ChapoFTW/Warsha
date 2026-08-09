@@ -70,6 +70,7 @@ import {
   type IdentityCandidate,
 } from '../supabase/functions/_shared/ocr-provider.ts';
 import { legalCopy } from '../src/legal/legal-copy.ts';
+import { resolveLocationExperienceAvailability } from '../src/providers/location-experience-policy.ts';
 
 const root = join(import.meta.dirname, '..');
 let passed = 0;
@@ -111,6 +112,25 @@ const migrationRaw = read(
 const migration = sqlCodeOf(
   'supabase', 'migrations', '202608090001_wps024_legal_compliance_governance.sql',
 );
+const workerAuthCorrection = sqlCodeOf(
+  'supabase', 'migrations', '202608150001_worker_phone_password_auth.sql',
+);
+const workerAuthBroker = codeOf('supabase', 'functions', 'worker-auth', 'index.ts');
+
+// The synthetic email is an authentication key, never a contact or export
+// field. These are WPS-024 privacy/governance assertions, not only auth tests.
+check(/'worker_auth_identities', 'private', 'worker_auth_identities'[\s\S]*'delete', false, null/.test(workerAuthCorrection),
+  'worker identity mapping is inventoried private, deletion-bound, non-exported, and unavailable to staff');
+check(/private\.account_contact_email\(p_user_id\)/.test(workerAuthCorrection),
+  'staff customer projection uses the real-contact email boundary');
+check(/exists \(select 1 from private\.worker_auth_identities i where i\.user_id = u\.id\)[\s\S]*then null[\s\S]*else u\.email/.test(workerAuthCorrection),
+  'synthetic worker email becomes null in contact projections');
+check(/values \(new\.id, not trusted_worker_registration, false\)/.test(workerAuthCorrection),
+  'synthetic workers have email and SMS notification delivery disabled');
+check(!/syntheticEmail[\s\S]*return json\(\{[^}]*email/.test(workerAuthBroker),
+  'trusted broker never returns its synthetic email as response data');
+check(/revoke all on function public\.resolve_worker_auth_identity\(text\) from public, anon, authenticated/.test(workerAuthCorrection),
+  'phone mapping resolver has no public or signed-in execution authority');
 
 // ---------------------------------------------------------------------------
 // SHA-256: three implementations, one answer
@@ -754,6 +774,9 @@ check(/alter table public\.account_onboarding\s*\n\s*drop constraint if exists/.
 const providerMigration = sqlCodeOf(
   'supabase', 'migrations', '202608100001_wps024_provider_activation.sql',
 );
+const edgeProviderGateway = sqlCodeOf(
+  'supabase', 'migrations', '202608170001_edge_provider_runtime_gateway.sql',
+);
 
 for (const provider of [
   'supabase', 'expo_eas', 'expo_camera', 'expo_image_picker',
@@ -855,12 +878,32 @@ const evaluateAppConfig = createRequire(import.meta.url)(
 
 const staticExpoConfig = JSON.parse(appConfig).expo as unknown;
 
-/** Evaluate the dynamic config under an exact environment, then restore it. */
+// EAS CLI reads this config locally before a build, with .env disabled, purely
+// to learn the project id — see the comment in app.config.js. These two names
+// are what separates that metadata read from a real build.
+const NO_DOTENV_VAR = 'EXPO_NO_DOTENV';
+const EAS_RUNNER_VAR = 'EAS_BUILD_RUNNER';
+const MANAGED_ENV_VARS = [
+  ANDROID_KEY_VAR,
+  IOS_KEY_VAR,
+  NO_DOTENV_VAR,
+  EAS_RUNNER_VAR,
+] as const;
+
+/**
+ * Evaluate the dynamic config under an exact environment, then restore it.
+ *
+ * Every managed name is set explicitly, so a variable that happens to be in the
+ * ambient shell cannot change what this suite proves.
+ */
 function evaluateWith(env: Record<string, string | undefined>): EvaluatedConfig {
-  const saved: Record<string, string | undefined> = {
-    [ANDROID_KEY_VAR]: process.env[ANDROID_KEY_VAR],
-    [IOS_KEY_VAR]: process.env[IOS_KEY_VAR],
-  };
+  const saved: Record<string, string | undefined> = Object.fromEntries(
+    MANAGED_ENV_VARS.map((name) => [name, process.env[name]]),
+  );
+  const baseline: Record<string, string | undefined> = Object.fromEntries(
+    MANAGED_ENV_VARS.map((name) => [name, undefined]),
+  );
+  env = { ...baseline, ...env };
   const apply = (values: Record<string, string | undefined>): void => {
     for (const [name, value] of Object.entries(values)) {
       if (value === undefined) delete process.env[name];
@@ -927,6 +970,52 @@ for (const missingVar of [ANDROID_KEY_VAR, IOS_KEY_VAR]) {
 check(process.env[ANDROID_KEY_VAR] === undefined
   || typeof process.env[ANDROID_KEY_VAR] === 'string',
   'the suite restores the ambient environment after evaluating the config');
+
+// EAS CLI's local metadata read cannot have the keys: it runs with .env
+// disabled, and the project id it is fetching is the input the environment
+// variable query needs. Throwing there breaks `eas build` and `eas env:list`
+// before anything is uploaded, and yields no native artifact in exchange.
+let metadataRead: EvaluatedConfig | undefined;
+let metadataThrew = false;
+try {
+  metadataRead = evaluateWith({ [NO_DOTENV_VAR]: '1' });
+} catch {
+  metadataThrew = true;
+}
+check(!metadataThrew,
+  'the EAS CLI local metadata read is not broken by the render-key guard');
+check(metadataRead?.android?.config?.googleMaps?.apiKey === undefined,
+  'the metadata read omits the Android key rather than inventing one');
+check(metadataRead?.ios?.config?.googleMapsApiKey === undefined,
+  'the metadata read omits the iOS key rather than inventing one');
+
+// Standing down for that read must not stand down for the build itself. On the
+// worker EAS_BUILD_RUNNER is set and the environment's variables are injected,
+// so a missing key there is a real defect and must still stop the build.
+for (const missingVar of [ANDROID_KEY_VAR, IOS_KEY_VAR]) {
+  const supplied: Record<string, string | undefined> = {
+    [ANDROID_KEY_VAR]: ANDROID_STUB,
+    [IOS_KEY_VAR]: IOS_STUB,
+    [NO_DOTENV_VAR]: '1',
+    [EAS_RUNNER_VAR]: 'eas-build',
+    [missingVar]: undefined,
+  };
+  let threw = false;
+  try {
+    evaluateWith(supplied);
+  } catch {
+    threw = true;
+  }
+  check(threw,
+    `THE GUARD STILL FIRES ON THE EAS WORKER WHEN ${missingVar} IS ABSENT`);
+}
+
+check(evaluateWith({
+  [ANDROID_KEY_VAR]: ANDROID_STUB,
+  [IOS_KEY_VAR]: IOS_STUB,
+  [NO_DOTENV_VAR]: '1',
+}).android?.config?.googleMaps?.apiKey === ANDROID_STUB,
+  'a supplied key is still used during the metadata read');
 
 const secretBoundary = codeOf('supabase', 'functions', '_shared', 'provider-secrets.ts');
 check(/Deno\.env\.get/.test(secretBoundary), 'secrets are read from the environment');
@@ -1035,10 +1124,10 @@ const locationFunction = codeOf('supabase', 'functions', 'location-proxy', 'inde
 
 check(/readSecret\('mapsServerKey'\)/.test(mapsProvider),
   'the billed Maps key is read server-side only');
-check(/sessiontoken=/.test(mapsProvider),
+check(/sessionToken/.test(mapsProvider),
   'Places calls carry a session token, so a search is billed once rather than per keystroke');
-check(/fields=formatted_address/.test(mapsProvider),
-  'Place Details asks for named fields, not everything the provider would return');
+check(/x-goog-fieldmask/.test(mapsProvider) && /id,formattedAddress,location/.test(mapsProvider),
+  'Places API New requests use narrow field masks rather than fetching every field');
 check(/manualPinAlwaysAvailable/.test(locationFunction),
   'EVERY LOCATION FAILURE STILL REPORTS THAT MANUAL PIN PLACEMENT WORKS');
 
@@ -1046,8 +1135,8 @@ check(/manualPinAlwaysAvailable/.test(locationFunction),
 // also eats the `//` inside every `https://` URL in the file.
 const mapsProviderRaw = read('supabase', 'functions', '_shared', 'google-maps-provider.ts');
 for (const [name, pattern] of [
-  ['Places Autocomplete', /place\/autocomplete\/json/],
-  ['Place Details', /place\/details\/json/],
+  ['Places Autocomplete New', /places\.googleapis\.com\/v1\/places:autocomplete/],
+  ['Place Details New', /places\.googleapis\.com\/v1\/places\//],
   ['forward geocoding', /forwardGeocode\(address: string\)/],
   ['reverse geocoding', /reverseGeocode\(latitude: number/],
 ] as const) {
@@ -1077,13 +1166,21 @@ check(/'location'/.test(locationFunction),
   'the location proxy asks for a capability role, not a provider');
 check(/resolveMapProvider/.test(locationFunction),
   'the map implementation is resolved from the registry at call time');
+check(/edge_provider_runtime/.test(locationFunction)
+  && !/schema\(['"]private['"]\)/.test(locationFunction),
+  'the location proxy reaches private provider authority through the narrow public service gateway');
+check(/grant execute on function public\.edge_provider_runtime\(text\) to service_role/.test(edgeProviderGateway)
+  && /revoke all on function public\.edge_provider_runtime\(text\) from public, anon, authenticated/.test(edgeProviderGateway),
+  'the provider runtime gateway is service-role-only');
 check(/MAPS_TIMEOUT_MS/.test(mapContract) && /MAPS_TIMEOUT_MS/.test(mapsProvider),
   'the map contract fixes a timeout every implementation inherits');
 
 // The render descriptor is answered before the search gate, because drawing a
 // map and searching an address fail independently and use different keys.
-check(locationFunction.indexOf('render_descriptor') < locationFunction.indexOf('provider_enabled_for_role'),
+check(locationFunction.indexOf('render_descriptor') < locationFunction.indexOf('runtime?.enabled'),
   'THE RENDER DESCRIPTOR IS ANSWERED EVEN WHEN THE SEARCH PROVIDER IS DISABLED');
+check(/serverCredentialAvailable:\s*provider\.isConfigured\(\)/.test(locationFunction),
+  'the proxy reports server credential presence without returning its value');
 
 // The renderer key crosses a runtime boundary and is declared twice. This is
 // the test that keeps the two declarations honest.
@@ -1122,6 +1219,8 @@ const mapWeb = codeOf('components', 'warsha', 'GoogleMapRenderer.web.tsx');
 check(!/react-native-maps/.test(mapWeb), 'the web variant imports no native-only module');
 check(!/staticmap|maps\.googleapis\.com/.test(mapWeb),
   'THE WEB BUILD RENDERS NO MAP IMAGE THAT COULD BE MISTAKEN FOR A LIVE ONE');
+check(!/TextInput|Latitude|Longitude/.test(mapWeb),
+  'THE WEB FALLBACK NEVER ASKS A NORMAL USER TO TYPE RAW COORDINATES');
 
 // ---------------------------------------------------------------------------
 // Provider clients
@@ -1138,11 +1237,75 @@ check(/await import\('expo-location'\)/.test(clients),
   'the location dependency is loaded lazily');
 check(/Accuracy\.Balanced/.test(clients),
   'a device fix asks for balanced accuracy, because the pin is about to be adjusted anyway');
+check(/getProviderStatusAsync/.test(clients)
+  && /permission_denied/.test(clients)
+  && /services_disabled/.test(clients)
+  && /provider_unavailable/.test(clients)
+  && /timed_out/.test(clients),
+  'device location preserves permission, service, provider and timeout outcomes');
+check(/getLastKnownPositionAsync/.test(clients),
+  'a recent coarse device fix can seed the pin before waiting for a fresh emulator fix');
 check(!/requestBackgroundPermissionsAsync/.test(clients),
   'NO BACKGROUND LOCATION PERMISSION IS EVER REQUESTED');
 check(!/"isAndroidBackgroundLocationEnabled":\s*true/.test(appConfig)
   && !/"isIosBackgroundLocationEnabled":\s*true/.test(appConfig),
   'the config plugin declares no background location');
+
+const configuredLocation = resolveLocationExperienceAvailability({
+  dataMode: 'supabase',
+  capability: {
+    mapsAvailable: true,
+    searchAvailable: true,
+    manualPinAlwaysAvailable: true,
+    pinRequiredBeforeBooking: true,
+    mapRendererKey: 'google_native_sdk',
+  },
+  descriptor: {
+    providerKey: 'configured-provider',
+    rendererKey: 'google_native_sdk',
+    requiresPublishableRenderKey: true,
+    serverCredentialAvailable: true,
+    attribution: 'Provider attribution',
+    defaultViewport: { latitude: 30, longitude: 31, latitudeDelta: 0.1, longitudeDelta: 0.1 },
+  },
+});
+check(configuredLocation.interactiveMapAvailable && configuredLocation.addressSearchAvailable,
+  'a configured live provider enables native maps and address search');
+check(configuredLocation.deviceLocationAvailable && !configuredLocation.providerUnavailable,
+  'device location is independently available and configured providers never show unavailable');
+const missingServerCredential = resolveLocationExperienceAvailability({
+  dataMode: 'supabase',
+  capability: {
+    mapsAvailable: true,
+    searchAvailable: true,
+    manualPinAlwaysAvailable: true,
+    pinRequiredBeforeBooking: true,
+    mapRendererKey: 'google_native_sdk',
+  },
+  descriptor: {
+    providerKey: 'configured-provider',
+    rendererKey: 'google_native_sdk',
+    requiresPublishableRenderKey: true,
+    serverCredentialAvailable: false,
+    attribution: 'Provider attribution',
+    defaultViewport: { latitude: 30, longitude: 31, latitudeDelta: 0.1, longitudeDelta: 0.1 },
+  },
+});
+check(missingServerCredential.interactiveMapAvailable && !missingServerCredential.addressSearchAvailable,
+  'a missing server credential fails search closed without disabling native map rendering');
+const absentLocation = resolveLocationExperienceAvailability({
+  dataMode: 'supabase',
+  capability: {
+    mapsAvailable: false,
+    searchAvailable: false,
+    manualPinAlwaysAvailable: true,
+    pinRequiredBeforeBooking: true,
+    mapRendererKey: null,
+  },
+  descriptor: null,
+});
+check(absentLocation.providerUnavailable && !absentLocation.addressSearchAvailable,
+  'provider unavailable appears only when no renderer descriptor and no enabled search provider exist');
 
 // WPS-023's pure boundaries were not turned into network modules.
 check(!/fetch\(|axios|XMLHttpRequest/.test(codeOf('src', 'onboarding', 'identity-extraction.ts')),
@@ -1387,6 +1550,85 @@ for (const column of ['document_type', 'document_hash', 'is_current']) {
   check(new RegExp(`\\b${column}\\b`).test(visionFunction),
     `the extraction function writes ${column}`);
 }
+
+// ---------------------------------------------------------------------------
+// Hosted development environment and governed provider activation
+// ---------------------------------------------------------------------------
+const developmentGovernance = read('supabase', 'migrations',
+  '202608180001_development_provider_governance.sql');
+const developmentGovernanceCode = developmentGovernance
+  .replace(/\/\*[\s\S]*?\*\//g, '')
+  .replace(/^\s*--[^\n]*$/gm, '');
+const providerActivation = developmentGovernanceCode.slice(
+  developmentGovernanceCode.indexOf('function public.staff_activate_external_provider'),
+  developmentGovernanceCode.indexOf('-- 6. MATERIAL LEGAL PUBLICATION'),
+);
+const legalPublication = developmentGovernanceCode.slice(
+  developmentGovernanceCode.indexOf('function public.staff_publish_legal_version'),
+  developmentGovernanceCode.indexOf('-- 7. SUBPROCESSOR PROMOTION'),
+);
+const providerSync = developmentGovernanceCode.slice(
+  developmentGovernanceCode.indexOf('function public.staff_sync_provider_status'),
+);
+
+check(/staff_feature_flags_env_check[\s\S]*development/.test(developmentGovernanceCode),
+  'development is a valid server-authoritative feature flag environment');
+check(/'location_provider', 'development', false, 0, 'none'/.test(developmentGovernanceCode),
+  'the development Maps flag is seeded disabled with no audience');
+check(/staff_bind_platform_environment/.test(developmentGovernanceCode),
+  'hosted environment binding uses a named staff authority');
+check(/Only a non-production hosted environment can be bound here/.test(developmentGovernanceCode),
+  'the project binding authority cannot bind production');
+check(/Feature flags must target the current platform environment/.test(developmentGovernanceCode),
+  'development cannot mutate another environment feature state');
+check(/private\.platform_environment\(\) = any\(p\.environments\)/.test(developmentGovernanceCode),
+  'provider selection and enablement enforce registry environment compatibility');
+
+check(/require_staff_capability\('manage_subprocessors'\)/.test(providerActivation),
+  'provider activation requires the existing provider/subprocessor capability');
+check(/consume_dual_control\([\s\S]*'manage_subprocessors'[\s\S]*'activate_external_provider'/.test(providerActivation),
+  'provider activation consumes exact dual control');
+check(/event_type[\s\S]*'enabled'|provider_key, 'enabled'/.test(providerActivation),
+  'provider activation writes immutable enabled history');
+check(/external_provider_activated/.test(providerActivation),
+  'provider activation writes staff audit');
+check(/dualControlRequestId/.test(providerActivation),
+  'provider activation audit identifies the consumed approval');
+check(/Disable the provider feature flag before activation/.test(providerActivation),
+  'provider activation refuses to turn an already-enabled flag into an implicit call path');
+check(!/staff_set_feature_flag\(/.test(providerActivation),
+  'provider activation never enables the feature flag');
+check(!/update private\.staff_kill_switches/.test(providerActivation),
+  'provider activation never alters a kill switch');
+check(!/p_.*(credential|secret|api_key)/i.test(
+  providerActivation.slice(0, providerActivation.indexOf('returns jsonb'))),
+  'provider activation accepts no credential value');
+
+check(/consume_dual_control\([\s\S]*publish_legal_version/.test(legalPublication),
+  'legal publication consumes approval bound to the exact publication');
+check(/if p_change_class in \('material', 'urgent'\)[\s\S]*consume_dual_control/.test(legalPublication),
+  'the legal dual-control gate is limited to material and urgent publication');
+check(/p_document_key \|\| ':' \|\| p_version \|\| ':' \|\| private\.platform_environment/.test(legalPublication),
+  'legal approval is bound to document, version and environment');
+check(/dualControlRequestId/.test(legalPublication),
+  'legal publication audit identifies the consumed approval');
+check(/sync_subprocessor_in_use/.test(providerSync)
+  && /consume_dual_control/.test(providerSync),
+  'subprocessor promotion consumes its own material-change approval');
+check(/v_target = 'in_use'/.test(providerSync),
+  'restrictive subprocessor demotion does not wait for promotion approval');
+
+const materialChecklist = read('docs', 'operations', 'google-maps-material-change-checklist.md');
+check(/template only/i.test(materialChecklist) && /no approval has been given/i.test(materialChecklist),
+  'the Maps legal checklist cannot be mistaken for completed approval');
+for (const document of ['Privacy Policy', 'Location Data Policy', 'Subprocessor Register']) {
+  check(materialChecklist.includes(document), `${document} is in the human approval checklist`);
+}
+check(/English material-change summary/.test(materialChecklist)
+  && /Arabic material-change summary/.test(materialChecklist),
+  'human approval covers both material summaries');
+check(/Renewed-acceptance scope/.test(materialChecklist),
+  'human approval must decide renewed-acceptance scope');
 
 
 // ---------------------------------------------------------------------------

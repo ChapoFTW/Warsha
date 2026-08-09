@@ -733,6 +733,37 @@ select has_function('private','provider_for_role',array['text'],
   'a role resolves to a provider');
 select has_function('private','provider_enabled_for_role',array['text'],
   'a role resolves to a gate');
+select has_function('public','edge_provider_runtime',array['text'],
+  'Edge Functions have a narrow gateway to the private provider authority');
+select has_function('public','edge_record_provider_health',
+  array['text','text','text','text','integer','smallint','boolean'],
+  'Edge Functions have a narrow gateway to the private health writer');
+select is(has_function_privilege('anon','public.edge_provider_runtime(text)','EXECUTE'),
+  false, 'anonymous callers cannot execute the provider runtime gateway');
+select is(has_function_privilege('authenticated','public.edge_provider_runtime(text)','EXECUTE'),
+  false, 'signed-in clients cannot execute the provider runtime gateway');
+select is(has_function_privilege('service_role','public.edge_provider_runtime(text)','EXECUTE'),
+  true, 'only the service role can execute the provider runtime gateway');
+select is(has_function_privilege('service_role','private.provider_for_role(text)','EXECUTE'),
+  false, 'the Edge service role cannot bypass the private provider boundary directly');
+select is(has_function_privilege('service_role','private.provider_enabled_for_role(text)','EXECUTE'),
+  false, 'the Edge service role cannot bypass the private provider gate directly');
+select is(has_function_privilege('anon',
+    'public.edge_record_provider_health(text,text,text,text,integer,smallint,boolean)','EXECUTE'),
+  false, 'anonymous callers cannot execute the provider health gateway');
+select is(has_function_privilege('authenticated',
+    'public.edge_record_provider_health(text,text,text,text,integer,smallint,boolean)','EXECUTE'),
+  false, 'signed-in clients cannot execute the provider health gateway');
+select is(has_function_privilege('service_role',
+    'public.edge_record_provider_health(text,text,text,text,integer,smallint,boolean)','EXECUTE'),
+  true, 'only the service role can execute the provider health gateway');
+select is(has_function_privilege('service_role',
+    'private.record_provider_health(text,text,text,text,integer,smallint,boolean)','EXECUTE'),
+  false, 'the Edge service role cannot bypass the private health boundary directly');
+select is(public.edge_provider_runtime('location')->>'providerKey', 'google_maps_platform',
+  'the Edge gateway delegates provider selection to the private role authority');
+select is((public.edge_provider_runtime('location')->>'enabled')::boolean, false,
+  'the Edge gateway preserves the existing registry/flag/kill-switch gate');
 
 select is((select count(*)::integer from private.external_providers
            where capability_role is null), 0,
@@ -909,6 +940,30 @@ select has_column('private','ocr_accuracy_runs','parser_failure_rate',
   'the baseline records parser failures separately from OCR failures');
 select has_column('private','ocr_accuracy_runs','parser_version',
   'the baseline records which parser produced it');
+
+-- Worker phone/password Auth privacy correction. The internal email is an
+-- opaque credential key, never contact data, staff data, or export data.
+select has_table('private','worker_auth_identities',
+  'worker phone-to-credential mapping is held in the private schema');
+select is((select count(*)::integer from private.data_inventory
+           where entry_key='worker_auth_identities'
+             and schema_name='private'
+             and classification_key='account_private'
+             and deletion_treatment='delete'
+             and not export_included
+             and staff_capability is null),
+  1, 'WORKER AUTH MAPPING IS INVENTORIED AS PRIVATE, NON-EXPORTED, AND NON-STAFF');
+select matches(pg_temp.code_of('private','account_contact_email'),
+  'worker_auth_identities[\s\S]*then null[\s\S]*else u.email',
+  'SYNTHETIC WORKER EMAIL IS NULL AT THE CONTACT-DATA BOUNDARY');
+select matches(pg_temp.code_of('public','get_staff_customer_overview'),
+  'private.account_contact_email\(p_user_id\)',
+  'STAFF CUSTOMER OVERVIEW CANNOT EXPOSE THE SYNTHETIC EMAIL');
+select is(
+  (select count(*)::integer from information_schema.role_table_grants
+   where table_schema='private' and table_name='worker_auth_identities'
+     and grantee in ('PUBLIC','anon','authenticated','service_role')),
+  0, 'NO API OR STAFF ROLE CAN READ THE PRIVATE WORKER AUTH TABLE');
 
 select finish();
 rollback;

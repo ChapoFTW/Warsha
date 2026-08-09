@@ -65,7 +65,7 @@ a Mock that allowed it would let a screen ship an "off" state that never exists.
 | `document_version` | Which version of the document was shown |
 | `granted` | The decision |
 | `decided_at` | When |
-| `environment` | `local` / `staging` / `production` |
+| `environment` | `local` / `development` / `staging` / `production` |
 | `source_surface` | `sign_up`, `privacy_center`, `onboarding`, `worker_onboarding`, `verification`, `support`, `migration` |
 | `withdrawn_at` | When an earlier grant stopped applying |
 

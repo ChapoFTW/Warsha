@@ -10,11 +10,15 @@ import { spacing, typography, type ThemeColors } from '@/constants/theme';
 import { useThemedStyles } from '@/src/appearance/appearance-context';
 import { useAuth } from '@/src/auth/auth-context';
 import { authMessageKey } from '@/src/auth/auth-errors';
+import { classifySignInIdentity } from '@/src/auth/auth-identifier';
+import { useAuthText } from '@/src/auth/auth-translations';
 import { useLocalization } from '@/src/i18n/localization';
 import { useOnboardingText } from '@/src/onboarding/onboarding-translations';
 
 /**
- * Signing in. Email and password, for customers and workers alike.
+ * Customers sign in with email and password. Workers sign in with their
+ * contact phone and password; the trusted auth broker resolves that phone to
+ * an opaque internal email/password identity without exposing it here.
  *
  * WPS-024 correction. There was a second path here — a phone number and a code
  * sent by SMS — and it could not work: Supabase Phone Auth is disabled and no
@@ -34,18 +38,19 @@ export default function SignIn() {
   const styles = useThemedStyles(makeStyles);
   const { t } = useLocalization();
   const ot = useOnboardingText();
+  const at = useAuthText();
   const auth = useAuth();
 
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
 
-  const submitEmail = async () => {
+  const submit = async () => {
     setBusy(true);
     setMessage('');
     try {
-      await auth.signIn(email.trim(), password);
+      await auth.signIn(identifier.trim(), password);
     } catch (error) {
       setMessage(t(authMessageKey(error)));
     } finally {
@@ -54,11 +59,12 @@ export default function SignIn() {
   };
 
   const resetPassword = async () => {
-    if (!email.trim()) return;
+    const identity = classifySignInIdentity(identifier);
+    if (identity?.kind !== 'customer_email') return;
     setBusy(true);
     setMessage('');
     try {
-      await auth.requestPasswordReset(email.trim());
+      await auth.requestPasswordReset(identity.email);
       setMessage(t('resetSent'));
     } catch (error) {
       setMessage(t(authMessageKey(error)));
@@ -75,13 +81,14 @@ export default function SignIn() {
 
         <View style={styles.form}>
           <BrandTextField
-            label={t('email')}
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
+            label={at('signInIdentifier')}
+            value={identifier}
+            onChangeText={setIdentifier}
+            keyboardType="default"
             autoCapitalize="none"
             autoCorrect={false}
-            textContentType="emailAddress"
+            textContentType="username"
+            helper={at('phonePasswordHint')}
           />
           <BrandTextField
             label={t('password')}
@@ -93,15 +100,17 @@ export default function SignIn() {
           <BrandButton
             label={ot.text('signIn')}
             loading={busy}
-            disabled={busy || !email.trim() || password.length < 6}
-            onPress={() => void submitEmail()}
+            disabled={busy || !identifier.trim() || password.length < 6}
+            onPress={() => void submit()}
           />
-          <BrandButton
-            label={t('forgotPassword')}
-            variant="ghost"
-            disabled={busy || !email.trim()}
-            onPress={() => void resetPassword()}
-          />
+          {classifySignInIdentity(identifier)?.kind === 'customer_email' ? (
+            <BrandButton
+              label={t('forgotPassword')}
+              variant="ghost"
+              disabled={busy}
+              onPress={() => void resetPassword()}
+            />
+          ) : null}
         </View>
 
         {message ? (
