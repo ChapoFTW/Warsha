@@ -123,6 +123,7 @@ check(betweenOnboardingSteps.every(target => target === 'worker_onboarding'),
 const providerContext = read('src', 'providers', 'provider-context.tsx');
 const onboardingContext = read('src', 'onboarding', 'onboarding-context.tsx');
 const gate = read('components', 'warsha', 'AuthGate.tsx');
+const startupPolicy = read('src', 'navigation', 'startup-route-policy.ts');
 const rootLayout = read('app', '_layout.tsx');
 
 check(!providerContext.includes('selected-app-mode'), 'customer mode is not persisted across restarts');
@@ -132,9 +133,10 @@ check(onboardingContext.includes('accountHydrationReady'),
   'onboarding readiness is scoped to the authenticated account');
 check(gate.includes("provider.setMode(defaultModeFor(target))"), 'the gate initializes experience from role');
 check(gate.includes('routeAfterHydration'), 'the gate withholds routing through account hydration');
-check(gate.includes("target === 'role_choice'"),
+check(startupPolicy.includes("input.target === 'account_blocked' || input.target === 'role_choice'"),
   'an interrupted registration cannot remain on an operational customer route');
-check(gate.includes("pathname === '/worker-home'"), 'the legacy worker home remains compatible');
+check(startupPolicy.includes("canonicalPathname(input.pathname) === '/worker-home'"),
+  'the legacy worker home remains compatible');
 check(rootLayout.includes('<Stack.Screen name="worker" />'), 'the dedicated worker stack is registered');
 
 function job(id: string, status: BookingStatus): Booking {

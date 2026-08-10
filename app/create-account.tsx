@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BrandLockup } from '@/components/warsha/BrandMark';
 import { BrandButton, BrandTextField } from '@/components/warsha/BrandUI';
+import { SignupLegalAcceptance } from '@/components/warsha/SignupLegalAcceptance';
 import { AppText } from '@/components/warsha/Typography';
 import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
 import { useThemedStyles } from '@/src/appearance/appearance-context';
@@ -14,6 +15,7 @@ import { isValidCustomerEmail } from '@/src/auth/auth-identifier';
 import { useAuthText } from '@/src/auth/auth-translations';
 import { isValidPhone, normalizePhone } from '@/src/auth/phone-auth';
 import { useLocalization } from '@/src/i18n/localization';
+import { signupLegalManifest, signupLegalSelectionSatisfied } from '@/src/legal/signup-legal';
 import { useOnboarding } from '@/src/onboarding/onboarding-context';
 import { useOnboardingText } from '@/src/onboarding/onboarding-translations';
 import type { AccountRoleChoice } from '@/src/onboarding/onboarding-types';
@@ -43,6 +45,18 @@ export default function CreateAccount() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [notice, setNotice] = useState('');
+  const [commonLegalAccepted, setCommonLegalAccepted] = useState(false);
+  const [workerVerificationAccepted, setWorkerVerificationAccepted] = useState(false);
+
+  const chooseRole = (choice: AccountRoleChoice | null) => {
+    setRole(choice);
+    // Changing the legal audience is a fresh decision. A customer acceptance
+    // must never arrive preselected on the worker agreement, or vice versa.
+    setCommonLegalAccepted(false);
+    setWorkerVerificationAccepted(false);
+    setMessage('');
+    setNotice('');
+  };
 
   const openSignIn = async () => {
     setBusy(true);
@@ -78,6 +92,7 @@ export default function CreateAccount() {
       const result = await auth.signUp(
         name.trim(), choice === 'worker' ? null : email.trim(), password, phone,
         choice === 'worker' ? 'provider' : 'customer', language,
+        signupLegalManifest(choice, language),
       );
       if (choice === 'customer' && result.needsEmailConfirmation) {
         // Supabase may return an obfuscated user for an existing address, so
@@ -114,7 +129,7 @@ export default function CreateAccount() {
                 accessibilityLabel={`${ot.text(option === 'customer' ? 'roleCustomer' : 'roleWorker')}. ${
                   ot.text(option === 'customer' ? 'roleCustomerHint' : 'roleWorkerHint')}`}
                 accessibilityHint={ot.text('a11yRoleNotSelected')}
-                onPress={() => setRole(option)}
+                onPress={() => chooseRole(option)}
                 style={({ pressed }) => [styles.option, pressed && styles.optionPressed]}>
                 <AppText style={styles.optionTitle}>
                   {ot.text(option === 'customer' ? 'roleCustomer' : 'roleWorker')}
@@ -196,6 +211,15 @@ export default function CreateAccount() {
             </>
           ) : null}
 
+          <SignupLegalAcceptance
+            role={role}
+            commonAccepted={commonLegalAccepted}
+            workerVerificationAccepted={workerVerificationAccepted}
+            disabled={busy}
+            onCommonAcceptedChange={setCommonLegalAccepted}
+            onWorkerVerificationAcceptedChange={setWorkerVerificationAccepted}
+          />
+
           <BrandButton
             label={ot.text('createAccount')}
             loading={busy}
@@ -203,6 +227,11 @@ export default function CreateAccount() {
               busy || name.trim().length < 2
               || (role === 'customer' && !isValidCustomerEmail(email)) || password.length < 6
               || !isValidPhone(normalizePhone(phone))
+              || !signupLegalSelectionSatisfied(
+                role,
+                commonLegalAccepted,
+                workerVerificationAccepted,
+              )
             }
             onPress={() => void createAccount(role)}
           />
@@ -214,7 +243,7 @@ export default function CreateAccount() {
         <BrandButton
           label={ot.text('roleQuestion')}
           variant="ghost"
-          onPress={() => { setRole(null); setMessage(''); setNotice(''); }}
+          onPress={() => chooseRole(null)}
         />
       </ScrollView>
     </SafeAreaView>

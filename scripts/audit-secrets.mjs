@@ -97,15 +97,18 @@ function scan(label, text) {
   }
 }
 
-// 1. Tracked working-tree files.
+// 1. Tracked and non-ignored untracked working-tree files. New migrations and
+// source files are most important before their first commit, when `ls-files`
+// alone would otherwise make the scanner blind to them.
 const tracked = git(['ls-files']).split('\n').filter(Boolean);
-for (const file of tracked) {
+const untracked = git(['ls-files', '--others', '--exclude-standard']).split('\n').filter(Boolean);
+for (const file of [...tracked, ...untracked]) {
   const dot = file.lastIndexOf('.');
   if (dot >= 0 && SKIP_EXT.has(file.slice(dot).toLowerCase())) continue;
   let size = 0;
   try { size = statSync(file).size; } catch { continue; }
   if (size > 4 * 1024 * 1024) continue;
-  scan(`tracked ${file}`, readFileSync(file, 'utf8'));
+  scan(`${tracked.includes(file) ? 'tracked' : 'untracked'} ${file}`, readFileSync(file, 'utf8'));
 }
 
 // 2. Git history. A rotated secret that is still reachable is still exposed.
@@ -128,4 +131,7 @@ if (findings.length) {
   process.exit(1);
 }
 
-console.log(`Secret scan clean: ${tracked.length} tracked files and ${revs.length} commits, no credential shape found.`);
+console.log(
+  `Secret scan clean: ${tracked.length} tracked files, ${untracked.length} non-ignored untracked files, `
+  + `${revs.length} commits, no credential shape found.`,
+);

@@ -20,6 +20,12 @@ centre cannot disagree about what somebody agreed to.
 
 **No parallel consent system was created.** `record_my_consent` is untouched.
 
+Signup follows this separation too. Mandatory agreement acceptance appends
+exact document-version decisions to `legal_acceptances`; it does not silently
+grant optional processing purposes. In particular, showing a link to Location
+Data Policy during signup does not accept it and does not grant precise-location
+permission. That permission is requested only at the runtime feature surface.
+
 ## What an acceptance records
 
 ```
@@ -123,6 +129,18 @@ obligations call is treated as unsatisfied, never as satisfied. The wrong guess
 in one direction shows a consent screen somebody did not need; in the other it
 treats a person as having agreed to something Warsha cannot establish they ever
 saw.
+
+The root route gate consumes both the server `enforced` switch and `satisfied`.
+When a future governed material version is published and renewed acceptance is
+explicitly enabled, product routes resolve to `/legal/consent`; legal/privacy,
+support, appeals and account-closure surfaces remain reachable. Earlier ledger
+rows are never updated or removed.
+
+An unreadable obligations answer fails closed the same way: the gate cannot
+tell "owes nothing" apart from "could not ask", so it routes to the same
+screen. That makes the consent screen the one place a transient failure lands,
+and it therefore has to say so and offer a retry. Rendering an empty list there
+would be a dead end, because every product route redirects back to it.
 
 ## Role independence
 

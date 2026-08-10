@@ -103,10 +103,12 @@ function ThemedRoot() {
     if (Platform.OS !== 'web' || typeof document === 'undefined') return;
     document.documentElement.style.colorScheme = scheme;
     document.documentElement.style.backgroundColor = colors.canvas;
+    document.documentElement.style.setProperty('--warsha-startup-canvas', colors.canvas);
+    document.documentElement.style.setProperty('--warsha-startup-mark', colors.brandMark);
     document.body.style.backgroundColor = colors.canvas;
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content', colors.canvas);
     document.querySelector('meta[name="color-scheme"]')?.setAttribute('content', scheme);
-  }, [colors.canvas, scheme]);
+  }, [colors.brandMark, colors.canvas, scheme]);
 
   return (
     <ThemeProvider value={navigationTheme}>
@@ -183,7 +185,12 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    if (fontsLoaded || fontError) void SplashScreen.hideAsync();
+    // AuthGate owns ordinary startup and hides the native splash only after a
+    // safe route is mounted. ConfigurationError sits outside that gate, so it
+    // is the sole exceptional path that hides here.
+    if ((fontsLoaded || fontError) && supabaseConfigurationMissing) {
+      void SplashScreen.hideAsync();
+    }
   }, [fontError, fontsLoaded]);
 
   if (!fontsLoaded && !fontError) return null;

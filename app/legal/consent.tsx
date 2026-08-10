@@ -39,9 +39,9 @@ import { mayRestrictOnDecline, type LegalDocumentKey } from '@/src/legal/legal-t
  */
 export default function LegalConsentScreen() {
   const styles = useThemedStyles(makeStyles);
-  const { isRTL } = useLocalization();
+  const { isRTL, t } = useLocalization();
   const lt = useLegalText();
-  const { obligations, accept, decline, ready, unavailable } = useLegal();
+  const { obligations, accept, decline, ready, unavailable, reload } = useLegal();
 
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
@@ -53,7 +53,23 @@ export default function LegalConsentScreen() {
 
   const outstanding = obligations.obligations.filter((item) => item.outstanding);
 
-  if (ready && !unavailable && outstanding.length === 0) {
+  // The startup gate fails closed to this screen when the acceptance authority
+  // cannot be read, so an unreadable answer must be recoverable here. Without
+  // this branch a transient network failure renders an empty screen that every
+  // product route redirects back to.
+  if (ready && unavailable) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <ScreenHeader title={lt.text('reconsentTitle')} />
+        <View style={styles.state}>
+          <AppText style={styles.stateBody}>{lt.text('unavailable')}</AppText>
+          <BrandButton label={t('tryAgain')} onPress={() => reload()} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (ready && outstanding.length === 0) {
     return (
       <SafeAreaView style={styles.safe}>
         <ScreenHeader title={lt.text('reconsentTitle')} />

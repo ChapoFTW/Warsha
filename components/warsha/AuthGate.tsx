@@ -1,4 +1,5 @@
 import { usePathname, useRouter } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View, type ViewStyle } from 'react-native';
 
@@ -8,12 +9,10 @@ import { useThemedStyles } from '@/src/appearance/appearance-context';
 import { useAuth } from '@/src/auth/auth-context';
 import {
   defaultModeFor,
-  homeRouteFor,
-  isWorkerOnboardingContinuation,
   routeAfterHydration,
-  routeSurface,
 } from '@/src/navigation/worker-route-policy';
-import { isPublicAuthRoute, PUBLIC_ROUTES, signedOutRedirect } from '@/src/navigation/auth-route-policy';
+import { startupRouteDecision } from '@/src/navigation/startup-route-policy';
+import { useLegal } from '@/src/legal/legal-context';
 import { useOnboarding } from '@/src/onboarding/onboarding-context';
 import { useOnboardingText } from '@/src/onboarding/onboarding-translations';
 import { useProviderFoundation } from '@/src/providers/provider-context';
@@ -49,6 +48,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   const { loading: authLoading } = useAuth();
   const onboarding = useOnboarding();
   const provider = useProviderFoundation();
+  const legal = useLegal();
   const [modeAccount, setModeAccount] = useState<string | null>(null);
 
   const resolvedTarget = routeAfterHydration({
@@ -61,7 +61,9 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   const target = resolvedTarget ?? onboarding.route;
   const signedIn = onboarding.accountKey !== null;
   const modeReady = !signedIn || modeAccount === onboarding.accountKey;
-  const ready = providersReady && modeReady;
+  const legalReady = !signedIn
+    || (legal.ready && legal.accountKey === onboarding.accountKey);
+  const ready = providersReady && modeReady && legalReady;
 
   // Mode is initialized once per authenticated app session/account. Customer
   // mode remains available to a worker, but it is an explicit in-memory
@@ -81,91 +83,38 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     return () => { current = false; };
   }, [modeAccount, onboarding.accountKey, provider, providersReady, signedIn, target]);
 
+  const decision = startupRouteDecision({
+    ready,
+    pathname,
+    target,
+    mode: provider.mode,
+    workerCapabilityActive: onboarding.state.workerCapabilityActive,
+    legalAcceptanceRequired: signedIn
+      && !legal.satisfied
+      && (legal.obligations.enforced || legal.unavailable),
+  });
+  const decisionStatus = decision.status;
+  const redirect = decision.status === 'redirecting' ? decision.redirect : null;
+
   useEffect(() => {
-    if (!ready) return;
+    if (redirect) router.replace(redirect);
+  }, [redirect, router]);
 
-    if (target === 'gateway') {
-      // A signed-out session on a public route stays where it is. Bouncing
-      // somebody off the sign-in screen back to the gateway would make signing
-      // in impossible.
-      const redirect = signedOutRedirect(pathname);
-      if (redirect) router.replace(redirect);
-      return;
-    }
+  useEffect(() => {
+    if (decisionStatus !== 'render') return;
+    void SplashScreen.hideAsync().catch(() => {
+      // Web and a few development shells do not own a native splash surface.
+    });
+  }, [decisionStatus]);
 
-    // Signed in and sitting on a signed-out route: send them onward. This is
-    // what makes sign-in and account creation land in the right place without
-    // either screen having to know where that is.
-    if (isPublicAuthRoute(pathname, PUBLIC_ROUTES)) {
-      router.replace(homeRouteFor(target));
-      return;
-    }
-
-    const surface = routeSurface(pathname);
-
-    if (target === 'account_blocked') {
-      router.replace(homeRouteFor(target));
-      return;
-    }
-
-    // A missing role is not a customer role. If an interrupted registration
-    // or a deep link reaches an operational surface before role selection is
-    // recorded, return to the role authority instead of leaving the customer
-    // shell visible.
-    if (target === 'role_choice') {
-      router.replace(homeRouteFor(target));
-      return;
-    }
-
-    // A worker application is one continuous journey. Until capability is
-    // granted, customer and worker operational shells cannot become an escape
-    // hatch from the required next step. Shared legal/support routes remain.
-    if (
-      target === 'worker_onboarding'
-      && surface !== 'shared'
-      && !isWorkerOnboardingContinuation(pathname)
-    ) {
-      router.replace(homeRouteFor(target));
-      return;
-    }
-
-    if (target === 'worker_home') {
-      if (surface === 'worker') {
-        if (provider.mode !== 'provider') void provider.setMode('provider');
-        if (pathname === '/worker-home' || pathname === '/provider-mode') {
-          router.replace(homeRouteFor(target));
-        }
-        return;
-      }
-
-      // Customer surfaces are available only after the worker explicitly
-      // chooses the service-request experience in this app session.
-      if (surface === 'customer' && provider.mode !== 'customer') {
-        router.replace(homeRouteFor(target));
-      }
-      return;
-    }
-
-    // A customer cannot enter worker operations merely by knowing a route.
-    // A dual-role account with server-confirmed worker capability may still
-    // enter explicitly; the server remains the authorization boundary.
-    if (
-      (target === 'customer_home' || target === 'customer_address')
-      && surface === 'worker'
-      && !onboarding.state.workerCapabilityActive
-    ) {
-      router.replace(homeRouteFor(target));
-      return;
-    }
-
-    if (target === 'customer_address' && pathname === '/') {
-      router.replace(homeRouteFor(target));
-    }
-  }, [onboarding.state.workerCapabilityActive, pathname, provider, ready, router, target]);
-
-  if (!ready) {
+  if (decisionStatus !== 'render') {
     return (
-      <View accessibilityRole="progressbar" accessibilityLabel={ot.text('gatewayLoading')} style={styles.loading}>
+      <View
+        nativeID="warsha-startup-surface"
+        accessibilityRole="progressbar"
+        accessibilityLabel={ot.text('gatewayLoading')}
+        style={styles.loading}
+      >
         <BrandLoadingMark size={56} accessibilityLabel={ot.text('gatewayLoading')} />
       </View>
     );

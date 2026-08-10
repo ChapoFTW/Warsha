@@ -42,6 +42,21 @@ returns text language sql stable as $fn$
   where n.nspname = p_schema and p.proname = p_name and p.prokind = 'f';
 $fn$;
 
+create function pg_temp.signup_manifest(p_role text, p_language text default 'en')
+returns jsonb language sql stable as $fn$
+  select jsonb_agg(jsonb_build_object(
+    'documentKey', d.document_key,
+    'version', v.version,
+    'language', p_language,
+    'renderedHash', case when p_language = 'ar'
+      then v.content_hash_ar else v.content_hash_en end
+  ) order by d.sort_order)
+  from public.legal_documents d
+  join lateral (select * from private.legal_current_version(d.document_key)) v on true
+  where d.active and d.requires_acceptance
+    and (d.audience = 'all' or d.audience = p_role)
+$fn$;
+
 -- ---------------------------------------------------------------------------
 -- Structure
 -- ---------------------------------------------------------------------------
@@ -982,11 +997,13 @@ values
                       'worker_identity_id','c2400000-0000-4000-8000-000000000001'),
    jsonb_build_object('display_name','WPS024 Worker','account_role','provider',
                       'contact_phone','+201230000101',
-                      'worker_identity_id','c2400000-0000-4000-8000-000000000001')),
+                      'worker_identity_id','c2400000-0000-4000-8000-000000000001',
+                      'legal_acceptances',pg_temp.signup_manifest('worker'))),
   ('a2400000-0000-4000-8000-000000000002','00000000-0000-0000-0000-000000000000',
    'authenticated','authenticated','wps024.customer@example.com','x', now(), now(), now(), '{}',
    jsonb_build_object('display_name','WPS024 Customer','account_role','customer',
-                      'contact_phone','+201230000102'))
+                      'contact_phone','+201230000102',
+                      'legal_acceptances',pg_temp.signup_manifest('customer')))
 on conflict (id) do nothing;
 
 select is((select phone from public.profiles where id='a2400000-0000-4000-8000-000000000001'),

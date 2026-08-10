@@ -25,6 +25,7 @@ type RegisterBody = {
   phone?: unknown;
   password?: unknown;
   language?: unknown;
+  legalAcceptances?: unknown;
 };
 
 type SignInBody = {
@@ -56,6 +57,22 @@ function databaseRateLimited(error: { code?: string; message?: string } | null):
   return error?.code === '53400' || /too many attempts/i.test(error?.message ?? '');
 }
 
+function legalAcceptanceManifest(value: unknown): unknown[] | null {
+  if (!Array.isArray(value) || value.length < 1 || value.length > 4) return null;
+  const valid = value.every((item) => {
+    if (!item || typeof item !== 'object') return false;
+    const entry = item as Record<string, unknown>;
+    return typeof entry.documentKey === 'string'
+      && /^[a-z_]{3,64}$/.test(entry.documentKey)
+      && typeof entry.version === 'string'
+      && /^\d+\.\d+$/.test(entry.version)
+      && (entry.language === 'en' || entry.language === 'ar')
+      && typeof entry.renderedHash === 'string'
+      && /^[0-9a-f]{64}$/.test(entry.renderedHash);
+  });
+  return valid ? value : null;
+}
+
 Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') return new Response('ok', { headers: CORS });
   if (request.method !== 'POST') return json({ code: 'method_not_allowed' }, 405);
@@ -84,9 +101,11 @@ Deno.serve(async (request) => {
   if (body.action === 'register') {
     const fullName = typeof body.fullName === 'string' ? body.fullName.trim() : '';
     const language = body.language === 'ar' ? 'ar' : 'en';
+    const legalAcceptances = legalAcceptanceManifest(body.legalAcceptances);
     if (fullName.length < 2 || fullName.length > 120) {
       return json({ code: 'invalid_request' }, 400);
     }
+    if (!legalAcceptances) return json({ code: 'invalid_request' }, 400);
 
     const credentialId = crypto.randomUUID();
     const { data: available, error: availabilityError } = await service.rpc(
@@ -98,7 +117,6 @@ Deno.serve(async (request) => {
     if (available !== true) return json({ code: 'phone_in_use' }, 409);
 
     const syntheticEmail = workerSyntheticEmail(credentialId);
-    const acceptedAt = new Date().toISOString();
     const { error: createError } = await service.auth.admin.createUser({
       email: syntheticEmail,
       password,
@@ -112,8 +130,7 @@ Deno.serve(async (request) => {
         account_role: 'provider',
         contact_phone: phone,
         worker_identity_id: credentialId,
-        terms_accepted_at: acceptedAt,
-        privacy_accepted_at: acceptedAt,
+        legal_acceptances: legalAcceptances,
       },
       app_metadata: {
         worker_synthetic_identity: true,

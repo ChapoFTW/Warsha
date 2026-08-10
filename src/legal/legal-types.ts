@@ -164,6 +164,8 @@ export type LegalObligation = {
 export type LegalObligations = {
   role: 'customer' | 'worker' | null;
   obligations: readonly LegalObligation[];
+  /** Server governance switch for material renewed acceptance. */
+  enforced: boolean;
   /** True when nothing is outstanding. The only field a gate should read. */
   satisfied: boolean;
   /** Outstanding items whose class actually blocks functionality. */
@@ -184,6 +186,7 @@ export type LegalAcceptanceRecord = {
 export const emptyObligations: LegalObligations = {
   role: null,
   obligations: [],
+  enforced: false,
   satisfied: false,
   blocking: [],
 };

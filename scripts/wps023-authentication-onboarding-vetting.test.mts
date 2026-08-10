@@ -439,18 +439,23 @@ check(/accessibilityRole="header"/.test(welcome), 'the gateway has an accessible
 
 const gate = read('components', 'warsha', 'AuthGate.tsx');
 const gateCode = codeOf('components', 'warsha', 'AuthGate.tsx');
-check(/if \(!ready\)/.test(gateCode), 'the gate renders nothing operational until ready');
+const startupPolicyCode = codeOf('src', 'navigation', 'startup-route-policy.ts');
+check(/if \(decisionStatus !== 'render'\)/.test(gateCode),
+  'the gate renders nothing operational until route authority permits it');
 check(/routeAfterHydration/.test(gateCode),
   'new-session routing waits for every account-scoped authority');
 check(/BrandLoadingMark/.test(gate), 'the loading state is the brand mark');
 // The loading state must not impersonate a signed-in app. Scoped to the branch
 // that actually renders it — `/(tabs)` appears in the route table, which is a
 // destination, not something the loading screen draws.
-const loadingBranch = gateCode.slice(gateCode.indexOf('if (!ready)'), gateCode.indexOf('return <>{children}'));
+const loadingBranch = gateCode.slice(
+  gateCode.indexOf("if (decisionStatus !== 'render')"),
+  gateCode.indexOf('return <>{children}'),
+);
 check(loadingBranch.length > 50, 'the loading branch was found');
 check(!/Tabs|BottomNavigation|skeleton|Skeleton/.test(loadingBranch),
   'THE LOADING STATE DOES NOT IMPERSONATE A SIGNED-IN APP');
-check(/PUBLIC_ROUTES/.test(gateCode), 'the gate knows which routes are public');
+check(/isPublicAuthRoute/.test(startupPolicyCode), 'the central route policy knows which routes are public');
 check(/replace\(/.test(gateCode) && !/push\(/.test(gateCode),
   'the gate replaces rather than pushes, so there is no back door into a protected screen');
 

@@ -85,8 +85,10 @@ check(/emailRedirectTo:\s*Linking\.createURL\('auth\/confirm'\)/.test(authContex
   'customer signup supplies a cross-platform confirmation callback');
 check(/exchangeCodeForSession/.test(authContext) && /auth\.setSession/.test(authContext),
   'callback supports PKCE and implicit-token responses');
-check(/customerConfirmationPending/.test(createAccount) && /customerConfirmationPending/.test(profile),
-  'both customer registration surfaces use the non-enumerating pending state');
+check(/customerConfirmationPending/.test(createAccount),
+  'canonical customer registration uses the non-enumerating pending state');
+check(!/auth\.signUp\(/.test(profile) && /router\.push\('\/create-account'\)/.test(profile),
+  'signed-out profile delegates account creation to the canonical legal-gated surface');
 check(!/setNotice\(t\('checkEmail'\)\)/.test(createAccount),
   'create-account no longer reports a bare email-sent claim');
 check(/confirmationInvalidBody/.test(callbackScreen) && /confirmationProcessingBody/.test(callbackScreen),

@@ -2,6 +2,21 @@ begin;
 
 select plan(12);
 
+create function pg_temp.signup_manifest(p_language text default 'en')
+returns jsonb language sql stable as $fn$
+  select jsonb_agg(jsonb_build_object(
+    'documentKey', d.document_key,
+    'version', v.version,
+    'language', p_language,
+    'renderedHash', case when p_language = 'ar'
+      then v.content_hash_ar else v.content_hash_en end
+  ) order by d.sort_order)
+  from public.legal_documents d
+  join lateral (select * from private.legal_current_version(d.document_key)) v on true
+  where d.active and d.requires_acceptance
+    and (d.audience = 'all' or d.audience = 'customer')
+$fn$;
+
 select has_function(
   'private', 'handle_customer_email_confirmation', array[]::text[],
   'customer email confirmation handoff exists');
@@ -26,7 +41,11 @@ insert into auth.users(
   'eb190001-0000-4000-8000-000000000001',
   'authenticated', 'authenticated', 'customer-confirmation@test.local', '', null,
   '{}',
-  '{"display_name":"Confirmation Customer","account_role":"customer","contact_phone":"+201555555501"}',
+  jsonb_build_object(
+    'display_name','Confirmation Customer',
+    'account_role','customer',
+    'contact_phone','+201555555501',
+    'legal_acceptances',pg_temp.signup_manifest()),
   now(), now()
 );
 

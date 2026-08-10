@@ -31,6 +31,46 @@ is not a thing — it is whatever text happened to be on the server that day.
 Each arrow is enforced. The first by two test suites, the second by the server
 function, the third by an append-only trigger.
 
+## Signup is part of the same chain
+
+Customer and worker registration use the same corpus and ledger; there is no
+signup-only boolean consent store. The unchecked client controls build a
+role-scoped manifest containing only document key, exact version, displayed
+language and the bundled rendered hash. Customers name Customer Terms and
+Privacy Policy. Workers name Worker Terms, Privacy Policy and the separately
+versioned Worker Verification Policy.
+
+For customer email/password signup, that manifest is transient Auth metadata.
+For worker phone/password signup, the trusted worker broker validates its shape
+and forwards it as transient Auth metadata. A before-insert trigger lifts the
+manifest out of the metadata and carries it through the statement in a
+transaction-local setting keyed by user id, so the stored Auth row never holds
+it. The after-insert trigger then:
+
+1. obtains the current required documents from the published register;
+2. refuses missing, duplicate, wrong-audience, stale-version or hash-mismatched
+   evidence inside the account-creation transaction; and
+3. appends one immutable `legal_acceptances` row per required document using
+   the database clock and the resolved platform environment.
+
+Removing the manifest *before* the row is stored, rather than after, is the
+part that had to be corrected. Hosted Auth creates the user and then updates
+that same row from its own in-memory copy of the metadata; an after-insert
+removal was silently undone by that write-back, and three SHA-256 values rode
+along in every issued JWT. The isolation trigger therefore also fires on
+update, so no later write-back can reinstate what a signup only ever needed
+once.
+
+The client never supplies the acceptance timestamp. Customer email
+confirmation can happen later; the legal evidence is already bound to the
+account created by the signup request. Worker registration cannot bypass the
+ledger through its synthetic-email boundary.
+
+Location Data Policy remains readable from the same viewer but is not included
+in either mandatory signup manifest. Device location permission remains a
+separate operating-system decision, and this integration changes no provider
+or Maps activation state.
+
 ## Why the text is not in the database
 
 Three reasons, in order of weight.

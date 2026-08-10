@@ -54,8 +54,8 @@ check(isWorkerOnboardingContinuation('/worker/verification?step=certificate'),
   'certificate deep links remain onboarding continuations');
 check(!isWorkerOnboardingContinuation('/worker/jobs'),
   'incomplete workers cannot enter operational jobs');
-const authGate = read('components/warsha/AuthGate.tsx');
-check(authGate.includes('!isWorkerOnboardingContinuation(pathname)'),
+const startupPolicy = read('src/navigation/startup-route-policy.ts');
+check(startupPolicy.includes('!isWorkerOnboardingContinuation(input.pathname)'),
   'the central route gate applies the onboarding-continuation exception');
 
 // Egypt administrative selection is dataset-backed and dependent.

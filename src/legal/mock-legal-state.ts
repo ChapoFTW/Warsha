@@ -109,6 +109,9 @@ export function mockLegalObligations(
   return {
     role: account.role,
     obligations,
+    // Mirrors the shipped server configuration. Mock records exact signup
+    // versions without pretending renewed-acceptance governance is enabled.
+    enforced: false,
     satisfied: blocking.length === 0,
     blocking,
   };

@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 
 import { createClient } from '@supabase/supabase-js';
+import { signupLegalManifest } from '../src/legal/signup-legal.ts';
 
 const PERSONAS = {
   customer: {
@@ -137,8 +138,10 @@ async function ensureUser(admin, persona) {
     display_name: persona.name,
     preferred_language: 'en',
     account_role: persona.role,
-    terms_accepted_at: '2026-07-29T00:00:00.000Z',
-    privacy_accepted_at: '2026-07-29T00:00:00.000Z',
+    legal_acceptances: signupLegalManifest(
+      persona.role === 'provider' ? 'worker' : 'customer',
+      'en',
+    ),
     wps007_smoke_persona: true,
   };
   if (existing) {

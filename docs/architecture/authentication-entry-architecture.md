@@ -55,6 +55,39 @@ AuthGate decides                 components/warsha/AuthGate.tsx
 
 ---
 
+### First-paint authority (Preview correction)
+
+`ready` is necessary but is not, by itself, permission to mount the current
+route. Expo Router applies `router.replace()` from an effect, and effects run
+after paint. A resolved signed-out session on the initial `/` therefore used to
+mount the customer tabs for one frame before the effect replaced `/` with
+`/welcome`.
+
+`src/navigation/startup-route-policy.ts` now returns one of three states:
+
+- `loading`: an account-scoped authority is unresolved;
+- `redirecting`: the target is known but the current pathname is unsafe;
+- `render`: the current pathname is valid for the resolved authority.
+
+Only `render` mounts the Router stack. Both other states mount the neutral
+Warsha loading mark on the already-resolved canvas, with the current language,
+direction and theme. A redirect is therefore never mistaken for permission to
+paint the route being replaced.
+
+On native, `preventAutoHideAsync()` is called at module scope and `AuthGate`
+hides the splash only after a safe route is renderable. On web the same route
+decision prevents protected React content from mounting during hydration.
+Preview, development and standalone builds all execute this same JavaScript
+authority; development shells may depict the native splash differently, as
+documented by Expo, but cannot bypass the React gate.
+
+Persisted sessions are also validated with `auth.getUser()` before Auth
+readiness. `getSession()` alone proves only that storage contained a token; an
+expired or revoked token now fails closed into the signed-out route without an
+intermediate product shell.
+
+---
+
 ## Why the gate renders nothing rather than redirecting
 
 The tempting design is: render the app, and redirect once the session resolves.
@@ -93,9 +126,10 @@ somebody off the sign-in screen back to the gateway would make signing in
 impossible — an obvious bug that a naive "always redirect to `/welcome`" gate
 would ship.
 
-A signed-in session sitting on a public route is sent onward. That is what makes
-sign-in and account creation land in the right place without either screen
-needing to know where that is.
+A signed-in session sitting on an **account-entry** route is sent onward. Legal
+and privacy documents are intentionally public before signup and remain valid
+shared routes after signup; they are not treated as account-entry screens. That
+distinction also keeps the governed renewed-acceptance screen reachable.
 
 ---
 

@@ -32,11 +32,11 @@
     "test:wps015": "node --no-warnings --experimental-strip-types scripts/wps015-production-payments.test.mts",
     "test:wps016": "node --no-warnings --experimental-strip-types scripts/wps016-trust-safety.test.mts",
     "test:marketplace": "node --no-warnings --experimental-strip-types scripts/marketplace-intelligence.test.mts",
-    "smoke:wps007": "node scripts/wps007-smoke.mjs",
+    "smoke:wps007": "node --no-warnings --experimental-strip-types scripts/wps007-smoke.mjs",
     "check:mojibake": "node ./scripts/check-mojibake.js",
     "db:test": "supabase test db",
     "auth:cleanup-seed": "node ./scripts/cleanup-malformed-seed-users.mjs",
-    "auth:create-dev-user": "node ./scripts/create-dev-auth-user.mjs",
+    "auth:create-dev-user": "node --no-warnings --experimental-strip-types ./scripts/create-dev-auth-user.mjs",
     "test:wps017": "node --no-warnings --experimental-strip-types scripts/wps017-operations-admin.test.mts",
     "audit:secrets": "node ./scripts/audit-secrets.mjs",
     "audit:migrations": "node ./scripts/audit-migrations.mjs",
@@ -53,7 +53,8 @@
     "test:wps024": "node --no-warnings --experimental-strip-types scripts/wps024-legal-compliance-governance.test.mts",
     "test:wps025": "node --no-warnings --experimental-strip-types scripts/wps025-worker-experience.test.mts",
     "test:platform-preferences": "node --no-warnings --experimental-strip-types scripts/cross-platform-preferences-routing.test.mts",
-    "test:onboarding-stabilization": "node --no-warnings --experimental-strip-types scripts/onboarding-auth-stabilization.test.mts"
+    "test:onboarding-stabilization": "node --no-warnings --experimental-strip-types scripts/onboarding-auth-stabilization.test.mts",
+    "test:signup-legal-startup": "node --no-warnings --experimental-strip-types scripts/signup-legal-startup.test.mts"
   },
   "dependencies": {
     "@expo-google-fonts/cairo": "^0.4.2",

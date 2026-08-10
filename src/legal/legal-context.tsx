@@ -66,7 +66,7 @@ type LegalValue = {
 const LegalContext = createContext<LegalValue | null>(null);
 
 export function LegalProvider({ children }: PropsWithChildren) {
-  const { mode, user } = useAuth();
+  const { mode, user, loading: authLoading } = useAuth();
   const accountKey = mode === 'mock' ? 'mock-user' : user?.id ?? null;
 
   const [loadedAccount, setLoadedAccount] = useState<string | null>(null);
@@ -166,9 +166,10 @@ export function LegalProvider({ children }: PropsWithChildren) {
 
   const value = useMemo<LegalValue>(() => {
     const isCurrentAccount = loadedAccount !== null && loadedAccount === accountKey;
-    const usable = ready && isCurrentAccount && !unavailable;
+    const settled = !authLoading && ready && (accountKey === null || isCurrentAccount);
+    const usable = settled && isCurrentAccount && !unavailable;
     return {
-      ready,
+      ready: settled,
       accountKey,
       satisfied: usable ? obligations.satisfied : false,
       obligations: isCurrentAccount ? obligations : emptyObligations,
@@ -180,6 +181,7 @@ export function LegalProvider({ children }: PropsWithChildren) {
     };
   }, [
     accountKey,
+    authLoading,
     acceptances,
     accept,
     decline,

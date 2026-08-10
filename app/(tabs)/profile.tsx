@@ -54,7 +54,6 @@ export default function Profile() {
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
   const [preferred, setPreferred] = useState<'en' | 'ar'>(language);
-  const [register, setRegister] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
   const [phoneEnrollment, setPhoneEnrollment] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -105,19 +104,11 @@ export default function Profile() {
     return () => { active = false; };
   }, [auth.mode, signedIn, auth.user?.id, t]);
 
-  const loginCustomer = async () => {
+  const login = async () => {
     setBusy(true);
     setMessage('');
     try {
-      if (register) {
-        // WPS-024 correction. One registration, both roles, no OTP. The phone
-        // number is required contact information and is validated before the
-        // call; nothing here sends a code or waits for one.
-        const result = await auth.signUp(name, email, password, phone, 'customer', preferred);
-        if (result.needsEmailConfirmation) {
-          setMessage(at('customerConfirmationPending'));
-        }
-      } else await auth.signIn(email, password);
+      await auth.signIn(email, password);
     } catch (error) { setMessage(t(authMessageKey(error))); }
     finally { setBusy(false); }
   };
@@ -242,22 +233,18 @@ export default function Profile() {
     {message ? <AppText accessibilityRole="alert" style={styles.error}>{message}</AppText> : null}
   </Page>;
 
-  // This compact profile form creates customer accounts only. Sign-in accepts
-  // the same role-appropriate identifier as the dedicated sign-in screen.
+  // Account creation has one canonical surface. Keeping a second compact
+  // registration form here would make legal acceptance and role-specific
+  // requirements bypassable as soon as the two implementations drift.
   return <Page>
-    <AppText style={styles.title}>{register ? t('signUp') : t('signIn')}</AppText>
-    {register ? <Field label={t('fullName')} value={name} onChangeText={setName} rtl={isRTL}/> : null}
-    <Field label={register ? t('email') : at('signInIdentifier')} value={email} onChangeText={setEmail} rtl={isRTL} keyboardType={register ? 'email-address' : 'default'} autoCapitalize="none" autoCorrect={false}/>
-    {!register ? <AppText style={styles.hint}>{at('phonePasswordHint')}</AppText> : null}
+    <AppText style={styles.title}>{t('signIn')}</AppText>
+    <Field label={at('signInIdentifier')} value={email} onChangeText={setEmail} rtl={isRTL} keyboardType="default" autoCapitalize="none" autoCorrect={false}/>
+    <AppText style={styles.hint}>{at('phonePasswordHint')}</AppText>
     <Field label={t('password')} value={password} onChangeText={setPassword} secureTextEntry rtl={isRTL}/>
-    {register ? <>
-      <Field label={at('phone')} value={phone} onChangeText={setPhone} rtl={isRTL} keyboardType="phone-pad" autoCapitalize="none" autoCorrect={false}/>
-      <AppText style={styles.hint}>{at('phoneContactHint')}</AppText>
-    </> : null}
     {message ? <AppText accessibilityRole="alert" style={styles.error}>{message}</AppText> : null}
-    <Pressable disabled={busy || !email || password.length < 6 || (register && (name.trim().length < 2 || !isValidPhone(normalizePhone(phone))))} onPress={() => void loginCustomer()} style={styles.primary}>{busy ? <BrandLoadingMark size={20} color={colors.background}/> : <AppText style={styles.dark}>{register ? t('signUp') : t('signIn')}</AppText>}</Pressable>
-    {!register && classifySignInIdentity(email)?.kind === 'customer_email' ? <Pressable accessibilityRole="button" accessibilityLabel={t('forgotPassword')} disabled={busy} onPress={() => void requestReset()} style={styles.textButton}><AppText style={styles.link}>{t('forgotPassword')}</AppText></Pressable> : null}
-    <Pressable onPress={() => setRegister((value) => !value)} style={styles.button}><AppText>{register ? t('signIn') : t('signUp')}</AppText></Pressable>
+    <Pressable disabled={busy || !email || password.length < 6} onPress={() => void login()} style={styles.primary}>{busy ? <BrandLoadingMark size={20} color={colors.background}/> : <AppText style={styles.dark}>{t('signIn')}</AppText>}</Pressable>
+    {classifySignInIdentity(email)?.kind === 'customer_email' ? <Pressable accessibilityRole="button" accessibilityLabel={t('forgotPassword')} disabled={busy} onPress={() => void requestReset()} style={styles.textButton}><AppText style={styles.link}>{t('forgotPassword')}</AppText></Pressable> : null}
+    <Pressable onPress={() => router.push('/create-account')} style={styles.button}><AppText>{t('signUp')}</AppText></Pressable>
   </Page>;
 }
 

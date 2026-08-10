@@ -3,6 +3,7 @@ import type { FunctionsError } from '@supabase/supabase-js';
 import { getSupabaseClient } from '@/src/lib/supabase';
 
 import { SafeAuthError } from './auth-errors';
+import type { SignupLegalAcceptance } from '@/src/legal/signup-legal';
 
 type WorkerSessionTokens = { accessToken: string; refreshToken: string };
 
@@ -11,6 +12,7 @@ type WorkerRegistration = {
   phone: string;
   password: string;
   language: 'en' | 'ar';
+  legalAcceptances: readonly SignupLegalAcceptance[];
 };
 
 async function responseCode(error: FunctionsError): Promise<string | null> {
@@ -53,6 +55,7 @@ export function registerWorker(input: WorkerRegistration): Promise<WorkerSession
     phone: input.phone,
     password: input.password,
     language: input.language,
+    legalAcceptances: input.legalAcceptances,
   });
 }
 

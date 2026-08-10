@@ -5,6 +5,11 @@ import { createContext, PropsWithChildren, useContext, useEffect, useMemo, useRe
 
 import { environment } from '@/src/config/environment';
 import { getSupabaseClient } from '@/src/lib/supabase';
+import { legalRepository } from '@/src/legal/legal-repository';
+import {
+  isCurrentSignupLegalManifest,
+  type SignupLegalAcceptance,
+} from '@/src/legal/signup-legal';
 
 import { SafeAuthError, sanitizeAuthError } from './auth-errors';
 import { classifySignInIdentity, visibleContactEmail } from './auth-identifier';
@@ -39,7 +44,15 @@ type Value = {
    */
   hasVerifiedPhone: boolean;
   signIn: (identifier: string, password: string) => Promise<void>;
-  signUp: (name: string, email: string | null, password: string, phone: string, role?: AccountRole, language?: 'en' | 'ar') => Promise<CustomerSignUpResult>;
+  signUp: (
+    name: string,
+    email: string | null,
+    password: string,
+    phone: string,
+    role: AccountRole,
+    language: 'en' | 'ar',
+    legalAcceptances: readonly SignupLegalAcceptance[],
+  ) => Promise<CustomerSignUpResult>;
   requestWorkerPhoneChange: (phone: string) => Promise<'code_sent' | 'already_verified'>;
   verifyWorkerPhoneChange: (phone: string, token: string) => Promise<void>;
   requestPasswordReset: (email: string) => Promise<void>;
@@ -121,18 +134,36 @@ export function AuthProvider({ children }: PropsWithChildren) {
       }
     };
 
-    void client.auth.getSession().then(({ data }) => {
-      if (active) {
-        setSession(data.session);
-        setLoading(false);
+    let hydratingInitialSession = true;
+    void (async () => {
+      try {
+        const { data, error } = await client.auth.getSession();
+        if (error) throw error;
+        let verifiedSession = data.session;
+        if (verifiedSession) {
+          // getSession reads persisted storage. getUser asks Auth to validate
+          // the token before any account shell is allowed to mount.
+          const { data: verified, error: verificationError } = await client.auth.getUser();
+          if (verificationError || !verified.user) {
+            await client.auth.signOut({ scope: 'local' }).catch(() => undefined);
+            verifiedSession = null;
+          } else {
+            verifiedSession = { ...verifiedSession, user: verified.user };
+          }
+        }
+        if (active) setSession(verifiedSession);
+      } catch (error) {
+        sanitizeAuthError(error, 'session');
+        if (active) setSession(null);
+      } finally {
+        hydratingInitialSession = false;
+        if (active) setLoading(false);
       }
-    }).catch((error) => {
-      sanitizeAuthError(error, 'session');
-      if (active) setLoading(false);
-    });
+    })();
 
     const { data } = client.auth.onAuthStateChange((event, next) => {
       if (!active) return;
+      if (event === 'INITIAL_SESSION' && hydratingInitialSession) return;
       setSession(next);
       if (event === 'PASSWORD_RECOVERY') {
         callbackHandled.current = true;
@@ -205,10 +236,23 @@ export function AuthProvider({ children }: PropsWithChildren) {
      * call: that would ask Supabase to treat it as an authentication factor and
      * send a code nobody can receive.
      */
-    signUp: async (name, email, password, phone, role = 'customer', language = 'en') => {
+    signUp: async (name, email, password, phone, role, language, legalAcceptances) => {
       const normalized = normalizePhone(phone);
       if (!isValidPhone(normalized)) throw new SafeAuthError('authInvalidPhone');
+      const signupRole = role === 'provider' ? 'worker' : 'customer';
+      if (!isCurrentSignupLegalManifest(signupRole, language, legalAcceptances)) {
+        throw new SafeAuthError('authError');
+      }
       if (environment.dataMode === 'mock') {
+        for (const acceptance of legalAcceptances) {
+          await legalRepository.accept(
+            'mock-user',
+            acceptance.documentKey,
+            acceptance.version,
+            acceptance.language,
+            'sign_up',
+          );
+        }
         return {
           needsEmailConfirmation: false,
           accountId: 'mock-user',
@@ -221,6 +265,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
             phone: normalized,
             password,
             language,
+            legalAcceptances,
           });
           const { data, error } = await getSupabaseClient().auth.setSession({
             access_token: tokens.accessToken,
@@ -233,7 +278,6 @@ export function AuthProvider({ children }: PropsWithChildren) {
           };
         }
         if (!email?.trim()) throw new SafeAuthError('authInvalidCredentials');
-        const acceptedAt = new Date().toISOString();
         const { data, error } = await getSupabaseClient().auth.signUp({
           email: email.trim(),
           password,
@@ -244,8 +288,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
               preferred_language: language,
               account_role: role,
               contact_phone: normalized,
-              terms_accepted_at: acceptedAt,
-              privacy_accepted_at: acceptedAt,
+              legal_acceptances: legalAcceptances,
             },
           },
         });

@@ -72,6 +72,16 @@ const copy = {
     acceptFailed: 'That could not be recorded. Please try again.',
     staleBundle:
       'Your app is showing an older version of this document. Update the app, then agree.',
+    signupTitle: 'Legal agreement',
+    signupRequiredHint: 'Read the required documents before creating your account. Nothing is selected for you.',
+    signupAgreeCommon: "I agree to Warsha's Terms of Service and Privacy Policy.",
+    signupAgreeWorkerVerification: 'I agree to the Worker Verification Policy.',
+    signupTerms: 'Terms of Service',
+    signupPrivacy: 'Privacy Policy',
+    signupWorkerVerification: 'Worker Verification Policy',
+    signupLocationPolicy: 'Location Data Policy',
+    signupLocationSeparate: 'Device location permission is separate from this agreement and remains optional.',
+    signupEvidence: 'Warsha records the exact document version, language and acceptance time. You can reopen these documents from Privacy and Legal.',
   },
   ar: {
     centreTitle: 'القانوني',
@@ -124,6 +134,16 @@ const copy = {
     loading: 'بيحمّل…',
     acceptFailed: 'ما اتسجّلش. حاول تاني من فضلك.',
     staleBundle: 'تطبيقك بيعرض نسخة أقدم من المستند ده. حدّث التطبيق وبعدين وافق.',
+    signupTitle: 'الموافقة القانونية',
+    signupRequiredHint: 'اقرأ المستندات المطلوبة قبل إنشاء الحساب. مفيش اختيار متعلّم لك مسبقًا.',
+    signupAgreeCommon: 'أوافق على شروط استخدام ورشة وسياسة الخصوصية.',
+    signupAgreeWorkerVerification: 'أوافق على سياسة التحقق من الصنايعي.',
+    signupTerms: 'شروط الاستخدام',
+    signupPrivacy: 'سياسة الخصوصية',
+    signupWorkerVerification: 'سياسة التحقق من الصنايعي',
+    signupLocationPolicy: 'سياسة بيانات الموقع',
+    signupLocationSeparate: 'إذن موقع الجهاز منفصل عن الموافقة دي ويفضل اختياري.',
+    signupEvidence: 'ورشة بتسجّل نسخة كل مستند ولغة عرضه ووقت الموافقة بالضبط. تقدر تفتح المستندات تاني من الخصوصية والقانوني.',
   },
 } as const;
 

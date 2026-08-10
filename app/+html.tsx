@@ -26,8 +26,11 @@ const bootstrapAppearance = `
       ? stored
       : (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
     var canvas = scheme === 'light' ? ${JSON.stringify(lightColors.canvas)} : ${JSON.stringify(darkColors.canvas)};
+    var mark = scheme === 'light' ? ${JSON.stringify(lightColors.brandMark)} : ${JSON.stringify(darkColors.brandMark)};
     document.documentElement.style.colorScheme = scheme;
     document.documentElement.style.backgroundColor = canvas;
+    document.documentElement.style.setProperty('--warsha-startup-canvas', canvas);
+    document.documentElement.style.setProperty('--warsha-startup-mark', mark);
     var themeColor = document.querySelector('meta[name="theme-color"]');
     if (themeColor) themeColor.setAttribute('content', canvas);
     var colorScheme = document.querySelector('meta[name="color-scheme"]');
@@ -51,6 +54,41 @@ const bootstrapAppearance = `
 })();
 `;
 
+// Static rendering cannot know a browser's stored preference. These variables
+// are set by the synchronous head script above, and !important intentionally
+// overrides only the exported neutral startup surface. Once React hydrates,
+// AuthGate paints the same values through the normal appearance provider.
+const startupSurfaceStyle = `
+:root {
+  --warsha-startup-canvas: ${darkColors.canvas};
+  --warsha-startup-mark: ${darkColors.brandMark};
+}
+#warsha-startup-surface {
+  background-color: var(--warsha-startup-canvas) !important;
+}
+#warsha-startup-surface svg rect,
+#warsha-startup-surface svg path {
+  stroke: var(--warsha-startup-mark) !important;
+}
+`;
+
+// Runs during body parsing, before first paint, after the statically rendered
+// startup node exists. There is no visible loading copy, but its assistive label
+// must not announce English on an Arabic cold start before React hydrates.
+const localizeStartupAccessibility = `
+(function () {
+  var label = document.documentElement.lang === 'ar' ? 'جاري تحميل ورشة' : 'Loading Warsha';
+  var surface = document.getElementById('warsha-startup-surface');
+  if (!surface) return;
+  surface.setAttribute('lang', document.documentElement.lang);
+  surface.setAttribute('dir', document.documentElement.dir);
+  surface.setAttribute('aria-label', label);
+  surface.querySelectorAll('[role="progressbar"]').forEach(function (node) {
+    node.setAttribute('aria-label', label);
+  });
+})();
+`;
+
 export default function RootHtml({ children }: PropsWithChildren) {
   return (
     <html lang="en" dir="auto">
@@ -69,9 +107,13 @@ export default function RootHtml({ children }: PropsWithChildren) {
         <link rel="icon" href="/warsha-current-approved-192.png" />
         <link rel="apple-touch-icon" href="/warsha-current-approved-192.png" />
         <ScrollViewStyleReset />
+        <style dangerouslySetInnerHTML={{ __html: startupSurfaceStyle }} />
         <script dangerouslySetInnerHTML={{ __html: bootstrapAppearance }} />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <script dangerouslySetInnerHTML={{ __html: localizeStartupAccessibility }} />
+      </body>
     </html>
   );
 }
