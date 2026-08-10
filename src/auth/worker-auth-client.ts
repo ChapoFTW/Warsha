@@ -2,7 +2,7 @@ import type { FunctionsError } from '@supabase/supabase-js';
 
 import { getSupabaseClient } from '@/src/lib/supabase';
 
-import { SafeAuthError } from './auth-errors';
+import { SafeAuthError, type AuthFailure } from './auth-errors';
 import type { SignupLegalAcceptance } from '@/src/legal/signup-legal';
 
 type WorkerSessionTokens = { accessToken: string; refreshToken: string };
@@ -30,18 +30,38 @@ async function responseCode(error: FunctionsError): Promise<string | null> {
   }
 }
 
+/**
+ * Every code the broker can return has a message that tells somebody what to
+ * do next. The previous fallback collapsed a stale-client contract mismatch, a
+ * transport failure and an unknown server state into "Something went wrong",
+ * which is the one answer that helps nobody: a duplicate phone number is fixed
+ * by using another number, an outdated build is fixed by updating, and neither
+ * is fixed by pressing the button again.
+ */
+const WORKER_AUTH_FAILURES: Record<string, AuthFailure> = {
+  invalid_phone: 'authInvalidPhone',
+  phone_in_use: 'authPhoneInUse',
+  invalid_credentials: 'authInvalidCredentials',
+  rate_limited: 'authRateLimited',
+  legal_acceptance_required: 'authOutdatedClient',
+  legal_acceptance_stale: 'authOutdatedClient',
+  // The client validates name and phone before calling, so a rejected shape
+  // means this build and the broker disagree about the contract.
+  invalid_request: 'authOutdatedClient',
+  method_not_allowed: 'authOutdatedClient',
+  unavailable: 'authServerError',
+  signup_failed: 'authServerError',
+};
+
 async function invokeWorkerAuth(body: Record<string, unknown>): Promise<WorkerSessionTokens> {
   const { data, error } = await getSupabaseClient().functions.invoke('worker-auth', { body });
   if (error) {
     const code = await responseCode(error);
-    if (code === 'invalid_phone') throw new SafeAuthError('authInvalidPhone');
-    if (code === 'phone_in_use') throw new SafeAuthError('authPhoneInUse');
-    if (code === 'invalid_credentials') throw new SafeAuthError('authInvalidCredentials');
-    if (code === 'rate_limited') throw new SafeAuthError('authRateLimited');
-    if (code === 'unavailable' || code === 'signup_failed') {
-      throw new SafeAuthError('authServerError');
-    }
-    throw new SafeAuthError('authError');
+    const failure = code ? WORKER_AUTH_FAILURES[code] : undefined;
+    if (failure) throw new SafeAuthError(failure);
+    // No readable code at all is a transport or gateway problem, not an
+    // application answer. Saying so is more actionable than a generic apology.
+    throw new SafeAuthError(code ? 'authServerError' : 'authNetworkError');
   }
   const tokens = data as Partial<WorkerSessionTokens> | null;
   if (!tokens?.accessToken || !tokens.refreshToken) throw new SafeAuthError('authServerError');

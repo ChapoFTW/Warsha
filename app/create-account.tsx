@@ -15,6 +15,18 @@ import { isValidCustomerEmail } from '@/src/auth/auth-identifier';
 import { useAuthText } from '@/src/auth/auth-translations';
 import { isValidPhone, normalizePhone } from '@/src/auth/phone-auth';
 import { useLocalization } from '@/src/i18n/localization';
+import {
+  isSignupBusy,
+  signupAfterRoleChange,
+  signupConfirmationRequired,
+  signupErrorKey,
+  signupFailed,
+  signupIdle,
+  signupPendingNotice,
+  signupSubmitting,
+  signupSucceeded,
+  type SignupState,
+} from '@/src/auth/signup-machine';
 import { signupLegalManifest, signupLegalSelectionSatisfied } from '@/src/legal/signup-legal';
 import { useOnboarding } from '@/src/onboarding/onboarding-context';
 import { useOnboardingText } from '@/src/onboarding/onboarding-translations';
@@ -42,11 +54,13 @@ export default function CreateAccount() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState('');
-  const [notice, setNotice] = useState('');
+  const [signup, setSignup] = useState<SignupState>(signupIdle);
   const [commonLegalAccepted, setCommonLegalAccepted] = useState(false);
   const [workerVerificationAccepted, setWorkerVerificationAccepted] = useState(false);
+
+  const busy = isSignupBusy(signup);
+  const pendingConfirmation = signupPendingNotice(signup);
+  const errorKey = signupErrorKey(signup);
 
   const chooseRole = (choice: AccountRoleChoice | null) => {
     setRole(choice);
@@ -54,23 +68,24 @@ export default function CreateAccount() {
     // must never arrive preselected on the worker agreement, or vice versa.
     setCommonLegalAccepted(false);
     setWorkerVerificationAccepted(false);
-    setMessage('');
-    setNotice('');
+    // An email belongs to the customer application only. Clearing it here means
+    // a worker attempt can never carry a half-typed customer identifier, and a
+    // customer returning to the form starts from a stated address.
+    setEmail('');
+    setSignup(signupAfterRoleChange());
   };
 
   const openSignIn = async () => {
-    setBusy(true);
-    setMessage('');
+    setSignup(signupSubmitting());
     try {
       // Role selection can be visible for an authenticated but incomplete
       // account. An explicit sign-in action means switch accounts; retaining
       // that session would make AuthGate return here immediately.
       if (auth.user) await auth.signOut();
+      setSignup(signupIdle);
       router.replace('/sign-in');
     } catch (error) {
-      setMessage(t(authMessageKey(error)));
-    } finally {
-      setBusy(false);
+      setSignup(signupFailed(authMessageKey(error)));
     }
   };
 
@@ -86,8 +101,9 @@ export default function CreateAccount() {
    * stand between somebody and an account.
    */
   const createAccount = async (choice: AccountRoleChoice) => {
-    setBusy(true);
-    setMessage('');
+    // Submitting discards the previous outcome first, so a stale pending
+    // notice can never sit beside a fresh failure.
+    setSignup(signupSubmitting());
     try {
       const result = await auth.signUp(
         name.trim(), choice === 'worker' ? null : email.trim(), password, phone,
@@ -97,17 +113,16 @@ export default function CreateAccount() {
       if (choice === 'customer' && result.needsEmailConfirmation) {
         // Supabase may return an obfuscated user for an existing address, so
         // this branch cannot prove account creation, sending, or delivery.
-        setNotice(at('customerConfirmationPending'));
+        setSignup(signupConfirmationRequired());
         return;
       }
       // The role is recorded server-side. The client's choice is an input to
       // that call, never the authority for it.
       const roleRecorded = await onboarding.selectRole(choice, result.accountId ?? undefined);
       if (!roleRecorded) throw new Error('Unable to record the account role.');
+      setSignup(signupSucceeded());
     } catch (error) {
-      setMessage(t(authMessageKey(error)));
-    } finally {
-      setBusy(false);
+      setSignup(signupFailed(authMessageKey(error)));
     }
   };
 
@@ -149,7 +164,9 @@ export default function CreateAccount() {
             loading={busy}
             onPress={() => void openSignIn()}
           />
-          {message ? <AppText accessibilityRole="alert" style={styles.error}>{message}</AppText> : null}
+          {errorKey ? (
+            <AppText accessibilityRole="alert" style={styles.error}>{t(errorKey)}</AppText>
+          ) : null}
         </ScrollView>
       </SafeAreaView>
     );
@@ -237,8 +254,15 @@ export default function CreateAccount() {
           />
         </View>
 
-        {notice ? <AppText accessibilityRole="alert" style={styles.notice}>{notice}</AppText> : null}
-        {message ? <AppText accessibilityRole="alert" style={styles.error}>{message}</AppText> : null}
+        {/* One result, one element. These are branches of a single value, so
+            a pending notice and a failure cannot both be on screen. */}
+        {pendingConfirmation ? (
+          <AppText accessibilityRole="alert" style={styles.notice}>
+            {at('customerConfirmationPending')}
+          </AppText>
+        ) : errorKey ? (
+          <AppText accessibilityRole="alert" style={styles.error}>{t(errorKey)}</AppText>
+        ) : null}
 
         <BrandButton
           label={ot.text('roleQuestion')}

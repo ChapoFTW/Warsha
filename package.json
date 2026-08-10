@@ -54,7 +54,8 @@
     "test:wps025": "node --no-warnings --experimental-strip-types scripts/wps025-worker-experience.test.mts",
     "test:platform-preferences": "node --no-warnings --experimental-strip-types scripts/cross-platform-preferences-routing.test.mts",
     "test:onboarding-stabilization": "node --no-warnings --experimental-strip-types scripts/onboarding-auth-stabilization.test.mts",
-    "test:signup-legal-startup": "node --no-warnings --experimental-strip-types scripts/signup-legal-startup.test.mts"
+    "test:signup-legal-startup": "node --no-warnings --experimental-strip-types scripts/signup-legal-startup.test.mts",
+    "test:signup-state": "node --no-warnings --experimental-strip-types scripts/signup-state-errors.test.mts"
   },
   "dependencies": {
     "@expo-google-fonts/cairo": "^0.4.2",

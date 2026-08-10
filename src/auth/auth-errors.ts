@@ -23,6 +23,7 @@ export type AuthFailure =
   | 'authSignupUnavailable'
   | 'authRateLimited'
   | 'authConfigurationError'
+  | 'authOutdatedClient'
   | 'authError';
 
 export type AuthOperation =
@@ -69,6 +70,7 @@ const SAFE_MESSAGES: Record<AuthFailure, string> = {
   authSignupUnavailable: 'The signup request could not be completed.',
   authRateLimited: 'The authentication request was rate limited.',
   authConfigurationError: 'Authentication is not configured.',
+  authOutdatedClient: 'This build and the authentication service disagree about the request contract.',
   authError: 'Authentication failed.',
 };
 

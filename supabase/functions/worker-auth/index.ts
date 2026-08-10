@@ -105,7 +105,21 @@ Deno.serve(async (request) => {
     if (fullName.length < 2 || fullName.length > 120) {
       return json({ code: 'invalid_request' }, 400);
     }
-    if (!legalAcceptances) return json({ code: 'invalid_request' }, 400);
+    // Distinct from a malformed name so a client that predates mandatory
+    // signup acceptance is told to update rather than shown an unexplained
+    // failure. The requirement itself is not relaxed.
+    if (!legalAcceptances) return json({ code: 'legal_acceptance_required' }, 400);
+
+    // Named before the account is created, because GoTrue collapses the
+    // writer's refusal into a generic database error. The writer still
+    // validates inside the transaction; this only decides which message a
+    // person sees.
+    const { data: manifestCurrent, error: manifestError } = await service.rpc(
+      'signup_legal_manifest_current',
+      { p_account_role: 'worker', p_manifest: legalAcceptances },
+    );
+    if (manifestError) return json({ code: 'unavailable' }, 503);
+    if (manifestCurrent !== true) return json({ code: 'legal_acceptance_stale' }, 409);
 
     const credentialId = crypto.randomUUID();
     const { data: available, error: availabilityError } = await service.rpc(
@@ -146,8 +160,8 @@ Deno.serve(async (request) => {
       // commit in that transaction.
       const { data: conflict } = await service.from('profiles')
         .select('id').eq('phone', phone).maybeSingle();
-      return conflict ? json({ code: 'phone_in_use' }, 409)
-        : json({ code: 'signup_failed' }, 503);
+      if (conflict) return json({ code: 'phone_in_use' }, 409);
+      return json({ code: 'signup_failed' }, 503);
     }
 
     const { data, error } = await credentialAuth.auth.signInWithPassword({

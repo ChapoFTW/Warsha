@@ -207,5 +207,45 @@ select throws_ok(
       jsonb_build_object('display_name','Unchecked','account_role','customer'),now(),now())$$,
   '22023', null, 'a product signup without legal acceptance is refused');
 
+-- The broker preflight exists only to choose a message. If it ever disagreed
+-- with the writer it would either promise an account the ledger refuses, or
+-- refuse one the ledger would have accepted.
+select is(
+  has_function_privilege('authenticated',
+    'public.signup_legal_manifest_current(text,jsonb)', 'EXECUTE'),
+  false, 'clients cannot use the preflight as a legal-corpus oracle');
+select is(
+  has_function_privilege('anon',
+    'public.signup_legal_manifest_current(text,jsonb)', 'EXECUTE'),
+  false, 'anonymous callers cannot probe the preflight');
+select is(
+  has_function_privilege('service_role',
+    'public.signup_legal_manifest_current(text,jsonb)', 'EXECUTE'),
+  true, 'the trusted broker may ask before creating an account');
+
+select ok(public.signup_legal_manifest_current('worker', pg_temp.signup_manifest('worker')),
+  'the current worker manifest passes preflight');
+select ok(public.signup_legal_manifest_current('customer', pg_temp.signup_manifest('customer','ar')),
+  'the current Arabic customer manifest passes preflight');
+select ok(not public.signup_legal_manifest_current('worker', pg_temp.signup_manifest('customer')),
+  'a customer manifest is not sufficient for a worker account');
+select ok(not public.signup_legal_manifest_current('customer',
+    jsonb_set(pg_temp.signup_manifest('customer'),'{0,version}',to_jsonb('9.9'::text))),
+  'a stale version fails preflight exactly as the writer refuses it');
+select ok(not public.signup_legal_manifest_current('customer',
+    jsonb_set(pg_temp.signup_manifest('customer'),'{0,renderedHash}',to_jsonb(repeat('0',64)))),
+  'an invented hash fails preflight exactly as the writer refuses it');
+select ok(not public.signup_legal_manifest_current('customer',
+    (select jsonb_agg(item) from jsonb_array_elements(pg_temp.signup_manifest('customer')) item
+     where item->>'documentKey' <> 'privacy_policy')),
+  'an omitted mandatory document fails preflight');
+select ok(not public.signup_legal_manifest_current('customer',
+    pg_temp.signup_manifest('customer') || pg_temp.signup_manifest('customer')),
+  'a duplicated document fails preflight');
+select ok(not public.signup_legal_manifest_current('customer', null),
+  'a missing manifest fails preflight');
+select ok(not public.signup_legal_manifest_current('staff', pg_temp.signup_manifest('customer')),
+  'an unsupported audience fails preflight');
+
 select * from finish();
 rollback;
