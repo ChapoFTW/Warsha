@@ -1,0 +1,152 @@
+/*
+ * Warsha web design tokens.
+ *
+ * The palette is the mobile application's, restated for the web rather than
+ * imported: `constants/theme.ts` is a React Native StyleSheet module and
+ * pulling it through a bundler to read six colours would drag the whole RN
+ * dependency in. The values are the authority; a regression test asserts
+ * these stay equal to the mobile tokens.
+ *
+ * Theme resolution follows the same order as mobile: an explicit choice wins,
+ * then the platform preference, then dark.
+ */
+
+:root {
+  --canvas: #080808;
+  --surface: #141414;
+  --surface-raised: #1c1c1c;
+  --border: rgba(250,250,250,0.14);
+  --border-strong: rgba(250,250,250,0.22);
+  --text-primary: #FAFAFA;
+  --text-secondary: #B8B8B8;
+  --text-muted: #6E6E6E;
+  --brand: #FAFAFA;
+  --brand-ink: #080808;
+  --focus: #FAFAFA;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+
+  --page-max: 1180px;
+  --gutter: clamp(16px, 4vw, 40px);
+
+  color-scheme: dark;
+}
+
+:root[data-theme='light'] {
+  --canvas: #F4F2EE;
+  --surface: #FFFFFF;
+  --surface-raised: #FFFFFF;
+  --border: rgba(17,17,17,0.13);
+  --border-strong: rgba(17,17,17,0.24);
+  --text-primary: #111111;
+  --text-secondary: #57544E;
+  --text-muted: #6B6862;
+  --brand: #111111;
+  --brand-ink: #FAFAFA;
+  --focus: #111111;
+
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) {
+    --canvas: #F4F2EE;
+    --surface: #FFFFFF;
+    --surface-raised: #FFFFFF;
+    --border: rgba(17,17,17,0.13);
+    --border-strong: rgba(17,17,17,0.24);
+    --text-primary: #111111;
+    --text-secondary: #57544E;
+    --text-muted: #6B6862;
+    --brand: #111111;
+    --brand-ink: #FAFAFA;
+    --focus: #111111;
+
+    color-scheme: light;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--canvas);
+  color: var(--text-primary);
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Arabic needs a face that renders it properly; Cairo is what mobile ships. */
+:root[dir='rtl'] body {
+  font-family: 'Cairo', system-ui, -apple-system, 'Segoe UI', Tahoma, Arial, sans-serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  line-height: 1.2;
+  margin: 0;
+  text-wrap: balance;
+}
+
+p {
+  margin: 0;
+}
+
+img,
+svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Keyboard users must be able to see where they are. Never remove this
+   without replacing it with something at least as visible. */
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.skip-link {
+  position: absolute;
+  inset-inline-start: -9999px;
+  top: 0;
+  z-index: 100;
+  padding: 12px 20px;
+  background: var(--brand);
+  color: var(--brand-ink);
+  font-weight: 700;
+  border-radius: 0 0 var(--radius-sm) 0;
+}
+
+.skip-link:focus {
+  inset-inline-start: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

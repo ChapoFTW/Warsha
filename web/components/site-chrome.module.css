@@ -1,0 +1,166 @@
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: color-mix(in srgb, var(--canvas) 88%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+}
+
+.headerInner {
+  max-width: var(--page-max);
+  margin: 0 auto;
+  padding: 14px var(--gutter);
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.brandMark {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  background: var(--brand);
+  display: inline-block;
+}
+
+.brandName {
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.nav {
+  display: none;
+  gap: 24px;
+  margin-inline-end: auto;
+}
+
+.navLink {
+  font-size: 14.5px;
+  color: var(--text-secondary);
+  padding: 6px 0;
+  border-bottom: 2px solid transparent;
+}
+
+.navLink:hover {
+  color: var(--text-primary);
+  border-bottom-color: var(--brand);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-inline-start: auto;
+}
+
+.signIn {
+  display: none;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  padding: 9px 14px;
+  border-radius: var(--radius-sm);
+}
+
+.signIn:hover {
+  color: var(--text-primary);
+  background: var(--surface);
+}
+
+.cta {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--brand-ink);
+  background: var(--brand);
+  padding: 9px 18px;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+
+.cta:hover {
+  filter: brightness(1.08);
+}
+
+@media (min-width: 900px) {
+  .nav,
+  .signIn {
+    display: flex;
+  }
+  .actions {
+    margin-inline-start: 0;
+  }
+}
+
+.footer {
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  margin-top: 96px;
+}
+
+.footerInner {
+  max-width: var(--page-max);
+  margin: 0 auto;
+  padding: 56px var(--gutter) 40px;
+  display: grid;
+  gap: 40px;
+  grid-template-columns: 1fr;
+}
+
+.footerBrand {
+  max-width: 320px;
+}
+
+.footerBlurb {
+  margin-top: 10px;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.footerGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.footerHeading {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.footerLink {
+  font-size: 14.5px;
+  color: var(--text-secondary);
+  width: fit-content;
+}
+
+.footerLink:hover {
+  color: var(--text-primary);
+}
+
+.footerBase {
+  max-width: var(--page-max);
+  margin: 0 auto;
+  padding: 20px var(--gutter) 40px;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+@media (min-width: 760px) {
+  .footerInner {
+    grid-template-columns: 1.4fr repeat(3, 1fr);
+  }
+}

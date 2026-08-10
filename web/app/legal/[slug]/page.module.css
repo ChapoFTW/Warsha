@@ -1,0 +1,113 @@
+.page {
+  max-width: var(--page-max);
+  margin: 0 auto;
+  padding: clamp(32px, 5vw, 64px) var(--gutter) 0;
+}
+
+.document {
+  max-width: 74ch;
+  margin: 0 auto;
+}
+
+.documentHeader {
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.title {
+  font-size: clamp(28px, 4vw, 40px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.meta {
+  margin-top: 12px;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.body {
+  padding-top: 28px;
+}
+
+.section {
+  margin-bottom: 26px;
+}
+
+.heading {
+  font-size: 19px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.paragraph {
+  font-size: 16px;
+  line-height: 1.75;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+
+.bullets {
+  margin: 8px 0 0;
+  padding-inline-start: 22px;
+  display: grid;
+  gap: 8px;
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
+
+.divider {
+  margin: 44px 0;
+  border: 0;
+  border-top: 1px solid var(--border);
+}
+
+.fingerprint {
+  margin-top: 48px;
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.fingerprintHeading {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.fingerprintNote {
+  margin-top: 8px;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.hashes {
+  margin: 16px 0 0;
+  display: grid;
+  gap: 12px;
+}
+
+.hashes div {
+  display: grid;
+  gap: 4px;
+}
+
+.hashes dt {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.hashes dd {
+  margin: 0;
+}
+
+.hashes code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  color: var(--text-secondary);
+  word-break: break-all;
+}

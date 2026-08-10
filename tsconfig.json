@@ -15,6 +15,7 @@
     "**/*.mts"
   ],
   "exclude": [
-    "supabase/functions/**/index.ts"
+    "supabase/functions/**/index.ts",
+    "web"
   ]
 }

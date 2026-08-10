@@ -55,7 +55,10 @@
     "test:platform-preferences": "node --no-warnings --experimental-strip-types scripts/cross-platform-preferences-routing.test.mts",
     "test:onboarding-stabilization": "node --no-warnings --experimental-strip-types scripts/onboarding-auth-stabilization.test.mts",
     "test:signup-legal-startup": "node --no-warnings --experimental-strip-types scripts/signup-legal-startup.test.mts",
-    "test:signup-state": "node --no-warnings --experimental-strip-types scripts/signup-state-errors.test.mts"
+    "test:signup-state": "node --no-warnings --experimental-strip-types scripts/signup-state-errors.test.mts",
+    "test:web-platform": "node --no-warnings --experimental-strip-types scripts/web-platform.test.mts",
+    "web:build": "npm --prefix web run build",
+    "web:dev": "npm --prefix web run dev"
   },
   "dependencies": {
     "@expo-google-fonts/cairo": "^0.4.2",
