@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import { AlphaNote, Card, CardGrid, PageShell, Prose } from '@/components/page-shell';
+import { AlphaNote, PageShell, Prose } from '@/components/page-shell';
 
 export const metadata: Metadata = {
   title: "Service categories",
@@ -35,7 +35,7 @@ export default function Page() {
       </Prose>
       <AlphaNote>
         Categories are governed centrally rather than typed freely, so that a request and a
-        worker's registration can be matched reliably.
+        worker&apos;s registration can be matched reliably.
       </AlphaNote>
     </PageShell>
   );

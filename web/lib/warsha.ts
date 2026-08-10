@@ -14,6 +14,8 @@
  * browser is the thing this platform exists not to be.
  */
 
+import type { Language } from '../../src/i18n/translations.ts';
+
 export {
   legalCorpus,
   legalDocumentKeys,
@@ -37,8 +39,6 @@ export {
   signupLegalSelectionSatisfied,
   type SignupRole,
 } from '../../src/legal/signup-legal.ts';
-
-import type { Language } from '../../src/i18n/translations.ts';
 
 export { translations } from '../../src/i18n/translations.ts';
 export type { Language };

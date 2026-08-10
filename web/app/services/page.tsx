@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import { AlphaNote, Card, CardGrid, PageShell, Prose } from '@/components/page-shell';
+import { AlphaNote, Card, CardGrid, PageShell } from '@/components/page-shell';
 
 export const metadata: Metadata = {
   title: "Find a professional",
