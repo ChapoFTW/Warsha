@@ -81,6 +81,34 @@ equal(classifyAuthFailure({ status: 400, code: 'email_address_not_authorized' },
   'authEmailDeliveryRestricted',
   'a recipient the development mailer will not serve is named as such');
 
+// --- Stale bundle: the 2026-08-10 Preview failure --------------------------
+// A device still running the 2f8a2a4 bundle — which predates mandatory signup
+// acceptance and therefore sends no manifest — was refused by the acceptance
+// writer inside the signup transaction. GoTrue reported only "Database error
+// saving new user", no account or audit entry was created, and nothing on
+// screen said the app needed updating.
+//
+// The client cannot be told which of the two known causes applied. WPS-023
+// narrowed the anon-executable surface to nine sanctioned reads and the
+// signed-out legal reader calls nothing, so there is no server question a
+// customer may ask before signing up, and widening that surface to answer one
+// is not a trade this failure justifies. The copy therefore carries both
+// remedies, and these assert it does.
+const localizedCopy = readFileSync('src/i18n/translations.ts', 'utf8');
+const signupFailureCopy = [...localizedCopy.matchAll(
+  /authSignupServerError: '((?:[^'\\]|\\.)*)'/g)].map(match => match[1]);
+check(signupFailureCopy.length === 2,
+  'the signup failure copy exists in both languages');
+check(signupFailureCopy.every(copy => /Update Warsha|حدّث تطبيق ورشة/.test(copy)),
+  'THE SIGNUP FAILURE NAMES UPDATING THE APP, WHICH A STALE BUNDLE CANNOT REPORT');
+check(signupFailureCopy.every(copy => /check the details|راجع البيانات/i.test(copy)),
+  'the signup failure also names the other known cause, a detail already in use');
+check(signupFailureCopy.every(copy => !/\bemail\b|\baddress\b|بريد/i.test(copy)),
+  'the signup failure never hints whether an email address already has an account');
+check(classifyAuthFailure({ status: 500, code: 'unexpected_failure' }, 'sign-up')
+  === 'authSignupServerError',
+  'the stale-bundle refusal keeps one stable machine-readable code');
+
 // --- Worker broker contract ------------------------------------------------
 const workerClient = readFileSync('src/auth/worker-auth-client.ts', 'utf8');
 const broker = readFileSync('supabase/functions/worker-auth/index.ts', 'utf8');

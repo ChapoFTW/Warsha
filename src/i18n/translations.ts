@@ -12,7 +12,7 @@ const featureTranslations = {
 export const translations = {
   en: {
     ...featureTranslations.en,
-    authSignupServerError: 'We couldn\'t create your account. Check the details you entered, or try again later.',
+    authSignupServerError: 'We couldn\'t create your account. Update Warsha to the latest version, check the details you entered, then try again.',
     authOutdatedClient: 'Update Warsha to the latest version, then create your account.',
     authEmailDeliveryRestricted: 'This email address cannot receive confirmation messages from the current development email service.',
     authEmailDeliveryFailed: 'The confirmation request could not be sent. Try again later or contact support.',
@@ -35,7 +35,7 @@ export const translations = {
   },
   ar: {
     ...featureTranslations.ar,
-    authSignupServerError: 'تعذر إنشاء حسابك. راجع البيانات اللي كتبتها، أو حاول مرة أخرى لاحقًا.',
+    authSignupServerError: 'تعذر إنشاء حسابك. حدّث تطبيق ورشة لآخر إصدار، وراجع البيانات اللي كتبتها، وبعدين حاول تاني.',
     authOutdatedClient: 'حدّث تطبيق ورشة لآخر إصدار وبعدين أنشئ حسابك.',
     authEmailDeliveryRestricted: 'عنوان البريد ده مش مسموح له يستقبل رسائل تأكيد من خدمة بريد التطوير الحالية.',
     authEmailDeliveryFailed: 'تعذر إرسال طلب التأكيد. حاول لاحقًا أو تواصل مع الدعم.',

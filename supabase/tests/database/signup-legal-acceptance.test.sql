@@ -210,6 +210,12 @@ select throws_ok(
 -- The broker preflight exists only to choose a message. If it ever disagreed
 -- with the writer it would either promise an account the ledger refuses, or
 -- refuse one the ledger would have accepted.
+-- The preflight stays server-side. WPS-023 narrowed the anon-executable
+-- surface to nine sanctioned reads and WPS-024 added no tenth, because the
+-- signed-out legal reader renders the bundled corpus and calls nothing. A
+-- customer client therefore cannot ask whether its bundle is current, and the
+-- honest consequence is carried in the failure copy rather than by widening
+-- the signed-out surface.
 select is(
   has_function_privilege('authenticated',
     'public.signup_legal_manifest_current(text,jsonb)', 'EXECUTE'),
@@ -217,7 +223,7 @@ select is(
 select is(
   has_function_privilege('anon',
     'public.signup_legal_manifest_current(text,jsonb)', 'EXECUTE'),
-  false, 'anonymous callers cannot probe the preflight');
+  false, 'the signed-out surface did not widen for signup');
 select is(
   has_function_privilege('service_role',
     'public.signup_legal_manifest_current(text,jsonb)', 'EXECUTE'),
