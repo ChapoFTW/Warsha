@@ -9,6 +9,7 @@ import { useAuth } from '@/src/auth/auth-context';
 import {
   defaultModeFor,
   homeRouteFor,
+  isWorkerOnboardingContinuation,
   routeAfterHydration,
   routeSurface,
 } from '@/src/navigation/worker-route-policy';
@@ -119,7 +120,11 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     // A worker application is one continuous journey. Until capability is
     // granted, customer and worker operational shells cannot become an escape
     // hatch from the required next step. Shared legal/support routes remain.
-    if (target === 'worker_onboarding' && surface !== 'shared') {
+    if (
+      target === 'worker_onboarding'
+      && surface !== 'shared'
+      && !isWorkerOnboardingContinuation(pathname)
+    ) {
       router.replace(homeRouteFor(target));
       return;
     }

@@ -42,8 +42,15 @@ const CUSTOMER_PREFIXES = [
   '/referrals',
 ];
 
+const WORKER_ONBOARDING_CONTINUATIONS = [
+  '/onboarding/worker',
+  '/onboarding/address',
+  '/worker/verification',
+];
+
 function matches(pathname: string, prefix: string): boolean {
-  return pathname === prefix || pathname.startsWith(`${prefix}/`);
+  const canonical = pathname.split(/[?#]/, 1)[0].replace(/\/$/, '') || '/';
+  return canonical === prefix || canonical.startsWith(`${prefix}/`);
 }
 
 /**
@@ -82,6 +89,17 @@ export function routeSurface(pathname: string): RouteSurface {
     return 'customer';
   }
   return 'shared';
+}
+
+/**
+ * Incomplete workers may enter only the screens that can satisfy their next
+ * onboarding gate. Verification is mounted under the permanent worker tree so
+ * completed workers can revisit it, but it is also an onboarding continuation.
+ * Keeping that exception here prevents AuthGate from treating the verification
+ * CTA as an attempt to escape into the operational worker shell.
+ */
+export function isWorkerOnboardingContinuation(pathname: string): boolean {
+  return WORKER_ONBOARDING_CONTINUATIONS.some(prefix => matches(pathname, prefix));
 }
 
 export function defaultModeFor(target: RouteTarget): ExperienceMode {

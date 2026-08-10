@@ -158,20 +158,24 @@ export function AddressLocationPicker({
             disabled={!deviceAvailable || busy !== null}
             onPress={() => void chooseDeviceLocation()}
           />
-          <BrandButton
-            label={copy.chooseOnMap}
-            icon="map"
-            variant="secondary"
-            disabled={!mapAvailable && environment.dataMode !== 'mock'}
-            onPress={() => environment.dataMode === 'mock' ? mockPin() : setMapOpen(current => !current)}
-          />
-          <BrandButton
-            label={copy.searchAddress}
-            icon="search"
-            variant="secondary"
-            disabled={!searchAvailable || busy !== null}
-            onPress={() => setSearchOpen(current => !current)}
-          />
+          {mapAvailable || environment.dataMode === 'mock' ? (
+            <BrandButton
+              label={copy.chooseOnMap}
+              icon="map"
+              variant="secondary"
+              disabled={busy !== null}
+              onPress={() => environment.dataMode === 'mock' ? mockPin() : setMapOpen(current => !current)}
+            />
+          ) : null}
+          {searchAvailable ? (
+            <BrandButton
+              label={copy.searchAddress}
+              icon="search"
+              variant="secondary"
+              disabled={busy !== null}
+              onPress={() => setSearchOpen(current => !current)}
+            />
+          ) : null}
         </>
       ) : null}
 

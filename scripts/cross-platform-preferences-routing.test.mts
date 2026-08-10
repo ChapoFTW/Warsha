@@ -76,6 +76,11 @@ check(/documentElement\.dir/.test(localization), 'web document direction updates
 
 const root = read('app/_layout.tsx');
 check(/<GlobalPreferenceControls \/>/.test(root), 'one root-owned preference dock covers every routed surface');
+const preferenceControls = read('components/warsha/GlobalPreferenceControls.tsx');
+check(!/layer:\s*\{\s*position:\s*'absolute'/.test(preferenceControls),
+  'the root preference dock reserves layout space instead of overlaying page headings');
+check(/paddingTop: Math\.max\(insets\.top/.test(preferenceControls),
+  'the root preference rail reserves the platform safe-area inset');
 check(/<GlobalPreferenceControls\/>/.test(read('components/warsha/ConfigurationError.tsx')), 'the pre-router configuration error keeps both global preferences available');
 check(/direction: isRTL \? 'rtl' : 'ltr'/.test(root), 'root layout direction follows the active language');
 check(/GlobalPreferenceControls embedded/.test(read('components/warsha/Header.tsx')), 'customer home owns a non-overlapping shared preference slot');

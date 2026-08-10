@@ -6,10 +6,24 @@ export type SignInIdentity =
   | { kind: 'customer_email'; email: string }
   | { kind: 'worker_phone'; phone: string };
 
+export function isValidCustomerEmail(value: string): boolean {
+  const email = value.trim();
+  if (email.length < 3 || email.length > 254 || /\s/.test(email)) return false;
+  const separator = email.lastIndexOf('@');
+  if (separator <= 0 || separator === email.length - 1) return false;
+  const local = email.slice(0, separator);
+  const domain = email.slice(separator + 1);
+  return local.length <= 64
+    && domain.length <= 253
+    && domain.includes('.')
+    && !domain.startsWith('.')
+    && !domain.endsWith('.');
+}
+
 export function classifySignInIdentity(value: string): SignInIdentity | null {
   const trimmed = value.trim();
   if (trimmed.includes('@')) {
-    return trimmed.length <= 254
+    return isValidCustomerEmail(trimmed)
       ? { kind: 'customer_email', email: trimmed.toLowerCase() }
       : null;
   }

@@ -154,8 +154,9 @@ check(/role === 'provider'[\s\S]*registerWorker/.test(authContextSource),
 check(/role === 'customer' \? \(/.test(createAccountSource)
   && /choice === 'worker' \? null : email\.trim\(\)/.test(createAccountSource),
   'worker create-account UI renders no email field and passes no email');
-check(/signInIdentifier/.test(signInSource) && /phonePasswordHint/.test(signInSource),
-  'sign-in copy presents customer email or worker phone plus password');
+check(/customerEmail/.test(signInSource) && /workerPhone/.test(signInSource)
+  && /customerSignInHint/.test(signInSource) && /workerSignInHint/.test(signInSource),
+  'sign-in mode presents customer email or worker phone plus password');
 check(!/auth\.user\??\.email/.test(profileSource),
   'profile UI never renders the raw synthetic Auth email');
 check(!/auth\.getUser|user\??\.email|email:/.test(customerProfileRepositorySource),

@@ -115,6 +115,8 @@ function ThemedRoot() {
             onboarding state are both known, so no protected screen can appear
             for a frame before the router corrects itself. */}
         <AuthGate>
+        <View style={{ flex: 1 }}>
+        {!shellOwnsPreferences ? <GlobalPreferenceControls /> : null}
         <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.canvas } }}>
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="welcome" />
@@ -158,8 +160,8 @@ function ThemedRoot() {
           <Stack.Screen name="support/index" />
           <Stack.Screen name="admin" />
         </Stack>
+        </View>
         </AuthGate>
-        {!shellOwnsPreferences ? <GlobalPreferenceControls /> : null}
         <NotificationBanner />
         <ProviderModeOverlay />
         <StatusBar style={statusBarStyle(scheme)} />

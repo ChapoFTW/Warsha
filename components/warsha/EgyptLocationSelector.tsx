@@ -19,19 +19,38 @@ import { useWorkerText } from '@/src/worker/worker-copy';
 
 type SelectionKind = 'governorate' | 'area';
 
+export type EgyptLocationSelectorCopy = {
+  governorate: string;
+  district: string;
+  selectGovernorate: string;
+  selectDistrict: string;
+  search: string;
+  close: string;
+};
+
 export function EgyptLocationSelector({
   governorate,
   district,
   onChange,
+  copy,
 }: {
   governorate: string;
   district: string;
   onChange: (next: { governorate: string; district: string }) => void;
+  copy?: EgyptLocationSelectorCopy;
 }) {
   const colors = useThemeColors();
   const styles = useThemedStyles(makeStyles);
   const { language, isRTL } = useLocalization();
   const wt = useWorkerText();
+  const text: EgyptLocationSelectorCopy = copy ?? {
+    governorate: wt.text('governorate'),
+    district: wt.text('district'),
+    selectGovernorate: wt.text('selectGovernorate'),
+    selectDistrict: wt.text('selectArea'),
+    search: wt.text('searchPlaces'),
+    close: wt.text('close'),
+  };
   const [kind, setKind] = useState<SelectionKind | null>(null);
   const [query, setQuery] = useState('');
   const governorateOption = egyptGovernorateForStoredValue(governorate);
@@ -55,16 +74,16 @@ export function EgyptLocationSelector({
   return (
     <View style={styles.group}>
       <SelectorButton
-        label={wt.text('governorate')}
+        label={text.governorate}
         value={governorateOption?.[language] ?? governorate}
-        placeholder={wt.text('selectGovernorate')}
+        placeholder={text.selectGovernorate}
         icon="map"
         onPress={() => open('governorate')}
       />
       <SelectorButton
-        label={wt.text('district')}
+        label={text.district}
         value={areaOption?.[language] ?? district}
-        placeholder={wt.text('selectArea')}
+        placeholder={text.selectDistrict}
         icon="location-on"
         disabled={!governorateOption}
         onPress={() => open('area')}
@@ -74,19 +93,19 @@ export function EgyptLocationSelector({
         <SafeAreaView style={styles.modalSafe}>
           <View style={[styles.header, isRTL && styles.reverse]}>
             <AppText accessibilityRole="header" style={styles.title}>
-              {kind === 'governorate' ? wt.text('selectGovernorate') : wt.text('selectArea')}
+              {kind === 'governorate' ? text.selectGovernorate : text.selectDistrict}
             </AppText>
-            <Pressable accessibilityRole="button" accessibilityLabel={wt.text('close')} onPress={() => setKind(null)} style={styles.close}>
+            <Pressable accessibilityRole="button" accessibilityLabel={text.close} onPress={() => setKind(null)} style={styles.close}>
               <MaterialIcons name="close" size={24} color={colors.textPrimary} />
             </Pressable>
           </View>
           <BrandTextField
-            accessibilityLabel={wt.text('searchPlaces')}
-            placeholder={wt.text('searchPlaces')}
+            accessibilityLabel={text.search}
+            placeholder={text.search}
             value={query}
             onChangeText={setQuery}
           />
-          <ScrollView contentContainerStyle={styles.list} keyboardShouldPersistTaps="handled">
+          <ScrollView automaticallyAdjustKeyboardInsets contentContainerStyle={styles.list} keyboardShouldPersistTaps="handled">
             {options.map(option => (
               <Pressable
                 key={option.id}

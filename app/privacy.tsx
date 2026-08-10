@@ -1,9 +1,10 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { router } from 'expo-router';
-import { useCallback, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { Alert, Linking, Platform, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BrandLoadingState } from '@/components/warsha/BrandUI';
 import { ScreenHeader } from '@/components/warsha/ScreenHeader';
 import { AppText } from '@/components/warsha/Typography';
 import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
@@ -42,6 +43,18 @@ export default function PrivacyScreen() {
 
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [locationPermission, setLocationPermission] = useState<'checking' | 'granted' | 'denied' | 'unavailable'>('checking');
+
+  useEffect(() => {
+    let active = true;
+    import('expo-location')
+      .then(Location => Location.getForegroundPermissionsAsync())
+      .then(permission => {
+        if (active) setLocationPermission(permission.granted ? 'granted' : 'denied');
+      })
+      .catch(() => { if (active) setLocationPermission('unavailable'); });
+    return () => { active = false; };
+  }, []);
 
   const onClear = useCallback(
     async (scope: 'all' | 'searches' | 'views') => {
@@ -76,17 +89,48 @@ export default function PrivacyScreen() {
     setBusy(false);
   }, [setDeactivated, overview.deactivated]);
 
-  if (ready && !overview.available) {
+  const confirmClear = useCallback((scope: 'all' | 'searches' | 'views') => {
+    if (Platform.OS === 'web' && typeof globalThis.confirm === 'function') {
+      if (globalThis.confirm(`${pt.text('historyConfirmTitle')}\n\n${pt.text('historyConfirmBody')}`)) {
+        void onClear(scope);
+      }
+      return;
+    }
+    Alert.alert(
+      pt.text('historyConfirmTitle'),
+      pt.text('historyConfirmBody'),
+      [
+        { text: pt.text('cancel'), style: 'cancel' },
+        { text: pt.text('historyConfirmAction'), style: 'destructive', onPress: () => void onClear(scope) },
+      ],
+    );
+  }, [onClear, pt]);
+
+  const confirmDeactivate = useCallback(() => {
+    if (overview.deactivated) {
+      void onDeactivate();
+      return;
+    }
+    if (Platform.OS === 'web' && typeof globalThis.confirm === 'function') {
+      if (globalThis.confirm(`${pt.text('deactivateConfirmTitle')}\n\n${pt.text('deactivateBody')}`)) {
+        void onDeactivate();
+      }
+      return;
+    }
+    Alert.alert(
+      pt.text('deactivateConfirmTitle'),
+      pt.text('deactivateBody'),
+      [
+        { text: pt.text('cancel'), style: 'cancel' },
+        { text: pt.text('deactivateAction'), onPress: () => void onDeactivate() },
+      ],
+    );
+  }, [onDeactivate, overview.deactivated, pt]);
+
+  if (!ready) {
     return (
       <SafeAreaView style={styles.safe}>
-        <ScrollView contentContainerStyle={styles.content}>
-          <ScreenHeader title={pt.text('privacyTitle')} />
-          <View style={styles.state}>
-            <MaterialIcons name="lock-outline" size={38} color={colors.textMuted} />
-            <AppText style={styles.stateTitle}>{pt.text('unavailableTitle')}</AppText>
-            <AppText style={styles.stateBody}>{pt.text('unavailableBody')}</AppText>
-          </View>
-        </ScrollView>
+        <BrandLoadingState label={pt.text('privacyTitle')} />
       </SafeAreaView>
     );
   }
@@ -95,6 +139,38 @@ export default function PrivacyScreen() {
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.content}>
         <ScreenHeader title={pt.text('privacyTitle')} subtitle={pt.text('privacySubtitle')} />
+
+        {!overview.available ? (
+          <View style={styles.infoCard}>
+            <MaterialIcons name="info-outline" size={22} color={colors.textSecondary} />
+            <AppText style={styles.notice}>{pt.text('availabilityLimited')}</AppText>
+          </View>
+        ) : null}
+
+        <View style={styles.card}>
+          <AppText style={styles.sectionTitle} accessibilityRole="header">
+            {pt.text('locationTitle')}
+          </AppText>
+          <AppText style={styles.hint}>{pt.text('locationBody')}</AppText>
+          <View style={styles.row}>
+            <MaterialIcons name="my-location" size={18} color={colors.textMuted} />
+            <View style={styles.grow}>
+              <AppText style={styles.rowTitle}>{pt.text('locationPermissionTitle')}</AppText>
+              <AppText style={styles.hint}>
+                {pt.text(locationPermission === 'granted'
+                  ? 'locationPermissionGranted'
+                  : locationPermission === 'denied'
+                    ? 'locationPermissionDenied'
+                    : 'locationPermissionUnknown')}
+              </AppText>
+            </View>
+          </View>
+          {Platform.OS !== 'web' ? (
+            <Action label={pt.text('openDeviceSettings')} onPress={() => void Linking.openSettings()} />
+          ) : null}
+          <AppText style={styles.rowTitle}>{pt.text('savedLocationTitle')}</AppText>
+          <AppText style={styles.hint}>{pt.text('savedLocationBody')}</AppText>
+        </View>
 
         {/* What we store */}
         <View style={styles.card}>
@@ -142,9 +218,9 @@ export default function PrivacyScreen() {
           </AppText>
           <AppText style={styles.hint}>{pt.text('historyBody')}</AppText>
           <View style={[styles.actions, isRTL && styles.reverse]}>
-            <Action label={pt.text('clearSearches')} onPress={() => void onClear('searches')} />
-            <Action label={pt.text('clearViews')} onPress={() => void onClear('views')} />
-            <Action label={pt.text('clearAll')} onPress={() => void onClear('all')} />
+            <Action label={pt.text('clearSearches')} onPress={() => confirmClear('searches')} />
+            <Action label={pt.text('clearViews')} onPress={() => confirmClear('views')} />
+            <Action label={pt.text('clearAll')} onPress={() => confirmClear('all')} />
           </View>
         </View>
 
@@ -157,7 +233,7 @@ export default function PrivacyScreen() {
           {overview.exportAvailable ? (
             <Action label={pt.text('exportRequest')} onPress={() => void onExport()} primary />
           ) : (
-            <AppText style={styles.hint}>{pt.text('unavailableBody')}</AppText>
+            <AppText style={styles.hint}>{pt.text('featureUnavailable')}</AppText>
           )}
           {exports.length === 0 ? (
             <AppText style={styles.hint}>{pt.text('exportEmpty')}</AppText>
@@ -178,10 +254,12 @@ export default function PrivacyScreen() {
               {pt.text('deactivated')}
             </AppText>
           ) : null}
-          <Action
-            label={overview.deactivated ? pt.text('reactivateAction') : pt.text('deactivateAction')}
-            onPress={() => void onDeactivate()}
-          />
+          {overview.available ? (
+            <Action
+              label={overview.deactivated ? pt.text('reactivateAction') : pt.text('deactivateAction')}
+              onPress={confirmDeactivate}
+            />
+          ) : <AppText style={styles.hint}>{pt.text('featureUnavailable')}</AppText>}
         </View>
 
         {/* Delete — a plain row, not hidden and not dressed up. */}
@@ -190,13 +268,25 @@ export default function PrivacyScreen() {
             {pt.text('deleteTitle')}
           </AppText>
           <AppText style={styles.hint}>{pt.text('deleteBody')}</AppText>
-          <Action label={pt.text('deleteAction')} onPress={() => router.push('/privacy-delete')} />
+          {overview.deletionAvailable
+            ? <Action label={pt.text('deleteAction')} onPress={() => router.push('/privacy-delete')} />
+            : <AppText style={styles.hint}>{pt.text('featureUnavailable')}</AppText>}
+        </View>
+
+        <View style={styles.card}>
+          <AppText style={styles.sectionTitle} accessibilityRole="header">
+            {pt.text('communicationsTitle')}
+          </AppText>
+          <AppText style={styles.hint}>{pt.text('communicationsBody')}</AppText>
+          <Action label={pt.text('manageNotifications')} onPress={() => router.push('/notification-preferences')} />
         </View>
 
         <View style={styles.card}>
           <AppText style={styles.sectionTitle} accessibilityRole="header">
             {pt.text('articlesTitle')}
           </AppText>
+          <AppText style={styles.hint}>{pt.text('legalDocumentsBody')}</AppText>
+          <Action label={pt.text('readLegalDocuments')} onPress={() => router.push('/legal')} />
           <Action label={pt.text('articlePrivacy')} onPress={() => router.push('/help')} />
         </View>
 
@@ -310,6 +400,7 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.canvas },
   content: { padding: spacing.lg, paddingBottom: spacing.xxxl, maxWidth: 720, width: '100%', alignSelf: 'center', gap: spacing.lg },
   card: { backgroundColor: colors.surface, borderRadius: radii.lg, borderWidth: 1, borderColor: colors.borderDefault, padding: spacing.lg, gap: spacing.sm },
+  infoCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: radii.md, borderWidth: 1, borderColor: colors.borderDefault, padding: spacing.md, gap: spacing.sm },
   sectionTitle: { fontSize: 15, fontWeight: typography.semibold, color: colors.textPrimary },
   hint: { fontSize: 12, lineHeight: 18, color: colors.textMuted },
   notice: { fontSize: 13, lineHeight: 19, color: colors.textSecondary },

@@ -6,6 +6,7 @@ import {
   canRefreshAccountInline,
   defaultModeFor,
   homeRouteFor,
+  isWorkerOnboardingContinuation,
   routeAfterHydration,
   routeSurface,
 } from '../src/navigation/worker-route-policy.ts';
@@ -57,6 +58,10 @@ check(routeSurface('/worker/jobs/abc') === 'worker', 'worker nested routes remai
 check(routeSurface('/provider-verification') === 'worker', 'legacy verification is a worker route');
 check(routeSurface('/support') === 'shared', 'support remains shared');
 check(routeSurface('/notifications') === 'shared', 'notifications remain shared');
+check(isWorkerOnboardingContinuation('/worker/verification'),
+  'identity verification is an allowed worker-onboarding continuation');
+check(!isWorkerOnboardingContinuation('/worker/jobs'),
+  'operational worker routes remain unavailable during onboarding');
 
 // Real-device registration regression. Publishing a Supabase session changes
 // the active account during render; the effects that reset provider/onboarding
@@ -236,8 +241,15 @@ check(!addressScreen.includes('addressLatitude') && !addressScreen.includes('add
   'no normal address flow renders raw latitude or longitude inputs');
 check(customerAddressPresentation.includes('addressFloor')
   && customerAddressPresentation.includes('addressApartment')
-  && customerAddressPresentation.includes('addressNotes'),
-  'customer booking retains its destination details');
+  && customerAddressPresentation.includes('addressLandmark'),
+  'customer profile onboarding retains reusable destination details');
+check(!customerAddressPresentation.includes("ot.text('addressNotes')")
+  && customerAddressPresentation.includes('serviceNotes: null')
+  && customerAddressPresentation.includes("instructions: ''"),
+  'profile onboarding stores no job-specific worker notes');
+check(customerAddressPresentation.includes('<EgyptLocationSelector')
+  && !customerAddressPresentation.includes("ot.text('addressGovernorate')} value="),
+  'customer profile onboarding uses the structured Egypt selector instead of free text');
 check(workerAddressPresentation.includes('<AddressLocationPicker'),
   'worker address reuses provider-aware map, search, and device-location infrastructure');
 const addressLocationPicker = read('components', 'warsha', 'AddressLocationPicker.tsx');

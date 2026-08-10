@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AddressLocationPicker, type AddressLocationPickerCopy } from '@/components/warsha/AddressLocationPicker';
 import { BrandButton, BrandCard, BrandLoadingState, BrandTextField } from '@/components/warsha/BrandUI';
+import { EgyptLocationSelector } from '@/components/warsha/EgyptLocationSelector';
 import { OnboardingFieldMeta } from '@/components/warsha/OnboardingFieldMeta';
 import { AppText } from '@/components/warsha/Typography';
 import { spacing, typography, type ThemeColors } from '@/constants/theme';
@@ -110,7 +111,7 @@ function WorkerCurrentLocationFlow({ area }: { area: ProviderAreaInput | null })
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
+      <ScrollView automaticallyAdjustKeyboardInsets contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
         <AppText accessibilityRole="header" style={styles.title}>{wt.text('workLocationTitle')}</AppText>
         <OnboardingFieldMeta
           label={wt.text('workLocationTitle')}
@@ -170,7 +171,6 @@ function CustomerDestinationAddressFlow() {
   const [floor, setFloor] = useState('');
   const [apartment, setApartment] = useState('');
   const [landmark, setLandmark] = useState('');
-  const [notes, setNotes] = useState('');
   const [pin, setPin] = useState<PinPosition | null>(null);
   const [pinSource, setPinSource] = useState<PinSource | null>(null);
   const [busy, setBusy] = useState(false);
@@ -194,7 +194,9 @@ function CustomerDestinationAddressFlow() {
     loading: ot.text('addressLocationLoading'),
   };
 
-  const detailsComplete = governorate.trim().length > 0 && street.trim().length > 0;
+  const detailsComplete = governorate.trim().length > 0
+    && district.trim().length > 0
+    && street.trim().length > 0;
 
   const confirm = async () => {
     if (!pin || !pinSource || !detailsComplete) {
@@ -213,7 +215,9 @@ function CustomerDestinationAddressFlow() {
         floor: floor.trim(),
         apartment: apartment.trim(),
         landmark: landmark.trim(),
-        instructions: notes.trim(),
+        // A saved profile address is not a booking. Job-specific access notes
+        // are collected when the customer creates the request that needs them.
+        instructions: '',
         isDefault: true,
       });
       const confirmed = await onboarding.confirmAddress({
@@ -225,7 +229,7 @@ function CustomerDestinationAddressFlow() {
         floor: floor.trim() || null,
         apartment: apartment.trim() || null,
         landmark: landmark.trim() || null,
-        serviceNotes: notes.trim() || null,
+        serviceNotes: null,
       });
       if (!confirmed) setMessage(ot.text('genericError'));
       else router.replace('/');
@@ -238,7 +242,7 @@ function CustomerDestinationAddressFlow() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
+      <ScrollView automaticallyAdjustKeyboardInsets contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
         <AppText accessibilityRole="header" style={styles.title}>{ot.text('addressTitle')}</AppText>
         <AppText style={styles.hint}>{ot.text('addressIntro')}</AppText>
 
@@ -254,14 +258,27 @@ function CustomerDestinationAddressFlow() {
         />
 
         <View style={styles.form}>
-          <BrandTextField label={ot.text('addressGovernorate')} value={governorate} onChangeText={setGovernorate} />
-          <BrandTextField label={ot.text('addressCity')} value={district} onChangeText={setDistrict} />
+          <EgyptLocationSelector
+            governorate={governorate}
+            district={district}
+            onChange={area => {
+              setGovernorate(area.governorate);
+              setDistrict(area.district);
+            }}
+            copy={{
+              governorate: ot.text('addressGovernorate'),
+              district: ot.text('addressCity'),
+              selectGovernorate: ot.text('addressSelectGovernorate'),
+              selectDistrict: ot.text('addressSelectDistrict'),
+              search: ot.text('addressSearchAdministrativeArea'),
+              close: ot.text('close'),
+            }}
+          />
           <BrandTextField label={ot.text('addressStreet')} value={street} onChangeText={setStreet} />
           <BrandTextField label={ot.text('addressBuilding')} value={building} onChangeText={setBuilding} />
           <BrandTextField label={ot.text('addressFloor')} value={floor} onChangeText={setFloor} />
           <BrandTextField label={ot.text('addressApartment')} value={apartment} onChangeText={setApartment} />
           <BrandTextField label={ot.text('addressLandmark')} value={landmark} onChangeText={setLandmark} />
-          <BrandTextField label={ot.text('addressNotes')} value={notes} onChangeText={setNotes} multiline />
           <BrandButton
             label={ot.text('addressConfirm')}
             loading={busy}

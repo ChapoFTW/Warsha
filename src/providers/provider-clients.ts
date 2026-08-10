@@ -1,5 +1,9 @@
 import { environment } from '@/src/config/environment';
 import { getSupabaseClient } from '@/src/lib/supabase';
+import {
+  classifyDeviceLocationError,
+  type DeviceFixResult,
+} from '@/src/providers/device-location-policy';
 import type { MapRenderDescriptor } from '@/src/providers/map-renderer-types';
 
 /**
@@ -246,30 +250,26 @@ export const providerClients = {
  * Warsha never requests background location and the config plugin does not
  * declare it, so the OS cannot grant one.
  */
-export type DeviceFixResult =
-  | { outcome: 'succeeded'; position: { latitude: number; longitude: number } }
-  | { outcome: 'permission_denied'; canAskAgain: boolean }
-  | { outcome: 'services_disabled' }
-  | { outcome: 'provider_unavailable' }
-  | { outcome: 'timed_out' }
-  | { outcome: 'location_error'; code: string };
+export type { DeviceFixResult } from '@/src/providers/device-location-policy';
 
-const DEVICE_FIX_TIMEOUT_MS = 15_000;
+const DEVICE_FIX_TIMEOUT_MS = 20_000;
 
-function classifyLocationError(error: unknown): DeviceFixResult {
-  const source = error && typeof error === 'object' ? error as { code?: unknown; message?: unknown } : null;
-  const code = typeof source?.code === 'string' ? source.code : 'native_location_error';
-  const message = typeof source?.message === 'string' ? source.message.toLowerCase() : '';
-  if (message.includes('services are disabled') || message.includes('unsatisfied device settings')) {
-    return { outcome: 'services_disabled' };
-  }
-  if (message.includes('location is unavailable')
-      || message.includes('current location is unavailable')
-      || message.includes('current location is unknown')
-      || message.includes('location request has been rejected')) {
-    return { outcome: 'provider_unavailable' };
-  }
-  return { outcome: 'location_error', code };
+async function currentPositionWithTimeout(
+  Location: typeof import('expo-location'),
+  accuracy: NonNullable<import('expo-location').LocationOptions['accuracy']>,
+  timeoutMs: number,
+) {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const result = await Promise.race([
+    Location.getCurrentPositionAsync({ accuracy })
+      .then(position => ({ kind: 'position' as const, position }))
+      .catch(error => ({ kind: 'error' as const, error })),
+    new Promise<{ kind: 'timeout' }>(resolve => {
+      timer = setTimeout(() => resolve({ kind: 'timeout' }), timeoutMs);
+    }),
+  ]);
+  if (timer) clearTimeout(timer);
+  return result;
 }
 
 export async function requestDeviceFix(): Promise<DeviceFixResult> {
@@ -281,7 +281,10 @@ export async function requestDeviceFix(): Promise<DeviceFixResult> {
     const initialProvider = await Location.getProviderStatusAsync();
     if (!initialProvider.locationServicesEnabled) return { outcome: 'services_disabled' };
 
-    const permission = await Location.requestForegroundPermissionsAsync();
+    const existingPermission = await Location.getForegroundPermissionsAsync().catch(() => null);
+    const permission = existingPermission?.granted
+      ? existingPermission
+      : await Location.requestForegroundPermissionsAsync();
     if (!permission.granted) {
       return { outcome: 'permission_denied', canAskAgain: permission.canAskAgain };
     }
@@ -297,8 +300,8 @@ export async function requestDeviceFix(): Promise<DeviceFixResult> {
     // A recent coarse fix is enough to seed the pin and avoids making an
     // emulator wait for a fresh satellite/network update it may never emit.
     const lastKnown = await Location.getLastKnownPositionAsync({
-      maxAge: 5 * 60_000,
-      requiredAccuracy: 1_000,
+      maxAge: 15 * 60_000,
+      requiredAccuracy: 2_000,
     }).catch(() => null);
     if (lastKnown) {
       return {
@@ -307,18 +310,28 @@ export async function requestDeviceFix(): Promise<DeviceFixResult> {
       };
     }
 
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const current = await Promise.race([
-      Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
-        .then(position => ({ kind: 'position' as const, position }))
-        .catch(error => ({ kind: 'error' as const, error })),
-      new Promise<{ kind: 'timeout' }>(resolve => {
-        timer = setTimeout(() => resolve({ kind: 'timeout' }), DEVICE_FIX_TIMEOUT_MS);
-      }),
-    ]);
-    if (timer) clearTimeout(timer);
-    if (current.kind === 'timeout') return { outcome: 'timed_out' };
-    if (current.kind === 'error') return classifyLocationError(current.error);
+    let current = await currentPositionWithTimeout(
+      Location,
+      Location.Accuracy.Balanced,
+      DEVICE_FIX_TIMEOUT_MS,
+    );
+
+    // Some Android location providers reject a balanced one-shot before a
+    // coarse network fix is warm. A single bounded low-accuracy retry is still
+    // foreground-only and is adequate for seeding Warsha's private matching
+    // coordinate. No provider, reverse geocoder, SMS, or background permission
+    // is involved.
+    if (current.kind !== 'position') {
+      const firstFailure = current.kind === 'timeout'
+        ? { outcome: 'timed_out' as const }
+        : classifyDeviceLocationError(current.error);
+      if (firstFailure.outcome === 'permission_denied' || firstFailure.outcome === 'services_disabled') {
+        return firstFailure;
+      }
+      current = await currentPositionWithTimeout(Location, Location.Accuracy.Low, 10_000);
+      if (current.kind === 'timeout') return { outcome: 'timed_out' };
+      if (current.kind === 'error') return classifyDeviceLocationError(current.error);
+    }
     return {
       outcome: 'succeeded',
       position: {
@@ -329,6 +342,6 @@ export async function requestDeviceFix(): Promise<DeviceFixResult> {
   } catch (error) {
     // Preserve the category. The UI still offers the other paths, while Metro
     // can now distinguish permission, provider and native-module failures.
-    return classifyLocationError(error);
+    return classifyDeviceLocationError(error);
   }
 }

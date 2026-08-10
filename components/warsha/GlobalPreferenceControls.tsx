@@ -74,9 +74,9 @@ export function GlobalPreferenceControls({ embedded = false }: { embedded?: bool
     <View
       pointerEvents="box-none"
       style={embedded ? styles.embedded : [
-        styles.layer,
-        { top: Math.max(insets.top, spacing.sm) },
-        isRTL ? styles.layerStart : styles.layerEnd,
+        styles.rail,
+        { paddingTop: Math.max(insets.top, spacing.sm) },
+        isRTL ? styles.railStart : styles.railEnd,
       ]}>
       <View style={[styles.dock, isRTL && styles.reverse]}>
         <Pressable
@@ -174,10 +174,19 @@ export function GlobalPreferenceControls({ embedded = false }: { embedded?: bool
 }
 
 const makeStyles = (colors: ThemeColors) => StyleSheet.create({
-  layer: { position: 'absolute', zIndex: 1000 },
+  // The routed-page control lives in normal layout flow. Its measured height,
+  // including a large-font dock and the platform safe-area inset, is therefore
+  // reserved before the Stack instead of being painted over the screen below.
+  rail: {
+    zIndex: 1000,
+    flexShrink: 0,
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.sm,
+    backgroundColor: colors.canvas,
+  },
   embedded: { zIndex: 1000 },
-  layerEnd: { right: spacing.md },
-  layerStart: { left: spacing.md },
+  railEnd: { alignItems: 'flex-end' },
+  railStart: { alignItems: 'flex-start' },
   dock: {
     flexDirection: 'row',
     alignItems: 'center',

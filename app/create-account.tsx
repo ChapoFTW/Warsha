@@ -10,6 +10,7 @@ import { radii, spacing, typography, type ThemeColors } from '@/constants/theme'
 import { useThemedStyles } from '@/src/appearance/appearance-context';
 import { useAuth } from '@/src/auth/auth-context';
 import { authMessageKey } from '@/src/auth/auth-errors';
+import { isValidCustomerEmail } from '@/src/auth/auth-identifier';
 import { useAuthText } from '@/src/auth/auth-translations';
 import { isValidPhone, normalizePhone } from '@/src/auth/phone-auth';
 import { useLocalization } from '@/src/i18n/localization';
@@ -141,7 +142,10 @@ export default function CreateAccount() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        automaticallyAdjustKeyboardInsets
+        contentContainerStyle={styles.page}
+        keyboardShouldPersistTaps="handled">
         <BrandLockup size={48} />
         <AppText accessibilityRole="header" style={styles.title}>
           {ot.text(role === 'customer' ? 'roleCustomer' : 'roleWorker')}
@@ -197,7 +201,7 @@ export default function CreateAccount() {
             loading={busy}
             disabled={
               busy || name.trim().length < 2
-              || (role === 'customer' && !email.trim()) || password.length < 6
+              || (role === 'customer' && !isValidCustomerEmail(email)) || password.length < 6
               || !isValidPhone(normalizePhone(phone))
             }
             onPress={() => void createAccount(role)}

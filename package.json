@@ -52,7 +52,8 @@
     "test:wps023": "node --no-warnings --experimental-strip-types scripts/wps023-authentication-onboarding-vetting.test.mts",
     "test:wps024": "node --no-warnings --experimental-strip-types scripts/wps024-legal-compliance-governance.test.mts",
     "test:wps025": "node --no-warnings --experimental-strip-types scripts/wps025-worker-experience.test.mts",
-    "test:platform-preferences": "node --no-warnings --experimental-strip-types scripts/cross-platform-preferences-routing.test.mts"
+    "test:platform-preferences": "node --no-warnings --experimental-strip-types scripts/cross-platform-preferences-routing.test.mts",
+    "test:onboarding-stabilization": "node --no-warnings --experimental-strip-types scripts/onboarding-auth-stabilization.test.mts"
   },
   "dependencies": {
     "@expo-google-fonts/cairo": "^0.4.2",
