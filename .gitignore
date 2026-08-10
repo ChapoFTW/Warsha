@@ -49,3 +49,4 @@ app-example
 /supabase/.branches/
 
 tmp/
+.vercel
