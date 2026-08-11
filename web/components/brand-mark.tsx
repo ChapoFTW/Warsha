@@ -1,3 +1,10 @@
+import {
+  MARK_CONTOUR_STROKE,
+  MARK_FRAME,
+  MARK_STROKE,
+  MARK_TRACE,
+  MARK_VIEWBOX,
+} from '@warsha/brand';
 import type { Locale } from '@/lib/preferences';
 
 import styles from './brand-mark.module.css';
@@ -5,18 +12,22 @@ import styles from './brand-mark.module.css';
 /**
  * The Warsha mark — "The Current".
  *
- * This is not a new drawing. The geometry is copied verbatim from
- * `components/warsha/BrandMark.tsx`, which the Android and iOS applications
- * render: a protective frame containing a concealed W-shaped flow trace, on a
- * 32×32 viewBox with a 2.5 stroke and a 7.2 corner radius.
+ * The geometry comes from `src/brand/mark-geometry.ts`, the same module the
+ * asset generator rasterises and the same shapes Android and iOS draw. Nothing
+ * here is redrawn; a stroked vector stays crisp at any density and lets one
+ * drawing serve both themes.
  *
- * It is redrawn as inline SVG rather than imported as a PNG for two reasons
- * that matter at this size: a stroked vector stays crisp at any density and in
- * print, and `currentColor` lets one mark serve both themes. The mobile client
- * inks it with the `brandMark` token — near-white on the dark canvas,
- * near-black on the light one — and the web token of the same name resolves to
- * the same two values, so the mark is identical on every Warsha surface
- * without a second asset to keep in sync.
+ * **The mark is white.** On a dark surface that is all it needs to be. On a
+ * light surface a white line vanishes, so a thin dark contour is drawn *under*
+ * it at a slightly greater stroke width — the same paths, so the edge follows
+ * the logo rather than boxing it. There is no square, no plate and no second
+ * logo: just the overhang of a heavier line showing at the edges of the one on
+ * top.
+ *
+ * Which of the two appears is decided by CSS custom properties that flip with
+ * the theme, so the correct contrast variant is chosen automatically and
+ * before first paint — the same inline script that prevents the theme flash
+ * prevents a white-on-white flash here.
  */
 export function BrandMark({
   size = 26,
@@ -25,33 +36,60 @@ export function BrandMark({
   size?: number;
   title?: string;
 }) {
+  const frame = MARK_FRAME;
   return (
     <svg
       width={size}
       height={size}
-      viewBox="0 0 32 32"
+      viewBox={`0 0 ${MARK_VIEWBOX} ${MARK_VIEWBOX}`}
       fill="none"
       role={title ? 'img' : 'presentation'}
       aria-label={title}
       aria-hidden={title ? undefined : true}
       focusable="false"
+      className={styles.mark}
     >
-      <rect
-        x="2"
-        y="2"
-        width="28"
-        height="28"
-        rx="7.2"
-        stroke="currentColor"
-        strokeWidth="2.5"
-      />
-      <path
-        d="M2 13.2 L8.4 23.2 L14 14.8 L19.6 21.2 L30 9.2"
-        stroke="currentColor"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+      {/* Contour first, so the mark keeps its exact weight and only the
+          overhang shows. `--warsha-mark-contour` is transparent on dark. */}
+      <g className={styles.contour}>
+        <rect
+          x={frame.x}
+          y={frame.y}
+          width={frame.width}
+          height={frame.height}
+          rx={frame.rx}
+          stroke="currentColor"
+          strokeWidth={MARK_CONTOUR_STROKE}
+          strokeLinejoin="round"
+        />
+        <path
+          d={MARK_TRACE}
+          stroke="currentColor"
+          strokeWidth={MARK_CONTOUR_STROKE}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </g>
+
+      <g className={styles.ink}>
+        <rect
+          x={frame.x}
+          y={frame.y}
+          width={frame.width}
+          height={frame.height}
+          rx={frame.rx}
+          stroke="currentColor"
+          strokeWidth={MARK_STROKE}
+          strokeLinejoin="round"
+        />
+        <path
+          d={MARK_TRACE}
+          stroke="currentColor"
+          strokeWidth={MARK_STROKE}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </g>
     </svg>
   );
 }

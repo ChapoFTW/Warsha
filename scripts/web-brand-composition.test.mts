@@ -33,10 +33,20 @@ const geometry = [
 ];
 for (const { name, pattern } of geometry) {
   check(pattern.test(mobileMark), `the mobile mark defines the ${name}`);
-  check(pattern.test(webMark), `THE WEB MARK USES THE SAME ${name.toUpperCase()} AS ANDROID AND iOS`);
+}
+// The web no longer repeats those literals: it imports them from
+// `src/brand/mark-geometry.ts`, which is stronger than matching the same
+// numbers in two files and hoping they stay equal. `test:brand-assets`
+// asserts that module holds the canonical values.
+check(/from '@warsha\/brand'/.test(webMark),
+  'THE WEB MARK IMPORTS THE CANONICAL GEOMETRY RATHER THAN RESTATING IT');
+for (const symbol of ['MARK_FRAME', 'MARK_TRACE', 'MARK_STROKE', 'MARK_VIEWBOX']) {
+  check(webMark.includes(symbol), `the web mark draws from ${symbol}`);
 }
 check(/currentColor/.test(webMark),
   'the web mark inks itself from the theme rather than hard-coding a colour');
+check(/MARK_CONTOUR_STROKE/.test(webMark),
+  'the web mark draws the contour at the shared contour weight');
 check(/BrandLockup/.test(chrome) && !/brandMark/.test(chromeCss),
   'THE HEADER RENDERS THE CANONICAL LOCKUP, NOT A PLACEHOLDER SQUARE');
 check(!/border-radius:\s*7px[\s\S]{0,80}background:\s*var\(--brand\)/.test(chromeCss),
@@ -108,10 +118,16 @@ check(existsSync(join('web', 'app', 'apple-icon.png')), 'iOS bookmarks have a Wa
 check(existsSync(join('web', 'public', 'warsha-og.png')), 'shared links carry a Warsha image');
 check(/warsha-og\.png/.test(layout) && /images:/.test(layout),
   'Open Graph and Twitter metadata reference the Warsha image');
-// The icons must be the approved brand files, not a re-export of something else.
-const approved = readFileSync('assets/images/warsha-current-approved-favicon.png');
-check(readFileSync(join('web', 'app', 'icon.png')).equals(approved),
-  'the favicon is byte-identical to the approved brand favicon the app ships');
+// The favicon is no longer a copy of the shipped PNG: that asset bakes the
+// mark onto an opaque black square, which is exactly what a tab strip must not
+// receive. It is now generated from the canonical geometry with a transparent
+// background and the contour treatment, so it reads on light and dark tabs
+// alike. `test:brand-assets` asserts its dimensions, transparency and origin.
+const legacyFavicon = readFileSync('assets/images/warsha-current-approved-favicon.png');
+check(!readFileSync(join('web', 'app', 'icon.png')).equals(legacyFavicon),
+  'THE FAVICON IS NOT THE OLD BAKED-SQUARE ASSET');
+check(existsSync('scripts/generate-brand-assets.mjs'),
+  'the favicon is reproducible from the canonical mark');
 
 // --- Direction ---------------------------------------------------------------
 check(/inset-inline-start/.test(chromeCss) && /margin-inline-end/.test(chromeCss),

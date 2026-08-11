@@ -1,10 +1,30 @@
+/*
+ * The mark is white on every surface. What changes with the theme is whether a
+ * contour is drawn under it.
+ *
+ * Both layers take their colour from tokens rather than from the theme
+ * directly, so the correct contrast variant is already resolved by the inline
+ * head script that sets `data-theme` before first paint. There is no
+ * white-on-white or black-on-black frame.
+ */
+
+.mark {
+  display: block;
+  overflow: visible;
+}
+
+.ink {
+  color: var(--warsha-mark-ink);
+}
+
+.contour {
+  color: var(--warsha-mark-contour);
+}
+
 .lockup {
   display: inline-flex;
   align-items: center;
   gap: 9px;
-  /* The mark inks itself from the text colour, which is how one drawing
-     serves both themes without a second asset. */
-  color: var(--brand);
 }
 
 .wordmark {
