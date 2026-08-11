@@ -20,20 +20,33 @@ const equal = <T,>(actual: T, expected: T, label: string) => {
   checks += 1;
 };
 
-// Customer and worker sign-in are visibly distinct while preserving the two
-// established credential authorities.
+// Sign-in preserves the two credential authorities without asking anybody
+// which one they are.
+//
+// The selector this used to assert has been removed. It cross-checked the
+// typed identifier against a self-declared role, so a worker who left it on
+// Customer and entered their phone number was told the credentials were
+// invalid — they were not, the form was. The identifier's shape now selects
+// the credential path, and the product role is resolved after authentication
+// from server state.
 const signIn = read('app/sign-in.tsx');
-check(signIn.includes("accessibilityRole=\"radiogroup\"")
-  && signIn.includes("(['customer', 'worker'] as const)"),
-  'sign-in exposes an accessible customer/worker mode selector');
-check(signIn.includes("mode === 'customer' ? 'customerEmail' : 'workerPhone'"),
-  'the selected mode owns the visible identifier label');
-check(signIn.includes("mode === 'customer' ? 'email-address' : 'phone-pad'"),
-  'the selected mode owns the cross-platform keyboard');
-check(signIn.includes("mode === 'customer' ? 'customerSignInHint' : 'workerSignInHint'"),
-  'customer and worker helpers are explicit in both modes');
-check(signIn.includes("mode === 'customer' && classifySignInIdentity(identifier)?.kind === 'customer_email'"),
+check(!signIn.includes('accessibilityRole="radiogroup"')
+  && !signIn.includes("(['customer', 'worker'] as const)"),
+  'SIGN-IN NO LONGER ASKS SOMEBODY TO DECLARE A ROLE BEFORE AUTHENTICATING');
+check(signIn.includes("at('signInIdentity')"),
+  'one identifier field serves both credential kinds');
+check(signIn.includes('!classifySignInIdentity(identifier)'),
+  'the only pre-flight check is whether the identifier is usable');
+check(!signIn.includes("mode === 'customer'") && !signIn.includes("mode === 'worker'"),
+  'no label, keyboard or validation branch depends on a declared role');
+check(signIn.includes("at('signInIdentityHint')"),
+  'one hint explains what to type, without naming an account type');
+// Recovery is a capability of an email address, not of a role: a worker has no
+// mailbox to recover to, so the affordance appears only for a customer email.
+check(signIn.includes("classifySignInIdentity(identifier)?.kind === 'customer_email' ?"),
   'password recovery remains customer-email only');
+check(signIn.includes("if (identity?.kind !== 'customer_email') return;"),
+  'the recovery handler refuses anything that is not a customer email');
 
 equal(isValidCustomerEmail('customer@example.com'), true, 'a normal customer email passes local validation');
 equal(isValidCustomerEmail('not-an-email'), false, 'a malformed customer email fails before the network');
