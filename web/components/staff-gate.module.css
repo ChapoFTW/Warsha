@@ -1,0 +1,50 @@
+.centre {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: clamp(16px, 4vw, 40px);
+  background: var(--canvas);
+}
+
+.refusal {
+  max-width: 460px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  color: var(--brand);
+}
+
+.refusalTitle {
+  margin-top: 6px;
+  font-size: clamp(21px, 3vw, 26px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+
+.refusalBody { font-size: 15px; line-height: 1.65; color: var(--text-secondary); }
+
+.refusalLink {
+  width: fit-content;
+  margin-top: 4px;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--brand-ink);
+  background: var(--brand);
+  padding: 11px 18px;
+  border-radius: var(--radius-sm);
+}
+
+.environment {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  text-align: center;
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 7px 12px;
+  background: var(--brand);
+  color: var(--brand-ink);
+}

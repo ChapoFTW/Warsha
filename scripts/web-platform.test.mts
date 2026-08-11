@@ -71,10 +71,21 @@ check(!/sb_secret_|eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9/.test(allWebText),
   'no Supabase secret or JWT literal is embedded in web source');
 check(!/postgres:\/\/|postgresql:\/\//.test(allWebText),
   'the web client holds no direct database connection string');
+// The web reads NEXT_PUBLIC_* through Next's own environment resolution.
+// These were briefly mapped from the EXPO_PUBLIC_* names inside next.config,
+// which inlined empty strings whenever those were absent from the build
+// environment and silently overrode .env.local — every authenticated page
+// rendered blank. A missing explicit variable is a loud error; a mapped empty
+// one is a white screen.
+const browserClient = readWeb('lib', 'supabase-browser.ts');
+check(/NEXT_PUBLIC_SUPABASE_URL/.test(browserClient)
+  && /NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY/.test(browserClient),
+  'web reads the publishable Supabase values of the same project as mobile');
+check(/is not configured/.test(browserClient),
+  'a missing Supabase variable fails loudly rather than rendering nothing');
 const nextConfig = readWeb('next.config.ts');
-check(/NEXT_PUBLIC_SUPABASE_URL/.test(nextConfig)
-  && /EXPO_PUBLIC_SUPABASE_URL/.test(nextConfig),
-  'web reads the same publishable Supabase project values as the mobile client');
+check(!/env: \{/.test(nextConfig),
+  'next.config does not remap public environment variables into empty strings');
 
 // --- The web is not the mobile app in a browser ----------------------------
 // Import statements only — the prose in these files discusses React Native

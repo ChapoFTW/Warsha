@@ -1,0 +1,48 @@
+.page {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: clamp(24px, 4vw, 44px) clamp(16px, 4vw, 32px) 64px;
+  background: var(--canvas);
+  min-height: 100dvh;
+}
+
+.header { margin-bottom: clamp(20px, 3vw, 30px); max-width: 70ch; }
+.title { font-size: clamp(24px, 3.6vw, 32px); font-weight: 800; letter-spacing: -0.02em; }
+.lead { margin-top: 12px; font-size: 15px; line-height: 1.65; color: var(--text-secondary); }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 22px;
+  margin-bottom: 16px;
+}
+
+.cardTitle { font-size: 15px; font-weight: 700; margin-bottom: 12px; }
+.muted { font-size: 14.5px; color: var(--text-muted); }
+
+.chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+
+.chip {
+  font-size: 13px;
+  font-weight: 700;
+  padding: 6px 11px;
+  border-radius: var(--radius-sm);
+  background: var(--brand);
+  color: var(--brand-ink);
+  text-transform: capitalize;
+}
+
+.chipQuiet {
+  font-size: 12.5px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  padding: 5px 9px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+
+.facts { margin: 0; display: grid; gap: 10px; }
+.facts div { display: flex; justify-content: space-between; gap: 16px; font-size: 14.5px; }
+.facts dt { color: var(--text-muted); }
+.facts dd { margin: 0; color: var(--text-primary); font-weight: 600; }

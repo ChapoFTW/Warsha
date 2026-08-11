@@ -1,0 +1,11 @@
+/* The neutral surface shown while the account is unknown.
+
+   Deliberately not a skeleton of the application: a loading screen that
+   impersonates a signed-in shell is a loading screen that lies about whether
+   somebody is signed in. Just the mark, on the resolved canvas. */
+.startup {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  background: var(--canvas);
+}

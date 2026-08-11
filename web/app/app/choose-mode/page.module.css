@@ -1,0 +1,49 @@
+.page {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: clamp(16px, 4vw, 40px);
+  background: var(--canvas);
+}
+
+.panel { width: 100%; max-width: 720px; display: flex; flex-direction: column; gap: 14px; }
+
+.title {
+  margin-top: 10px;
+  font-size: clamp(24px, 4vw, 32px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.lead { font-size: 16px; line-height: 1.65; color: var(--text-secondary); }
+
+.choices {
+  margin-top: 12px;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 1fr;
+}
+
+.choice {
+  appearance: none;
+  font: inherit;
+  text-align: start;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 22px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  color: var(--text-primary);
+}
+
+.choice:hover { border-color: var(--brand); }
+
+.choiceTitle { font-size: 18px; font-weight: 750; }
+.choiceBody { font-size: 14.5px; line-height: 1.65; color: var(--text-secondary); }
+
+@media (min-width: 720px) {
+  .choices { grid-template-columns: 1fr 1fr; }
+}

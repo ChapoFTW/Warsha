@@ -1,0 +1,58 @@
+.title {
+  font-size: clamp(24px, 3.6vw, 32px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-bottom: clamp(20px, 3vw, 28px);
+}
+
+.grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 128px;
+}
+
+.cardTitle { font-size: 15px; font-weight: 700; }
+.muted { font-size: 14.5px; line-height: 1.6; color: var(--text-muted); }
+.metric { font-size: 30px; font-weight: 800; letter-spacing: -0.02em; }
+.metricLabel { font-size: 14px; font-weight: 600; color: var(--text-muted); }
+
+.link {
+  font-size: 14.5px;
+  color: var(--text-primary);
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  width: fit-content;
+}
+
+.status {
+  font-size: 15.5px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
+
+.next {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-inline-start: 3px solid var(--brand);
+  border-radius: var(--radius-md);
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+@media (min-width: 720px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1040px) { .grid { grid-template-columns: repeat(3, 1fr); } }

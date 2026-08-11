@@ -6,6 +6,19 @@ import { localeFromAcceptLanguage } from './lib/preferences.ts';
 const CANONICAL_HOST = 'usewarsha.com';
 
 /**
+ * Serve an application tree from a host without exposing its path prefix.
+ *
+ * `app.usewarsha.com/jobs` renders `/app/jobs`; the visitor never sees `/app`
+ * in the address bar, and the public host cannot reach it at all.
+ */
+function rewriteInto(prefix: string, request: NextRequest, pathname: string) {
+  if (pathname.startsWith(prefix)) return NextResponse.next();
+  const url = request.nextUrl.clone();
+  url.pathname = `${prefix}${pathname === '/' ? '' : pathname}`;
+  return NextResponse.rewrite(url);
+}
+
+/**
  * Two decisions, both made before a response is written.
  *
  * **Host.** `www.usewarsha.com` is the same site reachable at a second
@@ -41,6 +54,30 @@ export function middleware(request: NextRequest) {
   }
 
   const { pathname } = request.nextUrl;
+
+  /*
+   * Host decides which product is served.
+   *
+   * `app.` and `admin.` are separate origins on purpose. A browser isolates
+   * storage and script access per origin, so a flaw in a marketing page cannot
+   * reach a signed-in session, and nothing in the customer application can
+   * read a staff session. They share one deployment because they share one
+   * backend; they do not share an origin because they do not share a threat
+   * model.
+   */
+  if (host === `app.${CANONICAL_HOST}` || host.startsWith('app.localhost')) {
+    return rewriteInto('/app', request, pathname);
+  }
+  if (host === `admin.${CANONICAL_HOST}` || host.startsWith('admin.localhost')) {
+    return rewriteInto('/admin', request, pathname);
+  }
+  // The public host serves only the public site. Reaching an application path
+  // here would put a signed-in surface on the wrong origin.
+  if (pathname.startsWith('/app') || pathname.startsWith('/admin')) {
+    const home = request.nextUrl.clone();
+    home.pathname = '/';
+    return NextResponse.redirect(home, 307);
+  }
 
   // Already addressed in a language: nothing left to decide. The matcher lets
   // these through so the host redirect above can see them, so the guard has to

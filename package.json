@@ -65,7 +65,8 @@
     "test:web-brand": "node --no-warnings --experimental-strip-types scripts/web-brand-composition.test.mts",
     "test:brand-assets": "node --no-warnings --experimental-strip-types scripts/brand-asset-audit.test.mts",
     "brand:generate": "node --no-warnings --experimental-strip-types scripts/generate-brand-assets.mjs",
-    "test:web-auth": "node --no-warnings --experimental-strip-types scripts/web-auth-session.test.mts"
+    "test:web-auth": "node --no-warnings --experimental-strip-types scripts/web-auth-session.test.mts",
+    "test:web-app": "node --no-warnings --experimental-strip-types scripts/web-app-surfaces.test.mts"
   },
   "dependencies": {
     "@expo-google-fonts/cairo": "^0.4.2",

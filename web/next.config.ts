@@ -20,14 +20,17 @@ const nextConfig: NextConfig = {
   outputFileTracingRoot: __dirname,
   typedRoutes: true,
   eslint: { ignoreDuringBuilds: true },
-  env: {
-    // The web client talks to the same Supabase project as mobile. These are
-    // the publishable values the mobile client already ships; no service role
-    // key is ever referenced in browser code.
-    NEXT_PUBLIC_SUPABASE_URL: process.env.EXPO_PUBLIC_SUPABASE_URL ?? '',
-    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
-      process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? '',
-  },
+  /*
+   * NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY are read
+   * through Next's ordinary environment resolution — .env.local locally, the
+   * project's environment variables on Vercel.
+   *
+   * They were briefly mapped here from the EXPO_PUBLIC_* names, which inlined
+   * empty strings whenever those were absent from the build environment and
+   * silently overrode .env.local. The client constructor then threw and every
+   * authenticated page rendered blank. An explicit variable that is missing is
+   * a loud error; a mapped one that is empty is a blank screen.
+   */
 };
 
 export default nextConfig;
