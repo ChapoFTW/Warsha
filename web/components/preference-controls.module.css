@@ -10,15 +10,16 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 40px;
-  padding: 0 12px;
+  min-height: 36px;
+  padding: 0 10px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text-primary);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 650;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .language:hover {
@@ -28,11 +29,12 @@
 .appearance {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
-  padding: 3px;
+  gap: 1px;
+  padding: 2px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--surface);
+  flex-shrink: 0;
 }
 
 .appearanceOption {
@@ -41,10 +43,10 @@
   background: transparent;
   color: var(--text-muted);
   font: inherit;
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 600;
-  padding: 6px 10px;
-  min-height: 34px;
+  padding: 5px 8px;
+  min-height: 30px;
   border-radius: 6px;
   cursor: pointer;
   white-space: nowrap;
@@ -63,13 +65,3 @@
 
 /* Narrow screens: the appearance control keeps its full labels but tightens.
    Abbreviating to icons would make "System" unguessable in either language. */
-@media (max-width: 520px) {
-  .appearanceOption {
-    padding: 6px 8px;
-    font-size: 12.5px;
-  }
-  .language {
-    padding: 0 10px;
-    font-size: 13.5px;
-  }
-}

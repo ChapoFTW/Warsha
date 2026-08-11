@@ -1,3 +1,14 @@
+/*
+ * Header height is a consequence, not a setting.
+ *
+ * The previous header measured 122px at 1440px because five navigation labels
+ * wrapped onto two lines: the row's content was wider than the row, flex shrank
+ * the links, and the text broke. Nothing was setting a large height. So the fix
+ * is to stop the wrap — `white-space: nowrap` on the links, and a collapse to a
+ * menu below the width where they honestly fit — rather than to subtract
+ * padding until it looks right.
+ */
+
 .header {
   position: sticky;
   top: 0;
@@ -8,46 +19,39 @@
 }
 
 .headerInner {
+  position: relative;
   max-width: var(--page-max);
   margin: 0 auto;
-  padding: 14px var(--gutter);
+  padding: 9px var(--gutter);
   display: flex;
   align-items: center;
-  gap: 28px;
+  gap: 16px;
+  min-height: 60px;
 }
 
 .brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
   flex-shrink: 0;
 }
 
-.brandMark {
-  width: 26px;
-  height: 26px;
-  border-radius: 7px;
-  background: var(--brand);
-  display: inline-block;
-}
-
-.brandName {
-  font-size: 19px;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-}
-
+/* --- Primary navigation ---------------------------------------------------
+   Hidden until there is room for it on one line. `nowrap` is the whole fix:
+   without it, flex resolves an over-wide row by breaking every label. */
 .nav {
   display: none;
-  gap: 24px;
+  align-items: center;
+  gap: 18px;
   margin-inline-end: auto;
+  min-width: 0;
 }
 
 .navLink {
-  font-size: 14.5px;
+  font-size: 14px;
+  line-height: 1.4;
   color: var(--text-secondary);
-  padding: 6px 0;
+  padding: 4px 0;
   border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .navLink:hover {
@@ -55,41 +59,71 @@
   border-bottom-color: var(--brand);
 }
 
+/* --- The collapse ---------------------------------------------------------
+   Shown exactly when the inline navigation is not. */
+.menuButton {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  margin-inline-end: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text-primary);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.menuButton:hover {
+  border-color: var(--border-strong);
+}
+
+.navPanel {
+  position: absolute;
+  inset-inline-start: var(--gutter);
+  inset-inline-end: var(--gutter);
+  top: calc(100% + 8px);
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  box-shadow: 0 18px 40px rgb(0 0 0 / 28%);
+}
+
+.navPanelLink {
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 15px;
+  color: var(--text-primary);
+}
+
+.navPanelLink:hover {
+  background: var(--surface);
+}
+
+/* --- Actions --------------------------------------------------------------
+   No wrapping. A header that reflows onto a second line is the same defect
+   this file exists to fix, one element further along. */
 .actions {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-inline-start: auto;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-
-/* The preference controls live in the header's flow. They wrap onto their own
-   line on narrow screens rather than overlapping the brand or the buttons,
-   which is what a fixed-position widget would do at this width. */
-.preferences {
-  display: flex;
-  align-items: center;
   gap: 8px;
-  order: 3;
-  width: 100%;
-  justify-content: flex-end;
-}
-
-@media (min-width: 700px) {
-  .preferences {
-    order: 0;
-    width: auto;
-  }
+  flex-shrink: 0;
 }
 
 .signIn {
   display: none;
-  font-size: 14.5px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--text-secondary);
-  padding: 9px 14px;
+  padding: 9px 12px;
   border-radius: var(--radius-sm);
+  white-space: nowrap;
 }
 
 .signIn:hover {
@@ -98,11 +132,11 @@
 }
 
 .cta {
-  font-size: 14.5px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--brand-ink);
   background: var(--brand);
-  padding: 9px 18px;
+  padding: 10px 16px;
   border-radius: var(--radius-sm);
   white-space: nowrap;
 }
@@ -111,16 +145,49 @@
   filter: brightness(1.08);
 }
 
-@media (min-width: 900px) {
-  .nav,
-  .signIn {
+/* 1140px is where the five labels, both preference controls and both calls to
+   action measure comfortably inside the 1180px page width. Below it the
+   navigation collapses; it never wraps. */
+@media (min-width: 1140px) {
+  .nav {
     display: flex;
   }
-  .actions {
-    margin-inline-start: 0;
+  .menuButton {
+    display: none;
   }
 }
 
+/* The narrowest phones cannot hold brand, menu, both preference controls and
+   both calls to action on one 60px line. Rather than wrapping to a second row
+   — the defect this file exists to fix — the controls move into the menu. */
+.headerPreferences {
+  display: none;
+  align-items: center;
+  gap: 8px;
+}
+
+.panelPreferences {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  padding: 10px 14px 4px;
+  border-top: 1px solid var(--border);
+}
+
+@media (min-width: 720px) {
+  .headerPreferences {
+    display: inline-flex;
+  }
+  .panelPreferences {
+    display: none;
+  }
+  .signIn {
+    display: inline-flex;
+  }
+}
+
+/* --- Footer --------------------------------------------------------------- */
 .footer {
   border-top: 1px solid var(--border);
   background: var(--surface);
@@ -141,7 +208,7 @@
 }
 
 .footerBlurb {
-  margin-top: 10px;
+  margin-top: 12px;
   font-size: 14px;
   color: var(--text-muted);
 }

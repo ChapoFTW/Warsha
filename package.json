@@ -61,7 +61,8 @@
     "web:dev": "npm --prefix web run dev",
     "test:web-bilingual": "node --no-warnings --experimental-strip-types scripts/web-bilingual-appearance.test.mts",
     "test:identity-signin": "node --no-warnings --experimental-strip-types scripts/identity-signin.test.mts",
-    "test:rtl-direction": "node --no-warnings --experimental-strip-types scripts/rtl-direction.test.mts"
+    "test:rtl-direction": "node --no-warnings --experimental-strip-types scripts/rtl-direction.test.mts",
+    "test:web-brand": "node --no-warnings --experimental-strip-types scripts/web-brand-composition.test.mts"
   },
   "dependencies": {
     "@expo-google-fonts/cairo": "^0.4.2",

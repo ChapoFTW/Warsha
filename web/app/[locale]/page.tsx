@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 
+import { BrandMark } from '@/components/brand-mark';
 import { SiteFooter, SiteHeader } from '@/components/site-chrome';
 import { copy } from '@/lib/copy';
 import { isLocale, type Locale } from '@/lib/preferences';
@@ -49,18 +50,35 @@ export default async function HomePage({
       <main id="main">
         <section className={styles.hero}>
           <div className={styles.heroInner}>
-            <p className={styles.eyebrow}>{words.heroEyebrow}</p>
-            <h1 className={styles.heroTitle}>{words.heroTitle}</h1>
-            <p className={styles.heroBody}>{words.heroBody}</p>
-            <div className={styles.heroActions}>
-              <Link href={localeHref(typed, '/create-account')} className={styles.primaryCta}>
-                {words.heroPostJob}
-              </Link>
-              <Link href={localeHref(typed, '/become-a-worker')} className={styles.secondaryCta}>
-                {words.heroWork}
-              </Link>
+            <div className={styles.heroText}>
+              <p className={styles.eyebrow}>{words.heroEyebrow}</p>
+              <h1 className={styles.heroTitle}>{words.heroTitle}</h1>
+              <p className={styles.heroBody}>{words.heroBody}</p>
+              <div className={styles.heroActions}>
+                <Link href={localeHref(typed, '/create-account')} className={styles.primaryCta}>
+                  {words.heroPostJob}
+                </Link>
+                <Link href={localeHref(typed, '/become-a-worker')} className={styles.secondaryCta}>
+                  {words.heroWork}
+                </Link>
+              </div>
+              <p className={styles.heroNote}>{words.heroNote}</p>
             </div>
-            <p className={styles.heroNote}>{words.heroNote}</p>
+
+            {/* The second column.
+                No photograph of a Warsha professional exists in the repository
+                yet, and a stock image of somebody who has never used Warsha
+                would be a claim rather than a picture. Until that asset is
+                produced this column is the Warsha mark at display scale, held
+                in a soft field of the canvas itself — the same geometry the
+                phone draws, enlarged rather than redesigned. It is decorative,
+                so it is hidden from assistive technology; the headline beside
+                it already says everything this says. */}
+            <div className={styles.heroVisual} aria-hidden="true">
+              <div className={styles.heroField}>
+                <BrandMark size={520} />
+              </div>
+            </div>
           </div>
         </section>
 

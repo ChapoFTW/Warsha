@@ -1,6 +1,8 @@
 import Link from 'next/link';
 
+import { BrandLockup } from '@/components/brand-mark';
 import { AppearanceSwitch, LanguageSwitch } from '@/components/preference-controls';
+import { SiteNav } from '@/components/site-nav';
 import { copy } from '@/lib/copy';
 import type { Locale } from '@/lib/preferences';
 import { localeHref } from '@/lib/routes';
@@ -11,9 +13,7 @@ import styles from './site-chrome.module.css';
  * Public site header and footer.
  *
  * Deliberately not a tab bar. The mobile client's bottom tabs are the right
- * answer for a thumb and the wrong answer for a pointer and a 1440px viewport,
- * and reproducing them here is the clearest sign of an app stretched into a
- * browser rather than built for one.
+ * answer for a thumb and the wrong answer for a pointer and a 1440px viewport.
  *
  * Every label comes from the dictionary and every href carries the locale, so
  * a reader never lands on the other language by following the site's own
@@ -37,24 +37,19 @@ export function SiteHeader({ locale }: Props) {
     <header className={styles.header}>
       <div className={styles.headerInner}>
         <Link href={localeHref(locale)} className={styles.brand} aria-label={words.homeAria}>
-          <span className={styles.brandMark} aria-hidden="true" />
-          <span className={styles.brandName}>{words.brand}</span>
+          <BrandLockup locale={locale} />
         </Link>
 
-        <nav className={styles.nav} aria-label={words.navPrimary}>
-          {primary.map((item) => (
-            <Link key={item.href} href={item.href} className={styles.navLink}>
-              {item.label}
-            </Link>
-          ))}
-        </nav>
+        <SiteNav locale={locale} links={primary} />
 
         <div className={styles.actions}>
-          <div className={styles.preferences}>
+          <span className={styles.headerPreferences}>
             <LanguageSwitch locale={locale} />
             <AppearanceSwitch locale={locale} />
-          </div>
-          <Link href={localeHref(locale, '/sign-in')} className={styles.signIn}>{words.signIn}</Link>
+          </span>
+          <Link href={localeHref(locale, '/sign-in')} className={styles.signIn}>
+            {words.signIn}
+          </Link>
           <Link href={localeHref(locale, '/create-account')} className={styles.cta}>
             {words.createAccount}
           </Link>
@@ -98,7 +93,7 @@ export function SiteFooter({ locale }: Props) {
     <footer className={styles.footer}>
       <div className={styles.footerInner}>
         <div className={styles.footerBrand}>
-          <span className={styles.brandName}>{words.brand}</span>
+          <BrandLockup locale={locale} />
           <p className={styles.footerBlurb}>{words.footerBlurb}</p>
         </div>
 

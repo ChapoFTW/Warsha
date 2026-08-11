@@ -88,7 +88,8 @@ check(!webImports.some(specifier => /^react-native|^expo[-/]?|^@react-native/.te
 check(webImports.some(specifier => specifier.includes('src/legal/legal-corpus')),
   'the web client does import the shared legal authority');
 const chrome = readWeb('components', 'site-chrome.tsx');
-check(/aria-label=\{words\.navPrimary\}/.test(chrome)
+const chromeNav = readWeb('components', 'site-nav.tsx');
+check(/aria-label=\{words\.navPrimary\}/.test(chromeNav)
   && /<header/.test(chrome) && /<footer/.test(chrome),
   'the web uses header/footer navigation rather than a reproduced tab bar');
 check(!/bottomTab|tabBar|BottomNavigation/i.test(allWebText),

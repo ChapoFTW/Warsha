@@ -67,8 +67,17 @@ export async function generateMetadata(
       title: locale === 'ar' ? 'ورشة — خدمات المنزل في مصر' : 'Warsha — home services in Egypt',
       description: words.heroBody,
       url: `/${locale}`,
+      images: [{
+        url: '/warsha-og.png',
+        width: 512,
+        height: 512,
+        alt: words.brand,
+      }],
     },
-    twitter: { card: 'summary_large_image' },
+    twitter: {
+      card: 'summary_large_image',
+      images: ['/warsha-og.png'],
+    },
     robots: { index: true, follow: true },
   };
 }

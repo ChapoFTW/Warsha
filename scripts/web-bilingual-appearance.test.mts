@@ -170,10 +170,16 @@ const controlStyles = readFileSync('web/components/preference-controls.module.cs
 const chromeStyles = readFileSync('web/components/site-chrome.module.css', 'utf8');
 check(!/position:\s*(fixed|absolute)/.test(controlStyles),
   'THE SWITCHERS ARE IN NORMAL FLOW AND CANNOT OVERLAP CONTENT AT ANY WIDTH');
-check(/flex-wrap:\s*wrap/.test(chromeStyles),
-  'the header wraps rather than letting its controls collide on narrow screens');
-check(/@media \(min-width: 700px\)/.test(chromeStyles),
-  'the preference row has an explicit narrow-screen arrangement');
+// Wrapping was the defect, not the safeguard: five navigation labels breaking
+// onto second lines is what made the header 122px tall at 1440px. The header
+// now reorganises at explicit breakpoints and never reflows.
+check(!/flex-wrap:\s*wrap/.test(chromeStyles),
+  'THE HEADER NEVER WRAPS ONTO A SECOND ROW; IT COLLAPSES INSTEAD');
+check(/@media \(min-width: 720px\)/.test(chromeStyles)
+  && /@media \(min-width: 1140px\)/.test(chromeStyles),
+  'the header has explicit breakpoints for the menu and the preference controls');
+check(/panelPreferences/.test(chromeStyles),
+  'on the narrowest screens the preference controls move into the menu rather than overflowing');
 check(!/z-index:\s*(9{2,}|\d{4,})/.test(controlStyles),
   'no switcher escapes stacking context to sit on top of the page');
 

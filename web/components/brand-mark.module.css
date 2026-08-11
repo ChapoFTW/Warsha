@@ -1,0 +1,23 @@
+.lockup {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  /* The mark inks itself from the text colour, which is how one drawing
+     serves both themes without a second asset. */
+  color: var(--brand);
+}
+
+.wordmark {
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+/* Arabic sets slightly larger, as it does in the mobile lockup: the script has
+   a smaller x-height and matches the Latin wordmark's weight at a larger size. */
+:root[dir='rtl'] .wordmark {
+  font-size: 21px;
+  letter-spacing: 0;
+}
