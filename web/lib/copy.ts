@@ -122,6 +122,10 @@ export const copy = {
     signInEyebrow: 'Welcome back',
     signInLead:
       'Choose how you use Warsha. Your account works the same on the web and in the app.',
+    signInIdentity: 'Email or phone number',
+    signInIdentityHint: 'Use the email address or the phone number you registered with. Warsha works out the rest.',
+    signInOneAccount: 'One sign-in for everyone',
+    signInOneAccountBody: 'Whether you hire professionals, do the work, or both, you sign in the same way. Warsha resolves what your account can do after you are signed in — you never have to declare it first.',
     signInCustomer: 'I need work done',
     signInCustomerBody:
       'Sign in with the email address and password you registered with.',
@@ -252,6 +256,10 @@ export const copy = {
     signInTitle: 'ادخل على ورشة',
     signInEyebrow: 'أهلًا بعودتك',
     signInLead: 'اختار إنت بتستخدم ورشة إزاي. حسابك بيشتغل نفس الشيء على الويب والتطبيق.',
+    signInIdentity: 'البريد الإلكتروني أو رقم التليفون',
+    signInIdentityHint: 'استخدم البريد الإلكتروني أو رقم التليفون اللي سجّلت بيه. ورشة هتعرف الباقي.',
+    signInOneAccount: 'تسجيل دخول واحد للكل',
+    signInOneAccountBody: 'سواء بتطلب صنايعية، أو بتشتغل، أو الاتنين، بتسجّل الدخول بنفس الطريقة. ورشة بتحدد حسابك بيعمل إيه بعد ما تدخل — مش لازم تقول ده بنفسك الأول.',
     signInCustomer: 'محتاج حد يشتغل عندي',
     signInCustomerBody: 'ادخل بالإيميل والباسورد اللي سجّلت بيهم.',
     signInWorker: 'أنا اللي بشتغل',

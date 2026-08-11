@@ -182,10 +182,12 @@ check(/closed testing/i.test(publicCopy),
 check(!/auth\.warsha\.invalid|synthetic/i.test(withoutComments(allWebText)),
   'THE WEB NEVER REVEALS THE SYNTHETIC WORKER EMAIL IDENTITY');
 const signIn = readWeb('app', '[locale]', 'sign-in', 'page.tsx');
-check(/signInCustomer\b/.test(signIn) && /signInWorker\b/.test(signIn),
-  'sign-in asks which audience somebody is, not which identifier their account uses');
-check(/I need work done/.test(readWeb('lib', 'copy.ts'))
-  && /محتاج حد يشتغل عندي/.test(readWeb('lib', 'copy.ts')),
-  'that question is asked in both languages');
+check(!/signInCustomerBody|signInWorkerBody/.test(signIn),
+  'WEB SIGN-IN DOES NOT ASK SOMEBODY TO CLASSIFY THEIR OWN ACCOUNT');
+check(/signInIdentity/.test(signIn) && /signInOneAccount/.test(signIn),
+  'web sign-in asks for an identifier and says one sign-in serves everyone');
+check(/Email or phone number/.test(readWeb('lib', 'copy.ts'))
+  && /البريد الإلكتروني أو رقم التليفون/.test(readWeb('lib', 'copy.ts')),
+  'the identifier is asked for in both languages');
 
 console.log(`Web platform regressions: ${checks} checks passed across ${webCode.length} web modules.`);

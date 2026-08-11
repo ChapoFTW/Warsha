@@ -26,10 +26,16 @@ import { useOnboardingText } from '@/src/onboarding/onboarding-translations';
  * sent. A visible path that always fails is worse than no path, because the
  * person blames themselves and tries again.
  *
- * The visible account-mode selector changes labels, keyboard, validation and
- * recovery affordances; it never changes an account role or server authority.
- * People therefore choose the identity they actually have without learning
- * about the worker's synthetic internal email.
+ * There is no account-type selector, and removing it fixed a real failure:
+ * the selector cross-checked the identifier against a self-declared role, so a
+ * worker who left it on Customer and typed their phone number was told their
+ * credentials were invalid. They were not — the form was.
+ *
+ * Nobody is asked what kind of account they have. `classifySignInIdentity`
+ * reads the shape of what was typed and `auth.signIn` routes on that alone:
+ * an email goes to Supabase password auth, a phone to the trusted worker
+ * broker. The product role is resolved after authentication, from server
+ * state, by the same route authority the rest of the app uses.
  *
  * Error text comes from `sanitizeAuthError`, which WPS-001 wrote precisely so
  * a failed sign-in cannot be used to discover whether an account exists.
@@ -42,20 +48,17 @@ export default function SignIn() {
   const at = useAuthText();
   const auth = useAuth();
 
-  const [mode, setMode] = useState<'customer' | 'worker'>('customer');
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
 
   const submit = async () => {
-    const identity = classifySignInIdentity(identifier);
-    if (
-      !identity
-      || mode === 'customer' && identity.kind !== 'customer_email'
-      || mode === 'worker' && identity.kind !== 'worker_phone'
-    ) {
-      setMessage(t('authInvalidCredentials'));
+    // The identifier decides the authentication path. A person who registered
+    // with a phone types a phone; nobody has to know that this routes through
+    // the worker broker, or that it corresponds to a product role at all.
+    if (!classifySignInIdentity(identifier)) {
+      setMessage(at('signInIdentityInvalid'));
       return;
     }
     setBusy(true);
@@ -70,7 +73,6 @@ export default function SignIn() {
   };
 
   const resetPassword = async () => {
-    if (mode !== 'customer') return;
     const identity = classifySignInIdentity(identifier);
     if (identity?.kind !== 'customer_email') return;
     setBusy(true);
@@ -95,38 +97,15 @@ export default function SignIn() {
         <AppText accessibilityRole="header" style={styles.title}>{ot.text('signIn')}</AppText>
 
         <View style={styles.form}>
-          <View accessibilityRole="radiogroup" style={styles.modeGroup}>
-            {(['customer', 'worker'] as const).map(option => {
-              const selected = mode === option;
-              const label = at(option === 'customer' ? 'customerAccount' : 'workerAccount');
-              return (
-                <Pressable
-                  key={option}
-                  accessibilityRole="radio"
-                  accessibilityLabel={label}
-                  accessibilityState={{ checked: selected, selected }}
-                  onPress={() => {
-                    setMode(option);
-                    setIdentifier('');
-                    setMessage('');
-                  }}
-                  style={[styles.modeOption, selected && styles.modeOptionSelected]}>
-                  <AppText style={[styles.modeLabel, selected && styles.modeLabelSelected]}>{label}</AppText>
-                </Pressable>
-              );
-            })}
-          </View>
-          <AppText style={styles.modeHelp}>
-            {at(mode === 'customer' ? 'customerSignInHint' : 'workerSignInHint')}
-          </AppText>
+          <AppText style={styles.modeHelp}>{at('signInIdentityHint')}</AppText>
           <BrandTextField
-            label={at(mode === 'customer' ? 'customerEmail' : 'workerPhone')}
+            label={at('signInIdentity')}
             value={identifier}
             onChangeText={setIdentifier}
-            keyboardType={mode === 'customer' ? 'email-address' : 'phone-pad'}
+            keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
-            textContentType={mode === 'customer' ? 'emailAddress' : 'telephoneNumber'}
+            textContentType="username"
           />
           <BrandTextField
             label={t('password')}
@@ -138,16 +117,10 @@ export default function SignIn() {
           <BrandButton
             label={ot.text('signIn')}
             loading={busy}
-            disabled={
-              busy
-              || password.length < 6
-              || (mode === 'customer'
-                ? classifySignInIdentity(identifier)?.kind !== 'customer_email'
-                : classifySignInIdentity(identifier)?.kind !== 'worker_phone')
-            }
+            disabled={busy || password.length < 6 || !classifySignInIdentity(identifier)}
             onPress={() => void submit()}
           />
-          {mode === 'customer' && classifySignInIdentity(identifier)?.kind === 'customer_email' ? (
+          {classifySignInIdentity(identifier)?.kind === 'customer_email' ? (
             <BrandButton
               label={t('forgotPassword')}
               variant="ghost"
@@ -182,26 +155,6 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   title: { fontSize: 26, fontWeight: typography.bold, color: colors.textPrimary },
   form: { width: '100%', maxWidth: 420, gap: spacing.md },
-  modeGroup: {
-    flexDirection: 'row',
-    padding: spacing.xs,
-    gap: spacing.xs,
-    borderWidth: 1,
-    borderColor: colors.borderDefault,
-    borderRadius: radii.md,
-    backgroundColor: colors.surface,
-  },
-  modeOption: {
-    flex: 1,
-    minHeight: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: spacing.sm,
-    borderRadius: radii.sm,
-  },
-  modeOptionSelected: { backgroundColor: colors.surfaceSelected },
-  modeLabel: { color: colors.textSecondary, fontWeight: typography.semibold },
-  modeLabelSelected: { color: colors.textPrimary },
   modeHelp: { color: colors.textSecondary, lineHeight: 21 },
   error: { color: colors.errorText, textAlign: 'center', maxWidth: 420 },
 });

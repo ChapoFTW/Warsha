@@ -55,7 +55,7 @@ function validate() {
     'typecheck', 'lint', 'check:mojibake', 'audit:migrations', 'audit:secrets',
     'test:qa-preview', 'test:platform-preferences', 'test:onboarding-stabilization',
     'test:signup-legal-startup', 'test:signup-state', 'test:web-platform',
-    'test:web-bilingual',
+    'test:web-bilingual', 'test:identity-signin', 'test:rtl-direction',
     'test:wps018', 'test:wps023', 'test:wps024',
     'test:wps025', 'test:worker-auth', 'test:customer-email-confirmation',
   ]) npmScript(name);

@@ -7,6 +7,7 @@ import { BrandButton, BrandCard, BrandLoadingState, BrandTextField, StateBadge }
 import { AppText } from '@/components/warsha/Typography';
 import { radii, spacing, type ThemeColors } from '@/constants/theme';
 import { useThemedStyles } from '@/src/appearance/appearance-context';
+import { useLocalization } from '@/src/i18n/localization';
 import { environment } from '@/src/config/environment';
 import type { PinSource } from '@/src/onboarding/onboarding-types';
 import { resolveLocationExperienceAvailability, type LocationExperienceAvailability } from '@/src/providers/location-experience-policy';
@@ -48,6 +49,7 @@ export function AddressLocationPicker({
   const [busy, setBusy] = useState<'device' | 'search' | 'pin' | null>(null);
   const [message, setMessage] = useState('');
   const sessionToken = useRef(newSessionToken());
+  const { isRTL } = useLocalization();
 
   useEffect(() => {
     let active = true;
@@ -180,7 +182,7 @@ export function AddressLocationPicker({
       ) : null}
 
       {availability?.providerUnavailable ? (
-        <BrandCard style={styles.notice}>
+        <BrandCard style={[styles.notice, isRTL && styles.noticeRTL]}>
           <MaterialIcons name="map" size={22} />
           <AppText style={styles.noticeText}>{copy.providerUnavailable}</AppText>
         </BrandCard>
@@ -229,6 +231,7 @@ export function AddressLocationPicker({
 const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   group: { gap: spacing.md },
   notice: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  noticeRTL: { flexDirection: 'row-reverse' },
   noticeText: { flex: 1, color: colors.textSecondary, lineHeight: 21 },
   note: { color: colors.textMuted, fontSize: 13, lineHeight: 19 },
   searchGroup: { gap: spacing.sm },
