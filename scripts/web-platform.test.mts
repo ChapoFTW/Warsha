@@ -126,7 +126,26 @@ check(/localStorage.getItem\('warsha.theme'\)/.test(readWeb('app', 'layout.tsx')
 // --- SEO --------------------------------------------------------------------
 const home = readWeb('app', 'page.tsx');
 check(/export const metadata/.test(home) && /alternates/.test(home),
-  'the homepage declares canonical and language alternates');
+  'the homepage declares a canonical URL');
+
+// A language alternate is a promise that a translated address exists. The
+// homepage once advertised hreflang="ar" pointing at /ar, which returned 404 —
+// telling crawlers the Arabic edition was a dead page. Any `languages` entry
+// must name a route that is actually built.
+const routeDirectories = new Set(
+  readdirSync(join('web', 'app'), { withFileTypes: true })
+    .filter(entry => entry.isDirectory())
+    .map(entry => entry.name),
+);
+for (const file of webCode.filter(f => f.endsWith('page.tsx'))) {
+  const languages = /languages:\s*\{([^}]*)\}/.exec(readFileSync(file, 'utf8'));
+  if (!languages) continue;
+  for (const [, target] of languages[1].matchAll(/'\/([^']*)'/g)) {
+    const segment = target.split('/')[0];
+    check(segment === '' || routeDirectories.has(segment),
+      `${file} advertises a language alternate for a route that exists (/${segment})`);
+  }
+}
 check(/openGraph/.test(readWeb('app', 'layout.tsx')),
   'social metadata is declared for sharing');
 for (const page of ['about', 'help', 'services', 'how-it-works', 'become-a-worker']) {

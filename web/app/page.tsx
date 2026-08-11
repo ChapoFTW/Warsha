@@ -11,7 +11,19 @@ export const metadata: Metadata = {
   description:
     'Describe the job, receive quotes from skilled professionals, and agree the price '
     + 'before the work starts. Warsha covers home repairs and maintenance in Egypt.',
-  alternates: { canonical: '/', languages: { en: '/', ar: '/ar' } },
+  // No `languages` alternate. Warsha's public pages are bilingual on one URL —
+  // the legal reader renders English and Arabic together — so there is no
+  // separate Arabic address to advertise. Declaring `/ar` pointed crawlers at
+  // a 404 and offered an Arabic edition that does not exist.
+  alternates: { canonical: '/' },
+  openGraph: {
+    title: 'Warsha — home services in Egypt',
+    description:
+      'Describe the job, receive quotes from skilled professionals, and agree the '
+      + 'price before the work starts.',
+    url: '/',
+    type: 'website',
+  },
 };
 
 /**
