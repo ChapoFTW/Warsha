@@ -34,6 +34,7 @@ export default function WorkerHome() {
   const nav = [
     { href: '/worker', label: words.navHome },
     { href: '/worker/verification', label: words.navVerification },
+    { href: '/notifications', label: words.navNotifications },
     { href: '/support', label: words.navSupport },
   ];
 

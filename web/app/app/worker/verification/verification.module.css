@@ -1,0 +1,62 @@
+.title {
+  font-size: 26px; font-weight: 700; color: var(--text-primary);
+  letter-spacing: -0.01em; margin-bottom: 18px;
+}
+
+.status {
+  background: var(--surface); border: 1px solid var(--border);
+  border-inline-start: 3px solid var(--brand);
+  border-radius: var(--radius-md); padding: 20px; margin-bottom: 18px;
+}
+
+.statusTitle { font-size: 18px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px; }
+
+.reason { font-size: 14.5px; line-height: 1.6; color: var(--text-secondary); margin-bottom: 8px; }
+
+.progress { font-size: 13.5px; color: var(--text-muted); }
+
+.panel {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-md); padding: 20px; margin-bottom: 18px;
+}
+
+.sectionTitle { font-size: 17px; font-weight: 700; color: var(--text-primary); margin-bottom: 14px; }
+
+.gates { list-style: none; margin: 0 0 16px; padding: 0; display: grid; gap: 2px; }
+
+.gate, .gateNext {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap;
+  padding: 13px 0; border-bottom: 1px solid var(--border);
+}
+
+.gates li:last-child { border-bottom: 0; }
+
+.gateLabel { font-size: 15px; color: var(--text-secondary); }
+
+.gateNext .gateLabel { color: var(--text-primary); font-weight: 700; }
+
+.gateBadge {
+  font-size: 12px; font-weight: 700; padding: 4px 9px; border-radius: 999px;
+  background: var(--brand); color: var(--brand-ink); white-space: nowrap;
+}
+
+.note {
+  font-size: 13.5px; line-height: 1.6; color: var(--text-muted);
+  border-inline-start: 2px solid var(--border); padding-inline-start: 12px;
+}
+
+.action {
+  appearance: none; border: 0; font: inherit; font-size: 15px; font-weight: 700;
+  color: var(--brand-ink); background: var(--brand); border-radius: var(--radius-sm);
+  padding: 13px 22px; min-height: 44px; cursor: pointer; margin-bottom: 14px;
+}
+.action:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.ok, .failure {
+  font-size: 14.5px; line-height: 1.6; color: var(--text-primary);
+  border-inline-start: 3px solid var(--brand);
+  padding-inline-start: 12px; margin-bottom: 16px;
+}
+
+.muted { font-size: 14.5px; line-height: 1.6; color: var(--text-muted); }

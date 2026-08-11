@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 
 import { AppShell, useAccount } from '@/components/app-shell';
 import { appCopy } from '@/lib/app-copy';
+import { parseCounts, type NotificationCounts } from '@/lib/notifications';
 import { supabase } from '@/lib/supabase';
 import { useAppLocale } from '@/lib/use-app-locale';
 
@@ -19,27 +20,25 @@ import styles from './dashboard.module.css';
  * "we could not load it".
  */
 
-type Counts = { unread: number } | null;
-
 export default function CustomerHome() {
   const locale = useAppLocale();
   const words = appCopy[locale];
   const account = useAccount();
-  const [counts, setCounts] = useState<Counts>(null);
+  const [counts, setCounts] = useState<NotificationCounts | null>(null);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     let active = true;
     void (async () => {
-      const { data, error } = await supabase().rpc('get_my_notification_counts');
+      // `p_mode` is required and has no default, so calling this with no
+      // arguments cannot resolve server-side — which is what used to happen,
+      // and why this card only ever showed its failure state.
+      const { data, error } = await supabase()
+        .rpc('get_my_notification_counts', { p_mode: 'customer' });
       if (!active) return;
-      if (error) {
-        setFailed(true);
-      } else {
-        const payload = data as { unread?: number } | null;
-        setCounts({ unread: Number(payload?.unread ?? 0) });
-      }
+      if (error) setFailed(true);
+      else setCounts(parseCounts(data));
       setLoading(false);
     })();
     return () => { active = false; };
@@ -62,9 +61,9 @@ export default function CustomerHome() {
             <p className={styles.muted}>{words.loading}</p>
           ) : failed ? (
             <p className={styles.muted}>{words.loadFailed}</p>
-          ) : counts && counts.unread > 0 ? (
+          ) : counts && counts.globalUnread > 0 ? (
             <p className={styles.metric}>
-              {counts.unread} <span className={styles.metricLabel}>{words.unreadCount}</span>
+              {counts.globalUnread} <span className={styles.metricLabel}>{words.unreadCount}</span>
             </p>
           ) : (
             <p className={styles.muted}>{words.noNotifications}</p>

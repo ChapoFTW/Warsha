@@ -1,0 +1,76 @@
+.head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap; margin-bottom: 18px;
+}
+
+.title { font-size: 26px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.01em; }
+
+.filters { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; }
+
+.field { display: grid; gap: 6px; min-width: 0; flex: 0 1 240px; }
+
+.label {
+  font-size: 12px; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--text-muted);
+}
+
+.select {
+  font: inherit; font-size: 15px; color: var(--text-primary);
+  background: var(--canvas); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 10px 12px; min-height: 44px; width: 100%;
+}
+
+.list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+
+.item {
+  display: flex; gap: 14px; justify-content: space-between; flex-wrap: wrap;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-md); padding: 16px 18px;
+}
+
+/* Unread is marked on the reading edge, so it mirrors in Arabic rather than
+   always sitting on the left. */
+.itemUnread { border-inline-start: 3px solid var(--brand); }
+
+.itemBody { min-width: 0; flex: 1 1 320px; }
+
+.itemTitle {
+  font-size: 15.5px; font-weight: 700; color: var(--text-primary);
+  margin-bottom: 4px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+
+.count {
+  font-size: 12px; font-weight: 700; min-width: 22px; text-align: center;
+  padding: 2px 7px; border-radius: 999px;
+  background: var(--brand); color: var(--brand-ink);
+}
+
+.itemText { font-size: 14.5px; line-height: 1.6; color: var(--text-secondary); margin-bottom: 6px; }
+
+.when { font-size: 13px; color: var(--text-muted); }
+
+.itemActions { display: flex; gap: 12px; align-items: flex-start; flex-wrap: wrap; }
+
+.textAction {
+  appearance: none; border: 0; background: transparent; font: inherit;
+  font-size: 14px; font-weight: 600; color: var(--text-secondary);
+  cursor: pointer; padding: 6px 0; min-height: 44px;
+  text-decoration: underline; text-underline-offset: 3px;
+}
+
+.action {
+  appearance: none; border: 0; font: inherit; font-size: 14.5px; font-weight: 700;
+  color: var(--brand-ink); background: var(--brand); border-radius: var(--radius-sm);
+  padding: 12px 20px; min-height: 44px; cursor: pointer; margin-top: 16px;
+}
+
+.action:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.state {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-md); padding: 32px 24px; text-align: center;
+}
+
+.emptyTitle { font-size: 17px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px; }
+
+.muted { font-size: 14.5px; line-height: 1.6; color: var(--text-muted); }

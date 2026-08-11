@@ -1,0 +1,91 @@
+.head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap; margin-bottom: 10px;
+}
+
+.title { font-size: 26px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.01em; }
+
+.lead { font-size: 15px; line-height: 1.65; color: var(--text-secondary); max-width: 70ch; margin-bottom: 22px; }
+
+.panel {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-md); padding: 20px; margin-bottom: 18px;
+}
+
+.sectionTitle { font-size: 17px; font-weight: 700; color: var(--text-primary); margin-bottom: 14px; }
+
+.field { display: grid; gap: 6px; margin-bottom: 16px; }
+
+.label {
+  font-size: 12px; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--text-muted);
+}
+
+.input, .select, .textarea {
+  font: inherit; font-size: 15px; color: var(--text-primary);
+  background: var(--canvas); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 10px 12px; min-height: 44px; width: 100%;
+}
+
+.textarea { resize: vertical; line-height: 1.6; }
+
+.actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+
+.action {
+  appearance: none; border: 0; font: inherit; font-size: 14.5px; font-weight: 700;
+  color: var(--brand-ink); background: var(--brand); border-radius: var(--radius-sm);
+  padding: 12px 20px; min-height: 44px; cursor: pointer; white-space: nowrap;
+}
+.action:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.secondary {
+  appearance: none; font: inherit; font-size: 14.5px; font-weight: 600;
+  color: var(--text-secondary); background: transparent;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 12px 20px; min-height: 44px; cursor: pointer;
+}
+
+.list { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+
+.case { padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+.case:last-child { border-bottom: 0; padding-bottom: 0; }
+
+.caseOpen {
+  appearance: none; border: 0; background: transparent; font: inherit;
+  font-size: 15.5px; font-weight: 700; color: var(--text-primary);
+  cursor: pointer; padding: 0 0 6px; text-align: start;
+  text-decoration: underline; text-underline-offset: 3px;
+}
+
+.caseMeta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+
+.badge {
+  font-size: 12px; font-weight: 600; padding: 4px 9px; border-radius: 999px;
+  border: 1px solid var(--border); color: var(--text-secondary); white-space: nowrap;
+}
+
+.when { font-size: 13px; color: var(--text-muted); }
+
+.thread { list-style: none; margin: 0 0 16px; padding: 0; display: grid; gap: 10px; }
+
+.message {
+  background: var(--canvas); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 12px 14px;
+}
+
+/* The reader's own message is marked on the reading edge so it mirrors. */
+.messageMine { border-inline-start: 3px solid var(--brand); }
+
+.messageBody { font-size: 14.5px; line-height: 1.6; color: var(--text-secondary); }
+
+.note {
+  font-size: 13.5px; line-height: 1.6; color: var(--text-muted);
+  border-inline-start: 2px solid var(--border); padding-inline-start: 12px;
+}
+
+.failure {
+  font-size: 14px; line-height: 1.55; color: var(--text-primary);
+  border-inline-start: 3px solid var(--brand); padding-inline-start: 12px; margin-bottom: 14px;
+}
+
+.muted { font-size: 14.5px; line-height: 1.6; color: var(--text-muted); }

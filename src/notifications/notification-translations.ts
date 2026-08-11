@@ -1,43 +1,25 @@
 import { useLocalization } from '@/src/i18n/localization';
 
-const rawCopy = {
-  en: {
-    notifications:'Notifications',notificationBell:'Open notifications',markAllRead:'Mark all as read',markRead:'Mark as read',dismiss:'Dismiss notification',empty:'No notifications yet',emptyBody:'Booking updates and important account activity will appear here.',loadError:'Couldn’t load notifications.',retry:'Try again',loadMore:'Load more',newUpdate:'New update',justNow:'Just now',
-    new_booking_request:'New booking request',booking_message:'New message',booking_pending_provider_approval:'Booking request sent',booking_accepted:'Booking accepted',booking_rejected:'Booking rejected',booking_rescheduling_requested:'New schedule proposed',booking_reschedule_accepted:'Proposed schedule accepted',booking_reschedule_rejected:'Proposed schedule declined',booking_confirmed:'Booking confirmed',booking_provider_on_the_way:'Provider on the way',booking_provider_arrived:'Provider arrived',booking_job_started:'Work started',booking_work_in_progress:'Work in progress',booking_completed:'Work completed',booking_cancelled:'Booking cancelled',booking_no_show:'Customer no-show',booking_disputed:'Problem reported',booking_refunded:'Booking refunded',operation_traveling:'Worker traveling',operation_arrived:'Worker arrived',operation_started:'Work started',operation_paused:'Work paused',operation_resumed:'Work resumed',operation_waiting_for_approval:'Approval needed',operation_additional_work:'Additional work update',operation_delay:'Delay update',operation_finished:'Work finished',operation_inspection:'Inspection ready',operation_completed:'Work completed',operation_return_visit:'Return visit update',review_unlocked:'Review available',verification_submitted:'Verification sent',verification_approved:'Identity verified',verification_rejected:'Verification needs attention',verification_resubmission_requested:'New verification photos needed',verification_expired:'Verification expired',
-    new_booking_requestBody:'A customer sent you a new booking request.',booking_messageBody:'You have a new message about your booking.',booking_pending_provider_approvalBody:'Your booking request was sent.',booking_acceptedBody:'The provider accepted your booking.',booking_rejectedBody:'The provider could not accept this booking.',booking_rescheduling_requestedBody:'The provider proposed another date and time.',booking_reschedule_acceptedBody:'The customer accepted your proposed schedule.',booking_reschedule_rejectedBody:'The customer declined your proposed schedule.',booking_confirmedBody:'The proposed schedule or booking was confirmed.',booking_provider_on_the_wayBody:'Your provider is on the way.',booking_provider_arrivedBody:'Your provider has arrived.',booking_job_startedBody:'Work on your booking has started.',booking_work_in_progressBody:'Your booking is now in progress.',booking_completedBody:'The provider marked the work as completed.',booking_cancelledBody:'This booking was cancelled.',booking_no_showBody:'Customer no-show.',booking_disputedBody:'A problem was reported for this booking.',booking_refundedBody:'This booking was marked as refunded.',operation_travelingBody:'The worker is on the way.',operation_arrivedBody:'The worker arrived.',operation_startedBody:'Work on this booking started.',operation_pausedBody:'Work was paused with an auditable update.',operation_resumedBody:'Work resumed.',operation_waiting_for_approvalBody:'A customer decision is needed before work continues.',operation_additional_workBody:'There is an additional-work decision on this booking.',operation_delayBody:'The worker shared a delay update.',operation_finishedBody:'The work is ready for inspection.',operation_inspectionBody:'Review the finished work before closing the booking.',operation_completedBody:'The customer approved completion.',operation_return_visitBody:'There is a return-visit update on the same booking.',review_unlockedBody:'You can now review this completed booking.',verification_submittedBody:'Your photos were sent for review.',verification_approvedBody:'Customers can now see your verified identity.',verification_rejectedBody:'Open verification to see what needs changing.',verification_resubmission_requestedBody:'Please add the requested new photos.',verification_expiredBody:'Take new photos to restore your verified status.',genericBody:'There is a new update for your booking.',
-  },
-  ar: {
-    notifications:'الإشعارات',notificationBell:'فتح الإشعارات',markAllRead:'تحديد الكل كمقروء',markRead:'تحديد كمقروء',dismiss:'حذف الإشعار',empty:'لا توجد إشعارات حتى الآن',emptyBody:'ستظهر هنا تحديثات الحجوزات والأنشطة المهمة في حسابك.',loadError:'تعذر تحميل الإشعارات.',retry:'حاول مرة أخرى',loadMore:'عرض المزيد',newUpdate:'تحديث جديد',justNow:'الآن',
-    new_booking_request:'طلب حجز جديد',booking_pending_provider_approval:'تم إرسال طلب الحجز',booking_accepted:'تم قبول الحجز',booking_rejected:'تم رفض الحجز',booking_rescheduling_requested:'اقتراح موعد جديد',booking_reschedule_accepted:'وافق العميل على الموعد',booking_reschedule_rejected:'رفض العميل الموعد',booking_confirmed:'تم تأكيد الحجز',booking_provider_on_the_way:'الفني في الطريق',booking_provider_arrived:'وصل الفني',booking_job_started:'بدأ تنفيذ العمل',booking_work_in_progress:'العمل جارٍ',booking_completed:'اكتمل العمل',booking_cancelled:'تم إلغاء الحجز',booking_no_show:'العميل لم يحضر',booking_disputed:'تم الإبلاغ عن مشكلة',booking_refunded:'تم رد المبلغ',operation_traveling:'الصنايعي في الطريق',operation_arrived:'الصنايعي وصل',operation_started:'الشغل بدأ',operation_paused:'الشغل اتوقف مؤقتًا',operation_resumed:'الشغل اتكمل',operation_waiting_for_approval:'مطلوب موافقة',operation_additional_work:'تحديث شغل إضافي',operation_delay:'تحديث تأخير',operation_finished:'الشغل خلص',operation_inspection:'الشغل جاهز للمعاينة',operation_completed:'الشغل اكتمل',operation_return_visit:'تحديث زيارة الرجوع',review_unlocked:'المراجعة متاحة',verification_submitted:'تم إرسال التوثيق',verification_approved:'تم التحقق من الهوية',verification_rejected:'التوثيق يحتاج تعديل',verification_resubmission_requested:'مطلوب صور توثيق جديدة',verification_expired:'انتهى التوثيق',
-    new_booking_requestBody:'أرسل عميل طلب حجز جديد.',booking_pending_provider_approvalBody:'تم إرسال طلب حجزك إلى الفني.',booking_acceptedBody:'وافق الفني على حجزك.',booking_rejectedBody:'تعذر على الفني قبول هذا الحجز.',booking_rescheduling_requestedBody:'اقترح الفني تاريخًا ووقتًا آخرين.',booking_reschedule_acceptedBody:'وافق العميل على الموعد الذي اقترحته.',booking_reschedule_rejectedBody:'رفض العميل الموعد الذي اقترحته.',booking_confirmedBody:'تم تأكيد الحجز أو الموعد المقترح.',booking_provider_on_the_wayBody:'الفني في الطريق إليك.',booking_provider_arrivedBody:'وصل الفني إلى موقع الخدمة.',booking_job_startedBody:'بدأ الفني تنفيذ العمل.',booking_work_in_progressBody:'العمل في حجزك جارٍ الآن.',booking_completedBody:'حدد الفني العمل كمكتمل.',booking_cancelledBody:'تم إلغاء هذا الحجز.',booking_no_showBody:'تم تسجيل عدم الحضور لهذا الحجز.',booking_disputedBody:'تم الإبلاغ عن مشكلة في هذا الحجز.',booking_refundedBody:'تم تسجيل رد المبلغ لهذا الحجز.',operation_travelingBody:'الصنايعي في الطريق.',operation_arrivedBody:'الصنايعي وصل.',operation_startedBody:'الشغل على الحجز بدأ.',operation_pausedBody:'الشغل اتوقف مؤقتًا بتحديث محفوظ في السجل.',operation_resumedBody:'الشغل اتكمل.',operation_waiting_for_approvalBody:'مطلوب قرار من العميل قبل ما الشغل يكمل.',operation_additional_workBody:'فيه قرار بخصوص شغل إضافي على الحجز.',operation_delayBody:'الصنايعي شارك تحديث تأخير.',operation_finishedBody:'الشغل جاهز للمعاينة.',operation_inspectionBody:'عاين الشغل قبل ما تقفل الحجز.',operation_completedBody:'العميل وافق على إكمال الشغل.',operation_return_visitBody:'فيه تحديث زيارة رجوع على نفس الحجز.',review_unlockedBody:'تقدر دلوقتي تراجع الحجز المكتمل.',verification_submittedBody:'تم إرسال صورك للمراجعة.',verification_approvedBody:'العملاء يقدروا يشوفوا إن هويتك موثقة.',verification_rejectedBody:'افتح التوثيق واعرف المطلوب تغييره.',verification_resubmission_requestedBody:'أضف الصور الجديدة المطلوبة.',verification_expiredBody:'صوّر صور جديدة علشان ترجع علامة التوثيق.',genericBody:'يوجد تحديث جديد في حجزك.',
-  },
-} as const;
+import { copy } from './notification-copy';
 
-const copy = {
-  en: {
-    ...rawCopy.en,
-    dispute_opened: 'Dispute opened', dispute_evidence_requested: 'Evidence requested', dispute_evidence_submitted: 'Evidence added', dispute_under_review: 'Dispute under review', dispute_resolved: 'Dispute resolved', dispute_closed: 'Dispute closed', dispute_cancelled: 'Dispute withdrawn',
-    dispute_openedBody: 'A dispute was opened for this booking.', dispute_evidence_requestedBody: 'Warsha support requested more evidence.', dispute_evidence_submittedBody: 'New evidence was added to the dispute.', dispute_under_reviewBody: 'Warsha support is reviewing the dispute.', dispute_resolvedBody: 'A resolution is available for the dispute.', dispute_closedBody: 'The dispute was closed.', dispute_cancelledBody: 'The customer withdrew the dispute.',
-  },
-  ar: {
-    ...rawCopy.ar,
-    booking_message: 'رسالة جديدة', booking_messageBody: 'لديك رسالة جديدة بشأن حجزك.',
-    dispute_opened: 'تم فتح نزاع', dispute_evidence_requested: 'مطلوب أدلة', dispute_evidence_submitted: 'اتضاف دليل', dispute_under_review: 'النزاع تحت المراجعة', dispute_resolved: 'النزاع اتحل', dispute_closed: 'النزاع اتقفل', dispute_cancelled: 'النزاع اتسحب',
-    dispute_openedBody: 'اتفتح نزاع على الحجز ده.', dispute_evidence_requestedBody: 'فريق دعم ورشة طلب أدلة زيادة.', dispute_evidence_submittedBody: 'اتضاف دليل جديد للنزاع.', dispute_under_reviewBody: 'فريق دعم ورشة بيراجع النزاع.', dispute_resolvedBody: 'قرار النزاع بقى متاح.', dispute_closedBody: 'النزاع اتقفل.', dispute_cancelledBody: 'العميل سحب النزاع.',
-  },
-} as const;
+/**
+ * The hook form, for React Native screens.
+ *
+ * The copy itself lives in notification-copy.ts, which imports nothing and
+ * is therefore usable from the web app too. Everything that was exported from
+ * here still is, so no caller had to change.
+ */
+export type { NotificationCopyKey } from './notification-copy';
+export {
+  copy,
+  legacyNotificationEventCopy,
+  notificationBodyKey,
+  notificationCopyKey,
+} from './notification-copy';
 
-export type NotificationCopyKey = keyof typeof copy.en;
-export function useNotificationText() { const { language } = useLocalization(); return (key: NotificationCopyKey) => copy[language][key]; }
-export function notificationCopyKey(type: string): NotificationCopyKey {
-  return type in copy.en ? type as NotificationCopyKey : 'newUpdate';
-}
-export function notificationBodyKey(type: string): NotificationCopyKey {
-  const key = `${type}Body`;
-  return key in copy.en ? key as NotificationCopyKey : 'genericBody';
-}
-export function legacyNotificationEventCopy(language: 'en' | 'ar', type: string) {
-  const values = copy[language] as Record<string, string>;
-  if (!(type in values)) return undefined;
-  return { title: values[type], body: values[`${type}Body`] ?? values.genericBody };
+import type { NotificationCopyKey } from './notification-copy';
+
+export function useNotificationText() {
+  const { language } = useLocalization();
+  return (key: NotificationCopyKey) => copy[language][key];
 }
