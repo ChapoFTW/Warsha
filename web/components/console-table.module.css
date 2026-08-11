@@ -60,6 +60,72 @@
 .muted { font-size: 14.5px; color: var(--text-muted); }
 .error { font-size: 14.5px; color: var(--text-primary); border-inline-start: 3px solid var(--brand); padding-inline-start: 12px; }
 
+/* Status badges. Warsha is monochrome: emphasis is weight and border, never a
+   colour the design system does not have. */
+.badge {
+  display: inline-block;
+  font-size: 12px; font-weight: 600; line-height: 1.4;
+  padding: 4px 9px; border-radius: 999px;
+  border: 1px solid var(--border); color: var(--text-secondary);
+  white-space: nowrap;
+}
+.badgeStrong {
+  background: var(--brand); color: var(--brand-ink);
+  border-color: transparent; font-weight: 700;
+}
+.badgeQuiet { color: var(--text-muted); border-style: dashed; }
+
+.timestamp { font-size: 13.5px; color: var(--text-secondary); white-space: nowrap; }
+.waiting { font-size: 13.5px; color: var(--text-secondary); white-space: nowrap; }
+
+/* Filter rows sit above a table and wrap rather than overflowing. */
+.filters { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 16px; }
+
+.select {
+  font: inherit; font-size: 14.5px; color: var(--text-primary);
+  background: var(--canvas); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 10px 12px; min-height: 44px;
+}
+
+/* Pagination sits under the table and states position, not just direction. */
+.pager {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap; margin-top: 16px;
+  padding-top: 14px; border-top: 1px solid var(--border);
+}
+
+.pagerButtons { display: flex; gap: 8px; }
+
+.pagerButton {
+  appearance: none; font: inherit; font-size: 14px; font-weight: 600;
+  color: var(--text-secondary); background: transparent;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 9px 14px; min-height: 44px; cursor: pointer;
+}
+.pagerButton:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.pagerPosition { font-size: 13.5px; color: var(--text-muted); }
+
+/* A row that opens a detail view. */
+.rowLink {
+  appearance: none; font: inherit; font-size: 14px; font-weight: 600;
+  color: var(--text-primary); background: transparent; border: 0;
+  padding: 0; cursor: pointer; text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* A standing note about what a surface deliberately will not show. */
+.notice {
+  font-size: 13.5px; line-height: 1.6; color: var(--text-muted);
+  border-inline-start: 2px solid var(--border);
+  padding-inline-start: 12px; margin-bottom: 16px;
+}
+
+.freshness {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  font-size: 13.5px; color: var(--text-muted); margin-bottom: 16px;
+}
+
 .chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
 .chip {
   font-size: 12px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;

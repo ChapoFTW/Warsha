@@ -19,10 +19,24 @@ export type StaffSession = {
   displayTimezone?: string;
   mfaRequired?: boolean;
   mfaProvider?: string | null;
+  launchPhase?: string;
   reauthWindowSeconds?: number;
   reauthValid: boolean;
   platformReady: boolean;
   breakGlassOnly?: boolean;
+  /** The assurance level the identity provider granted: `aal1`, `aal2`, `none`. */
+  assuranceLevel?: string;
+  mfaSatisfied?: boolean;
+  /**
+   * Seconds since the most recent entry in the token's `amr` array.
+   *
+   * This is the number the whole re-authentication design turns on. It comes
+   * from the signed token, not from anything the browser says, and a token
+   * *refresh* does not reset it — only a real authentication event does.
+   */
+  sessionFreshnessSeconds?: number | null;
+  sessionRevoked?: boolean;
+  dualControlEnabled?: boolean;
 };
 
 export const NO_STAFF_SESSION: StaffSession = {
@@ -50,9 +64,17 @@ export function parseStaffSession(value: unknown): StaffSession {
     reauthWindowSeconds: typeof raw.reauthWindowSeconds === 'number'
       ? raw.reauthWindowSeconds
       : undefined,
+    launchPhase: typeof raw.launchPhase === 'string' ? raw.launchPhase : undefined,
     reauthValid: raw.reauthValid === true,
     platformReady: raw.platformReady === true,
     breakGlassOnly: raw.breakGlassOnly === true,
+    assuranceLevel: typeof raw.assuranceLevel === 'string' ? raw.assuranceLevel : undefined,
+    mfaSatisfied: raw.mfaSatisfied === true,
+    sessionFreshnessSeconds: typeof raw.sessionFreshnessSeconds === 'number'
+      ? raw.sessionFreshnessSeconds
+      : null,
+    sessionRevoked: raw.sessionRevoked === true,
+    dualControlEnabled: raw.dualControlEnabled === true,
   };
 }
 
