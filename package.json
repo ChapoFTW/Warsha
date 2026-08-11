@@ -58,7 +58,8 @@
     "test:signup-state": "node --no-warnings --experimental-strip-types scripts/signup-state-errors.test.mts",
     "test:web-platform": "node --no-warnings --experimental-strip-types scripts/web-platform.test.mts",
     "web:build": "npm --prefix web run build",
-    "web:dev": "npm --prefix web run dev"
+    "web:dev": "npm --prefix web run dev",
+    "test:web-bilingual": "node --no-warnings --experimental-strip-types scripts/web-bilingual-appearance.test.mts"
   },
   "dependencies": {
     "@expo-google-fonts/cairo": "^0.4.2",

@@ -1,0 +1,107 @@
+import type { Metadata, Viewport } from 'next';
+import { notFound } from 'next/navigation';
+
+import { copy } from '@/lib/copy';
+import { directionOf, isLocale, LOCALES, type Locale } from '@/lib/preferences';
+
+import '../globals.css';
+
+/**
+ * Appearance is applied before first paint; language is applied by the server.
+ *
+ * These are different problems with different right answers. The language of a
+ * page is knowable when the HTML is generated, so `lang` and `dir` are baked
+ * into the markup and an Arabic reader never sees a frame of English. The
+ * appearance preference lives in the visitor's browser and cannot be known at
+ * build time, so it is read by a synchronous script in `<head>` — before the
+ * body exists, therefore before anything is painted.
+ *
+ * Reading it in an effect instead would paint dark, then correct to light, on
+ * every single visit. That flash is exactly what WPS-020 forbids on mobile.
+ */
+const applyStoredAppearance = `
+(function () {
+  try {
+    var stored = window.localStorage.getItem('warsha:appearance:v1');
+    var explicit = window.localStorage.getItem('warsha:appearance-explicit:v1') === 'true';
+    if (explicit && (stored === 'light' || stored === 'dark')) {
+      document.documentElement.setAttribute('data-theme', stored);
+    }
+  } catch (error) {
+    // No stored preference resolves to the device scheme via CSS, which is
+    // the documented default and needs no script at all.
+  }
+})();
+`;
+
+export function generateStaticParams() {
+  return LOCALES.map((locale) => ({ locale }));
+}
+
+export async function generateMetadata(
+  { params }: { params: Promise<{ locale: string }> },
+): Promise<Metadata> {
+  const { locale } = await params;
+  if (!isLocale(locale)) return {};
+  const words = copy[locale];
+
+  return {
+    metadataBase: new URL('https://usewarsha.com'),
+    title: {
+      default: locale === 'ar' ? 'ورشة — خدمات المنزل في مصر' : 'Warsha — home services in Egypt',
+      template: `%s · ${words.brand}`,
+    },
+    description: words.heroBody,
+    applicationName: words.brand,
+    // Both languages are real, generated routes, so these alternates point at
+    // pages that exist. An hreflang naming a 404 is worse than none.
+    alternates: {
+      canonical: `/${locale}`,
+      languages: { en: '/en', ar: '/ar' },
+    },
+    openGraph: {
+      type: 'website',
+      siteName: words.brand,
+      locale: locale === 'ar' ? 'ar_EG' : 'en_EG',
+      alternateLocale: locale === 'ar' ? 'en_EG' : 'ar_EG',
+      title: locale === 'ar' ? 'ورشة — خدمات المنزل في مصر' : 'Warsha — home services in Egypt',
+      description: words.heroBody,
+      url: `/${locale}`,
+    },
+    twitter: { card: 'summary_large_image' },
+    robots: { index: true, follow: true },
+  };
+}
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: dark)', color: '#080808' },
+    { media: '(prefers-color-scheme: light)', color: '#F4F2EE' },
+  ],
+  width: 'device-width',
+  initialScale: 1,
+};
+
+export default async function LocaleLayout({
+  children,
+  params,
+}: {
+  children: React.ReactNode;
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  if (!isLocale(locale)) notFound();
+  const typed: Locale = locale;
+
+  return (
+    <html lang={typed} dir={directionOf(typed)} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: applyStoredAppearance }} />
+      </head>
+      <body>
+        <a className="skip-link" href="#main">{copy[typed].skipToContent}</a>
+        {children}
+      </body>
+    </html>
+  );
+}

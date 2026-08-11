@@ -1,0 +1,75 @@
+/*
+ * The controls sit inside the header's normal flow rather than floating over
+ * the page. A fixed corner widget is the usual shortcut and it is the reason
+ * so many sites have a language button sitting on top of their own footer at
+ * 380px. Nothing here overlaps content at any width because nothing here is
+ * taken out of flow.
+ */
+
+.language {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.language:hover {
+  border-color: var(--border-strong);
+}
+
+.appearance {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.appearanceOption {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 10px;
+  min-height: 34px;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.appearanceOption:hover {
+  color: var(--text-primary);
+}
+
+/* The pressed state is driven by aria-pressed, so the visual and the
+   accessible state cannot disagree. */
+.appearanceOption[aria-pressed='true'] {
+  background: var(--brand);
+  color: var(--brand-ink);
+}
+
+/* Narrow screens: the appearance control keeps its full labels but tightens.
+   Abbreviating to icons would make "System" unguessable in either language. */
+@media (max-width: 520px) {
+  .appearanceOption {
+    padding: 6px 8px;
+    font-size: 12.5px;
+  }
+  .language {
+    padding: 0 10px;
+    font-size: 13.5px;
+  }
+}

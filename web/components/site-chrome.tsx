@@ -1,5 +1,10 @@
 import Link from 'next/link';
 
+import { AppearanceSwitch, LanguageSwitch } from '@/components/preference-controls';
+import { copy } from '@/lib/copy';
+import type { Locale } from '@/lib/preferences';
+import { localeHref } from '@/lib/routes';
+
 import styles from './site-chrome.module.css';
 
 /**
@@ -7,57 +12,37 @@ import styles from './site-chrome.module.css';
  *
  * Deliberately not a tab bar. The mobile client's bottom tabs are the right
  * answer for a thumb and the wrong answer for a pointer and a 1440px viewport,
- * and reproducing them here is the single clearest sign of an app that was
- * stretched into a browser rather than built for one.
+ * and reproducing them here is the clearest sign of an app stretched into a
+ * browser rather than built for one.
+ *
+ * Every label comes from the dictionary and every href carries the locale, so
+ * a reader never lands on the other language by following the site's own
+ * navigation. RTL needs no mirrored stylesheet: the layout is built from
+ * logical properties, so `dir="rtl"` on `<html>` reverses it.
  */
 
-const PRIMARY = [
-  { href: '/services', label: 'Find a professional' },
-  { href: '/how-it-works', label: 'How Warsha works' },
-  { href: '/become-a-worker', label: 'Work with Warsha' },
-  { href: '/trust-and-safety', label: 'Trust & safety' },
-  { href: '/help', label: 'Help' },
-] as const;
+type Props = { locale: Locale };
 
-const FOOTER_GROUPS = [
-  {
-    heading: 'Warsha',
-    links: [
-      { href: '/about', label: 'About' },
-      { href: '/how-it-works', label: 'How it works' },
-      { href: '/contact', label: 'Contact' },
-    ],
-  },
-  {
-    heading: 'Services',
-    links: [
-      { href: '/services', label: 'All services' },
-      { href: '/categories', label: 'Categories' },
-      { href: '/become-a-worker', label: 'Become a worker' },
-    ],
-  },
-  {
-    heading: 'Legal',
-    links: [
-      { href: '/legal', label: 'Legal centre' },
-      { href: '/legal/privacy-policy', label: 'Privacy Policy' },
-      { href: '/legal/customer-terms', label: 'Terms of Service' },
-      { href: '/legal/location-data-policy', label: 'Location Data Policy' },
-    ],
-  },
-] as const;
+export function SiteHeader({ locale }: Props) {
+  const words = copy[locale];
+  const primary = [
+    { href: localeHref(locale, '/services'), label: words.navFind },
+    { href: localeHref(locale, '/how-it-works'), label: words.navHow },
+    { href: localeHref(locale, '/become-a-worker'), label: words.navWorker },
+    { href: localeHref(locale, '/trust-and-safety'), label: words.navTrust },
+    { href: localeHref(locale, '/help'), label: words.navHelp },
+  ];
 
-export function SiteHeader() {
   return (
     <header className={styles.header}>
       <div className={styles.headerInner}>
-        <Link href="/" className={styles.brand} aria-label="Warsha home">
+        <Link href={localeHref(locale)} className={styles.brand} aria-label={words.homeAria}>
           <span className={styles.brandMark} aria-hidden="true" />
-          <span className={styles.brandName}>Warsha</span>
+          <span className={styles.brandName}>{words.brand}</span>
         </Link>
 
-        <nav className={styles.nav} aria-label="Primary">
-          {PRIMARY.map((item) => (
+        <nav className={styles.nav} aria-label={words.navPrimary}>
+          {primary.map((item) => (
             <Link key={item.href} href={item.href} className={styles.navLink}>
               {item.label}
             </Link>
@@ -65,26 +50,59 @@ export function SiteHeader() {
         </nav>
 
         <div className={styles.actions}>
-          <Link href="/sign-in" className={styles.signIn}>Sign in</Link>
-          <Link href="/create-account" className={styles.cta}>Create account</Link>
+          <div className={styles.preferences}>
+            <LanguageSwitch locale={locale} />
+            <AppearanceSwitch locale={locale} />
+          </div>
+          <Link href={localeHref(locale, '/sign-in')} className={styles.signIn}>{words.signIn}</Link>
+          <Link href={localeHref(locale, '/create-account')} className={styles.cta}>
+            {words.createAccount}
+          </Link>
         </div>
       </div>
     </header>
   );
 }
 
-export function SiteFooter() {
+export function SiteFooter({ locale }: Props) {
+  const words = copy[locale];
+  const groups = [
+    {
+      heading: words.footerWarsha,
+      links: [
+        { href: localeHref(locale, '/about'), label: words.footerAbout },
+        { href: localeHref(locale, '/how-it-works'), label: words.footerHowItWorks },
+        { href: localeHref(locale, '/contact'), label: words.footerContact },
+      ],
+    },
+    {
+      heading: words.footerServices,
+      links: [
+        { href: localeHref(locale, '/services'), label: words.footerAllServices },
+        { href: localeHref(locale, '/categories'), label: words.footerCategories },
+        { href: localeHref(locale, '/become-a-worker'), label: words.footerBecomeWorker },
+      ],
+    },
+    {
+      heading: words.footerLegal,
+      links: [
+        { href: localeHref(locale, '/legal'), label: words.footerLegalCentre },
+        { href: localeHref(locale, '/legal/privacy-policy'), label: words.footerPrivacy },
+        { href: localeHref(locale, '/legal/customer-terms'), label: words.footerTerms },
+        { href: localeHref(locale, '/legal/location-data-policy'), label: words.footerLocation },
+      ],
+    },
+  ];
+
   return (
     <footer className={styles.footer}>
       <div className={styles.footerInner}>
         <div className={styles.footerBrand}>
-          <span className={styles.brandName}>Warsha</span>
-          <p className={styles.footerBlurb}>
-            Home repairs and maintenance in Egypt, with the price agreed before the work starts.
-          </p>
+          <span className={styles.brandName}>{words.brand}</span>
+          <p className={styles.footerBlurb}>{words.footerBlurb}</p>
         </div>
 
-        {FOOTER_GROUPS.map((group) => (
+        {groups.map((group) => (
           <nav key={group.heading} aria-label={group.heading} className={styles.footerGroup}>
             <h2 className={styles.footerHeading}>{group.heading}</h2>
             {group.links.map((link) => (
@@ -97,7 +115,7 @@ export function SiteFooter() {
       </div>
 
       <div className={styles.footerBase}>
-        <p>© {new Date().getFullYear()} Warsha</p>
+        <p>© {new Date().getFullYear()} {words.brand}</p>
       </div>
     </footer>
   );

@@ -60,6 +60,27 @@
   align-items: center;
   gap: 10px;
   margin-inline-start: auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* The preference controls live in the header's flow. They wrap onto their own
+   line on narrow screens rather than overlapping the brand or the buttons,
+   which is what a fixed-position widget would do at this width. */
+.preferences {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  order: 3;
+  width: 100%;
+  justify-content: flex-end;
+}
+
+@media (min-width: 700px) {
+  .preferences {
+    order: 0;
+    width: auto;
+  }
 }
 
 .signIn {

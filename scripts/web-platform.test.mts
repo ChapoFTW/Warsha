@@ -59,7 +59,7 @@ for (const role of ['customer', 'worker'] as const) {
       `${role} must be able to read ${document.key} on the web before accepting it`);
   }
 }
-check(/generateStaticParams/.test(readWeb('app', 'legal', '[slug]', 'page.tsx')),
+check(/generateStaticParams/.test(readWeb('app', '[locale]', 'legal', '[slug]', 'page.tsx')),
   'every legal document is statically generated, so reading one waits on nothing');
 check(legalCorpus.every(d => hashesFor(d).en.length === 64 && hashesFor(d).ar.length === 64),
   'both language hashes remain publishable for every document');
@@ -88,7 +88,8 @@ check(!webImports.some(specifier => /^react-native|^expo[-/]?|^@react-native/.te
 check(webImports.some(specifier => specifier.includes('src/legal/legal-corpus')),
   'the web client does import the shared legal authority');
 const chrome = readWeb('components', 'site-chrome.tsx');
-check(/aria-label="Primary"/.test(chrome) && /<header/.test(chrome) && /<footer/.test(chrome),
+check(/aria-label=\{words\.navPrimary\}/.test(chrome)
+  && /<header/.test(chrome) && /<footer/.test(chrome),
   'the web uses header/footer navigation rather than a reproduced tab bar');
 check(!/bottomTab|tabBar|BottomNavigation/i.test(allWebText),
   'no mobile bottom-tab navigation is reproduced on the web');
@@ -109,31 +110,37 @@ check(cssValue(lightBlock, '--canvas') === lightColors.canvas.toLowerCase(),
   'the web light canvas equals the mobile light canvas token');
 
 // --- Accessibility and bilingual obligations -------------------------------
-check(/skip-link/.test(css) && /skip-link/.test(readWeb('app', 'layout.tsx')),
+check(/skip-link/.test(css) && /skip-link/.test(readWeb('app', '[locale]', 'layout.tsx')),
   'a keyboard user can skip to content');
 check(/:focus-visible/.test(css) && !/outline:\s*none/.test(css),
   'FOCUS IS ALWAYS VISIBLE; NOTHING REMOVES THE OUTLINE');
 check(/prefers-reduced-motion/.test(css), 'reduced-motion preference is respected');
-check(/dir="rtl"/.test(readWeb('app', 'legal', '[slug]', 'page.tsx')),
-  'Arabic legal text is rendered right-to-left');
+// Direction is a property of the document, not of one element inside it. The
+// locale layout sets it on <html>, so every page — legal or otherwise — is
+// right-to-left in Arabic without each component remembering to ask.
+check(/dir=\{directionOf\(typed\)\}/.test(readWeb('app', '[locale]', 'layout.tsx')),
+  'Arabic pages are rendered right-to-left from the document root');
 check(/dir='rtl'\]/.test(css) || /\[dir='rtl'\]/.test(css),
   'RTL has its own type treatment rather than mirrored Latin defaults');
 check(/prefers-color-scheme/.test(css) && /data-theme/.test(css),
   'theme follows an explicit choice, then the platform preference');
-check(/localStorage.getItem\('warsha.theme'\)/.test(readWeb('app', 'layout.tsx')),
-  'the stored theme is applied before first paint, as on mobile');
+check(/localStorage.getItem\('warsha:appearance:v1'\)/.test(readWeb('app', '[locale]', 'layout.tsx')),
+  'the stored theme is applied before first paint, using the mobile key');
 
 // --- SEO --------------------------------------------------------------------
-const home = readWeb('app', 'page.tsx');
-check(/export const metadata/.test(home) && /alternates/.test(home),
-  'the homepage declares a canonical URL');
+const home = readWeb('app', '[locale]', 'page.tsx');
+check(/generateMetadata/.test(readWeb('app', '[locale]', 'layout.tsx')),
+  'the locale layout declares canonical and alternate URLs per language');
 
 // A language alternate is a promise that a translated address exists. The
 // homepage once advertised hreflang="ar" pointing at /ar, which returned 404 —
 // telling crawlers the Arabic edition was a dead page. Any `languages` entry
 // must name a route that is actually built.
-const routeDirectories = new Set(
-  readdirSync(join('web', 'app'), { withFileTypes: true })
+// Alternates are locale-prefixed (`/ar/services`). The locale itself is the
+// `[locale]` dynamic segment, so the segment after it is what must name a real
+// route directory.
+const localeRoutes = new Set(
+  readdirSync(join('web', 'app', '[locale]'), { withFileTypes: true })
     .filter(entry => entry.isDirectory())
     .map(entry => entry.name),
 );
@@ -141,23 +148,27 @@ for (const file of webCode.filter(f => f.endsWith('page.tsx'))) {
   const languages = /languages:\s*\{([^}]*)\}/.exec(readFileSync(file, 'utf8'));
   if (!languages) continue;
   for (const [, target] of languages[1].matchAll(/'\/([^']*)'/g)) {
-    const segment = target.split('/')[0];
-    check(segment === '' || routeDirectories.has(segment),
+    const [locale, ...rest] = target.split('/');
+    check(locale === 'en' || locale === 'ar',
+      `${file} advertises an alternate under a supported locale (/${locale})`);
+    const segment = rest[0] ?? '';
+    check(segment === '' || localeRoutes.has(segment),
       `${file} advertises a language alternate for a route that exists (/${segment})`);
   }
 }
-check(/openGraph/.test(readWeb('app', 'layout.tsx')),
+check(/openGraph/.test(readWeb('app', '[locale]', 'layout.tsx')),
   'social metadata is declared for sharing');
 for (const page of ['about', 'help', 'services', 'how-it-works', 'become-a-worker']) {
-  check(/export const metadata/.test(readWeb('app', page, 'page.tsx')),
+  check(/generateMetadata/.test(readWeb('app', '[locale]', page, 'page.tsx')),
     `/${page} declares its own metadata`);
 }
 
 // --- Honesty ----------------------------------------------------------------
 // The public site must not invent marketplace scale it does not have.
-const publicCopy = ['page.tsx', 'about/page.tsx', 'services/page.tsx',
-  'how-it-works/page.tsx', 'trust-and-safety/page.tsx', 'become-a-worker/page.tsx']
-  .map(p => readWeb('app', p)).join('\n');
+// All visitor-facing prose now lives in the dictionaries, in both languages,
+// so checking those covers every page at once rather than a sampled few.
+const publicCopy = withoutComments(
+  readWeb('lib', 'copy.ts') + '\n' + readWeb('lib', 'pages-copy.ts'));
 // A quantity, not an ordinal: "1,200 workers" is a claim, "2. Professionals
 // quote" is a numbered heading.
 check(!/\b\d[\d,]*\s*\+?\s+(workers|professionals|customers|jobs|reviews)\b/i.test(publicCopy),
@@ -170,8 +181,11 @@ check(/closed testing/i.test(publicCopy),
 // --- Worker identity privacy ------------------------------------------------
 check(!/auth\.warsha\.invalid|synthetic/i.test(withoutComments(allWebText)),
   'THE WEB NEVER REVEALS THE SYNTHETIC WORKER EMAIL IDENTITY');
-const signIn = readWeb('app', 'sign-in', 'page.tsx');
-check(/I need work done/.test(signIn) && /I do the work/.test(signIn),
+const signIn = readWeb('app', '[locale]', 'sign-in', 'page.tsx');
+check(/signInCustomer\b/.test(signIn) && /signInWorker\b/.test(signIn),
   'sign-in asks which audience somebody is, not which identifier their account uses');
+check(/I need work done/.test(readWeb('lib', 'copy.ts'))
+  && /محتاج حد يشتغل عندي/.test(readWeb('lib', 'copy.ts')),
+  'that question is asked in both languages');
 
 console.log(`Web platform regressions: ${checks} checks passed across ${webCode.length} web modules.`);
