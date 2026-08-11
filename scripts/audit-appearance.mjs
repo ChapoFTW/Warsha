@@ -25,6 +25,23 @@ const PALETTE_FILES = new Set([
 ]);
 
 /**
+ * The brand geometry is governed, not exempted.
+ *
+ * `src/brand/mark-geometry.ts` legitimately names the mark's ink and contour:
+ * it is the canonical geometry authority, it is deliberately import-free
+ * because the Node asset generator consumes it, and the mark's physical
+ * appearance is not a theme-variant runtime colour.
+ *
+ * But "this file may hold colours" would be a blanket suppression, and the next
+ * invented colour would land here unnoticed — which is exactly how an amber
+ * that Warsha does not own got written once already. So the rule is narrower:
+ * this file may name a colour *only if the canonical palette already defines
+ * that exact value*. An arbitrary literal still fails, and the mark can no
+ * longer drift away from the app it appears in.
+ */
+const GOVERNED_BRAND_FILES = new Set(['src/brand/mark-geometry.ts']);
+
+/**
  * Files allowed to import the static dark palette, each for a stated reason.
  * `app/+html.tsx` is rendered at export time and has no React tree to read a
  * hook from; the appearance modules define the palettes themselves.
@@ -38,6 +55,16 @@ const STATIC_PALETTE_ALLOWED = new Set([
 ]);
 
 const COLOUR_LITERAL = /#[0-9a-fA-F]{3,8}\b|\brgba?\s*\(/;
+
+/**
+ * Every hex value the canonical palette defines, upper-cased so `#fafafa` and
+ * `#FAFAFA` are the same colour — which they are, and a case difference is not
+ * a reason to fail a build.
+ */
+const canonicalColours = new Set(
+  [...readFileSync('constants/appearance.ts', 'utf8').matchAll(/#[0-9a-fA-F]{3,8}\b/g)]
+    .map((match) => match[0].toUpperCase()),
+);
 
 const files = execFileSync('git', ['ls-files', 'app', 'components', 'src', 'hooks', 'constants'], { encoding: 'utf8' })
   .split('\n').filter(Boolean).filter(file => /\.tsx?$/.test(file));
@@ -63,11 +90,28 @@ for (const file of files) {
 
   // 2. Colour literals outside the palette definition.
   if (!PALETTE_FILES.has(file)) {
+    const governed = GOVERNED_BRAND_FILES.has(file);
     for (const [index, line] of text.split(/\r?\n/).entries()) {
       if (!COLOUR_LITERAL.test(line)) continue;
       // A literal inside a comment is documentation, not a rendered colour.
       const code = line.replace(/\/\/.*$/, '').replace(/\/\*[\s\S]*?\*\//g, '');
       if (!COLOUR_LITERAL.test(code)) continue;
+      if (governed) {
+        // Every literal must already exist in the canonical palette.
+        for (const literal of code.match(/#[0-9a-fA-F]{3,8}\b/g) ?? []) {
+          if (!canonicalColours.has(literal.toUpperCase())) {
+            findings.push(
+              `${file}:${index + 1}: ${literal} is not a colour constants/appearance.ts defines`,
+            );
+          }
+        }
+        // `rgb()`/`rgba()` has no canonical form to compare against, so the
+        // brand authority may not use one at all.
+        if (/\brgba?\s*\(/.test(code)) {
+          findings.push(`${file}:${index + 1}: the brand authority names colours as hex, not rgb()`);
+        }
+        continue;
+      }
       findings.push(`${file}:${index + 1}: colour literal outside the theme definition`);
     }
   }

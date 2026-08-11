@@ -92,6 +92,22 @@ for (const file of runtimeFiles) {
 for (const script of ['qa:status', 'qa:validate', 'qa:update', 'qa:build:android']) {
   check(Boolean(pkg.scripts[script]), `${script} is available`);
 }
+/**
+ * The release gate must actually run every audit that governs a shipped
+ * property.
+ *
+ * `audit:appearance` was defined and wired into `audit:all`, but not into
+ * `qa:validate` — so a commit that put a colour literal outside the theme
+ * definition reached origin/main with the gate reporting green. A gate that
+ * cannot see a class of failure does not prevent it. Each of these is asserted
+ * by name so removing one is a deliberate act with a failing test attached.
+ */
+for (const audit of ['audit:migrations', 'audit:secrets', 'audit:appearance', 'check:mojibake']) {
+  check(pkg.scripts[audit], `${audit} exists as a script`);
+  check(releaseGuard.includes(`'${audit}'`),
+    `THE RELEASE GATE ACTUALLY RUNS ${audit}, NOT ONLY audit:all`);
+}
+
 check(releaseGuard.includes("'--channel', 'preview'"), 'the OTA command is locked to Preview');
 check(releaseGuard.includes("'--environment', 'preview'"), 'QA commands are locked to Preview variables');
 check(releaseGuard.includes("['env:exec', 'preview'"),

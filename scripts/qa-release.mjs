@@ -52,7 +52,11 @@ function status() {
 
 function validate() {
   for (const name of [
+    // `audit:appearance` belongs here, not only in `audit:all`. It was absent
+    // once, and a commit that added a colour literal outside the theme reached
+    // origin/main green: the gate could not see the class of failure at all.
     'typecheck', 'lint', 'check:mojibake', 'audit:migrations', 'audit:secrets',
+    'audit:appearance',
     'test:qa-preview', 'test:platform-preferences', 'test:onboarding-stabilization',
     'test:signup-legal-startup', 'test:signup-state', 'test:web-platform',
     'test:web-bilingual', 'test:identity-signin', 'test:rtl-direction', 'test:web-brand', 'test:brand-assets', 'test:web-auth', 'test:web-app', 'test:admin-console',
