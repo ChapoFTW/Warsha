@@ -1,0 +1,86 @@
+.shell {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: 1fr;
+  background: var(--canvas);
+}
+
+.sidebar {
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  padding: 14px clamp(16px, 4vw, 24px);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.brand { flex-shrink: 0; }
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-inline-end: auto;
+}
+
+.navLink {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+
+.navLink:hover { color: var(--text-primary); background: var(--canvas); }
+
+.navLinkActive { color: var(--brand-ink); background: var(--brand); }
+
+.sidebarFoot { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+.signOut {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: var(--canvas);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.signOut:hover { border-color: var(--border-strong); }
+
+.main {
+  padding: clamp(20px, 3vw, 34px) clamp(16px, 4vw, 34px) 64px;
+  min-width: 0;
+}
+
+.title {
+  font-size: clamp(22px, 3vw, 28px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-bottom: 20px;
+}
+
+/* Desktop: a real sidebar. The console is used at a desk, and a vertical
+   list of areas is easier to scan than a wrapped horizontal one. */
+@media (min-width: 960px) {
+  .shell { grid-template-columns: 232px 1fr; }
+  .sidebar {
+    border-bottom: 0;
+    border-inline-end: 1px solid var(--border);
+    flex-direction: column;
+    align-items: stretch;
+    gap: 22px;
+    padding: 22px 16px;
+  }
+  .nav { flex-direction: column; align-items: stretch; gap: 2px; margin-inline-end: 0; }
+  .navLink { padding: 9px 12px; }
+  .sidebarFoot { margin-top: auto; flex-wrap: wrap; }
+}

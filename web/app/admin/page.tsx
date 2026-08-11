@@ -1,5 +1,6 @@
 'use client';
 
+import { ConsoleShell } from '@/components/console-shell';
 import { useStaff } from '@/components/staff-gate';
 import { appCopy } from '@/lib/app-copy';
 import { useAppLocale } from '@/lib/use-app-locale';
@@ -23,11 +24,8 @@ export default function ConsoleDashboard() {
   const { session } = useStaff();
 
   return (
-    <main id="main" className={styles.page}>
-      <header className={styles.header}>
-        <h1 className={styles.title}>{words.consoleTitle}</h1>
-        <p className={styles.lead}>{words.consoleLead}</p>
-      </header>
+    <ConsoleShell title={words.consoleTitle}>
+      <p className={styles.lead}>{words.consoleLead}</p>
 
       <section className={styles.card} aria-labelledby="roles">
         <h2 id="roles" className={styles.cardTitle}>{words.consoleYourAccess}</h2>
@@ -66,6 +64,6 @@ export default function ConsoleDashboard() {
           <div><dt>{words.consoleTimezone}</dt><dd>{session.displayTimezone ?? '—'}</dd></div>
         </dl>
       </section>
-    </main>
+    </ConsoleShell>
   );
 }
