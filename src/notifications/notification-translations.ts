@@ -1,6 +1,7 @@
 import { useLocalization } from '@/src/i18n/localization';
 
 import { copy } from './notification-copy';
+import type { NotificationCopyKey } from './notification-copy';
 
 /**
  * The hook form, for React Native screens.
@@ -17,7 +18,6 @@ export {
   notificationCopyKey,
 } from './notification-copy';
 
-import type { NotificationCopyKey } from './notification-copy';
 
 export function useNotificationText() {
   const { language } = useLocalization();

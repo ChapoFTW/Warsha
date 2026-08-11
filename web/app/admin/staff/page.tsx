@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Badge, Empty, Identifier, Timestamp } from '@/components/console-bits';
 import { ConsoleShell } from '@/components/console-shell';
 import { ReauthDialog } from '@/components/reauth-dialog';
+import { GrantRoleForm, RevokeButton } from '@/components/staff-role-actions';
 import { useStaff } from '@/components/staff-gate';
 import { appCopy } from '@/lib/app-copy';
 import { parseRoleDirectory, type RoleDirectory } from '@/lib/console-payloads';
@@ -24,9 +25,14 @@ import styles from '@/components/console-table.module.css';
  * capability model and it is not worked around here: the page asks for a fresh
  * sign-in and then loads.
  *
- * It is also `dual_control = true`. Granting or revoking needs a second person,
- * which is why this page shows state and does not offer a lone grant button
- * that could not complete by itself.
+ * `manage_staff_roles` is also `dual_control = true`, and it is worth being
+ * precise about what that means here rather than inventing a workflow. For
+ * roles, the second person *is* the prohibition on granting to yourself:
+ * `staff_grant_role` raises 42501 when the subject is the actor, and the
+ * migration's own heading calls that the dual control. There is no approval
+ * queue for role grants — `staff_request_dual_control` exists for the
+ * capabilities that genuinely queue — so this page offers the grant directly
+ * and refuses the operator's own account.
  */
 export default function StaffPage() {
   const locale = useAppLocale();
@@ -131,6 +137,12 @@ export default function StaffPage() {
             </div>
           </section>
 
+          <GrantRoleForm
+            roles={directory.roles}
+            onDone={() => { void load(); }}
+            onNeedsReauth={() => setAskReauth(true)}
+          />
+
           <section className={styles.panel}>
             <h2 className={styles.label}>{words.staffGrantsHeading}</h2>
             {directory.grants.length === 0 ? (
@@ -145,6 +157,7 @@ export default function StaffPage() {
                       <th>{words.colStatus}</th>
                       <th>{words.colGranted}</th>
                       <th>{words.colExpires}</th>
+                      <th>{words.colAction}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -185,6 +198,13 @@ export default function StaffPage() {
                             ) : (
                               <span className={styles.muted}>{words.grantNoExpiry}</span>
                             )}
+                          </td>
+                          <td>
+                            <RevokeButton
+                              grant={grant}
+                              onDone={() => { void load(); }}
+                              onNeedsReauth={() => setAskReauth(true)}
+                            />
                           </td>
                         </tr>
                       );

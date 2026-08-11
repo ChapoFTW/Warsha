@@ -345,6 +345,76 @@ check(/isReauthRefusal\(error\)/.test(staffPage),
   'the staff page recovers from a freshness refusal in place');
 check(/ReauthDialog/.test(staffPage), 'by offering the dialog');
 
+// ===========================================================================
+// PRIVILEGED MUTATIONS
+// ===========================================================================
+//
+// The audit that mattered most: **no second staff-role system was written.**
+// WPS-017 already governs grant and revoke, and these assert the console calls
+// exactly those and nothing else.
+
+for (const [rpc, capability] of [
+  ['staff_grant_role', 'manage_staff_roles'],
+  ['staff_revoke_role', 'manage_staff_roles'],
+] as const) {
+  const body = migrations.slice(migrations.indexOf(`function public.${rpc}`));
+  check(body.slice(0, 700).includes(`require_staff_capability('${capability}')`),
+    `${rpc} REQUIRES ${capability} IN THE DATABASE`);
+  // A reason is not optional on either, and the console must not pretend it is.
+  check(body.slice(0, 900).includes('A reason is required'),
+    `${rpc} REFUSES AN EMPTY REASON SERVER-SIDE`);
+  // Granted to `authenticated`, so the browser calls it as the staff member
+  // rather than needing any elevated credential.
+  check(migrations.includes(`'public.${rpc}(`),
+    `${rpc} is granted to the authenticated staff session`);
+}
+
+// SELF-ESCALATION. The single most important property on this surface.
+const grantSql = migrations.slice(migrations.indexOf('function public.staff_grant_role'));
+check(/p_user_id = v_actor/.test(grantSql.slice(0, 800)),
+  'staff_grant_role REFUSES A GRANT TO THE ACTOR\'S OWN ACCOUNT, IN THE DATABASE');
+check(/cannot grant a role to their own account/.test(grantSql.slice(0, 900)),
+  'and says so, which is the message the console maps');
+
+const mutations = readWeb('lib', 'staff-mutations.ts');
+const actions = readWeb('components', 'staff-role-actions.tsx');
+check(/isSelfGrant/.test(actions) && /isSelfGrant/.test(mutations),
+  'THE CONSOLE ALSO REFUSES A SELF-GRANT BEFORE SENDING IT');
+check(/disabled=\{!ready \|\| busy\}/.test(actions),
+  'and keeps the button disabled until the action could actually succeed');
+check(/!self/.test(actions), 'with the self check part of readiness, not a warning beside it');
+
+// Revoking clears sessions, which is why no separate control is offered.
+const revokeSql = migrations.slice(migrations.indexOf('function public.staff_revoke_role'));
+check(/staff_session_attestations\s*\n?\s*set revoked_at/.test(revokeSql.slice(0, 1200)),
+  'REVOKING A ROLE ALSO REVOKES THE ACCOUNT\'S SESSION ATTESTATIONS');
+
+// Reason and idempotency bounds match the server's.
+check(/REASON_MIN = 3/.test(mutations), 'the client uses the same 3-character reason minimum');
+check(/IDEMPOTENCY_MIN = 8/.test(mutations) && /IDEMPOTENCY_MAX = 200/.test(mutations),
+  'and the same 8..200 idempotency-key bounds');
+check(/length\(coalesce\(p_idempotency_key,''\)\) not between 8 and 200/.test(grantSql.slice(0, 1600)),
+  'which are the bounds the database actually enforces');
+check(/useState\(newIdempotencyKey\)/.test(actions),
+  'THE IDEMPOTENCY KEY IS GENERATED ONCE PER FORM, SO A DOUBLE SUBMIT CANNOT GRANT TWICE');
+
+// A freshness refusal must reopen the dialog; a capability refusal must not.
+check(/isReauthRefusal\(error\)\) onNeedsReauth\(\)/.test(actions),
+  'a freshness refusal on a mutation reopens the re-authentication dialog');
+check(/classifyRefusal/.test(actions),
+  'and every other refusal is named rather than shown as a Postgres message');
+for (const refusal of ['self', 'already-active', 'unknown-role', 'reason-required', 'reauth', 'capability']) {
+  check(mutations.includes(`'${refusal}'`), `the refusal "${refusal}" is classified`);
+}
+
+// No dual-control workflow was invented where the database has none.
+check(!/staff_request_dual_control|staff_approve_dual_control/.test(actions),
+  'NO APPROVAL QUEUE IS INVENTED FOR ROLE GRANTS; THE SELF-GRANT BAN IS THE CONTROL');
+
+// And no client-side role writing of any kind.
+check(!/from\('staff_role_grants'\)|\.insert\(|\.update\(|\.delete\(/.test(actions + mutations),
+  'THE BROWSER NEVER WRITES A ROLE ROW DIRECTLY; IT CALLS THE GOVERNED RPC');
+
 // --- Bilingual, like every other surface ------------------------------------
 const enKeys = Object.keys(appCopy.en).sort();
 const arKeys = Object.keys(appCopy.ar).sort();
