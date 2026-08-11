@@ -15,7 +15,7 @@
  * why something is absent can never satisfy the check for that absence.
  */
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 
 import {
@@ -479,7 +479,7 @@ for (const route of ['welcome', 'sign-in', 'create-account', 'worker-home',
 const screens = [
   'app/welcome.tsx', 'app/sign-in.tsx', 'app/create-account.tsx', 'app/worker-home.tsx',
   'app/onboarding/address.tsx', 'app/onboarding/worker.tsx', 'app/onboarding/identity.tsx',
-  'app/onboarding/certificate.tsx', 'app/admin/vetting.tsx', 'app/legal/[topic].tsx',
+  'app/onboarding/certificate.tsx', 'app/legal/[topic].tsx',
 ];
 for (const screen of screens) {
   // Comments stripped: a comment explaining why the motto is not repeated must
@@ -531,14 +531,11 @@ const workerHomeCode = codeOf('app', 'worker', 'index.tsx');
 check(workerHomeCode.indexOf('<PrimaryTaskCard') < workerHomeCode.indexOf('styles.customerCard'),
   'REQUESTING A SERVICE IS SECONDARY TO THE WORKER PRIMARY TASK');
 
-const vettingScreen = codeOf('app', 'admin', 'vetting.tsx');
-check(/subjectRef/.test(vettingScreen), 'the staff queue renders an opaque reference');
-check(/AdminShell/.test(vettingScreen) && /useAdmin/.test(vettingScreen),
-  'the staff queue sits inside the WPS-017 guarded admin shell');
-check(/can\('review_worker_vetting'\)/.test(vettingScreen),
-  'the staff queue gates its read on the capability the server will demand');
-check(!/displayName|email|phone|nationalId/.test(vettingScreen),
-  'THE STAFF QUEUE RENDERS NO IDENTITY FIELD');
+// Administration is web-only — docs/constitution/cross-platform-parity.md.
+// The vetting console moved to admin.usewarsha.com. The console suite
+// asserts the pseudonymous queue: an opaque subjectRef, and no name, email
+// or phone rendered anywhere on it.
+check(!existsSync('app/admin/vetting.tsx'), 'THE MOBILE VETTING CONSOLE IS GONE');
 
 // Offence-shaped DATA BINDING, not the word.
 //
@@ -551,14 +548,10 @@ check(!/displayName|email|phone|nationalId/.test(vettingScreen),
 // that is what is checked.
 // `\w\.` so this is a property access on an identifier, not a sentence that
 // happens to end just before the word.
-check(!/\w\.(offence|offense|conviction|charge|crime)/i.test(vettingScreen),
-  'THE STAFF QUEUE BINDS NO OFFENCE-SHAPED FIELD');
-check(!/(offence|offense|conviction)\w*\s*[:=]/i.test(vettingScreen),
-  'the staff queue declares no offence-shaped value');
 // Backed by the type, which has no such field to bind in the first place.
 check(!/offence|offense|conviction|charge|crime/i.test(
   staffTypes.split('export type StaffVettingCase')[1]?.split('};')[0] ?? ''),
-  'the vetting case type has no offence-shaped field');
+  'THE VETTING CASE TYPE HAS NO OFFENCE-SHAPED FIELD');
 
 // ---------------------------------------------------------------------------
 // Copy: English and Egyptian Arabic parity
@@ -648,7 +641,7 @@ for (const gate of ['national_id_front_uploaded', 'national_id_back_uploaded',
 }
 
 check(/legal_review_status text not null default 'pending'/.test(migration),
-  'the vetting policy starts unapproved');
+  'THE VETTING POLICY STARTS UNAPPROVED');
 
 // The rejected rule, checked as BEHAVIOUR rather than as prose.
 //

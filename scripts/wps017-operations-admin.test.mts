@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { adminCopy } from '../src/admin/admin-copy.ts';
@@ -84,8 +84,6 @@ const pgtap = read('supabase/tests/database/operations-admin-platform.test.sql')
 const repository = read('src/admin/admin-repository.ts');
 const context = read('src/admin/admin-context.tsx');
 const environmentModule = read('src/config/environment.ts');
-const layout = read('app/admin/_layout.tsx');
-const shell = read('components/warsha/AdminShell.tsx');
 const index = read('docs/wps/WPS-INDEX.md');
 const packageJson = read('package.json');
 const envExample = read('.env.example');
@@ -396,9 +394,6 @@ prose(envExample, /Never add SUPABASE_SERVICE_ROLE_KEY/, 'the env example still 
 notMatch(repository, /service_role|SERVICE_ROLE|serviceRole/, 'the admin repository holds no service-role path');
 notMatch(context, /service_role|SERVICE_ROLE/, 'the admin context holds no service-role path');
 notMatch(repository, /\bexecute_sql\b|\brun_sql\b|rawQuery/, 'there is no arbitrary SQL executor in the client');
-prose(layout, /not a hidden route/i, 'the guard documents that it is not a hidden route');
-prose(layout, /platformReady/, 'the guard fails closed when the platform is not ready');
-prose(layout, /isStaff/, 'the guard refuses a non-staff account');
 match(migration, /production_requires_mfa/, 'production structurally requires the MFA flag');
 match(migration, /mfa_provider text not null default 'none'/, 'no MFA provider is configured');
 match(migration, /legacy_staff_bridge_enabled boolean not null default false/,
@@ -484,18 +479,13 @@ for (const a11y of ['a11yEnvironment', 'a11yQueueCard', 'a11yCaseStatus', 'a11yC
   'a11yOverdue', 'a11ySuppressed', 'a11yHighRisk', 'a11yTable', 'a11yMetric', 'a11yLoading']) {
   ok(a11y in en && a11y in ar, `accessibility label ${a11y} is localized`);
 }
-prose(shell, /accessibilityLabel/, 'the shell carries screen-reader labels');
-prose(shell, /accessibilityRole="header"/, 'sections are announced as headers');
-prose(shell, /minHeight: 48/, 'operational rows meet the minimum touch target');
-prose(shell, /isRTL && styles\.reverse/, 'the shell mirrors direction for RTL');
-prose(shell, /suppressedLabel/, 'a suppressed metric renders as hidden, never as zero');
-// Status must be distinguishable without colour: every tone pairs with a word.
-prose(shell, /StateBadge/, 'status is rendered with a labelled badge, not colour alone');
+// The mobile operations shell is gone; its presentation guarantees now live in
+// the web console suite (scripts/admin-console.test.mts). The environment tone
+// model below is a backend concept and stays here.
 equal(environmentTone('production'), 'error', 'production reads as the strongest tone');
 equal(environmentTone('staging'), 'warning', 'staging reads as a warning tone');
 equal(environmentTone('development'), 'neutral', 'development is distinct and reads as a neutral tone');
 equal(environmentTone('local'), 'neutral', 'local reads as a neutral tone');
-prose(shell, /environmentDevelopment/, 'the operations shell labels development explicitly');
 
 // Formatting stays Egypt-appropriate.
 match(formatEgpMinor('128450', 'en'), /EGP/, 'English money is labelled EGP');
@@ -512,25 +502,35 @@ match(translations, /brandMotto: 'YOUR WORK, OUR MISSION'/, 'approved English mo
 match(translations, /brandMotto: 'شغلك مهمتنا'/, 'approved Arabic motto remains active');
 notMatch(read('src/admin/admin-copy.ts'), /YOUR WORK, OUR MISSION|شغلك مهمتنا/,
   'the motto is not repeated in operational copy');
-notProse(shell, /YOUR WORK, OUR MISSION/, 'the operational shell does not carry the motto');
-for (const screen of ['app/admin/index.tsx', 'app/admin/search.tsx', 'app/admin/analytics.tsx',
-  'app/admin/configuration.tsx', 'app/admin/incidents.tsx', 'app/admin/audit.tsx']) {
-  notMatch(read(screen), /YOUR WORK, OUR MISSION|brandMotto/, `${screen} does not repeat the motto`);
-}
+// The operational screens that used to be asserted here are gone: operational
+// administration is web-only, at admin.usewarsha.com. See the routing section
+// below, which now asserts their absence rather than their contents.
 
 // ---------------------------------------------------------------------------
 // Routing and capability-driven navigation
 // ---------------------------------------------------------------------------
-const home = read('app/admin/index.tsx');
-for (const route of ['/admin/search', '/admin/analytics', '/admin/configuration',
-  '/admin/incidents', '/admin/audit']) {
-  ok(home.includes(route), `the operational home links to ${route}`);
+//
+// Operational administration is web-only. Warsha runs its staff console at
+// admin.usewarsha.com and nowhere else, so these assertions changed from
+// "the mobile console is capability-gated" to "there is no mobile console".
+//
+// The distinction that keeps this correct: a staff member may also be a
+// customer or a worker, and mobile must treat them normally in those PRODUCT
+// roles. What mobile must not carry is the STAFF OPERATIONS surface. Backend
+// staff governance is untouched, no role was removed from anybody, and the
+// capability model asserted above still stands.
+for (const screen of [
+  'app/admin/index.tsx', 'app/admin/search.tsx', 'app/admin/analytics.tsx',
+  'app/admin/configuration.tsx', 'app/admin/incidents.tsx', 'app/admin/audit.tsx',
+  'app/admin/vetting.tsx', 'app/admin/support.tsx', 'app/admin/legal.tsx',
+  'app/admin/privacy.tsx', 'app/admin/campaigns.tsx', 'app/admin/providers.tsx',
+  'app/admin/_layout.tsx', 'components/warsha/AdminShell.tsx',
+]) {
+  ok(!existsSync(screen), `${screen} IS GONE — ADMINISTRATION IS WEB-ONLY`);
 }
-match(home, /can\('safe_search'\)/, 'search is capability gated in navigation');
-match(home, /can\('view_analytics'\)/, 'analytics is capability gated in navigation');
-match(home, /can\('view_audit_logs'\)/, 'the audit explorer is capability gated in navigation');
-match(home, /can\('manage_incidents'\)/, 'incidents are capability gated in navigation');
-match(read('app/_layout.tsx'), /Stack\.Screen name="admin"/, 'the admin surface is registered in the router');
+ok(!existsSync('app/admin'), 'THE MOBILE APP HAS NO ADMIN ROUTE DIRECTORY AT ALL');
+notMatch(read('app/_layout.tsx'), /Stack\.Screen name="admin"/,
+  'AND THE MOBILE ROUTER REGISTERS NO ADMIN SURFACE');
 
 // Runbooks are substantive.
 for (const [name, body] of Object.entries({

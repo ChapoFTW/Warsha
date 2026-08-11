@@ -104,7 +104,7 @@ for (const path of [
   'src/privacy/privacy-staff-repository.ts',
   'app/privacy.tsx',
   'app/privacy-delete.tsx',
-  'app/admin/privacy.tsx',
+
   'docs/wps/WPS-022-privacy-data-lifecycle-user-rights.md',
   'docs/wes/WES-022-privacy-data-lifecycle-user-rights.md',
   'docs/privacy/WARSHA-DATA-INVENTORY.md',
@@ -388,7 +388,7 @@ for (const path of [
   'src/privacy/privacy-context.tsx',
   'app/privacy.tsx',
   'app/privacy-delete.tsx',
-  'app/admin/privacy.tsx',
+
 ]) {
   const source = codeOf(path);
   lacks(source, /privacy_anonymize_account/, `${path} cannot call anonymization`);
@@ -403,10 +403,10 @@ const staffRepo = codeOf('src/privacy/privacy-staff-repository.ts');
 lacks(staffRepo, /manifest/i, 'THE STAFF REPOSITORY NEVER READS AN EXPORT MANIFEST');
 lacks(staffRepo, /get_my_data_exports|request_my_data_export/,
   'the staff repository cannot call an account-scoped export RPC');
-const staffScreen = codeOf('app/admin/privacy.tsx');
-lacks(staffScreen, /reasonCode|blockerCodes/,
-  'THE STAFF SCREEN SHOWS NO REASON AND NO BLOCKER DETAIL');
-has(staffScreen, /subjectRef/, 'the staff screen shows a truncated reference');
+// Administration is web-only — docs/constitution/cross-platform-parity.md.
+// The privacy console moved to admin.usewarsha.com, where the console
+// suite asserts the same redaction properties.
+check(!existsSync('app/admin/privacy.tsx'), 'THE MOBILE PRIVACY CONSOLE IS GONE');
 
 const staffTypes = read('src/privacy/privacy-staff-types.ts');
 lacks(staffTypes, /manifest\??:/, 'the staff request type cannot carry a manifest');

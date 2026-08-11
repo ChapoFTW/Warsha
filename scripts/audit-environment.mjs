@@ -82,19 +82,13 @@ for (const route of topLevel) {
   if (!registered) notes.push(`app/${route} is not named in the root layout Stack`);
 }
 
-// The staff surface must be guarded by the WPS-017 gate, not by obscurity.
-const adminLayout = readFileSync('app/admin/_layout.tsx', 'utf8');
-for (const guard of ['surfaceEnabled', 'platformReady', 'isStaff']) {
-  if (!adminLayout.includes(guard)) failures.push(`app/admin/_layout.tsx does not check ${guard}`);
+// Administration is web-only. The guard that used to protect the mobile staff
+// surface now lives in web/components/staff-gate.tsx, asserted by the
+// web-navigation suite. What must hold here is that the surface stays gone.
+if (existsSync('app/admin')) {
+  failures.push('app/admin exists: administration is web-only and must not return to mobile');
 }
 const adminScreens = [];
-(function walk(dir) {
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    const full = join(dir, entry.name);
-    if (entry.isDirectory()) walk(full);
-    else if (entry.name.endsWith('.tsx') && entry.name !== '_layout.tsx') adminScreens.push(full);
-  }
-})('app/admin');
 for (const screen of adminScreens) {
   const text = readFileSync(screen, 'utf8');
   if (!text.includes('useAdmin') && !text.includes('AdminShell')) {

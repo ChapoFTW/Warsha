@@ -139,8 +139,12 @@ match(migration, /staff_platform_dual_control_check/, 'production cannot disable
 // 9. The admin surface is not protected by obscurity.
 prose(wps, /never.{0,60}(security boundary|bundle)/i,
   'WPS-018 states a bundled route is not a security boundary');
-ok(read('scripts/audit-environment.mjs').includes('surfaceEnabled'),
-  'the route audit checks the admin guard');
+// Administration is web-only, so the mobile route audit no longer has an admin
+// guard to check — it asserts the surface is absent instead. The guard itself
+// moved to web/components/staff-gate.tsx, where the web-navigation suite checks
+// it resolves the session with getUser() and authorises with get_staff_session().
+ok(read('scripts/audit-environment.mjs').includes("existsSync('app/admin')"),
+  'THE ROUTE AUDIT ASSERTS THE MOBILE ADMIN SURFACE STAYS ABSENT');
 
 // ---------------------------------------------------------------------------
 // Environment model

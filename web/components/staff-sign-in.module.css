@@ -1,0 +1,111 @@
+.page {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: clamp(16px, 4vw, 40px);
+  background: var(--canvas);
+  position: relative;
+}
+
+/* In flow at the top of the page, not floating over the form — the same rule
+   the public header follows, so nothing overlaps at any width. */
+.controls {
+  position: absolute;
+  top: clamp(12px, 3vw, 24px);
+  inset-inline-end: clamp(12px, 3vw, 24px);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.panel {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.title {
+  margin-top: 10px;
+  font-size: clamp(24px, 4vw, 30px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.lead {
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--text-secondary);
+}
+
+.form {
+  margin-top: 8px;
+  display: grid;
+  gap: 14px;
+}
+
+.field { display: grid; gap: 6px; }
+
+.label {
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* The value is an address, a number or a password: all read left-to-right in
+   every language. `dir="ltr"` is set on the input itself so the label and the
+   page around it stay in the reader's direction. */
+.input {
+  font: inherit;
+  font-size: 16px;
+  color: var(--text-primary);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  min-height: 48px;
+  width: 100%;
+}
+
+.input:focus-visible { border-color: var(--text-muted); }
+.input:disabled { opacity: 0.6; }
+
+.submit {
+  appearance: none;
+  border: 0;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--brand-ink);
+  background: var(--brand);
+  border-radius: var(--radius-sm);
+  padding: 14px 20px;
+  min-height: 50px;
+  cursor: pointer;
+}
+
+.submit:disabled { opacity: 0.45; cursor: not-allowed; }
+.submit:not(:disabled):hover { filter: brightness(1.08); }
+
+.error {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-primary);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-inline-start: 3px solid var(--brand);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+}
+
+.foot { margin-top: 6px; font-size: 14px; color: var(--text-secondary); }
+
+.link {
+  color: var(--text-primary);
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

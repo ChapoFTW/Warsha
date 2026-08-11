@@ -24,6 +24,43 @@ The surfaces:
 Report the audit even when it finds nothing. "Checked Android and iOS; the
 header does not exist there" is a useful sentence. Silence is not.
 
+## Administration is web-only
+
+**Operational administration exists only at `admin.usewarsha.com`. Android and
+iOS must not contain a staff operations console.** This is a platform boundary,
+decided 2026-08-12, not an oversight and not a parity violation.
+
+| Capability | Where it lives |
+| --- | --- |
+| Customer and worker product functionality | mobile **and** web |
+| Staff operations console | **admin web only** |
+
+The distinction that keeps this correct, because it is easy to get wrong:
+
+**A staff member may also be a customer or a worker.** Their staff role is real
+backend authority and stays that way. Mobile treats that person normally
+according to their *product* roles — they book work or do work like anybody
+else. What mobile does not carry is the *staff operations* surface.
+
+So:
+
+- backend staff governance, capabilities, roles and audit are untouched;
+- no staff role is removed from any account because of this rule;
+- `get_staff_session()` remains the authorization authority everywhere;
+- shared staff *types and backend concepts* may stay in `src/` where the
+  product legitimately uses them;
+- what was removed is the reachable console: `app/admin/**` and
+  `components/warsha/AdminShell.tsx`.
+
+Do not reintroduce a mobile admin console. `npm run test:wps017` asserts the
+absence of every one of those screens by name, and that the mobile router
+registers no `admin` surface, so bringing one back fails the build.
+
+The admin origin must also always have a real signed-out entry. An
+unauthenticated operator reaching `admin.usewarsha.com` — at any path — gets the
+staff sign-in form, never a 404. `npm run test:web-navigation` asserts that
+every navigation and redirect destination on that origin resolves to a route.
+
 ## What parity does and does not mean
 
 **It does not mean identical layouts.** A bottom tab bar is right for a thumb

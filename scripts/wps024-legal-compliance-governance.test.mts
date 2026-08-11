@@ -25,7 +25,7 @@
  * machinery, not for the words.
  */
 
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
@@ -676,12 +676,9 @@ check(/authoritativeLanguage/.test(readerSource),
 check(/arabicIsSummary/.test(readerSource),
   'THE READER DISCLOSES WHEN THE ARABIC IS A SUMMARY RATHER THAN A FULL TEXT');
 
-const adminScreen = codeOf('app', 'admin', 'legal.tsx');
-check(/AdminShell/.test(adminScreen), 'the admin surface uses the guarded admin shell');
-check(/can\('review_legal_governance'\)/.test(adminScreen),
-  'the admin surface gates on the capability the server demands');
-check(!/\w\.(userId|user_id|email|fullName|displayName|phone)\b/.test(adminScreen),
-  'THE GOVERNANCE SCREEN BINDS NO PERSON-SHAPED FIELD');
+// Administration is web-only — see docs/constitution/cross-platform-parity.md.
+// The legal governance console moved to admin.usewarsha.com.
+check(!existsSync('app/admin/legal.tsx'), 'THE MOBILE LEGAL CONSOLE IS GONE');
 
 // ---------------------------------------------------------------------------
 // Copy: both languages, and no untranslated string
@@ -1521,11 +1518,9 @@ check(/not in \('refused_disabled', 'refused_no_credential'\)/.test(healthMigrat
   'AVAILABILITY EXCLUDES WARSHA\'S OWN REFUSALS');
 
 // The staff screen never shows a percentage for a window with no calls.
-const healthScreen = codeOf('app', 'admin', 'providers.tsx');
-check(/Not observed/.test(healthScreen),
-  'AN UNOBSERVED PROVIDER READS AS UNOBSERVED, NEVER AS A GREEN 100%');
-check(!/credentialSecretName.*value|secretValue/i.test(healthScreen),
-  'the provider screen shows a secret NAME and has no path to a value');
+// Administration is web-only — docs/constitution/cross-platform-parity.md.
+// The provider health console moved to admin.usewarsha.com.
+check(!existsSync('app/admin/providers.tsx'), 'THE MOBILE PROVIDER HEALTH CONSOLE IS GONE');
 
 // ---------------------------------------------------------------------------
 // Capability roles: no vendor name survives in business logic

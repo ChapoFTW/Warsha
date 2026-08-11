@@ -88,7 +88,6 @@ const repositorySource = read('src/growth/growth-repository.ts');
 const contextSource = read('src/growth/growth-context.tsx');
 const referralsScreen = read('app/referrals.tsx');
 const bannerSource = read('components/warsha/EligiblePromotionBanner.tsx');
-const adminScreen = read('app/admin/campaigns.tsx');
 const wps = read('docs/wps/WPS-021-growth-referrals-promotions.md');
 const wes = read('docs/wes/WES-021-growth-referrals-promotions.md');
 
@@ -632,8 +631,9 @@ for (const capability of ['manage_referral_programs', 'approve_referral_program'
   'manage_growth_campaigns', 'approve_growth_campaign']) {
   has(migration, new RegExp(`'${capability}'`), `the ${capability} capability is registered`);
 }
-has(adminScreen, /programsTitle/, 'the admin screen shows referral programmes');
-has(adminScreen, /campaignsTitle/, 'and campaigns, separately');
+// Administration is web-only — see docs/constitution/cross-platform-parity.md.
+// The campaigns console moved to admin.usewarsha.com. Its absence is the assertion.
+check(!existsSync('app/admin/campaigns.tsx'), 'THE MOBILE CAMPAIGNS CONSOLE IS GONE');
 
 // ---------------------------------------------------------------------------
 // Documentation

@@ -121,6 +121,93 @@ for (const [file, pattern] of Object.entries(REAL_WORK)) {
   check(text.length > 1500, `${file} is a real page, not a stub`);
 }
 
+// ===========================================================================
+// THE ADMIN ORIGIN ALWAYS HAS A REAL SIGNED-OUT ENTRY
+// ===========================================================================
+//
+// admin.usewarsha.com/sign-in returned the default Next.js 404. The gate linked
+// to `/sign-in`, the middleware rewrites that to `/admin/sign-in` on this
+// origin, and no such route had ever been created — so the one thing an admin
+// origin must never do is exactly what it did.
+check(existsSync(join(APP_DIR, 'admin/sign-in/page.tsx')),
+  '/sign-in EXISTS ON THE ADMIN ORIGIN — IT RETURNED A 404 IN PRODUCTION ONCE');
+
+const gate = readFileSync(join(WEB, 'components', 'staff-gate.tsx'), 'utf8');
+
+// Anonymous must render the form in place. A link or a redirect is what broke.
+check(/status === 'anonymous'[\s\S]{0,120}<StaffSignIn/.test(gate),
+  'AN ANONYMOUS OPERATOR IS SHOWN THE SIGN-IN FORM, NOT SENT SOMEWHERE');
+check(!/href="\/sign-in"/.test(gate),
+  'and the gate no longer links to a path this origin rewrites into a 404');
+
+// Every href the admin surfaces point at must resolve — including hard
+// `window.location` destinations, which the nav-array sweep above cannot see.
+const adminSources = walk(join(APP_DIR, 'admin'))
+  .filter((file) => file.endsWith('.tsx'))
+  .concat([
+    join(WEB, 'components', 'staff-gate.tsx'),
+    join(WEB, 'components', 'console-shell.tsx'),
+    join(WEB, 'components', 'staff-sign-in.tsx'),
+  ]);
+let adminDestinations = 0;
+for (const file of adminSources) {
+  const text = readFileSync(file, 'utf8');
+  for (const match of text.matchAll(/window\.location\.(?:href|replace)\s*(?:=|\()\s*'([^']+)'/g)) {
+    const href = match[1];
+    if (/^https?:/.test(href)) continue;
+    adminDestinations += 1;
+    check(routeExists('admin', href),
+      `${file}: REDIRECTS TO ${href}, WHICH MUST RESOLVE ON THE ADMIN ORIGIN`);
+  }
+}
+check(adminDestinations >= 2,
+  `admin redirect destinations were found and checked (${adminDestinations})`);
+
+// The four console areas must each resolve, since the sidebar renders them.
+for (const area of ['users', 'verification', 'staff', 'audit']) {
+  check(existsSync(join(APP_DIR, 'admin', area, 'page.tsx')),
+    `the console area /${area} resolves`);
+}
+check(existsSync(join(APP_DIR, 'admin', 'page.tsx')), 'and the console dashboard resolves');
+
+// Signing out must land somewhere real. `/` on this origin is the dashboard,
+// which the gate then answers with the sign-in form.
+const consoleShell = readFileSync(join(WEB, 'components', 'console-shell.tsx'), 'utf8');
+check(/signOut\(\)/.test(consoleShell), 'the console offers sign out');
+
+// STAFF AUTHENTICATE AS ORDINARY WARSHA IDENTITIES. No console credential store.
+const staffSignIn = readFileSync(join(WEB, 'components', 'staff-sign-in.tsx'), 'utf8');
+check(/classifySignInIdentity/.test(staffSignIn),
+  'THE CONSOLE USES THE SHARED IDENTITY-DRIVEN SIGN-IN, NOT AN ADMIN CREDENTIAL STORE');
+check(/from '@\/lib\/auth-actions'/.test(staffSignIn),
+  'and the same signIn action every other surface uses');
+check(!/admin_password|staff_password|adminLogin|is_admin/i.test(staffSignIn),
+  'NO SEPARATE ADMIN USERNAME OR PASSWORD PATH EXISTS');
+check(/type="text"/.test(staffSignIn),
+  'the identifier field accepts a phone number as well as an address');
+// Anti-enumeration: every credential failure maps to one shared message.
+check(/invalid_credentials: 'errInvalidCredentials'/.test(staffSignIn),
+  'credential failures are indistinguishable, preserving anti-enumeration');
+
+// Authorization is still the server's answer, taken after authentication.
+check(/get_staff_session/.test(gate),
+  'AUTHORIZATION COMES FROM get_staff_session(), NOT FROM ANYTHING THE FORM DID');
+check(/auth\.getUser\(\)/.test(gate),
+  'and a stored token is validated with getUser() before it is trusted');
+check(/status === 'loading'/.test(gate),
+  'a resolving session shows a neutral gate, so the console cannot flash first');
+
+// --- Administration is web-only ---------------------------------------------
+//
+// The platform boundary, asserted where it can regress. Backend staff
+// governance is untouched; what must not come back is the mobile console.
+for (const screen of [
+  'app/admin', 'app/admin/index.tsx', 'app/admin/vetting.tsx',
+  'components/warsha/AdminShell.tsx',
+]) {
+  check(!existsSync(screen), `${screen} IS ABSENT — ADMINISTRATION IS WEB-ONLY`);
+}
+
 // --- Shared authorities are read, not restated ------------------------------
 const notifications = readFileSync(join(WEB, 'lib', 'notifications.ts'), 'utf8');
 check(/from '\.\.\/\.\.\/src\/notifications\/notification-copy/.test(notifications),

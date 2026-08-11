@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 
 import {
   isPublicAuthRoute,
@@ -84,7 +84,11 @@ check(/paddingTop: Math\.max\(insets\.top/.test(preferenceControls),
 check(/<GlobalPreferenceControls\/>/.test(read('components/warsha/ConfigurationError.tsx')), 'the pre-router configuration error keeps both global preferences available');
 check(/direction: isRTL \? 'rtl' : 'ltr'/.test(root), 'root layout direction follows the active language');
 check(/GlobalPreferenceControls embedded/.test(read('components/warsha/Header.tsx')), 'customer home owns a non-overlapping shared preference slot');
-check(/GlobalPreferenceControls embedded/.test(read('components/warsha/AdminShell.tsx')), 'admin shell owns a non-overlapping shared preference slot');
+// The mobile admin shell is gone: operational administration is web-only.
+// What mattered here — that a surface owning its own preference slot does not
+// double-render the global one — still holds for the two shells that remain.
+check(!existsSync('components/warsha/AdminShell.tsx'),
+  'THERE IS NO MOBILE ADMIN SHELL; ADMINISTRATION IS WEB-ONLY');
 check(/GlobalPreferenceControls embedded/.test(read('app/worker/index.tsx')), 'worker home owns a non-overlapping shared preference slot');
 
 const expo = JSON.parse(read('app.json')).expo;

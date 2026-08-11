@@ -66,7 +66,7 @@ function ThemedRoot() {
   const { colors, scheme } = useAppearance();
   const { isRTL } = useLocalization();
   const pathname = usePathname();
-  const shellOwnsPreferences = pathname === '/' || pathname === '/worker' || pathname.startsWith('/admin');
+  const shellOwnsPreferences = pathname === '/' || pathname === '/worker';
 
   const navigationTheme = useMemo(() => ({
     dark: scheme === 'dark',
@@ -160,7 +160,6 @@ function ThemedRoot() {
           <Stack.Screen name="auth/confirm" />
           <Stack.Screen name="help/index" />
           <Stack.Screen name="support/index" />
-          <Stack.Screen name="admin" />
         </Stack>
         </View>
         </AuthGate>

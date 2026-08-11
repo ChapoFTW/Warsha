@@ -3,7 +3,9 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
 import { BrandMark } from '@/components/brand-mark';
+import { StaffSignIn } from '@/components/staff-sign-in';
 import { appCopy } from '@/lib/app-copy';
+import { signOut } from '@/lib/auth-actions';
 import { supabase } from '@/lib/supabase';
 import { useAppLocale } from '@/lib/use-app-locale';
 import {
@@ -76,20 +78,34 @@ export function StaffGate({ children }: { children: React.ReactNode }) {
     );
   }
 
+  // Signed out: the sign-in form, here, on whatever route was asked for.
+  //
+  // It used to be a link to `/sign-in`. On this origin the middleware rewrites
+  // that to `/admin/sign-in`, which did not exist, so an unauthenticated
+  // operator was sent to a Next.js 404 — the one thing an admin origin must
+  // never do. Rendering the form in place means every deep link into the
+  // console lands somewhere usable, and there is no redirect to get wrong.
+  if (status === 'anonymous') {
+    return <StaffSignIn onSignedIn={() => { void load(); }} />;
+  }
+
+  // Authenticated, but not a staff member. A different answer to a different
+  // question, and it must not look like a failed sign-in: the credentials were
+  // fine. Signing out is offered because the way forward is a different account.
   if (status !== 'ready') {
     return (
       <div className={styles.centre}>
         <div className={styles.refusal}>
           <BrandMark size={32} />
-          <h1 className={styles.refusalTitle}>
-            {status === 'anonymous' ? words.consoleSignInRequired : words.consoleRefusedTitle}
-          </h1>
-          <p className={styles.refusalBody}>
-            {status === 'anonymous' ? words.consoleSignInBody : words.consoleRefusedBody}
-          </p>
-          {status === 'anonymous' ? (
-            <a className={styles.refusalLink} href="/sign-in">{words.consoleGoToSignIn}</a>
-          ) : null}
+          <h1 className={styles.refusalTitle}>{words.consoleRefusedTitle}</h1>
+          <p className={styles.refusalBody}>{words.consoleRefusedBody}</p>
+          <button
+            type="button"
+            className={styles.refusalLink}
+            onClick={() => { void signOut().then(() => { void load(); }); }}
+          >
+            {words.signOut}
+          </button>
         </div>
       </div>
     );

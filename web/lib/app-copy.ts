@@ -296,6 +296,10 @@ export const appCopy = {
     revokeAction: 'Revoke',
     revokeConfirm: 'Revoke role',
 
+    consoleSignInTitle: 'Warsha Console',
+    consoleSignInLead: 'Sign in with your Warsha account. Console access depends on the staff role your account holds.',
+    consoleSignInNote: 'Console access is granted by a Security Administrator. It cannot be requested here.',
+
     cancel: 'Cancel',
     close: 'Close',
     resultKind: 'Kind',
@@ -590,6 +594,10 @@ export const appCopy = {
     reasonLabel: 'السبب',
     revokeAction: 'اسحب',
     revokeConfirm: 'اسحب الدور',
+
+    consoleSignInTitle: 'كونسول ورشة',
+    consoleSignInLead: 'ادخل بحساب ورشة بتاعك. الدخول على الكونسول بيعتمد على دور الموظف اللي حسابك شايله.',
+    consoleSignInNote: 'الدخول على الكونسول بيتمنح من مدير الأمان. مش بيتطلب من هنا.',
 
     cancel: 'إلغاء',
     close: 'إقفال',

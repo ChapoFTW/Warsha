@@ -7,7 +7,7 @@
  * asserts what the client guarantees and what the migration must contain.
  */
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 
 import {
   mockHelpArticles,
@@ -63,7 +63,6 @@ const articleScreen = readFileSync('app/help/article/[slug].tsx', 'utf8');
 const caseScreen = readFileSync('app/support/case/[id].tsx', 'utf8');
 const newCaseScreen = readFileSync('app/support/new.tsx', 'utf8');
 const casesScreen = readFileSync('app/support/index.tsx', 'utf8');
-const staffScreen = readFileSync('app/admin/support.tsx', 'utf8');
 const rootLayout = readFileSync('app/_layout.tsx', 'utf8');
 const audit = readFileSync('docs/architecture/support-architecture-audit.md', 'utf8');
 const wps = readFileSync('docs/wps/WPS-019-customer-support-help-center.md', 'utf8');
@@ -407,8 +406,10 @@ has(readFileSync('src/notifications/notification-context.tsx', 'utf8'),
 
 // The staff surface is capability-gated in the client too, and says plainly
 // that the client gate is not the security boundary.
-has(staffScreen, /can\('manage_support_cases'\)/, 'the staff surface checks the capability before rendering');
-has(staffScreen, /not a security boundary/i, 'the staff surface states that the client gate is not the boundary');
+// Administration is web-only — see docs/constitution/cross-platform-parity.md.
+// The staff support queue moved to admin.usewarsha.com, where the console suite asserts its capability gate.
+// Its absence from mobile is the assertion that remains here.
+check(!existsSync('app/admin/support.tsx'), 'THE MOBILE STAFF SUPPORT QUEUE IS GONE');
 
 // ---------------------------------------------------------------------------
 // 15. Documentation
