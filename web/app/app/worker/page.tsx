@@ -2,6 +2,7 @@
 
 import { AppShell, useAccount } from '@/components/app-shell';
 import { appCopy } from '@/lib/app-copy';
+import { workerNav } from '@/lib/nav';
 import { useAppLocale } from '@/lib/use-app-locale';
 
 import styles from '../dashboard.module.css';
@@ -31,15 +32,8 @@ export default function WorkerHome() {
         ? words.workerOnboardingIncomplete
         : words.workerVerificationPending;
 
-  const nav = [
-    { href: '/worker', label: words.navHome },
-    { href: '/worker/verification', label: words.navVerification },
-    { href: '/notifications', label: words.navNotifications },
-    { href: '/support', label: words.navSupport },
-  ];
-
   return (
-    <AppShell nav={nav} mode={words.modeWorker}>
+    <AppShell nav={workerNav(words)} mode={words.modeWorker}>
       <h1 className={styles.title}>{words.dashboardGreeting}</h1>
 
       <section className={styles.next} aria-labelledby="next">

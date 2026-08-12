@@ -4,6 +4,7 @@ import { useState } from 'react';
 
 import { AppShell, useAccount } from '@/components/app-shell';
 import { appCopy } from '@/lib/app-copy';
+import { workerNav } from '@/lib/nav';
 import {
   actionableGates,
   canAppeal,
@@ -50,13 +51,6 @@ export default function WorkerVerificationPage() {
   const needsAction = needsWorkerAction(state?.workerState ?? null);
   const mayAppeal = canAppeal(state?.workerState ?? null);
 
-  const nav = [
-    { href: '/worker', label: words.navHome },
-    { href: '/worker/verification', label: words.navVerification },
-    { href: '/notifications', label: words.navNotifications },
-    { href: '/support', label: words.navSupport },
-  ];
-
   const gateLabel = (gate: string) =>
     (words as Record<string, string>)[`gate_${gate}`] ?? gate;
 
@@ -69,7 +63,7 @@ export default function WorkerVerificationPage() {
   };
 
   return (
-    <AppShell nav={nav} mode={words.modeWorker}>
+    <AppShell nav={workerNav(words)} mode={words.modeWorker}>
       <h1 className={styles.title}>{words.workerVerificationTitle}</h1>
 
       {state === null ? (

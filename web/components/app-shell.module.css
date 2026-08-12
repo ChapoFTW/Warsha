@@ -126,10 +126,17 @@
     justify-content: flex-end;
   }
 
+  /* `width: 100%` was circular here: it resolved against a bar that had already
+     been widened by this very row, so seven links pushed the whole document
+     sideways where four had fitted. `flex-basis` with `min-width: 0` makes the
+     row take one full line and then scroll inside it, which is what the
+     scroll container was for. */
   .nav {
     display: flex;
     order: 3;
-    width: 100%;
+    flex: 0 0 100%;
+    min-width: 0;
+    max-width: 100%;
     margin-inline-end: 0;
     gap: 18px;
     overflow-x: auto;

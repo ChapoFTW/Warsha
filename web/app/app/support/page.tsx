@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { AppShell, useAccount } from '@/components/app-shell';
 import { appCopy } from '@/lib/app-copy';
+import { customerNav, workerNav } from '@/lib/nav';
 import {
   classifySupportError,
   newIdempotencyKey,
@@ -86,7 +87,7 @@ export default function SupportPage() {
   }, [loadCases]);
 
   return (
-    <AppShell nav={navFor(mode, words)} mode={mode === 'worker' ? words.modeWorker : words.modeCustomer}>
+    <AppShell nav={mode === 'worker' ? workerNav(words) : customerNav(words)} mode={mode === 'worker' ? words.modeWorker : words.modeCustomer}>
       <div className={styles.head}>
         <h1 className={styles.title}>{words.supportTitle}</h1>
         <button
@@ -168,7 +169,6 @@ export default function SupportPage() {
     </AppShell>
   );
 }
-
 function CaseDetail({
   detail,
   words,
@@ -589,19 +589,4 @@ function formatWhen(value: string, locale: 'en' | 'ar', withTime = false): strin
     dateStyle: 'medium',
     ...(withTime ? { timeStyle: 'short' as const } : {}),
   }).format(date);
-}
-
-function navFor(mode: 'customer' | 'worker', words: Record<string, string>) {
-  return mode === 'worker'
-    ? [
-      { href: '/worker', label: words.navHome },
-      { href: '/worker/verification', label: words.navVerification },
-      { href: '/notifications', label: words.navNotifications },
-      { href: '/support', label: words.navSupport },
-    ]
-    : [
-      { href: '/', label: words.navHome },
-      { href: '/notifications', label: words.navNotifications },
-      { href: '/support', label: words.navSupport },
-    ];
 }

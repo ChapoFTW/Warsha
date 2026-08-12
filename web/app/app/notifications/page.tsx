@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { AppShell, useAccount } from '@/components/app-shell';
 import { appCopy } from '@/lib/app-copy';
+import { customerNav, workerNav } from '@/lib/nav';
 import {
   cursorFrom,
   NOTIFICATION_CATEGORIES,
@@ -100,7 +101,7 @@ export default function NotificationsPage() {
   const unread = items?.filter((row) => !row.readAt).length ?? 0;
 
   return (
-    <AppShell nav={navFor(mode, words)} mode={mode === 'worker' ? words.modeWorker : words.modeCustomer}>
+    <AppShell nav={mode === 'worker' ? workerNav(words) : customerNav(words)} mode={mode === 'worker' ? words.modeWorker : words.modeCustomer}>
       <div className={styles.head}>
         <h1 className={styles.title}>{chrome.title}</h1>
         {unread > 0 ? (
@@ -204,20 +205,6 @@ export default function NotificationsPage() {
   );
 }
 
-function navFor(mode: 'customer' | 'worker', words: Record<string, string>) {
-  return mode === 'worker'
-    ? [
-      { href: '/worker', label: words.navHome },
-      { href: '/worker/verification', label: words.navVerification },
-      { href: '/notifications', label: words.navNotifications },
-      { href: '/support', label: words.navSupport },
-    ]
-    : [
-      { href: '/', label: words.navHome },
-      { href: '/notifications', label: words.navNotifications },
-      { href: '/support', label: words.navSupport },
-    ];
-}
 
 function relative(at: string, locale: 'en' | 'ar'): string {
   const seconds = (Date.now() - new Date(at).getTime()) / 1000;
