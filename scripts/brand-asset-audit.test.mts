@@ -3,8 +3,9 @@ import { existsSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 import {
-  MARK_CONTOUR,
-  MARK_CONTOUR_STROKE,
+  MARK_INK_ON_DARK,
+  MARK_INK_ON_LIGHT,
+  inkFor,
   MARK_FRAME,
   MARK_STROKE,
   MARK_TRACE,
@@ -50,46 +51,56 @@ check(webMark.includes('MARK_TRACE') && webMark.includes('@warsha/brand'),
 check(/rx="7\.2"/.test(mobileMark) && /strokeWidth="2\.5"/.test(mobileMark),
   'the mobile mark uses the canonical frame and stroke');
 
-// --- The contour follows the shape, and is never a box ----------------------
-equal(MARK_CONTOUR_STROKE, MARK_STROKE + MARK_CONTOUR,
-  'the contour is the same paths at a greater stroke width');
-check(MARK_CONTOUR > 0 && MARK_CONTOUR < MARK_STROKE / 2,
-  'the contour is a thin edge, not a second mark competing with the first');
+// --- One mark, in the ink its surface calls for ------------------------------
+//
+// The contour is gone. A previous version kept the mark white everywhere and
+// drew a heavier dark path underneath so it could survive a light background;
+// the mark now simply changes colour, which is what the mobile client has
+// always done through the brandMark appearance token.
+equal(MARK_INK_ON_DARK, '#FAFAFA', 'the dark-surface ink is near-white');
+equal(MARK_INK_ON_LIGHT, '#111111', 'the light-surface ink is near-black');
+equal(inkFor('light'), MARK_INK_ON_LIGHT,
+  'A LIGHT SURFACE GETS THE BLACK MARK, NOT A WHITE ONE WITH AN OUTLINE');
+equal(inkFor('dark'), MARK_INK_ON_DARK, 'and a dark surface gets the white mark');
+equal(treatmentFor('light'), 'plain', 'there is exactly one treatment');
+equal(treatmentFor('dark'), 'plain', 'on both surfaces');
 
-const contoured = markSvg({ treatment: 'contoured' });
-const plain = markSvg({ treatment: 'plain' });
-// A filled rect covering the canvas would be a plate. The only rects allowed
-// are the stroked frame (fill="none") and an explicit platform background.
-const filledRects = [...contoured.matchAll(/<rect[^>]*>/g)]
-  .filter((match) => /fill="(?!none)/.test(match[0]));
-equal(filledRects.length, 0,
-  'THE CONTOURED MARK BAKES NO BACKGROUND PLATE BEHIND THE LOGO');
-check((contoured.match(/<rect/g) ?? []).length === 2
-  && (contoured.match(/<path/g) ?? []).length === 2,
-  'the contoured mark is the same two shapes drawn twice, contour beneath ink');
-check((plain.match(/<rect/g) ?? []).length === 1,
-  'the plain mark draws the geometry once');
-check(contoured.indexOf('#111111') < contoured.indexOf('#FAFAFA'),
-  'the contour is drawn first so the mark keeps its exact weight on top');
+const onDark = markSvg({ ink: inkFor('dark') });
+const onLight = markSvg({ ink: inkFor('light') });
 
-// --- The right variant for the surface --------------------------------------
-equal(treatmentFor('light'), 'contoured',
-  'A LIGHT SURFACE GETS THE CONTOUR, SO A WHITE MARK CANNOT VANISH');
-equal(treatmentFor('dark'), 'plain',
-  'a dark surface gets no contour, because the white mark is already legible');
+// The geometry is untouched: same shapes, drawn once, whatever the ink.
+for (const [name, svg] of [['dark', onDark], ['light', onLight]] as const) {
+  check((svg.match(/<rect/g) ?? []).length === 1,
+    `the ${name} mark draws the frame exactly once — no contour pass`);
+  check((svg.match(/<path/g) ?? []).length === 1,
+    `the ${name} mark draws the trace exactly once`);
+  const filled = [...svg.matchAll(/<rect[^>]*>/g)].filter((m) => /fill="(?!none)/.test(m[0]));
+  equal(filled.length, 0, `THE ${name.toUpperCase()} MARK BAKES NO PLATE BEHIND THE LOGO`);
+  check(/rx="7.2"/.test(svg), `the ${name} mark keeps the canonical corner radius`);
+  check(svg.includes('stroke-width="2.5"'),
+    `THE ${name.toUpperCase()} MARK KEEPS THE CANONICAL STROKE — NOTHING WAS THICKENED`);
+}
+check(onLight.includes('#111111') && !onLight.includes('#FAFAFA'),
+  'the light-surface mark is black and contains no white layer');
+check(onDark.includes('#FAFAFA') && !onDark.includes('#111111'),
+  'the dark-surface mark is white and contains no black layer');
 
 const globals = readFileSync('web/app/globals.css', 'utf8');
 const darkBlock = globals.slice(0, globals.indexOf("[data-theme='light']"));
 const lightBlock = globals.slice(globals.indexOf("[data-theme='light']"));
-check(/--warsha-mark-ink:\s*#FAFAFA/i.test(darkBlock)
-  && /--warsha-mark-contour:\s*transparent/i.test(darkBlock),
-  'dark theme: white mark, no contour');
-check(/--warsha-mark-ink:\s*#FAFAFA/i.test(lightBlock)
-  && /--warsha-mark-contour:\s*#111111/i.test(lightBlock),
-  'LIGHT THEME: THE MARK STAYS WHITE AND GAINS A DARK CONTOUR');
+check(/--warsha-mark-ink:\s*#FAFAFA/i.test(darkBlock),
+  'dark theme: the mark is white');
+check(/--warsha-mark-ink:\s*#111111/i.test(lightBlock),
+  'LIGHT THEME: THE MARK IS BLACK, NOT WHITE-WITH-A-CONTOUR');
+check(!/--warsha-mark-contour/.test(globals),
+  'THE CONTOUR TOKEN IS GONE FROM THE STYLESHEET ENTIRELY');
+check(!/contour/i.test(readFileSync('web/components/brand-mark.module.css', 'utf8')
+  .replace(/\/\*[\s\S]*?\*\//g, '')),
+  'and the component stylesheet declares no contour class');
+
 check(/prefers-color-scheme: light/.test(globals)
-  && /--warsha-mark-contour/.test(globals.slice(globals.indexOf('prefers-color-scheme'))),
-  'a system-derived light theme selects the contour too');
+  && /--warsha-mark-ink:\s*#111111/i.test(globals.slice(globals.indexOf('prefers-color-scheme'))),
+  'A SYSTEM-DERIVED LIGHT THEME ALSO GETS THE BLACK MARK, SO SYSTEM MODE IS NOT A GAP');
 // The variant is a CSS token, so it is resolved by the same pre-paint script
 // that prevents the theme flash — no white-on-white frame.
 check(/data-theme/.test(readFileSync('web/app/[locale]/layout.tsx', 'utf8')),

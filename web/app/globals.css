@@ -12,8 +12,10 @@
  */
 
 :root {
+  /* Dark is the default ground, so the mark is near-white here. It flips to
+     near-black on light surfaces below. Same two values the mobile brandMark
+     token uses, so one mark behaves identically on every Warsha surface. */
   --warsha-mark-ink: #FAFAFA;
-  --warsha-mark-contour: transparent;
   --canvas: #080808;
   --surface: #141414;
   --surface-raised: #1c1c1c;
@@ -37,8 +39,7 @@
 }
 
 :root[data-theme='light'] {
-  --warsha-mark-ink: #FAFAFA;
-  --warsha-mark-contour: #111111;
+  --warsha-mark-ink: #111111;
   --canvas: #F4F2EE;
   --surface: #FFFFFF;
   --surface-raised: #FFFFFF;
@@ -56,8 +57,7 @@
 
 @media (prefers-color-scheme: light) {
   :root:not([data-theme='dark']) {
-  --warsha-mark-ink: #FAFAFA;
-    --warsha-mark-contour: #111111;
+    --warsha-mark-ink: #111111;
     --canvas: #F4F2EE;
     --surface: #FFFFFF;
     --surface-raised: #FFFFFF;

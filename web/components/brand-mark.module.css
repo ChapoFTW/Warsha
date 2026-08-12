@@ -1,11 +1,12 @@
 /*
- * The mark is white on every surface. What changes with the theme is whether a
- * contour is drawn under it.
+ * The mark takes the colour of its surface: near-black on light, near-white on
+ * dark. No contour, no outline, no halo, no thickened stroke compensating for
+ * contrast — the mark simply changes colour, which is what the mobile client
+ * has always done through the brandMark appearance token.
  *
- * Both layers take their colour from tokens rather than from the theme
- * directly, so the correct contrast variant is already resolved by the inline
- * head script that sets `data-theme` before first paint. There is no
- * white-on-white or black-on-black frame.
+ * The value resolves from a token, so the inline head script that sets
+ * `data-theme` before first paint has already chosen it. There is no
+ * white-on-white or black-on-black flash.
  */
 
 .mark {
@@ -15,10 +16,6 @@
 
 .ink {
   color: var(--warsha-mark-ink);
-}
-
-.contour {
-  color: var(--warsha-mark-contour);
 }
 
 .lockup {

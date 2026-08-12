@@ -38,6 +38,7 @@ export const copy = {
     appearanceLight: 'Light',
     appearanceDark: 'Dark',
 
+    heroImageAlt: 'An electrician fitting a wall socket in a home.',
     heroEyebrow: 'Home services in Egypt',
     heroTitle: 'Get it fixed, at a price you agreed first.',
     heroBody:
@@ -182,6 +183,7 @@ export const copy = {
     appearanceLight: 'فاتح',
     appearanceDark: 'داكن',
 
+    heroImageAlt: 'كهربائي بيركّب علبة كهربا في شقة.',
     heroEyebrow: 'خدمات المنزل في مصر',
     heroTitle: 'صلّح اللي محتاج تصليح، بسعر اتفقت عليه الأول.',
     heroBody:

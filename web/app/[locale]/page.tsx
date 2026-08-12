@@ -1,7 +1,9 @@
 import { notFound } from 'next/navigation';
+import Image from 'next/image';
 import Link from 'next/link';
 
-import { BrandMark } from '@/components/brand-mark';
+import heroImage from '@/assets/hero/warsha-hero-electrician.png';
+
 import { SiteFooter, SiteHeader } from '@/components/site-chrome';
 import { copy } from '@/lib/copy';
 import { isLocale, type Locale } from '@/lib/preferences';
@@ -65,19 +67,27 @@ export default async function HomePage({
               <p className={styles.heroNote}>{words.heroNote}</p>
             </div>
 
-            {/* The second column.
-                No photograph of a Warsha professional exists in the repository
-                yet, and a stock image of somebody who has never used Warsha
-                would be a claim rather than a picture. Until that asset is
-                produced this column is the Warsha mark at display scale, held
-                in a soft field of the canvas itself — the same geometry the
-                phone draws, enlarged rather than redesigned. It is decorative,
-                so it is hidden from assistive technology; the headline beside
-                it already says everything this says. */}
-            <div className={styles.heroVisual} aria-hidden="true">
-              <div className={styles.heroField}>
-                <BrandMark size={520} />
-              </div>
+            {/* The second column: the work itself.
+                This replaced a 520px Warsha mark. The header already carries
+                the brand; repeating it here at display scale filled space
+                without saying anything, and a home-services marketplace should
+                show a person doing the work rather than its own logo again.
+
+                The subject sits on the right of the frame with the room open to
+                the left, so `object-position` keeps him in view as the column
+                narrows instead of cropping him out — see the stylesheet. The
+                photograph is never mirrored for Arabic: the column order
+                reverses, the picture does not. Flipping a real photograph puts
+                the screwdriver in the wrong hand. */}
+            <div className={styles.heroVisual}>
+              <Image
+                src={heroImage}
+                alt={words.heroImageAlt}
+                className={styles.heroPhoto}
+                sizes="(max-width: 720px) 100vw, (max-width: 1100px) 50vw, 46vw"
+                priority
+                placeholder="blur"
+              />
             </div>
           </div>
         </section>

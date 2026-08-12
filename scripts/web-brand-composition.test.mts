@@ -45,8 +45,8 @@ for (const symbol of ['MARK_FRAME', 'MARK_TRACE', 'MARK_STROKE', 'MARK_VIEWBOX']
 }
 check(/currentColor/.test(webMark),
   'the web mark inks itself from the theme rather than hard-coding a colour');
-check(/MARK_CONTOUR_STROKE/.test(webMark),
-  'the web mark draws the contour at the shared contour weight');
+check(!/MARK_CONTOUR|contour/i.test(webMark.replace(/\/\*[\s\S]*?\*\//g, '')),
+  'THE WEB MARK DRAWS NO CONTOUR — IT CHANGES COLOUR WITH ITS SURFACE INSTEAD');
 check(/BrandLockup/.test(chrome) && !/brandMark/.test(chromeCss),
   'THE HEADER RENDERS THE CANONICAL LOCKUP, NOT A PLACEHOLDER SQUARE');
 check(!/border-radius:\s*7px[\s\S]{0,80}background:\s*var\(--brand\)/.test(chromeCss),
@@ -83,14 +83,24 @@ check(/heroVisual/.test(home) && /heroText/.test(home),
   'the hero is a deliberate two-column composition');
 check(/grid-template-columns: minmax\(0, 1\.05fr\) minmax\(0, 0\.95fr\)/.test(heroCss),
   'THE HERO GIVES THE SECOND COLUMN REAL WIDTH RATHER THAN LEAVING DEAD SPACE');
-check(/aria-hidden="true"/.test(home),
-  'the decorative visual is hidden from assistive technology');
-check(/mask-image: radial-gradient/.test(heroCss),
-  'the visual dissolves into the canvas instead of ending on a hard crop');
+// The hero visual is a photograph now, not a decorative mark, so it is
+// informative and carries real localized alt text rather than aria-hidden.
+check(/alt={words.heroImageAlt}/.test(home),
+  'THE HERO PHOTOGRAPH CARRIES LOCALIZED ALT TEXT, NOT aria-hidden');
+check(!/<BrandMark size={5dd}/.test(home),
+  'THE GIANT DECORATIVE MARK IS GONE FROM THE HERO');
+check(/object-fit: cover/.test(heroCss) && /aspect-ratio/.test(heroCss),
+  'the photograph fills a declared box, so it can neither stretch nor shift layout');
+check((heroCss.match(/object-position/g) ?? []).length >= 3,
+  'the crop is tuned per breakpoint so the subject survives narrow viewports');
+check(!/scaleX(-1)|transform:s*scaleX/.test(heroCss),
+  'THE PHOTOGRAPH IS NEVER MIRRORED FOR RTL');
+// The second column is a photograph now, so it is present at every width with
+// its own composition rather than dropped below 900px.
 check(/@media \(min-width: 900px\)/.test(heroCss),
-  'the second column appears only where it has room; it is dropped, never squashed');
-check(/opacity: 0\.1[0-9]?/.test(heroCss),
-  'the mark sits behind the headline rather than competing with it');
+  'the layout still has a desktop breakpoint for the side-by-side composition');
+check(!/display: none/.test(heroCss.slice(heroCss.indexOf('.heroVisual'), heroCss.indexOf('.heroPhoto'))),
+  'MOBILE KEEPS THE PHOTOGRAPH RATHER THAN HIDING IT');
 
 // --- No invented brand ------------------------------------------------------
 const globals = readWeb('app', 'globals.css');

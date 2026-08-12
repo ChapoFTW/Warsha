@@ -29,44 +29,39 @@ export const MARK_TRACE = 'M2 13.2 L8.4 23.2 L14 14.8 L19.6 21.2 L30 9.2';
 export const MARK_STROKE = 2.5;
 
 /**
- * The contour.
+ * The mark's ink.
  *
- * The mark is white. On a light surface a white line disappears, so a thin
- * dark edge is drawn *under* it — the same paths at a greater stroke width, so
- * the contour follows the geometry rather than boxing it. Nothing is redrawn
- * and nothing is filled: there is no square, only a slightly heavier line
- * showing at the edges of the one that sits on top.
+ * Near-black on a light surface, near-white on a dark one. The geometry is
+ * identical in both cases — only the colour changes.
  *
- * `0.9` viewBox units total means `0.45` on each side. Chosen by looking at it
- * at every size Warsha ships:
- *
- *   16px favicon → 0.22px per side: present, never muddy
- *   32px favicon → 0.45px per side
- *   26px header  → 0.37px per side
- *   192px PWA    → 2.7px per side
- *   512px splash → 7.2px per side
- *
- * Going heavier reads as an outline at 512 and swallows the trace at 16, which
- * is the failure this number exists to avoid.
+ * An earlier version kept the mark white everywhere and drew a heavier dark
+ * path underneath so it could survive a light background. That was a contour
+ * compensating for a contrast problem the mark should not have had, and it is
+ * gone: no outline, no halo, no thickened stroke, no plate. These are the two
+ * values `constants/appearance.ts` already resolves the mobile `brandMark`
+ * token to, so one mark now behaves identically on every Warsha surface.
  */
-export const MARK_CONTOUR = 0.9;
-export const MARK_CONTOUR_STROKE = MARK_STROKE + MARK_CONTOUR;
+export const MARK_INK_ON_DARK = '#FAFAFA';
+export const MARK_INK_ON_LIGHT = '#111111';
 
 export type MarkTreatment =
-  /** White mark, dark contour. For light surfaces. */
-  | 'contoured'
-  /** White mark alone. For dark surfaces, where it is already legible. */
-  | 'plain';
+  /** The mark alone, in the ink its surface calls for. There is no other. */
+  'plain';
+
+/** The ink a surface calls for. */
+export function inkFor(surface: 'light' | 'dark'): string {
+  return surface === 'light' ? MARK_INK_ON_LIGHT : MARK_INK_ON_DARK;
+}
 
 /**
  * Which treatment a surface needs.
  *
- * A dark surface does not get a contour: the instruction is to add one only
- * where it earns its place, and an outline drawn around a white mark on near
- * black is a detail nobody can see paying for weight everybody can.
+ * One, now. Kept as a function because the asset generator and the tests both
+ * ask the authority rather than assuming, and because "there is exactly one
+ * treatment" is a fact worth being able to assert.
  */
-export function treatmentFor(surface: 'light' | 'dark'): MarkTreatment {
-  return surface === 'light' ? 'contoured' : 'plain';
+export function treatmentFor(_surface: 'light' | 'dark'): MarkTreatment {
+  return 'plain';
 }
 
 /**
@@ -80,16 +75,14 @@ export function treatmentFor(surface: 'light' | 'dark'): MarkTreatment {
  * edge of a 512px square gets cropped by the launcher's mask.
  */
 export function markSvg(options: {
-  treatment: MarkTreatment;
+  treatment?: MarkTreatment;
+  /** Defaults to the dark-surface ink; pass inkFor('light') for a light one. */
   ink?: string;
-  contour?: string;
   padding?: number;
   background?: string | null;
 }): string {
   const {
-    treatment,
-    ink = '#FAFAFA',
-    contour = '#111111',
+    ink = MARK_INK_ON_DARK,
     padding = 0,
     background = null,
   } = options;
@@ -109,13 +102,15 @@ export function markSvg(options: {
     <path d="${translateTrace(offset)}" fill="none" stroke="${stroke}" stroke-width="${width}"
       stroke-linecap="round" stroke-linejoin="round"/>`;
 
-  // The contour is drawn first so the mark sits on top of it and keeps its
-  // exact weight; only the overhang shows.
-  const contourLayer = treatment === 'contoured'
-    ? shapes(contour, MARK_CONTOUR_STROKE)
-    : '';
-
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" fill="none">${backgroundLayer}${contourLayer}${shapes(ink, MARK_STROKE)}</svg>`;
+  // One layer. The mark is drawn once, in the ink its surface calls for —
+  // there is no contour pass underneath any more.
+  return [
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}"`,
+    ` width="${size}" height="${size}" fill="none">`,
+    backgroundLayer,
+    shapes(ink, MARK_STROKE),
+    '</svg>',
+  ].join('');
 }
 
 /** Shift the trace by the icon padding without altering its shape. */

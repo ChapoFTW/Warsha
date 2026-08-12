@@ -18,50 +18,43 @@
   min-width: 0;
 }
 
-/* --- The second column ----------------------------------------------------
-   The mark at display scale, bled softly into the canvas so it reads as part
-   of the page rather than a rectangle placed next to the text. It is drawn at
-   low contrast on purpose: it is a field for the headline to sit against, not
-   a second thing competing to be read. */
+/* --- The second column: the photograph ------------------------------------
+   A 520px Warsha mark used to sit here at 14% opacity. The header already
+   carries the brand, so this column now shows the work instead.
+
+   The subject stands on the right of the frame with the room open to his left,
+   which is what makes the crop behaviour below work: as the column narrows the
+   visible window keeps his side of the picture and sacrifices empty room,
+   rather than the other way round. Nothing is ever stretched — the image is
+   always `object-fit: cover` inside a box with a declared aspect ratio, so the
+   only thing that changes across breakpoints is which part of the frame is
+   visible.
+
+   The photograph is never mirrored. Under `dir="rtl"` the grid reverses and
+   the column moves to the other side, but a photograph is a record of a real
+   moment: flipping it would put the screwdriver in the man's left hand and the
+   socket on the wrong wall. Direction-neutral by construction. */
 .heroVisual {
-  display: none;
   position: relative;
-  justify-content: center;
-  align-items: center;
-  min-height: 380px;
-}
-
-.heroField {
-  position: relative;
-  display: grid;
-  place-items: center;
+  /* Mobile gets its own composition rather than the desktop column squeezed:
+     a short landscape band under the copy, weighted to the subject. */
+  aspect-ratio: 16 / 10;
   width: 100%;
-  aspect-ratio: 1;
-  max-width: 460px;
-  color: var(--brand);
-  opacity: 0.14;
-  /* Fades at every edge so the mark dissolves into the canvas instead of
-     ending on a hard crop. */
-  mask-image: radial-gradient(circle at 50% 48%, #000 54%, transparent 88%);
-  -webkit-mask-image: radial-gradient(circle at 50% 48%, #000 54%, transparent 88%);
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  /* A token-derived ground, so the photograph never sits on a bare seam while
+     it decodes and never introduces a colour the design system does not own. */
+  background: var(--surface);
 }
 
-.heroField::before {
-  content: '';
-  position: absolute;
-  inset: -12%;
-  border-radius: 50%;
-  background: radial-gradient(
-    circle at 50% 45%,
-    color-mix(in srgb, var(--brand) 12%, transparent),
-    transparent 68%
-  );
-}
-
-.heroField svg {
-  position: relative;
+.heroPhoto {
   width: 100%;
-  height: auto;
+  height: 100%;
+  /* cover + a declared aspect ratio: fills the box, keeps its proportions,
+     cannot squash. */
+  object-fit: cover;
+  /* Narrow viewports show the right of the frame, where the work is. */
+  object-position: 72% center;
 }
 
 .eyebrow {
@@ -271,7 +264,14 @@
     grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
   }
   .heroVisual {
-    display: flex;
+    /* From here the column stands beside the copy and can afford a portrait-ish
+       box, so more of the room reads and the subject stops crowding the edge. */
+    aspect-ratio: 4 / 5;
+    height: 100%;
+    min-height: 420px;
+  }
+  .heroPhoto {
+    object-position: 62% center;
   }
 }
 
@@ -285,5 +285,24 @@
   }
   .legalGrid {
     grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Tablet and small laptop: the column is beside the copy but still wide, so a
+   gentler crop keeps both the subject and some of the room. */
+@media (min-width: 720px) and (max-width: 899px) {
+  .heroVisual {
+    aspect-ratio: 21 / 9;
+  }
+  .heroPhoto {
+    object-position: 68% center;
+  }
+}
+
+/* Wide desktop: the full frame reads comfortably, so the crop relaxes further
+   towards the centre and the negative space on the left does real work. */
+@media (min-width: 1280px) {
+  .heroPhoto {
+    object-position: 58% center;
   }
 }
