@@ -145,16 +145,26 @@ export function AuthProvider({ children }: PropsWithChildren) {
           // the token before any account shell is allowed to mount.
           const { data: verified, error: verificationError } = await client.auth.getUser();
           if (verificationError || !verified.user) {
-            await client.auth.signOut({ scope: 'local' }).catch(() => undefined);
+            // Not when a callback owns the session: signing out locally would
+            // delete the recovery session that arrived while this was in flight.
+            if (!callbackHandled.current) {
+              await client.auth.signOut({ scope: 'local' }).catch(() => undefined);
+            }
             verifiedSession = null;
           } else {
             verifiedSession = { ...verifiedSession, user: verified.user };
           }
         }
-        if (active) setSession(verifiedSession);
+        // A recovery or confirmation link may have established a session while
+        // this hydration was awaiting the network. That session is newer than
+        // anything read above, and writing the stale value over it is what made
+        // a valid reset link render as expired: the callback set status 'ready'
+        // and then this line put the session back to null, so the screen saw
+        // `ready` with no session and showed the invalid card.
+        if (active && !callbackHandled.current) setSession(verifiedSession);
       } catch (error) {
         sanitizeAuthError(error, 'session');
-        if (active) setSession(null);
+        if (active && !callbackHandled.current) setSession(null);
       } finally {
         hydratingInitialSession = false;
         if (active) setLoading(false);

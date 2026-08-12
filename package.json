@@ -68,7 +68,8 @@
     "test:web-auth": "node --no-warnings --experimental-strip-types scripts/web-auth-session.test.mts",
     "test:web-app": "node --no-warnings --experimental-strip-types scripts/web-app-surfaces.test.mts",
     "test:admin-console": "node --no-warnings --experimental-strip-types scripts/admin-console.test.mts",
-    "test:web-navigation": "node --no-warnings --experimental-strip-types scripts/web-navigation.test.mts"
+    "test:web-navigation": "node --no-warnings --experimental-strip-types scripts/web-navigation.test.mts",
+    "test:password-recovery": "node --no-warnings --experimental-strip-types scripts/password-recovery.test.mts"
   },
   "dependencies": {
     "@expo-google-fonts/cairo": "^0.4.2",

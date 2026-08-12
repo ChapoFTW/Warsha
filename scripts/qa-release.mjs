@@ -61,7 +61,7 @@ function validate() {
     'test:signup-legal-startup', 'test:signup-state', 'test:web-platform',
     'test:web-bilingual', 'test:identity-signin', 'test:rtl-direction', 'test:web-brand', 'test:brand-assets', 'test:web-auth', 'test:web-app', 'test:admin-console', 'test:web-navigation',
     'test:wps018', 'test:wps023', 'test:wps024',
-    'test:wps025', 'test:worker-auth', 'test:customer-email-confirmation',
+    'test:wps025', 'test:worker-auth', 'test:customer-email-confirmation', 'test:password-recovery',
   ]) npmScript(name);
   run(commands.npx, ['expo-doctor']);
   inPreviewEnvironment('node ./scripts/qa-release.mjs export-preview');
