@@ -569,4 +569,172 @@ for (const key of ['accountStatus_active', 'accountStatus_deleted',
   check(inBoth(key), `the console names "${key}" in both languages`);
 }
 
+// --- Vetting decisions and enforcement ------------------------------------
+//
+// The finding that shaped this: **there is no product role to grant.** A search
+// of every migration for a staff RPC that adds or removes Customer or Worker
+// access returns nothing, and that is the design rather than a gap. Customer
+// access is implied by having an account; worker access is
+// `private.worker_capability_active`, a verdict computed from the onboarding
+// state machine and the activation gates. So the governed way to give a worker
+// access is `activate` — a vetting decision — and the way to take it away is
+// `suspend`, `reject`, or an enforcement action.
+
+const decisions = readWeb('lib', 'console-decisions.ts');
+const decisionPanel = readWeb('components', 'vetting-decision.tsx');
+const enforcementPanel = readWeb('components', 'enforcement-action.tsx');
+const workerCase = readWeb('components', 'worker-case.tsx');
+
+check(!/create or replace function public\.staff_(grant|revoke|set)_product_role/.test(migrations),
+  'THERE IS NO PRODUCT-ROLE GRANT RPC IN THE DATABASE');
+check(/private\.worker_capability_active/.test(migrations),
+  'because worker access is a computed verdict');
+// Comments stripped: `console-decisions.ts` explains at length why no such RPC
+// exists, and naming the thing that must not be built is the documentation.
+check(!/staff_grant_product_role|staff_set_product_role|grant_customer_role/.test(
+  strip(decisions) + strip(decisionPanel) + strip(enforcementPanel) + strip(workerCase)),
+  'AND THE CONSOLE INVENTS NO SUCH THING');
+check(/productRolesFor/.test(readWeb('lib', 'account.ts')),
+  'the client still derives product roles from server state');
+
+// Capability follows the decision. Copied from the migration, asserted against it.
+const decisionFn = migrations.slice(migrations.indexOf('function public.staff_worker_vetting_decision'));
+for (const [decision, capability] of Object.entries({
+  approve: 'review_criminal_records',
+  activate: 'activate_worker',
+  reject: 'reject_worker_application',
+  suspend: 'reject_worker_application',
+  request_correction: 'review_worker_vetting',
+  start_identity_review: 'review_identity_verification',
+})) {
+  check(decisionFn.slice(0, 1600).includes(`when '${decision}' then '${capability}'`),
+    `the database maps ${decision} to ${capability}`);
+  check(new RegExp(`${decision}: '${capability}'`).test(decisions),
+    `AND THE CONSOLE USES THE SAME CAPABILITY FOR ${decision}`);
+}
+
+// Only legal transitions are offered.
+check(/worker_transition_allowed/.test(migrations),
+  'the database has a transition table');
+check(/STAFF_TRANSITIONS/.test(decisions),
+  'and the console mirrors the staff branch of it');
+check(/decisionsFrom/.test(decisionPanel),
+  'SO A DECISION THE STATE MACHINE WOULD REFUSE IS NEVER OFFERED');
+check(/criminal_record_under_review: \['approved'/.test(decisions),
+  'including the certificate-review branch, which is the fiddly one');
+
+// Adverse decisions demand evidence, and the number is the server's.
+check(/adverse decision requires recorded evidence/.test(migrations),
+  'the database refuses an adverse decision with no evidence');
+check(/coalesce\(p_private_note, ''\)\)\) < 10/.test(migrations),
+  'at fewer than ten characters');
+check(/EVIDENCE_MIN = 10/.test(decisions), 'AND THE CONSOLE USES TEN');
+check(/ADVERSE_DECISIONS[\s\S]{0,80}'reject', 'suspend'/.test(decisions),
+  'for exactly the two decisions the database calls adverse');
+check(/adverse \|\| evidenceValid/.test(decisionPanel),
+  'and will not submit without it');
+
+// Activation gates are shown, never judged.
+check(/Activation gates are not satisfied/.test(migrations),
+  'the database refuses activation when a gate fails');
+check(/'gates-unsatisfied'/.test(decisions) && /decisionGates/.test(decisionPanel),
+  'and the console explains that refusal rather than pre-empting it');
+check(!/gates\.every|allGatesPass/.test(strip(decisionPanel)),
+  'AND NEVER DECIDES FOR ITSELF WHETHER ACTIVATION WILL WORK');
+
+// Enforcement: the vocabulary is the table's check constraints, exactly.
+const enforcementTypes = migrations.slice(
+  migrations.indexOf('trust_enforcement_actions_type_check'),
+  migrations.indexOf('trust_enforcement_actions_reason_check'));
+for (const action of ['warning', 'temporary_restriction', 'investigation', 'suspension',
+  'permanent_ban', 'marketplace_removal', 'profile_hidden', 'payment_hold',
+  'withdrawal_hold', 'communication_restriction', 'review_restriction', 'restoration']) {
+  check(enforcementTypes.includes(`'${action}'`), `the table permits ${action}`);
+  check(decisions.includes(`'${action}'`), `and the console offers ${action}`);
+  check(inBoth(`enforcement_${action}`), `naming it in both languages`);
+}
+check(/'restoration'/.test(decisions),
+  'RESTORATION IS THE BACKEND\'S OWN REVERSAL, AND THE ONLY UNDO OFFERED');
+check(!/unban|un_ban|reverse_ban/i.test(strip(enforcementPanel) + strip(decisions)),
+  'so no inverse action the schema does not model is invented');
+
+// A permanent ban is a separate authority with two extra constraints.
+check(/when p_action_type = 'permanent_ban'\s*\n?\s*then 'approve_permanent_ban'/.test(migrations),
+  'a permanent ban needs approve_permanent_ban in the database');
+check(/action === 'permanent_ban' \? 'approve_permanent_ban'/.test(decisions),
+  'AND THE CONSOLE ASKS FOR THE SAME CAPABILITY');
+check(/consume_dual_control\('approve_permanent_ban'/.test(migrations),
+  'and consumes dual control');
+check(/enforcementDualControl/.test(enforcementPanel), 'which the console says up front');
+check(/action_type <> 'permanent_ban' or \(actor_kind = 'staff' and report_id is not null\)/.test(migrations),
+  'and must cite an investigated report');
+check(/permanentBanRequiresReport/.test(decisions) && /needsReport/.test(enforcementPanel),
+  'which the console requires before it will submit');
+check(/action_type <> 'permanent_ban' or expires_at is null/.test(migrations),
+  'and may never carry an expiry');
+check(/mayCarryExpiry/.test(decisions) && /canExpire \? \(/.test(enforcementPanel),
+  'SO THE EXPIRY FIELD IS NOT EVEN SHOWN FOR ONE');
+
+// Enforcement history is immutable, and the console says so before acting.
+check(/Enforcement history is immutable/.test(migrations),
+  'the database refuses to update an enforcement row');
+check(/enforcementImmutable/.test(enforcementPanel) && inBoth('enforcementImmutable'),
+  'AND THE CONSOLE WARNS THAT THE ACTION CANNOT BE UNDONE, IN BOTH LANGUAGES');
+
+// Bounds transcribed rather than chosen.
+check(/between 3 and 300/.test(migrations) && /PUBLIC_REASON_MAX = 300/.test(decisions),
+  'the public reason bound matches the table');
+check(/between 3 and 2000/.test(migrations) && /EVIDENCE_SUMMARY_MAX = 2000/.test(decisions),
+  'and the evidence bound');
+check(/not between 3 and 400/.test(migrations) && /SAFE_REASON_MAX = 400/.test(decisions),
+  'and the safe reason bound');
+
+// Idempotency on an action that cannot be undone.
+check(/unique \(idempotency_key\)/.test(migrations),
+  'the enforcement table is unique on its idempotency key');
+check(/p_idempotency_key: idempotencyKey/.test(enforcementPanel),
+  'AND THE CONSOLE ALWAYS SENDS ONE');
+check(/setIdempotencyKey\(newIdempotencyKey\(\)\)/.test(enforcementPanel),
+  'taking a fresh one only after the action is recorded');
+
+// Freshness: a reauth dialog only for a freshness refusal.
+for (const panel of [decisionPanel, enforcementPanel]) {
+  check(/refusal === 'reauth'/.test(panel),
+    'a re-authentication dialog opens ONLY for a freshness refusal');
+  check(/ReauthDialog/.test(panel), 'and it is the real one');
+}
+check(/'capability'/.test(decisions),
+  'a capability refusal is a different answer, because re-authenticating cannot fix it');
+
+// The pseudonymous reference is derived, never reversed.
+check(/encode\(pg_catalog\.sha256\(pg_catalog\.convert_to\(o\.user_id::text, 'UTF8'\)\), 'hex'\)/
+  .test(migrations), 'the server derives the subject reference by SHA-256');
+check(/subtle\.digest\('SHA-256'/.test(decisions),
+  'AND THE CONSOLE COMPUTES THE SAME HASH FROM A USER ID IT ALREADY HOLDS');
+check(/require_staff_capability\('review_worker_vetting'\)/.test(migrations),
+  'opening a case still demands the capability');
+check(/record_staff_audit\(\s*\n?\s*v_actor, 'review_worker_vetting', 'open_case'/.test(migrations),
+  'and still logs the access');
+
+// The OCR trail carries no confidence and no extracted value.
+// Asserted against the payload rather than the prose beside it: the
+// `extractionRuns` object is built from five fields, and neither a confidence
+// value nor an extracted value is one of them.
+const vettingDetailSql = fieldsOf('staff_worker_vetting_detail');
+const extractionBlock = vettingDetailSql.slice(vettingDetailSql.indexOf("'extractionRuns'"));
+check(!/confidence/i.test(extractionBlock.slice(0, 600)),
+  'THE VETTING DETAIL SENDS NO CONFIDENCE SCORE');
+check(!/'extractedValue'|'fields',/.test(extractionBlock.slice(0, 600)),
+  'and no extracted value, so a reviewer must read the document itself');
+check(!/confidence/i.test(strip(workerCase).replace(/caseOcrNote/g, '')),
+  'AND THE CONSOLE HAS NO CONFIDENCE FIELD TO RENDER');
+
+// Both languages for everything new.
+for (const key of ['decisionTitle', 'decisionImpact', 'decisionSafeReason',
+  'decisionEvidenceRequired', 'decisionGates', 'decisionReauth', 'decisionDualControl',
+  'enforcementTitle', 'enforcementEvidence', 'enforcementReport', 'caseTitle',
+  'caseOcrNote', 'decision_approve', 'decision_reject', 'decision_activate']) {
+  check(inBoth(key), `the console says "${key}" in both languages`);
+}
+
 console.log(`Admin console: ${checks} checks passed.`);

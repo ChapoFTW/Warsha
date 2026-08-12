@@ -4,6 +4,8 @@ import { useState } from 'react';
 
 import { AccountDetail } from '@/components/account-detail';
 import { Badge, Empty, Identifier, Timestamp } from '@/components/console-bits';
+import { EnforcementPanel } from '@/components/enforcement-action';
+import { WorkerCase } from '@/components/worker-case';
 import { ConsoleShell } from '@/components/console-shell';
 import { useStaff } from '@/components/staff-gate';
 import { appCopy, type AppWords } from '@/lib/app-copy';
@@ -205,6 +207,31 @@ export default function UsersPage() {
             locale={locale}
             session={session}
             onClose={() => setOpen(null)}
+            renderActions={(overview, reload) => {
+              // Every governed action needs the *account* id. A worker overview
+              // is keyed by provider id, and `userId` is the separate field the
+              // server returns for exactly this reason — the vetting decision
+              // and the enforcement record both act on the person, not on the
+              // provider profile.
+              const subjectUserId = overview.kind === 'customer'
+                ? overview.userId
+                : overview.userId;
+              if (!subjectUserId) return null;
+              return overview.kind === 'worker' ? (
+                <WorkerCase
+                  userId={subjectUserId}
+                  locale={locale}
+                  session={session}
+                  onChanged={reload}
+                />
+              ) : (
+                <EnforcementPanel
+                  subjectUserId={subjectUserId}
+                  locale={locale}
+                  onRecorded={reload}
+                />
+              );
+            }}
             onOpenAudit={(subjectId) => {
               // A full navigation rather than a router push: the audit page
               // reads its subject from the address on mount, and this is the

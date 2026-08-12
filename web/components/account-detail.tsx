@@ -51,7 +51,7 @@ export function AccountDetail({
   session,
   onClose,
   onOpenAudit,
-  children,
+  renderActions,
 }: {
   kind: 'customer' | 'worker';
   id: string;
@@ -61,7 +61,7 @@ export function AccountDetail({
   /** Hand the subject id to the audit explorer. */
   onOpenAudit?: (subjectId: string) => void;
   /** Governed actions are injected by the page, so this stays a reader. */
-  children?: (overview: AccountOverview, reload: () => Promise<void>) => React.ReactNode;
+  renderActions?: (overview: AccountOverview, reload: () => Promise<void>) => React.ReactNode;
 }) {
   const words = appCopy[locale] as Record<string, string>;
   const [overview, setOverview] = useState<AccountOverview | null>(null);
@@ -140,7 +140,7 @@ export function AccountDetail({
 
       {/* Governed actions belong to the page that knows the operator's
           capabilities and can run the reauthentication dialogue. */}
-      {children ? children(overview, load) : null}
+      {renderActions ? renderActions(overview, load) : null}
 
       {onOpenAudit ? (
         <div className={styles.actions}>
