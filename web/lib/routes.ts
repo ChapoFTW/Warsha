@@ -49,3 +49,6 @@ export function appHref(path: string): string {
 
 /** Where a public "Sign in" control sends somebody. */
 export const APP_SIGN_IN = appHref('/sign-in');
+
+/** Where a public "Create account" control sends somebody. */
+export const APP_CREATE_ACCOUNT = appHref('/create-account');

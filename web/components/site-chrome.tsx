@@ -5,7 +5,7 @@ import { AppearanceSwitch, LanguageSwitch } from '@/components/preference-contro
 import { SiteNav } from '@/components/site-nav';
 import { copy } from '@/lib/copy';
 import type { Locale } from '@/lib/preferences';
-import { APP_SIGN_IN, localeHref } from '@/lib/routes';
+import { APP_CREATE_ACCOUNT, APP_SIGN_IN, localeHref } from '@/lib/routes';
 
 import styles from './site-chrome.module.css';
 

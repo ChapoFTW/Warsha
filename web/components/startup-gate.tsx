@@ -30,7 +30,11 @@ import styles from './startup-gate.module.css';
  */
 
 /** Routes a signed-out visitor may reach on the application origin. */
-const PUBLIC_APP_ROUTES = ['/sign-in', '/account/unavailable'];
+// Creating an account is necessarily something a signed-out person does, so it
+// belongs here beside sign-in. Leaving it out made the route unreachable: the
+// gate bounced every anonymous visitor to /sign-in, which is the same class of
+// defect as the admin origin's missing signed-out entry.
+const PUBLIC_APP_ROUTES = ['/sign-in', '/create-account', '/account/unavailable'];
 
 function isPublicAppRoute(path: string): boolean {
   return PUBLIC_APP_ROUTES.some((route) => path === route || path.startsWith(`${route}/`));

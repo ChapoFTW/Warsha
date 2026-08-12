@@ -2,6 +2,17 @@
 
 import { classifySignInIdentity } from '@/src/auth/auth-identifier';
 
+import {
+  classifySignUpError,
+  emailAcceptable,
+  isCurrentSignupLegalManifest,
+  nameAcceptable,
+  normalizeEgyptianPhone,
+  passwordAcceptable,
+  phoneAcceptable,
+  type SignupLegalAcceptance,
+  type SignUpResult,
+} from './signup.ts';
 import { supabase } from './supabase.ts';
 
 /**
@@ -106,4 +117,61 @@ export async function signIn(identifier: string, password: string): Promise<Sign
 
 export async function signOut(): Promise<void> {
   await supabase().auth.signOut();
+}
+
+/**
+ * Create a customer account.
+ *
+ * The same `supabase.auth.signUp` call the app makes, with the same user
+ * metadata keys, so an account created in a browser is indistinguishable from
+ * one created on a phone — same `display_name`, `preferred_language`,
+ * `account_role` and `contact_phone`, read by the same triggers.
+ *
+ * Legal acceptance is verified against the shared manifest before the call and
+ * carried in the metadata; the database checks it again against its published
+ * register and remains authoritative.
+ *
+ * Worker registration is deliberately NOT here. It goes through the worker
+ * broker (`registerWorker`), which mints a session against a synthetic identity
+ * and is a server-side trust boundary — calling it from a browser bundle would
+ * move that boundary into the client.
+ */
+export async function signUpCustomer(input: {
+  name: string;
+  email: string;
+  password: string;
+  phone: string;
+  language: 'en' | 'ar';
+  acceptances: readonly SignupLegalAcceptance[];
+}): Promise<SignUpResult> {
+  if (!nameAcceptable(input.name)) return { ok: false, failure: 'invalid_name' };
+  if (!emailAcceptable(input.email)) return { ok: false, failure: 'invalid_email' };
+  if (!phoneAcceptable(input.phone)) return { ok: false, failure: 'invalid_phone' };
+  if (!passwordAcceptable(input.password)) return { ok: false, failure: 'weak_password' };
+  if (!isCurrentSignupLegalManifest('customer', input.language, input.acceptances)) {
+    return { ok: false, failure: 'legal_out_of_date' };
+  }
+
+  try {
+    const { data, error } = await supabase().auth.signUp({
+      email: input.email.trim(),
+      password: input.password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/confirm`,
+        data: {
+          display_name: input.name.trim(),
+          preferred_language: input.language,
+          account_role: 'customer',
+          contact_phone: normalizeEgyptianPhone(input.phone),
+          legal_acceptances: input.acceptances,
+        },
+      },
+    });
+    if (error) return { ok: false, failure: classifySignUpError(error.message) };
+    // A session means confirmation is disabled; otherwise the address must be
+    // confirmed before the account can be used.
+    return { ok: true, needsEmailConfirmation: !data.session };
+  } catch {
+    return { ok: false, failure: 'network' };
+  }
 }
