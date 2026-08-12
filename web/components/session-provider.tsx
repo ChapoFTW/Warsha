@@ -1,7 +1,7 @@
 'use client';
 
 import type { Session } from '@supabase/supabase-js';
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   emptyOnboardingState,
@@ -46,10 +46,13 @@ type SessionValue = {
 
 const SessionContext = createContext<SessionValue | null>(null);
 
-function readPreferredMode(): ProductMode | null {
+function readPreferredMode(userId: string): ProductMode | null {
   try {
-    const stored = window.localStorage.getItem(PREFERRED_MODE_KEY);
-    return isProductMode(stored) ? stored : null;
+    const stored = JSON.parse(window.sessionStorage.getItem(PREFERRED_MODE_KEY) ?? 'null') as {
+      userId?: unknown;
+      mode?: unknown;
+    } | null;
+    return stored?.userId === userId && isProductMode(stored.mode) ? stored.mode : null;
   } catch {
     return null;
   }
@@ -60,10 +63,11 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<OnboardingState | null>(null);
   const [authSettled, setAuthSettled] = useState(false);
   const [preferredMode, setPreferredMode] = useState<ProductMode | null>(null);
+  const accountGeneration = useRef(0);
 
-  const loadAccountState = useCallback(async (active: () => boolean) => {
+  const loadAccountState = useCallback(async (generation: number, active: () => boolean) => {
     const { data, error } = await supabase().rpc('get_my_onboarding_state');
-    if (!active()) return;
+    if (!active() || accountGeneration.current !== generation) return;
     if (error) {
       // A readable session with unreadable account state is not a product the
       // client may guess at. Treat it as unresolved rather than assume
@@ -77,8 +81,6 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let active = true;
     const isActive = () => active;
-    setPreferredMode(readPreferredMode());
-
     void (async () => {
       const client = supabase();
       try {
@@ -96,7 +98,9 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
 
         if (!active) return;
         setSession(verified);
-        if (verified) await loadAccountState(isActive);
+        setPreferredMode(verified ? readPreferredMode(verified.user.id) : null);
+        const generation = ++accountGeneration.current;
+        if (verified) await loadAccountState(generation, isActive);
       } catch {
         if (active) setSession(null);
       } finally {
@@ -106,13 +110,20 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
 
     const { data: subscription } = supabase().auth.onAuthStateChange((event, next) => {
       if (!active) return;
+      const generation = ++accountGeneration.current;
       setSession(next);
       if (!next) {
         setState(null);
+        setPreferredMode(null);
+        try { window.sessionStorage.removeItem(PREFERRED_MODE_KEY); } catch { /* optional storage */ }
         return;
       }
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        void loadAccountState(isActive);
+        // Never combine a new identity with the previous identity's product
+        // authority while the replacement account is hydrating.
+        setState(null);
+        setPreferredMode(readPreferredMode(next.user.id));
+        void loadAccountState(generation, isActive);
       }
     });
 
@@ -125,14 +136,17 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const chooseMode = useCallback((mode: ProductMode) => {
     setPreferredMode(mode);
     try {
-      window.localStorage.setItem(PREFERRED_MODE_KEY, mode);
+      if (session?.user.id) {
+        window.sessionStorage.setItem(PREFERRED_MODE_KEY, JSON.stringify({ userId: session.user.id, mode }));
+      }
     } catch {
-      // Choosing still works; it simply will not be remembered next visit.
+      // Choosing still works; it simply will not survive this page lifecycle.
     }
-  }, []);
+  }, [session?.user.id]);
 
   const refresh = useCallback(async () => {
-    await loadAccountState(() => true);
+    const generation = ++accountGeneration.current;
+    await loadAccountState(generation, () => true);
   }, [loadAccountState]);
 
   const value = useMemo<SessionValue>(() => ({

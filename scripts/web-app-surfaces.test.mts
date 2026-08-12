@@ -151,6 +151,12 @@ const addresses = readWeb('app', 'app', 'addresses', 'page.tsx');
 const jobs = readWeb('app', 'app', 'jobs', 'page.tsx');
 const account = readWeb('app', 'app', 'account', 'page.tsx');
 const location = readWeb('lib', 'location.ts');
+const worker = readWeb('lib', 'worker.ts');
+const workerOnboarding = readWeb('app', 'app', 'worker', 'onboarding', 'page.tsx');
+const workerProfile = readWeb('app', 'app', 'worker', 'profile', 'page.tsx');
+const workerOpportunities = readWeb('app', 'app', 'worker', 'opportunities', 'page.tsx');
+const workerJobs = readWeb('app', 'app', 'worker', 'jobs', 'page.tsx');
+const workerEarnings = readWeb('app', 'app', 'worker', 'earnings', 'page.tsx');
 
 for (const rpc of ['get_marketplace_catalog_v2', 'get_discovery_home', 'search_providers']) {
   check(new RegExp(`rpc\\('${rpc}'`).test(discovery),
@@ -183,6 +189,50 @@ check(/select\('display_name,phone'\)/.test(account) && !/\.email|user\.email/.t
   'THE ACCOUNT PAGE SHOWS CONTACT PROFILE DATA, NEVER THE AUTH IDENTITY EMAIL');
 check(/parseCategories|parseServices|parseProviderSearch|parseBookings/.test(customer),
   'governed customer payloads have typed fail-closed parsers');
+
+// --- Worker web follows the same authorities as mobile ---------------------
+check(/workerJourneyProgress/.test(workerOnboarding)
+    && /accept_my_worker_agreements/.test(workerOnboarding),
+  'worker onboarding consumes the shared journey policy and agreement authority');
+check(/WorkerProfileEditor/.test(workerOnboarding)
+    && /WorkerLocation/.test(workerOnboarding),
+  'worker onboarding has browser continuations for profile, trade, area and private location');
+const workerLocation = readWeb('components', 'worker-location.tsx');
+const workerLocationCode = strip(workerLocation);
+check(/confirm_my_service_address/.test(workerLocationCode)
+    && /p_floor: null/.test(workerLocationCode)
+    && /p_apartment: null/.test(workerLocationCode)
+    && /p_landmark: null/.test(workerLocationCode)
+    && /p_service_notes: null/.test(workerLocationCode)
+    && !/addressFloor|addressApartment|addressLandmark|addressServiceNotes/.test(workerLocationCode),
+  'WORKER LOCATION STORES INTERNAL COORDINATES WITHOUT CUSTOMER DESTINATION FIELDS');
+for (const rpc of ['get_worker_quote_invitations', 'submit_worker_quote',
+  'revise_worker_quote', 'withdraw_worker_quote', 'confirm_selected_quote']) {
+  check(new RegExp(`rpc\\('${rpc}'`).test(workerOpportunities),
+    `worker opportunities consume ${rpc}`);
+}
+for (const rpc of ['accept_provider_booking', 'reject_provider_booking',
+  'propose_provider_reschedule', 'advance_provider_booking_status', 'report_provider_no_show']) {
+  check(new RegExp(`rpc\\('${rpc}'`).test(workerJobs),
+    `worker jobs consume ${rpc}`);
+}
+check(/\.eq\('provider_id', providerId\)/.test(workerJobs),
+  'worker jobs are narrowed to the owner profile in addition to booking RLS');
+for (const rpc of ['get_my_provider_earnings', 'get_my_payout_destinations',
+  'save_my_payout_destination', 'request_provider_withdrawal']) {
+  check(new RegExp(`rpc\\('${rpc}'`).test(workerEarnings),
+    `worker earnings consume ${rpc}`);
+}
+check(/withdrawalsEnabled/.test(workerEarnings),
+  'payout actions render only when the server capability enables them');
+check(/mark_worker_available/.test(workerProfile)
+    && /WorkerProfileEditor/.test(workerProfile),
+  'the worker profile owns availability and foundation editing');
+check(/parseWorkerProfile|parseInvitations|parseWorkerBookings|parseEarnings/.test(worker),
+  'worker RPC payloads have typed fail-closed parsers');
+check(/sessionStorage\.getItem\(PREFERRED_MODE_KEY\)/.test(readWeb('components', 'session-provider.tsx'))
+    && /userId: session\.user\.id/.test(readWeb('components', 'session-provider.tsx')),
+  'a worker customer-mode choice is session- and identity-scoped, so cold start returns to worker home');
 
 // --- Direction and theme ------------------------------------------------------
 const locale = readWeb('lib', 'use-app-locale.ts');

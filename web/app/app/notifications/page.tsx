@@ -46,7 +46,12 @@ export default function NotificationsPage() {
 
   // The mode this account may actually read. A worker-only account has no
   // customer notifications, and asking for them is refused server-side.
-  const mode = account?.roles.worker && !account?.roles.customer ? 'worker' : 'customer';
+  // Every account is customer-capable, so product roles cannot identify the
+  // currently selected experience. The resolved route target can: it remains
+  // worker during onboarding and becomes customer only after an explicit mode
+  // choice.
+  const mode = account?.target === 'worker_home' || account?.target === 'worker_onboarding'
+    ? 'worker' : 'customer';
 
   const [items, setItems] = useState<WebNotification[] | null>(null);
   const [cursor, setCursor] = useState<NotificationCursor>(null);

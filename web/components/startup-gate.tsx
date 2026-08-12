@@ -97,13 +97,29 @@ export function StartupGate({ children }: { children: React.ReactNode }) {
     const home = webHomeFor(resolution.target);
     // A signed-in account sitting on sign-in is sent onward; that is what
     // makes signing in land in the right place without the form knowing where.
-    if (isPublicAppRoute(path) || path === '/choose-mode') {
+    if (isPublicAppRoute(path)) {
       status = 'redirecting';
       redirect = home;
+    } else if (path === '/choose-mode') {
+      status = resolution.roles.both ? 'render' : 'redirecting';
+      redirect = status === 'redirecting' ? home : null;
     } else if (resolution.target === 'account_blocked' && path !== '/account/unavailable') {
       status = 'redirecting';
       redirect = '/account/unavailable';
-    } else if (resolution.target === 'worker_onboarding' && !path.startsWith('/worker')) {
+    } else if (resolution.target === 'worker_onboarding'
+        && path !== '/worker/onboarding'
+        && !path.startsWith('/worker/verification')
+        && path !== '/notifications'
+        && path !== '/support') {
+      status = 'redirecting';
+      redirect = home;
+    } else if (resolution.target === 'customer_home' && path.startsWith('/worker')) {
+      status = 'redirecting';
+      redirect = home;
+    } else if (resolution.target === 'worker_home'
+        && !path.startsWith('/worker')
+        && path !== '/notifications'
+        && path !== '/support') {
       status = 'redirecting';
       redirect = home;
     } else if (path === '/' && home !== '/') {

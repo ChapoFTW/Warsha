@@ -28,6 +28,10 @@ export function customerNav(words: Record<string, string>): NavLink[] {
 export function workerNav(words: Record<string, string>): NavLink[] {
   return [
     { href: '/worker', label: words.navHome },
+    { href: '/worker/opportunities', label: words.navOpportunities },
+    { href: '/worker/jobs', label: words.navJobs },
+    { href: '/worker/earnings', label: words.navEarnings },
+    { href: '/worker/profile', label: words.navProfile },
     { href: '/worker/verification', label: words.navVerification },
     { href: '/notifications', label: words.navNotifications },
     { href: '/support', label: words.navSupport },

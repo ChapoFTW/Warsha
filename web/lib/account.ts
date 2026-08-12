@@ -26,7 +26,7 @@ export type AccountResolution =
   | { status: 'signed_out' }
   /** Signed in, product surface known. */
   | { status: 'resolved'; target: RouteTarget; state: OnboardingState; roles: ProductRoles }
-  /** Signed in and dual-capable with no recorded preference. */
+  /** Compatibility shape for an explicit chooser during hydration. */
   | { status: 'choose_mode'; state: OnboardingState; roles: ProductRoles };
 
 export type ProductRoles = {
@@ -55,10 +55,9 @@ export function productRolesFor(state: OnboardingState): ProductRoles {
 /**
  * Resolve where a signed-in account belongs.
  *
- * A dual-capable account with a recorded preference goes straight there. One
- * without is asked — after authentication, never before. Asking before is the
- * mistake the sign-in screens used to make: it required somebody to classify
- * an account the server had already classified.
+ * A worker starts in the canonical worker experience. Customer mode is an
+ * explicit, session-scoped choice; the absence of a choice is never permission
+ * to route a worker into customer Home or interrupt every cold start.
  */
 export function resolveAccount(input: {
   authSettled: boolean;
@@ -73,14 +72,10 @@ export function resolveAccount(input: {
   const roles = productRolesFor(input.state);
   const target = routeFor(input.state, true);
 
-  // Only a genuinely dual-capable account has a choice to make, and only when
-  // it has no recorded preference. A worker still in onboarding has one
-  // obvious next step and is not asked to pick.
+  // A worker still in onboarding has one obvious next step. An active worker
+  // also has a canonical home; customer mode exists only when explicitly
+  // selected for this browser session.
   const dualCapable = roles.both && target === 'worker_home';
-  if (dualCapable && input.preferredMode === null) {
-    return { status: 'choose_mode', state: input.state, roles };
-  }
-
   if (dualCapable && input.preferredMode === 'customer') {
     return { status: 'resolved', target: 'customer_home', state: input.state, roles };
   }

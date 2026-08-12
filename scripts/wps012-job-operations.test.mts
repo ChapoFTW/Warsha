@@ -17,7 +17,8 @@ const repository=read('src/job-operations/job-operation-repository.ts');
 const panel=read('components/warsha/JobOperationsPanel.tsx');
 const translations=read('src/job-operations/job-operation-translations.ts');
 const chat=read('src/chat/chat-translations.ts');
-const notifications=read('src/notifications/notification-translations.ts');
+const notifications=read('src/notifications/notification-translations.ts')
+  + read('src/notifications/notification-copy.ts');
 const providerScreen=read('app/provider-job/[id].tsx');
 const customerScreen=read('app/booking/[id].tsx');
 const realtime=read('src/realtime/realtime-service.ts');

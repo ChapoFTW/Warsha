@@ -123,8 +123,8 @@ check(customerResolved.status === 'resolved' && customerResolved.target === 'cus
 const dualNoPreference = resolveAccount({
   authSettled: true, signedIn: true, state: workerActive, preferredMode: null,
 });
-equal(dualNoPreference.status, 'choose_mode',
-  'A DUAL-CAPABLE ACCOUNT WITH NO PREFERENCE IS ASKED, AFTER AUTHENTICATION');
+check(dualNoPreference.status === 'resolved' && dualNoPreference.target === 'worker_home',
+  'AN ACTIVE WORKER WITH NO SESSION CHOICE RETURNS TO THE CANONICAL WORKER HOME');
 
 const dualPrefersCustomer = resolveAccount({
   authSettled: true, signedIn: true, state: workerActive, preferredMode: 'customer',
@@ -167,6 +167,16 @@ equal(webHomeFor('gateway'), '/sign-in', 'no session lands on sign-in');
 // --- Preference storage --------------------------------------------------------
 check(PREFERRED_MODE_KEY.startsWith('warsha:'),
   'the product-mode preference uses the Warsha key namespace');
+check(/sessionStorage\.getItem\(PREFERRED_MODE_KEY\)/.test(provider)
+    && /JSON\.stringify\(\{ userId: session\.user\.id, mode \}\)/.test(provider),
+  'CUSTOMER MODE FOR A WORKER IS SESSION- AND IDENTITY-SCOPED AND DOES NOT SURVIVE A COLD START');
+check(/setState\(null\)[\s\S]{0,180}setPreferredMode\(readPreferredMode\(next\.user\.id\)\)/.test(provider),
+  'A NEW AUTH IDENTITY CANNOT RENDER WITH THE PREVIOUS IDENTITY ACCOUNT STATE OR MODE');
+check(/accountGeneration\.current !== generation/.test(provider)
+    && /const generation = \+\+accountGeneration\.current/.test(provider),
+  'A STALE ACCOUNT HYDRATION RESPONSE CANNOT OVERWRITE THE CURRENT AUTH IDENTITY');
+check(/sessionStorage\.removeItem\(PREFERRED_MODE_KEY\)/.test(provider),
+  'sign-out clears the session-scoped product mode before the next sign-in');
 check(isProductMode('customer') && isProductMode('worker') && !isProductMode('admin'),
   'only real product modes are accepted');
 check(!/admin|staff/i.test(account),

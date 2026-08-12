@@ -52,7 +52,8 @@ export default function SupportPage() {
   const locale = useAppLocale();
   const words = appCopy[locale] as Record<string, string>;
   const account = useAccount();
-  const mode = account?.roles.worker && !account?.roles.customer ? 'worker' : 'customer';
+  const mode = account?.target === 'worker_home' || account?.target === 'worker_onboarding'
+    ? 'worker' : 'customer';
 
   const [cases, setCases] = useState<SupportCaseSummary[] | null>(null);
   const [openCase, setOpenCase] = useState<SupportCaseDetail | null>(null);

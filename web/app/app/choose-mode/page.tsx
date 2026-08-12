@@ -14,13 +14,13 @@ import styles from './page.module.css';
 /**
  * The dual-role chooser — shown **after** authentication, never before.
  *
- * Only an account the server says is genuinely dual-capable reaches this page,
- * and only when it has no recorded preference. Asking before sign-in was the
+ * Only an account the server says is genuinely dual-capable reaches this page.
+ * Asking before sign-in was the
  * old mistake: it required somebody to classify an account Warsha had already
  * classified, and rejected them when they guessed differently from the record.
  *
- * The choice is remembered, so this is asked once rather than every visit, and
- * it is reversible from the shell.
+ * The choice lasts for this browser session. A fresh launch returns an active
+ * worker to the canonical worker home, matching the mobile experience policy.
  */
 export default function ChooseModePage() {
   const locale = useAppLocale();
