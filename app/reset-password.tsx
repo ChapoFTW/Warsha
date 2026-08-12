@@ -10,11 +10,9 @@ import { radii, spacing, typography, type ThemeColors } from '@/constants/theme'
 import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
 import { useAuth } from '@/src/auth/auth-context';
 import { authMessageKey, sanitizeAuthError } from '@/src/auth/auth-errors';
+import { passwordRequirements } from '@/src/auth/password-policy';
 import { useLocalization } from '@/src/i18n/localization';
-import type { TranslationKey } from '@/src/i18n/translations';
 import { getSupabaseClient } from '@/src/lib/supabase';
-
-type Requirement = { key: TranslationKey; met: boolean };
 
 export default function ResetPasswordScreen() {
   const colors = useThemeColors();
@@ -29,12 +27,10 @@ export default function ResetPasswordScreen() {
   const [success, setSuccess] = useState(false);
   const [message, setMessage] = useState('');
 
-  const requirements = useMemo<Requirement[]>(() => [
-    { key: 'passwordLengthRequirement', met: password.length >= 8 },
-    { key: 'passwordUppercaseRequirement', met: /[A-Z]/.test(password) },
-    { key: 'passwordLowercaseRequirement', met: /[a-z]/.test(password) },
-    { key: 'passwordNumberRequirement', met: /\d/.test(password) },
-  ], [password]);
+  // The rules live in `src/auth/password-policy.ts` so the web asks for the
+  // same password this screen will demand. The keys are translation keys, so
+  // the list below is both the check and the explanation.
+  const requirements = useMemo(() => passwordRequirements(password), [password]);
   const passwordValid = requirements.every((requirement) => requirement.met);
   const passwordsMatch = password === confirmation && confirmation.length > 0;
 

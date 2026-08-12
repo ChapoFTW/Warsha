@@ -34,10 +34,38 @@ import styles from './startup-gate.module.css';
 // belongs here beside sign-in. Leaving it out made the route unreachable: the
 // gate bounced every anonymous visitor to /sign-in, which is the same class of
 // defect as the admin origin's missing signed-out entry.
-const PUBLIC_APP_ROUTES = ['/sign-in', '/create-account', '/account/unavailable'];
+const PUBLIC_APP_ROUTES = ['/sign-in', '/create-account', '/forgot-password', '/account/unavailable'];
+
+/**
+ * Routes the gate must never move anybody off, signed in or out.
+ *
+ * These own a session's lifecycle rather than consuming one, so the ordinary
+ * question — "does this account belong on this page?" — is the wrong question
+ * to ask about them.
+ *
+ * `/reset-password` is the one that matters. A recovery link *establishes a
+ * session*, so by the time this gate resolves, the visitor looks like an
+ * ordinary signed-in account and would be sent to their home page — bouncing
+ * them out of the password form the link existed to open. That is precisely the
+ * failure that made valid reset links look expired on mobile, and it must not
+ * be rebuilt here in a different shape.
+ *
+ * The page itself, not this gate, decides whether the visitor actually arrived
+ * with a recovery grant; somebody who simply types the path is shown the
+ * invalid-link card.
+ */
+const CALLBACK_APP_ROUTES = ['/reset-password', '/auth/confirm', '/sign-out'];
+
+function matches(routes: readonly string[], path: string): boolean {
+  return routes.some((route) => path === route || path.startsWith(`${route}/`));
+}
 
 function isPublicAppRoute(path: string): boolean {
-  return PUBLIC_APP_ROUTES.some((route) => path === route || path.startsWith(`${route}/`));
+  return matches(PUBLIC_APP_ROUTES, path);
+}
+
+function isCallbackAppRoute(path: string): boolean {
+  return matches(CALLBACK_APP_ROUTES, path);
 }
 
 export function StartupGate({ children }: { children: React.ReactNode }) {
@@ -52,7 +80,12 @@ export function StartupGate({ children }: { children: React.ReactNode }) {
   let redirect: string | null = null;
   let status: 'loading' | 'redirecting' | 'render' = 'loading';
 
-  if (resolution.status === 'loading') {
+  if (isCallbackAppRoute(path)) {
+    // Checked before the resolution is even consulted, including while it is
+    // still loading: these pages must paint immediately, because the thing they
+    // are waiting for is the very session the gate is waiting for.
+    status = 'render';
+  } else if (resolution.status === 'loading') {
     status = 'loading';
   } else if (resolution.status === 'signed_out') {
     status = isPublicAppRoute(path) ? 'render' : 'redirecting';

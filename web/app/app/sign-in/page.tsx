@@ -111,9 +111,17 @@ export default function SignInPage() {
           </button>
         </form>
 
+        {/* Both destinations are on this origin. The link out to the marketing
+            site's explainer was correct only while the real signup did not
+            exist; sending somebody to another origin to read about creating an
+            account, when they can create one here, is a detour. */}
+        <p className={styles.foot}>
+          <a className={styles.link} href="/forgot-password">{words.forgotPassword}</a>
+        </p>
+
         <p className={styles.foot}>
           {words.noAccount}{' '}
-          <a className={styles.link} href="https://usewarsha.com/create-account">
+          <a className={styles.link} href="/create-account">
             {words.createOne}
           </a>
         </p>

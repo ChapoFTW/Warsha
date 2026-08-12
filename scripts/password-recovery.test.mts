@@ -166,4 +166,125 @@ check(/finishPasswordRecovery[\s\S]{0,400}signOut\(\{ scope: 'global' \}\)/.test
 check(/verifyOtp\(\{ phone: normalized/.test(authContext),
   'worker phone verification is unchanged');
 
+// ---------------------------------------------------------------------------
+// The same journey in a browser
+// ---------------------------------------------------------------------------
+//
+// Web recovery is a second implementation of the same product rule, and the
+// value of these checks is that it is not allowed to become a second *model*.
+// The parser, the policy and the finishing behaviour are the mobile ones; only
+// the delivery differs, because a browser has no deep link.
+
+const callback = read('web/lib/auth-callback.ts');
+const webActions = read('web/lib/auth-actions.ts');
+const webReset = read('web/app/app/reset-password/page.tsx');
+const webForgot = read('web/app/app/forgot-password/page.tsx');
+const webConfirm = read('web/app/app/auth/confirm/page.tsx');
+const gate = read('web/components/startup-gate.tsx');
+const policy = read('src/auth/password-policy.ts');
+const appCopySource = read('web/lib/app-copy.ts');
+
+/** Present in BOTH language blocks, not only English. */
+function webCopyHas(key: string): boolean {
+  return appCopySource.split(`${key}:`).length === 3;
+}
+
+/**
+ * Comments removed before a leak check.
+ *
+ * These rules are about what a function *returns*. A comment explaining why it
+ * must not reveal whether an address exists is not itself a reveal — the first
+ * version of these checks failed on its own guard-rail prose, which is a false
+ * positive worth designing out rather than wording around.
+ */
+const stripComments = (source: string) =>
+  source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+
+// The gate exemption is the whole reason web recovery works. A recovery link
+// establishes a session, so without it the account resolves and the visitor is
+// routed to their home page — the browser shape of the mobile race above.
+check(/CALLBACK_APP_ROUTES/.test(gate),
+  'THE STARTUP GATE KNOWS ABOUT CALLBACK ROUTES');
+check(/CALLBACK_APP_ROUTES\s*=\s*\[[^\]]*'\/reset-password'/.test(gate),
+  'AND /reset-password IS ONE, SO A RECOVERY SESSION CANNOT REDIRECT THE FORM AWAY');
+check(/CALLBACK_APP_ROUTES\s*=\s*\[[^\]]*'\/auth\/confirm'/.test(gate),
+  'as is /auth/confirm, so a confirmed account is told so rather than routed off');
+check(gate.indexOf('isCallbackAppRoute(path)') < gate.indexOf("resolution.status === 'loading'"),
+  'and the exemption is tested BEFORE the resolution, including while it is loading');
+
+// The URL has to be read before supabase-js consumes it and calls replaceState.
+check(/typeof window === 'undefined' \? null : window\.location\.href/.test(callback),
+  'THE CALLBACK URL IS SNAPSHOTTED AT MODULE SCOPE, BEFORE ANY EFFECT RUNS');
+check(/readAuthCallbackParameters/.test(callback),
+  'and parsed with the mobile parser rather than a second one');
+check(!/console\.(log|info|warn|error)/.test(callback),
+  'and nothing about the link is logged');
+check(!/localStorage|sessionStorage|document\.cookie/.test(callback),
+  'and the snapshot is never written to storage');
+
+// Arriving without a callback is not a grant. This is the mobile screen's
+// `recoveryStatus !== 'ready'` rule, expressed in what a browser can observe.
+check(/arrived\.kind !== 'recovery' \|\| arrived\.refused/.test(webReset),
+  'A VISITOR WHO SIMPLY TYPES /reset-password SEES THE INVALID CARD, NOT THE FORM');
+check(/getSession\(\)/.test(webReset),
+  'and readiness is decided by awaiting the session, which awaits URL exchange');
+
+// One password policy, read by both surfaces.
+check(/PASSWORD_MIN_LENGTH = 8/.test(policy),
+  'THERE IS ONE PASSWORD POLICY MODULE');
+check(/from '@\/src\/auth\/password-policy'/.test(resetScreen),
+  'the mobile reset screen reads it');
+check(/password-policy/.test(webReset),
+  'and so does the web reset form');
+check(/password-policy/.test(webActions),
+  'and the web action that performs the update');
+check(!/\/\[A-Z\]\/\.test\(password\)/.test(resetScreen),
+  'so the mobile screen no longer carries its own copy of the rules');
+for (const rule of ['passwordLengthRequirement', 'passwordUppercaseRequirement',
+  'passwordLowercaseRequirement', 'passwordNumberRequirement']) {
+  check(policy.includes(rule), `the policy still states ${rule}`);
+  check(webCopyHas(rule), `and the web says it in both languages: ${rule}`);
+}
+
+// Anti-enumeration, again, in the browser.
+const webRequest = stripComments(webActions.slice(
+  webActions.indexOf('export async function requestPasswordReset'),
+  webActions.indexOf('export async function updatePassword'),
+));
+check(!/user.*not.*found|no.*such.*account|USER_NOT_FOUND|does not exist/i.test(webRequest),
+  'THE WEB RESET REQUEST REVEALS NOTHING ABOUT WHETHER THE ADDRESS EXISTS');
+check(/failure: 'server'/.test(webRequest),
+  'and collapses every non-transport refusal into one indistinguishable answer');
+check(webCopyHas('forgotSentBody'),
+  'and the screen it shows is worded to be true either way, in both languages');
+check(/If that address has a Warsha account/.test(appCopySource),
+  'saying "if that address has an account" rather than confirming that it does');
+
+// Finishing must revoke everything, exactly as the app does.
+check(/finishPasswordRecovery[\s\S]{0,400}signOut\(\{ scope: 'global' \}\)/.test(webActions),
+  'FINISHING A WEB RESET SIGNS OUT GLOBALLY TOO');
+check(/finishPasswordRecovery\(\)/.test(webReset),
+  'and the page actually calls it before reporting success');
+
+// The redirect target is this origin's own route. Web recovery must not borrow
+// the native deep link, and must not require native configuration to change.
+check(/redirectTo: `\$\{window\.location\.origin\}\/reset-password`/.test(webActions),
+  'THE WEB ASKS FOR A LINK BACK TO ITS OWN ORIGIN, NOT THE APP SCHEME');
+check(!/warsha:\/\//.test(stripComments(webActions)),
+  'and never builds the native scheme');
+
+// The route the signup email already named must exist.
+check(/emailRedirectTo: `\$\{window\.location\.origin\}\/auth\/confirm`/.test(webActions),
+  'signup still sends people to /auth/confirm');
+check(webConfirm.length > 0, 'AND THAT ROUTE NOW EXISTS');
+check(/arrivedBy/.test(webConfirm), 'and it reads the same callback snapshot');
+
+// Forgot-password must be reachable while signed out, or it is decoration.
+check(/PUBLIC_APP_ROUTES\s*=\s*\[[^\]]*'\/forgot-password'/.test(gate),
+  'FORGOT-PASSWORD IS REACHABLE WHILE SIGNED OUT');
+check(/href="\/forgot-password"/.test(read('web/app/app/sign-in/page.tsx')),
+  'and sign-in links to it, which is the only way anybody finds it');
+check(/forgotWorkerNote/.test(webForgot),
+  'and a worker is told plainly that a phone account has no address to email');
+
 console.log(`Password recovery: ${checks} checks passed.`);

@@ -1,6 +1,7 @@
 'use client';
 
 import { classifySignInIdentity } from '@/src/auth/auth-identifier';
+import { passwordMeetsPolicy } from '@/src/auth/password-policy';
 
 import {
   classifySignUpError,
@@ -117,6 +118,96 @@ export async function signIn(identifier: string, password: string): Promise<Sign
 
 export async function signOut(): Promise<void> {
   await supabase().auth.signOut();
+}
+
+/**
+ * Ask Auth to email a recovery link.
+ *
+ * **This never reports whether the address has an account**, and the absence of
+ * that answer is the feature. Supabase deliberately succeeds for an unknown
+ * address, and the caller is told the same thing either way, so the form cannot
+ * be used to discover who is registered. Only transport and rate-limit
+ * failures — facts about this request rather than about that person — are
+ * distinguishable.
+ *
+ * The link is sent back to this origin. `app.usewarsha.com` requests a link to
+ * `app.usewarsha.com/reset-password`; the app requests a `warsha://` link to
+ * its own screen. Neither borrows the other's redirect, which is what lets web
+ * recovery work without touching native configuration.
+ */
+export type ResetRequestFailure = 'invalid_email' | 'rate_limited' | 'network' | 'server';
+
+export type ResetRequestResult =
+  | { ok: true }
+  | { ok: false; failure: ResetRequestFailure };
+
+export async function requestPasswordReset(email: string): Promise<ResetRequestResult> {
+  if (!emailAcceptable(email)) return { ok: false, failure: 'invalid_email' };
+  try {
+    const { error } = await supabase().auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (!error) return { ok: true };
+    const status = (error as { status?: number }).status ?? 0;
+    if (status === 429) return { ok: false, failure: 'rate_limited' };
+    if (status === 0) return { ok: false, failure: 'network' };
+    // Anything else is ours, not theirs. In particular a 4xx about the address
+    // is not surfaced as "no such account" — see above.
+    return { ok: false, failure: 'server' };
+  } catch {
+    return { ok: false, failure: 'network' };
+  }
+}
+
+/**
+ * Set a new password on the session a recovery link established.
+ *
+ * `updateUser` is the same call `app/reset-password.tsx` makes, against the
+ * same Auth. The policy check in front of it reads
+ * `src/auth/password-policy.ts`, so the browser asks for exactly the password
+ * the app would.
+ */
+export type PasswordUpdateFailure =
+  | 'weak_password'
+  | 'same_password'
+  | 'session_expired'
+  | 'rate_limited'
+  | 'network'
+  | 'server';
+
+export type PasswordUpdateResult =
+  | { ok: true }
+  | { ok: false; failure: PasswordUpdateFailure };
+
+export async function updatePassword(password: string): Promise<PasswordUpdateResult> {
+  if (!passwordMeetsPolicy(password)) return { ok: false, failure: 'weak_password' };
+  try {
+    const { error } = await supabase().auth.updateUser({ password });
+    if (!error) return { ok: true };
+    const status = (error as { status?: number }).status ?? 0;
+    const code = (error as { code?: string }).code ?? '';
+    if (code === 'same_password') return { ok: false, failure: 'same_password' };
+    if (code === 'weak_password') return { ok: false, failure: 'weak_password' };
+    if (status === 401 || status === 403) return { ok: false, failure: 'session_expired' };
+    if (status === 429) return { ok: false, failure: 'rate_limited' };
+    if (status === 0) return { ok: false, failure: 'network' };
+    return { ok: false, failure: 'server' };
+  } catch {
+    return { ok: false, failure: 'network' };
+  }
+}
+
+/**
+ * Close the recovery session once the password has been changed.
+ *
+ * Global scope, deliberately, and for the same reason the app does it: a
+ * password reset is what somebody does when they believe their account is
+ * compromised, so every other session that password could have opened is
+ * revoked. Signing in again with the new password is the point, not an
+ * inconvenience.
+ */
+export async function finishPasswordRecovery(): Promise<void> {
+  await supabase().auth.signOut({ scope: 'global' }).catch(() => undefined);
 }
 
 /**

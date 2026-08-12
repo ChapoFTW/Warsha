@@ -1,0 +1,212 @@
+/* The shell every account-entry screen sits in.
+   Deliberately the same measurements as sign-in: somebody moving between
+   signing in, asking for a reset and setting a new password should not feel the
+   page change underneath them. */
+
+.page {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: clamp(16px, 4vw, 40px);
+  background: var(--canvas);
+  position: relative;
+}
+
+.controls {
+  position: absolute;
+  top: clamp(12px, 3vw, 24px);
+  inset-inline-end: clamp(12px, 3vw, 24px);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.panel {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.title {
+  margin-top: 10px;
+  font-size: clamp(24px, 4vw, 30px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.lead {
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--text-secondary);
+}
+
+.form { margin-top: 8px; display: grid; gap: 14px; }
+
+.field { display: grid; gap: 6px; }
+
+.label {
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* Addresses and passwords read left-to-right in every language, so `dir="ltr"`
+   goes on the input and the label around it stays in the reader's direction. */
+.input {
+  font: inherit;
+  font-size: 16px;
+  color: var(--text-primary);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  min-height: 48px;
+  width: 100%;
+}
+
+.input:focus-visible { border-color: var(--text-muted); }
+.input:disabled { opacity: 0.6; }
+
+/* An LTR island.
+   The input is `dir="ltr"` because a password reads left-to-right in every
+   language, so its text begins at the physical left even on an Arabic page. The
+   reveal control has to end up at the other end of *that* text, not at the end
+   of the paragraph direction — when it followed the document it landed on the
+   left in Arabic and sat directly on top of the characters being typed.
+   Declaring the wrapper LTR makes the logical properties below resolve against
+   the field's own direction, which is the direction that matters here. */
+.secretField { position: relative; display: block; direction: ltr; }
+.secretField .input { padding-inline-end: 72px; }
+
+.reveal {
+  position: absolute;
+  inset-inline-end: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  appearance: none;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 8px;
+  min-height: 36px;
+}
+
+.reveal:hover { color: var(--text-primary); }
+
+.submit {
+  appearance: none;
+  border: 0;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--brand-ink);
+  background: var(--brand);
+  border-radius: var(--radius-sm);
+  padding: 14px 20px;
+  min-height: 50px;
+  cursor: pointer;
+  text-align: center;
+  text-decoration: none;
+  display: block;
+}
+
+.submit:disabled { opacity: 0.45; cursor: not-allowed; }
+.submit:not(:disabled):hover { filter: brightness(1.08); }
+
+.error {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-primary);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-inline-start: 3px solid var(--brand);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+}
+
+.foot { margin-top: 6px; font-size: 14px; color: var(--text-secondary); }
+
+.link {
+  color: var(--text-primary);
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.note {
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+  margin-top: 4px;
+}
+
+/* Requirements list. Each rule is its own row so the one still outstanding is
+   findable, rather than a sentence somebody has to re-read. */
+.requirements {
+  display: grid;
+  gap: 7px;
+  margin: 2px 0 0;
+  /* The browser's own list indent pushed these rows out of line with the field
+     they describe — in both directions, mirrored. They are a checklist, not
+     prose. */
+  padding: 0;
+  list-style: none;
+}
+
+.requirement {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13.5px;
+  color: var(--text-muted);
+}
+
+.requirementMet { color: var(--text-primary); }
+
+/* A ring that fills in. Shape carries the state as well as colour, so it still
+   reads for somebody who cannot separate the two. */
+.tick {
+  inline-size: 15px;
+  block-size: 15px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border-strong, var(--border));
+  flex: none;
+  position: relative;
+}
+
+.requirementMet .tick {
+  border-color: var(--text-primary);
+  background: var(--text-primary);
+}
+
+/* Physical, not logical, and deliberately so: a tick is a glyph, not a layout.
+   Mirroring it in Arabic would draw a backwards check — the row it sits in
+   flips, the mark inside it must not. */
+.requirementMet .tick::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 5px;
+  inline-size: 3px;
+  block-size: 7px;
+  border: solid var(--canvas);
+  border-width: 0 1.7px 1.7px 0;
+  transform: rotate(45deg);
+}
+
+/* Result screens: confirmation, an unusable link, a finished reset. */
+.state { text-align: center; align-items: center; }
+.state .lead { max-width: 38ch; }
+.state .submit { min-width: 220px; }

@@ -11,7 +11,22 @@ sql_paths = ["./seed.sql"]
 [auth]
 enabled = true
 site_url = "http://localhost:8081"
-additional_redirect_urls = ["warsha://**", "exp://**", "http://localhost:8081/**"]
+# The app scheme and the Expo dev client are how a phone comes back from a
+# confirmation or recovery email. The last three are the browser's equivalent:
+# the web asks for a link to its own origin rather than borrowing `warsha://`,
+# so recovery works in a browser without native configuration changing.
+#
+# This file configures a LOCAL stack. The deployed origins must be listed
+# separately in the hosted project's own redirect allowlist, or Auth will refuse
+# the redirect and the link will look broken.
+additional_redirect_urls = [
+  "warsha://**",
+  "exp://**",
+  "http://localhost:8081/**",
+  "http://app.localhost:3000/**",
+  "http://localhost:3000/**",
+  "https://app.usewarsha.com/**",
+]
 [auth.email]
 enable_signup = true
 double_confirm_changes = true
