@@ -2,10 +2,12 @@
 
 import { useState } from 'react';
 
+import { AccountDetail } from '@/components/account-detail';
 import { Badge, Empty, Identifier, Timestamp } from '@/components/console-bits';
 import { ConsoleShell } from '@/components/console-shell';
 import { useStaff } from '@/components/staff-gate';
 import { appCopy, type AppWords } from '@/lib/app-copy';
+import { overviewKindFor } from '@/lib/console-accounts';
 import {
   parseSafeSearch,
   type SafeSearchKind,
@@ -62,12 +64,16 @@ export default function UsersPage() {
   const [results, setResults] = useState<SafeSearchResult[] | null>(null);
   const [busy, setBusy] = useState(false);
   const [refusal, setRefusal] = useState<string | null>(null);
+  // Which result is open, if any. Opening one calls an RPC that logs the
+  // access, so nothing is fetched until an operator actually asks.
+  const [open, setOpen] = useState<{ kind: 'customer' | 'worker'; id: string } | null>(null);
 
   const run = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!allowed || !query.trim() || busy) return;
     setBusy(true);
     setRefusal(null);
+    setOpen(null);
     const { data, error } = await supabase().rpc('staff_safe_search', {
       p_query: query.trim(),
       p_kind: kind || null,
@@ -150,27 +156,63 @@ export default function UsersPage() {
                   <th>{words.colStatus}</th>
                   <th>{words.colCreated}</th>
                   <th>{words.colIdentifier}</th>
+                  <th>{words.colOpen}</th>
                 </tr>
               </thead>
               <tbody>
-                {results.map((row) => (
-                  <tr key={`${row.kind}:${row.id}`}>
-                    <td><Badge>{row.kind}</Badge></td>
-                    <td><Badge tone="quiet">{row.status}</Badge></td>
-                    <td>
-                      <Timestamp
-                        value={row.createdAt}
-                        locale={locale}
-                        timeZone={session.displayTimezone}
-                      />
-                    </td>
-                    <td><Identifier value={row.id} /></td>
-                  </tr>
-                ))}
+                {results.map((row) => {
+                  // Only two of the twelve kinds have an overview behind them.
+                  // The rest get no control rather than a control that refuses.
+                  const overviewKind = overviewKindFor(row.kind);
+                  return (
+                    <tr key={`${row.kind}:${row.id}`}>
+                      <td><Badge>{row.kind}</Badge></td>
+                      <td><Badge tone="quiet">{row.status}</Badge></td>
+                      <td>
+                        <Timestamp
+                          value={row.createdAt}
+                          locale={locale}
+                          timeZone={session.displayTimezone}
+                        />
+                      </td>
+                      <td><Identifier value={row.id} /></td>
+                      <td>
+                        {overviewKind ? (
+                          <button
+                            type="button"
+                            className={styles.rowLink}
+                            onClick={() => setOpen({ kind: overviewKind, id: row.id })}
+                          >
+                            {words.colOpen}
+                          </button>
+                        ) : (
+                          <span className={styles.muted}>—</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         )}
+
+        {open ? (
+          <AccountDetail
+            key={`${open.kind}:${open.id}`}
+            kind={open.kind}
+            id={open.id}
+            locale={locale}
+            session={session}
+            onClose={() => setOpen(null)}
+            onOpenAudit={(subjectId) => {
+              // A full navigation rather than a router push: the audit page
+              // reads its subject from the address on mount, and this is the
+              // one hand-off between two console pages.
+              window.location.href = `/audit?entity=${encodeURIComponent(subjectId)}`;
+            }}
+          />
+        ) : null}
       </div>
     </ConsoleShell>
   );

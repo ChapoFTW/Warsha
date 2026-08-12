@@ -1,0 +1,126 @@
+/* One account, opened from a lookup.
+   Deliberately sits inside the console panel rather than on a URL of its own:
+   a linkable per-account address is the first step towards a directory, and
+   `staff_safe_search` was built so that browsing accounts is impossible. */
+
+.detail {
+  border-top: 1px solid var(--border);
+  margin-top: 18px;
+  padding-top: 18px;
+}
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.name {
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+.subject { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+
+.close {
+  appearance: none;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 14px;
+  min-height: 38px;
+  cursor: pointer;
+}
+
+.close:hover { border-color: var(--border-strong); }
+
+.section { margin-top: 20px; }
+
+.sectionTitle {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Facts, two columns on anything wider than a phone, one below. Auto-fit
+   rather than a fixed count so a long value is never squeezed into 90px. */
+.facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px 24px;
+}
+
+.fact { display: grid; gap: 3px; min-width: 0; }
+
+.factLabel {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.factValue {
+  font-size: 14.5px;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+/* A capability the caller does not hold. Said out loud, because a blank field
+   and a withheld field mean completely different things to an investigator. */
+.withheld {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--text-muted);
+  border-inline-start: 2px dashed var(--border);
+  padding-inline-start: 12px;
+}
+
+.counters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+.counter {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  display: grid;
+  gap: 4px;
+}
+
+.counterValue {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.counterLabel { font-size: 12.5px; color: var(--text-muted); }
+
+.chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+
+.actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+
+.linkOut {
+  font-size: 13.5px;
+  font-weight: 650;
+  color: var(--text-primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

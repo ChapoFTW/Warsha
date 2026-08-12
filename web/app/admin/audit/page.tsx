@@ -45,6 +45,23 @@ function isoDaysAgo(days: number): string {
   return at.toISOString().slice(0, 10);
 }
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * The subject an account detail handed over, if any.
+ *
+ * Read from `window.location.search` rather than `useSearchParams` on purpose:
+ * this page is a client component behind the staff gate, and reaching for the
+ * hook would force a Suspense boundary around a page that never prerenders
+ * anything worth suspending. Anything that is not a UUID is ignored, so a
+ * hand-edited address cannot push arbitrary text into an RPC argument.
+ */
+function subjectFromAddress(): string {
+  if (typeof window === 'undefined') return '';
+  const value = new URLSearchParams(window.location.search).get('entity') ?? '';
+  return UUID.test(value) ? value : '';
+}
+
 export default function AuditPage() {
   const locale = useAppLocale();
   const words = appCopy[locale];
@@ -54,6 +71,12 @@ export default function AuditPage() {
   const [source, setSource] = useState<AuditSource>('staff_audit');
   const [from, setFrom] = useState(isoDaysAgo(30));
   const [to, setTo] = useState(isoDaysAgo(0));
+  // `staff_audit_search` has taken `p_entity_id` and `p_actor_id` since
+  // WPS-017; this page simply never passed them, so every investigation of one
+  // account meant reading a whole page of unrelated entries. They are real
+  // server-side filters, so the narrowing happens in the database.
+  const [entityId, setEntityId] = useState(subjectFromAddress);
+  const [actorId, setActorId] = useState('');
   const [page, setPage] = useState(0);
   const [rows, setRows] = useState<AuditEntry[] | null>(null);
   const [busy, setBusy] = useState(false);
@@ -77,6 +100,10 @@ export default function AuditPage() {
       p_source: source,
       p_from: fromAt.toISOString(),
       p_to: toAt.toISOString(),
+      // Null, not an empty string: the function's defaults are `null` and an
+      // empty string would be a uuid cast error rather than "no filter".
+      p_actor_id: UUID.test(actorId) ? actorId : null,
+      p_entity_id: UUID.test(entityId) ? entityId : null,
       p_limit: PAGE_SIZE,
       p_offset: page * PAGE_SIZE,
     });
@@ -87,7 +114,7 @@ export default function AuditPage() {
       setRows(parseAuditPayload(data).rows);
     }
     setBusy(false);
-  }, [allowed, source, from, to, page, words]);
+  }, [allowed, source, from, to, page, entityId, actorId, words]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -148,7 +175,43 @@ export default function AuditPage() {
               disabled={!allowed || busy}
             />
           </label>
+
+          <label className={styles.field} style={{ flex: '1 1 260px' }}>
+            <span className={styles.label}>{words.auditSubject}</span>
+            <input
+              className={styles.input}
+              type="search"
+              dir="ltr"
+              autoComplete="off"
+              spellCheck={false}
+              placeholder={words.auditAnySubject}
+              value={entityId}
+              onChange={(event) => { setEntityId(event.target.value.trim()); setPage(0); }}
+              disabled={!allowed || busy}
+            />
+          </label>
+
+          <label className={styles.field} style={{ flex: '1 1 260px' }}>
+            <span className={styles.label}>{words.auditActor}</span>
+            <input
+              className={styles.input}
+              type="search"
+              dir="ltr"
+              autoComplete="off"
+              spellCheck={false}
+              placeholder={words.auditAnyActor}
+              value={actorId}
+              onChange={(event) => { setActorId(event.target.value.trim()); setPage(0); }}
+              disabled={!allowed || busy}
+            />
+          </label>
         </div>
+
+        {/* An identifier that is not a UUID is simply not sent. Saying so is
+            better than silently ignoring half of what was typed. */}
+        {(entityId && !UUID.test(entityId)) || (actorId && !UUID.test(actorId)) ? (
+          <p className={styles.notice}>{words.auditIdentifierIgnored}</p>
+        ) : null}
 
         {!allowed ? (
           <p className={styles.error}>{words.auditRefused}</p>

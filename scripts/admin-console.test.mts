@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { appCopy } from '../web/lib/app-copy.ts';
@@ -464,5 +464,109 @@ check(/dir="ltr"/.test(bits), 'identifiers are explicitly left-to-right');
 check(/Intl\.DateTimeFormat/.test(bits) && /timeZone/.test(bits),
   'timestamps are rendered in the console timezone rather than the reader\'s');
 check(/ar-EG/.test(bits), 'and in Egyptian Arabic when the console is in Arabic');
+
+// --- One account, opened from a lookup -------------------------------------
+//
+// The console could find a record and then show four columns about it. The
+// overview RPCs that answer "who is this and what state are they in" had been
+// contract-read but never rendered.
+
+const detail = readWeb('components', 'account-detail.tsx');
+const accounts = readWeb('lib', 'console-accounts.ts');
+const auditPage = readWeb('app', 'admin', 'audit', 'page.tsx');
+const consoleCopy = readWeb('lib', 'app-copy.ts');
+const inBoth = (key: string) => consoleCopy.split(`${key}:`).length === 3;
+
+// The capability each overview demands, asserted against the database.
+for (const [rpc, capability] of Object.entries({
+  get_staff_customer_overview: 'view_safe_customer_profile',
+  get_staff_worker_overview: 'view_safe_worker_profile',
+})) {
+  const body = migrations.slice(migrations.lastIndexOf(`function public.${rpc}`));
+  check(body.slice(0, 900).includes(`require_staff_capability('${capability}')`),
+    `${rpc} REALLY DOES REQUIRE ${capability} IN THE DATABASE`);
+  check(new RegExp(`rpc\\('${rpc}'`).test(detail), `and the console calls ${rpc}`);
+}
+
+// Contact details and money are separate capabilities, and the server says so.
+check(/'view_contact_details' = any\(v_caps\)/.test(migrations),
+  'CONTACT DETAILS ARE GATED BY A SEPARATE CAPABILITY IN THE DATABASE');
+check(/'view_financial_ledger' = any\(v_caps\)/.test(migrations),
+  'and the financial ledger by another one');
+check(/contactVisible/.test(accounts) && /financialVisible/.test(accounts),
+  'the payload parser carries both visibility flags');
+check(/contactVisible\s*$\n?\s*\?/m.test(accounts) || /contactVisible\s*\n?\s*\?/.test(accounts),
+  'and only populates contact when the server said it was visible');
+check(/detailContactWithheld/.test(detail) && /detailFinancialWithheld/.test(detail),
+  'AND THE CONSOLE SAYS "WITHHELD" RATHER THAN RENDERING AN EMPTY FIELD');
+check(inBoth('detailContactWithheld') && inBoth('detailFinancialWithheld'),
+  'in both languages');
+
+// Opening an overview is itself audited, so it must not be prefetched.
+check(/staff_log_access\(v_actor, 'customer_overview'/.test(migrations),
+  'OPENING A CUSTOMER OVERVIEW IS LOGGED SERVER-SIDE');
+check(/staff_log_access\(v_actor, 'worker_overview'/.test(migrations),
+  'and so is opening a worker overview');
+check(/setOpen\(\{ kind: overviewKind, id: row\.id \}\)/.test(usersPage),
+  'so the console loads one only when an operator asks for it');
+check(!/useEffect[\s\S]{0,200}get_staff_customer_overview/.test(usersPage),
+  'and never prefetches overviews for a page of results');
+
+// Still a lookup, not a directory: no per-account route was introduced.
+check(!existsSync(join('web', 'app', 'admin', 'users', '[id]')),
+  'THERE IS NO PER-ACCOUNT URL, SO THE LOOKUP CANNOT BECOME A DIRECTORY');
+check(/overviewKindFor/.test(usersPage),
+  'and only the two kinds with an overview behind them offer a control');
+check(/if \(kind === 'account'\) return 'customer'/.test(accounts),
+  'mapping the lookup kind to the right overview');
+
+// Money crosses as minor-unit strings and is formatted by the shared module.
+check(/pg_catalog\.sum\(e\.net_minor\)[\s\S]{0,120}::text/.test(migrations),
+  'the server sends money as text, because a piastre count outgrows a JS number');
+check(/pendingMinor: text\(money\.pendingMinor\)/.test(accounts),
+  'and the parser keeps it a string');
+check(/from '@\/src\/payments\/money'/.test(detail),
+  'AND THE CONSOLE FORMATS IT WITH THE SHARED MONEY MODULE');
+check(!/\/ 100|toFixed\(2\)|Number\(.*Minor/.test(strip(detail)),
+  'rather than dividing by a hundred itself');
+
+// Refusal and absence are different answers.
+check(/'refused' \| 'not_found' \| 'failed'/.test(accounts),
+  'A REFUSAL AND A MISSING RECORD ARE DISTINGUISHED');
+check(inBoth('detailRefused') && inBoth('detailNotFound'),
+  'and each has its own sentence in both languages');
+
+// --- Audit linkage ---------------------------------------------------------
+//
+// `staff_audit_search` has taken `p_actor_id` and `p_entity_id` since WPS-017.
+// The page never passed them, so investigating one account meant reading pages
+// of unrelated entries.
+check(/p_actor_id uuid default null, p_entity_id uuid default null/.test(migrations),
+  'THE AUDIT SEARCH ACCEPTS ACTOR AND ENTITY FILTERS IN THE DATABASE');
+check(/p_entity_id: UUID\.test\(entityId\) \? entityId : null/.test(auditPage),
+  'AND THE CONSOLE NOW PASSES THEM');
+check(/p_actor_id: UUID\.test\(actorId\) \? actorId : null/.test(auditPage),
+  'both of them');
+check(/detailOpenAudit/.test(detail) && /onOpenAudit/.test(usersPage),
+  'and an account detail can hand its subject to the trail');
+check(/\/audit\?entity=/.test(usersPage), 'through the address the audit page reads');
+check(/UUID\.test\(value\) \? value : ''/.test(auditPage),
+  'which is ignored unless it is a real identifier, so nothing arbitrary reaches an RPC');
+check(inBoth('auditSubject') && inBoth('auditActor') && inBoth('auditIdentifierIgnored'),
+  'and the new filters are named in both languages');
+
+// The audit view stays read-only. This is the property that matters most here.
+check(!/\.rpc\('staff_(?!audit_search)/.test(strip(auditPage)),
+  'THE AUDIT PAGE STILL CALLS NOTHING BUT THE SEARCH');
+check(!/insert|update|delete/i.test(strip(auditPage)),
+  'and has no write path of any kind');
+
+// Every state and restriction the overviews can return has a sentence.
+for (const key of ['accountStatus_active', 'accountStatus_deleted',
+  'trust_good_standing', 'trust_restricted', 'trust_suspended', 'trust_banned',
+  'restriction_marketplaceRemoved', 'restriction_communicationRestricted',
+  'restriction_reviewRestricted', 'restriction_paymentHold']) {
+  check(inBoth(key), `the console names "${key}" in both languages`);
+}
 
 console.log(`Admin console: ${checks} checks passed.`);
