@@ -55,9 +55,11 @@ export function SiteHeader({ locale }: Props) {
           <a href={APP_SIGN_IN} className={styles.signIn}>
             {words.signIn}
           </a>
-          <Link href={localeHref(locale, '/create-account')} className={styles.cta}>
+          {/* The real signup, on the application origin. The public
+              /create-account page stays as the explainer that links here. */}
+          <a href={APP_CREATE_ACCOUNT} className={styles.cta}>
             {words.createAccount}
-          </Link>
+          </a>
         </div>
       </div>
     </header>
