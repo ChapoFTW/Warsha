@@ -5,7 +5,7 @@ import { AppearanceSwitch, LanguageSwitch } from '@/components/preference-contro
 import { SiteNav } from '@/components/site-nav';
 import { copy } from '@/lib/copy';
 import type { Locale } from '@/lib/preferences';
-import { localeHref } from '@/lib/routes';
+import { APP_SIGN_IN, localeHref } from '@/lib/routes';
 
 import styles from './site-chrome.module.css';
 
@@ -44,12 +44,17 @@ export function SiteHeader({ locale }: Props) {
 
         <div className={styles.actions}>
           <span className={styles.headerPreferences}>
-            <LanguageSwitch locale={locale} />
+            <LanguageSwitch locale={locale} mode="path" />
             <AppearanceSwitch locale={locale} />
           </span>
-          <Link href={localeHref(locale, '/sign-in')} className={styles.signIn}>
+          {/* Straight into the real application. The marketing site explains
+              sign-in at /sign-in but must never implement it: there is one
+              identity-driven form, it lives at the application origin, and a
+              second copy here would be a second authentication implementation
+              that drifts from the first. */}
+          <a href={APP_SIGN_IN} className={styles.signIn}>
             {words.signIn}
-          </Link>
+          </a>
           <Link href={localeHref(locale, '/create-account')} className={styles.cta}>
             {words.createAccount}
           </Link>

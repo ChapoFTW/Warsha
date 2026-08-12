@@ -117,7 +117,7 @@ export function SiteNav({
               copy is ever displayed, so only one is in the accessibility
               tree. */}
           <div className={styles.panelPreferences}>
-            <LanguageSwitch locale={locale} />
+            <LanguageSwitch locale={locale} mode="path" />
             <AppearanceSwitch locale={locale} />
           </div>
         </div>

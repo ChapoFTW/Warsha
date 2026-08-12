@@ -208,6 +208,67 @@ for (const screen of [
   check(!existsSync(screen), `${screen} IS ABSENT — ADMINISTRATION IS WEB-ONLY`);
 }
 
+// ===========================================================================
+// THE LANGUAGE SWITCHER CANNOT INVENT A ROUTE
+// ===========================================================================
+//
+// Changing language on admin.usewarsha.com produced /ar/users — a route that
+// has never existed — and the operator could only escape by editing the address
+// bar. The switcher prefixed the path unconditionally, but only the public site
+// has [locale] routes. Warsha now has one rule per surface, never both.
+const controls = readFileSync(join(WEB, 'components', 'preference-controls.tsx'), 'utf8');
+check(/mode\?: LanguageSwitchMode/.test(controls),
+  'the language switcher takes an explicit mode rather than guessing');
+check(/mode = 'preference'/.test(controls),
+  'AND DEFAULTS TO THE NON-NAVIGATING MODE, SO A NEW SURFACE CANNOT 404 BY OMISSION');
+
+// Only surfaces that genuinely have [locale] routes may navigate.
+const PREFIXED = ['site-chrome.tsx', 'site-nav.tsx'];
+for (const file of readdirSync(join(WEB, 'components')).filter((f) => f.endsWith('.tsx'))) {
+  const text = readFileSync(join(WEB, 'components', file), 'utf8');
+  if (!/<LanguageSwitch/.test(text)) continue;
+  const navigates = /<LanguageSwitch[^>]*mode="path"/.test(text);
+  check(navigates === PREFIXED.includes(file),
+    `${file}: language switching ${navigates ? 'navigates' : 'stays in place'}, matching its routing`);
+}
+// The app and admin shells must never navigate: no [locale] route exists there.
+for (const shell of ['console-shell.tsx', 'app-shell.tsx', 'staff-sign-in.tsx']) {
+  const text = readFileSync(join(WEB, 'components', shell), 'utf8');
+  check(!/mode="path"/.test(text),
+    `${shell} DOES NOT BUILD A LOCALE PATH — /en AND /ar DO NOT EXIST ON THAT ORIGIN`);
+}
+// Confirm the premise: there is genuinely no locale route under app or admin.
+for (const surface of ['app', 'admin']) {
+  for (const locale of ['en', 'ar']) {
+    check(!existsSync(join(APP_DIR, surface, locale)),
+      `/${locale} is genuinely not a route under ${surface} — which is why prefixing 404s`);
+  }
+}
+// Switching in place must actually re-render, or the control would look broken.
+const localeHook = readFileSync(join(WEB, 'lib', 'use-app-locale.ts'), 'utf8');
+check(/languageChangeEvent/.test(localeHook) && /languageChangeEvent/.test(controls),
+  'a same-tab language change is announced and observed, so the page updates without navigating');
+
+// ===========================================================================
+// PUBLIC AUTH ENTRY POINTS REACH THE REAL APPLICATION
+// ===========================================================================
+const routes = readFileSync(join(WEB, 'lib', 'routes.ts'), 'utf8');
+check(/https:\/\/app\.usewarsha\.com/.test(routes),
+  'the application origin is named in one place');
+const chrome = readFileSync(join(WEB, 'components', 'site-chrome.tsx'), 'utf8');
+check(/href=\{APP_SIGN_IN\}/.test(chrome),
+  'THE PUBLIC SIGN-IN CONTROL LEADS INTO THE REAL APPLICATION, NOT A MARKETING PAGE');
+
+// The marketing site must not grow a second authentication implementation.
+for (const page of ['sign-in', 'create-account']) {
+  const source = readFileSync(join(APP_DIR, '[locale]', page, 'page.tsx'), 'utf8');
+  check(!/<input|<form|signInWithPassword|supabase\(/.test(source),
+    `the public /${page} page IMPLEMENTS NO AUTHENTICATION OF ITS OWN`);
+}
+// And the destination it points at is a real route.
+check(existsSync(join(APP_DIR, 'app', 'sign-in', 'page.tsx')),
+  'app.usewarsha.com/sign-in is a real route');
+
 // --- Shared authorities are read, not restated ------------------------------
 const notifications = readFileSync(join(WEB, 'lib', 'notifications.ts'), 'utf8');
 check(/from '\.\.\/\.\.\/src\/notifications\/notification-copy/.test(notifications),

@@ -9,6 +9,9 @@ import {
   type Locale,
 } from './preferences.ts';
 
+/** Fired when the language changes in this tab, where no storage event fires. */
+export const languageChangeEvent = 'warsha:language-change';
+
 /**
  * The application's language.
  *
@@ -49,8 +52,21 @@ export function useAppLocale(): Locale {
       document.documentElement.setAttribute('lang', next);
       document.documentElement.setAttribute('dir', directionOf(next));
     };
+    // Same tab: the unprefixed surfaces switch language without navigating, so
+    // there is no storage event and no route change to react to. The switcher
+    // announces the change instead.
+    const onLocal = () => {
+      const next = read();
+      setLocale(next);
+      document.documentElement.setAttribute('lang', next);
+      document.documentElement.setAttribute('dir', directionOf(next));
+    };
     window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
+    window.addEventListener(languageChangeEvent, onLocal);
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener(languageChangeEvent, onLocal);
+    };
   }, []);
 
   return locale;
