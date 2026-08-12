@@ -64,7 +64,6 @@ export default async function HomePage({
                   {words.heroWork}
                 </Link>
               </div>
-              <p className={styles.heroNote}>{words.heroNote}</p>
             </div>
 
             {/* The second column: the work itself.

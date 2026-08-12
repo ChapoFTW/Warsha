@@ -67,8 +67,10 @@
   --hero-feather: linear-gradient(
     to bottom,
     transparent 0%,
-    #000 6%,
-    #000 94%,
+    rgba(0, 0, 0, 0.55) 7%,
+    #000 16%,
+    #000 84%,
+    rgba(0, 0, 0, 0.55) 93%,
     transparent 100%
   );
   mask-image: var(--hero-fade), var(--hero-feather);
@@ -110,7 +112,7 @@
   /* Was clamp(34px, 6vw, 62px) with the browser default line-height. Still the
      loudest thing on the page, but it no longer needs most of the left half of
      a 900px-tall viewport to say four words. */
-  font-size: clamp(32px, 4.6vw, 50px);
+  font-size: clamp(35px, 5.05vw, 55px);
   line-height: 1.08;
   font-weight: 850;
   letter-spacing: -0.03em;

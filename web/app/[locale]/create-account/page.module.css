@@ -113,3 +113,16 @@
   font-size: clamp(16px, 1.7vw, 19px);
   color: var(--text-secondary);
 }
+
+/* The closed-testing disclosure, moved here from the homepage hero. Quiet, but
+   on the surface where it is actually load-bearing: this is where somebody is
+   about to create a real account on the live service. */
+.notice {
+  margin-top: 14px;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--text-muted);
+  border-inline-start: 2px solid var(--border);
+  padding-inline-start: 12px;
+  max-width: 56ch;
+}

@@ -67,6 +67,11 @@ export default async function CreateAccountPage({
           <p className={styles.eyebrow}>{words.createEyebrow}</p>
           <h1 className={styles.title}>{words.createTitle}</h1>
           <p className={styles.lead}>{words.createLead}</p>
+          {/* The closed-testing disclosure lives here rather than in the homepage
+              hero. It is a real disclosure — accounts created now are real
+              accounts on the live service — and it belongs at the point where
+              somebody is about to create one, not in the marketing headline. */}
+          <p className={styles.notice}>{words.heroNote}</p>
         </header>
 
         <div className={styles.choices}>
