@@ -1,5 +1,8 @@
 .hero {
-  padding: clamp(44px, 7vw, 88px) var(--gutter) clamp(40px, 6vw, 72px);
+  /* Was clamp(44px,7vw,88px)/clamp(40px,6vw,72px). The hero ran past the fold
+     on a 1440x900 screen, so the closed-testing note and the top of the next
+     section fell below it. */
+  padding: clamp(32px, 4.5vw, 56px) var(--gutter) clamp(32px, 4vw, 52px);
   border-bottom: 1px solid var(--border);
   background: var(--canvas);
   overflow: hidden;
@@ -36,25 +39,62 @@
    socket on the wrong wall. Direction-neutral by construction. */
 .heroVisual {
   position: relative;
-  /* Mobile gets its own composition rather than the desktop column squeezed:
-     a short landscape band under the copy, weighted to the subject. */
+  /* Mobile: a landscape band under the copy. */
   aspect-ratio: 16 / 10;
   width: 100%;
-  overflow: hidden;
-  border-radius: var(--radius-md);
-  /* A token-derived ground, so the photograph never sits on a bare seam while
-     it decodes and never introduces a colour the design system does not own. */
-  background: var(--surface);
+  /* No card. The photograph dissolves into the canvas on the room side rather
+     than ending on a rounded rectangle, so it reads as part of the page.
+
+     The fade is always on the EMPTY-ROOM edge, never the worker's. That is a
+     deliberate departure from "fade the edge nearest the text": in Arabic the
+     grid reverses and the text-facing edge becomes the worker's side, and
+     fading him is explicitly forbidden and would be worse. So the transition
+     runs copy -> environment -> worker in English and worker -> environment ->
+     page in Arabic; in both the man and the repair stay completely sharp.
+
+     Two stops only, no vignette, no overlay, no colour. */
+  --hero-fade: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(0, 0, 0, 0.35) 9%,
+    #000 26%
+  );
+  /* A second, much shallower pass on the horizontal edges. Without it the
+     picture still read as a rectangular card: one soft side and three crisp
+     ones is still a rectangle. 6% top and bottom is enough to stop the edge
+     announcing itself and nowhere near enough to touch the subject, who sits
+     in the middle third. */
+  --hero-feather: linear-gradient(
+    to bottom,
+    transparent 0%,
+    #000 6%,
+    #000 94%,
+    transparent 100%
+  );
+  mask-image: var(--hero-fade), var(--hero-feather);
+  -webkit-mask-image: var(--hero-fade), var(--hero-feather);
+  /* Both masks must apply, not stack: intersect keeps a pixel only where both
+     say it is visible. */
+  mask-composite: intersect;
+  -webkit-mask-composite: source-in;
 }
 
 .heroPhoto {
   width: 100%;
   height: 100%;
-  /* cover + a declared aspect ratio: fills the box, keeps its proportions,
-     cannot squash. */
+  /* cover inside a declared ratio: fills the box, keeps proportions, cannot
+     stretch or squash. */
   object-fit: cover;
-  /* Narrow viewports show the right of the frame, where the work is. */
-  object-position: 72% center;
+  /* The crop is chosen from the source composition, not guessed. In the
+     approved frame (1717x916) the man occupies roughly 55-87% of the width and
+     his hands, the screwdriver and the socket sit at roughly 82-96%. So the
+     visible window must reach ~96% or the work disappears and only a torso
+     remains — which is exactly what the rejected 4:5 crop did.
+
+     At 16/10 the visible width is 1.6/1.874 = 85% of the frame; an
+     object-position of 78% puts that window at roughly 12-97%, which holds the
+     man, the socket he is working on, and a good part of the room. */
+  object-position: 78% center;
 }
 
 .eyebrow {
@@ -67,10 +107,14 @@
 }
 
 .heroTitle {
-  font-size: clamp(34px, 6vw, 62px);
+  /* Was clamp(34px, 6vw, 62px) with the browser default line-height. Still the
+     loudest thing on the page, but it no longer needs most of the left half of
+     a 900px-tall viewport to say four words. */
+  font-size: clamp(32px, 4.6vw, 50px);
+  line-height: 1.08;
   font-weight: 850;
   letter-spacing: -0.03em;
-  max-width: 15ch;
+  max-width: 16ch;
 }
 
 .heroBody {
@@ -261,19 +305,20 @@
 
 @media (min-width: 900px) {
   .heroInner {
-    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    /* Text 47%, photograph 53%: the picture carries environment as well as
+       the subject, so it earns marginally the larger share. */
+    grid-template-columns: minmax(0, 0.47fr) minmax(0, 0.53fr);
   }
   .heroVisual {
-    /* From here the column stands beside the copy and can afford a portrait-ish
-       box, so more of the room reads and the subject stops crowding the edge. */
-    aspect-ratio: 4 / 5;
-    height: 100%;
-    min-height: 420px;
+    /* Landscape. The rejected version used 4/5 portrait here, which cropped the
+       frame to 47% of its width and cut the work out of the picture. */
+    aspect-ratio: 16 / 10;
   }
   .heroPhoto {
-    object-position: 62% center;
+    object-position: 76% center;
   }
 }
+
 
 @media (min-width: 1040px) {
   .steps {
@@ -292,17 +337,24 @@
    gentler crop keeps both the subject and some of the room. */
 @media (min-width: 720px) and (max-width: 899px) {
   .heroVisual {
-    aspect-ratio: 21 / 9;
+    /* The column is full width here and sits under the copy, so a wide band
+       reads well and keeps plenty of room around the subject. */
+    aspect-ratio: 2 / 1;
   }
   .heroPhoto {
-    object-position: 68% center;
+    object-position: 74% center;
   }
 }
 
 /* Wide desktop: the full frame reads comfortably, so the crop relaxes further
    towards the centre and the negative space on the left does real work. */
 @media (min-width: 1280px) {
+  .heroVisual {
+    /* Widest screens can afford the most of the frame: 3/2 shows 80% of the
+       source width, so the room around the work reads as a real home. */
+    aspect-ratio: 3 / 2;
+  }
   .heroPhoto {
-    object-position: 58% center;
+    object-position: 80% center;
   }
 }

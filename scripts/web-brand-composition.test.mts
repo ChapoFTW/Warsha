@@ -81,8 +81,29 @@ check(/aria-label=\{words\.navMenu\}/.test(nav),
 // and the rest of the row was empty.
 check(/heroVisual/.test(home) && /heroText/.test(home),
   'the hero is a deliberate two-column composition');
-check(/grid-template-columns: minmax\(0, 1\.05fr\) minmax\(0, 0\.95fr\)/.test(heroCss),
-  'THE HERO GIVES THE SECOND COLUMN REAL WIDTH RATHER THAN LEAVING DEAD SPACE');
+// The photograph carries environment as well as the subject, so it takes
+// marginally the larger share: text 47%, image 53%.
+check(/grid-template-columns: minmax\(0, 0\.47fr\) minmax\(0, 0\.53fr\)/.test(heroCss),
+  'THE PHOTOGRAPH GETS THE LARGER COLUMN, SINCE IT CARRIES THE CONTEXT');
+// The rejected version cropped a landscape photograph into a 4:5 portrait,
+// which cut the work out of the frame and left half a person.
+check(!/aspect-ratio: 4 \/ 5/.test(heroCss),
+  'NO PORTRAIT CROP OF A LANDSCAPE PHOTOGRAPH SURVIVES ANYWHERE');
+for (const landscape of ['16 / 10', '3 / 2', '2 / 1']) {
+  check(heroCss.includes(`aspect-ratio: ${landscape}`),
+    `the hero uses the landscape ratio ${landscape} at one of its breakpoints`);
+}
+// The crop must reach the right of the frame, where his hands and the socket
+// are; anything below ~70% shows the man without the work.
+const positions = [...heroCss.matchAll(/object-position:\s*(\d+)%/g)].map((m) => Number(m[1]));
+check(positions.length >= 4, 'the crop is tuned at every breakpoint');
+check(positions.every((p) => p >= 70),
+  'EVERY CROP REACHES THE WORK, NOT JUST THE WORKER');
+// The blend: the empty-room side dissolves, and the subject is never faded.
+check(/mask-image/.test(heroCss) && /mask-composite/.test(heroCss),
+  'the photograph is masked into the page rather than sitting on it as a card');
+check(!/border-radius/.test(heroCss.slice(heroCss.indexOf('.heroVisual'), heroCss.indexOf('.eyebrow'))),
+  'and is not treated as a rounded card');
 // The hero visual is a photograph now, not a decorative mark, so it is
 // informative and carries real localized alt text rather than aria-hidden.
 check(/alt={words.heroImageAlt}/.test(home),
