@@ -298,17 +298,31 @@ check(!/payload\?\.unread|data\?\.unread/.test(dashboards),
 check(!/rpc\('get_my_notification_counts'\)/.test(dashboards),
   'AND NONE CALLS get_my_notification_counts WITHOUT p_mode, WHICH CANNOT RESOLVE');
 
-// --- Support does not offer what the backend cannot do ----------------------
+// --- Support offers exactly what the backend can do -------------------------
+//
+// This check used to assert the opposite: that support called neither
+// `reply_support_case` nor `get_my_support_cases`, "which were never shipped".
+// That was a false premise. Both are defined and granted in WPS-017, and the
+// audit that concluded otherwise only matched single-line function signatures.
+// The rule the check was reaching for is still the right one — never offer a
+// control the server cannot honour — so it is now asserted the way round the
+// evidence supports, against the migration rather than against a memory.
 const support = readFileSync(join(APP_DIR, 'app/support/page.tsx'), 'utf8');
-// Comments stripped first: this file explains *why* it does not call those two,
-// and naming them in prose is the documentation, not a call.
-const supportCode = support
-  .replace(/\/\*[\s\S]*?\*\//g, '')
-  .replace(/\{\s*\/\*[\s\S]*?\*\/\s*\}/g, '')
-  .replace(/^\s*\/\/.*$/gm, '');
-check(!/reply_support_case|get_my_support_cases/.test(supportCode),
-  'SUPPORT CALLS NO RPC THAT WAS NEVER SHIPPED');
+const wps017Sql = readFileSync(
+  'supabase/migrations/202608020005_wps017_operations_analytics_admin.sql', 'utf8');
+
+for (const rpc of ['reply_support_case', 'get_my_support_cases']) {
+  check(new RegExp(`create or replace function public\\.${rpc}\\(`).test(wps017Sql),
+    `${rpc} IS DEFINED IN THE MIGRATION`);
+  check(new RegExp(`'public\\.${rpc}\\(`).test(wps017Sql),
+    `and ${rpc} is granted`);
+  check(new RegExp(`rpc\\('${rpc}'`).test(support),
+    `SO SUPPORT ACTUALLY CALLS ${rpc}`);
+}
+
 check(/newIdempotencyKey/.test(support),
   'opening a case is idempotent, so a double submit cannot open two');
+check(/p_idempotency_key: idempotencyKey/.test(support),
+  'and so is replying, so a double send cannot post the same paragraph twice');
 
 console.log(`Web navigation: ${checks} checks passed.`);

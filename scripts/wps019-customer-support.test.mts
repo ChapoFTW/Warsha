@@ -440,4 +440,102 @@ has(pgTap, /the third search is refused by the server/, 'rate limiting is assert
 has(pgTap, /search never returns a draft or archived article/, 'unpublished content is asserted unreachable');
 has(pgTap, /every published article has an Egyptian Arabic body/, 'complete localization is asserted');
 
+// ---------------------------------------------------------------------------
+// The same support case, in a browser
+// ---------------------------------------------------------------------------
+//
+// The web support page had no reply box because an earlier audit concluded
+// `reply_support_case` and `get_my_support_cases` had never shipped. They had:
+// both are defined in WPS-017 and granted in the same migration, and the audit
+// missed them because it only matched single-line function signatures. These
+// checks make that conclusion impossible to reach again by accident.
+
+const webSupport = readFileSync('web/lib/support.ts', 'utf8');
+const webSupportPage = readFileSync('web/app/app/support/page.tsx', 'utf8');
+const webCopy = readFileSync('web/lib/app-copy.ts', 'utf8');
+
+/** Present in BOTH language blocks of the web dictionary, not only English. */
+const inBothLanguages = (key: string) => webCopy.split(`${key}:`).length === 3;
+
+// The authority exists. Asserted against the migration, not against a memory.
+has(wps017, /create or replace function public\.reply_support_case\(p_case_id uuid, p_body text, p_idempotency_key text\)/,
+  'reply_support_case IS DEFINED IN WPS-017');
+has(wps017, /create or replace function public\.get_my_support_cases\(\)/,
+  'get_my_support_cases IS DEFINED IN WPS-017');
+has(wps017, /'public\.reply_support_case\(uuid,text,text\)'/,
+  'and reply_support_case is granted');
+has(wps017, /'public\.get_my_support_cases\(\)'/,
+  'and get_my_support_cases is granted');
+
+// So the web must call them.
+has(webSupportPage, /rpc\('reply_support_case'/, 'THE WEB SUPPORT PAGE CAN ACTUALLY REPLY');
+has(webSupportPage, /rpc\('get_my_support_cases'/, 'and lists cases through the governed RPC');
+has(webSupportPage, /rpc\('get_my_support_case'/, 'and opens one through the governed RPC');
+has(webSupportPage, /rpc\('reopen_support_case'/, 'and can reopen where the server allows it');
+has(webSupportPage, /rpc\('submit_support_satisfaction'/, 'and can rate a finished case');
+
+// The stale claim must not come back.
+lacks(webSupport, /do not exist|was never shipped|never shipped/i,
+  'the web support module no longer claims those RPCs are missing');
+lacks(webSupportPage, /never shipped|nowhere to send it/i,
+  'and neither does the page');
+lacks(webCopy, /supportReplyByEmail/,
+  'and the "replies arrive by email" copy is gone, because replies now happen here');
+
+// Permission is asked, not computed. The reopen rule alone is three conditions
+// including a fourteen-day window; a client that re-derives it will drift.
+has(webSupportPage, /detail\.canReply/, 'REPLYING IS OFFERED ONLY WHEN THE SERVER SAYS canReply');
+has(webSupportPage, /detail\.canReopen/, 'and reopening only when the server says canReopen');
+has(webSupportPage, /detail\.surveyAvailable/, 'and the survey only when the server offers it');
+lacks(webSupportPage, /status === 'resolved' &&/,
+  'and the page never re-derives the reopen rule for itself');
+
+// Limits are transcribed from the server's own constraints.
+has(wps017, /pg_catalog\.length\(pg_catalog\.btrim\(coalesce\(p_body,''\)\)\) not between 1 and 4000/,
+  'the server bounds a reply at 4000 characters');
+has(webSupport, /REPLY_MAX = 4000/, 'and the web uses that same bound');
+has(webSupport, /REOPEN_MAX = 2000/, 'and the reopen reason bound the server states');
+
+// Vocabulary comes from the shared module, so both surfaces offer one set.
+has(webSupport, /from '\.\.\/\.\.\/src\/support\/support-types\.ts'/,
+  'THE WEB READS THE SHARED SUPPORT VOCABULARY RATHER THAN RESTATING IT');
+lacks(webSupport, /'account_access', 'booking_help'/,
+  'so the category list exists in exactly one place');
+
+// Idempotency: a double send must not post the paragraph twice.
+has(wps017, /select m\.id into v_existing from public\.support_messages m/,
+  'the server dedupes a reply on its idempotency key');
+has(webSupportPage, /p_idempotency_key: idempotencyKey/, 'and the web always sends one');
+has(webSupportPage, /setIdempotencyKey\(newIdempotencyKey\(\)\)/,
+  'and takes a fresh key only after a send succeeds');
+
+// Staff-only material is never sent to a participant, at the source.
+has(wps017, /where m\.ticket_id = t\.id and m\.visibility = 'participants'/,
+  'the list RPC returns only participant-visible messages');
+// Comments stripped: the rule is about what the CODE does. A comment
+// explaining that staff notes never arrive is not the page filtering them.
+const webSupportCode = webSupportPage
+  .replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+lacks(webSupportCode, /internal|staff_only|visibility/i,
+  'so the browser has no staff-only material to filter, and does not pretend to');
+has(webSupportPage, /supportFromWarsha/,
+  'and Warsha’s side of a conversation is labelled by role, never by a staff name');
+
+// Both languages, as always.
+for (const key of ['supportReplyLabel', 'supportSendReply', 'supportReopenAction',
+  'supportHistory', 'supportRateLabel', 'supportCaseClosed', 'supportFromWarsha',
+  'supportReopenExhausted', 'supportReopenWindowPassed']) {
+  check(inBothLanguages(key), `the web says "${key}" in both languages`);
+}
+
+// Every status and action the server can produce has a sentence.
+for (const status of supportStatuses) {
+  check(inBothLanguages(`supportStatus_${status}`),
+    `and names the "${status}" status in both languages`);
+}
+for (const action of ['opened', 'replied', 'status_changed', 'escalated', 'resolved', 'closed']) {
+  check(inBothLanguages(`supportAction_${action}`),
+    `and the "${action}" history entry in both languages`);
+}
+
 console.log(`WPS-019 customer support: ${checks} checks passed.`);

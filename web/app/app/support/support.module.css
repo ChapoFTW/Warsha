@@ -89,3 +89,44 @@
 }
 
 .muted { font-size: 14.5px; line-height: 1.6; color: var(--text-muted); }
+
+/* Who wrote a message, above it. Warsha's side is a role, never a person's
+   name — support staff are not exposed to the people they help. */
+.messageWho {
+  display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
+  font-size: 12px; font-weight: 700; letter-spacing: 0.04em;
+  text-transform: uppercase; color: var(--text-muted); margin-bottom: 5px;
+}
+
+.reply { border-top: 1px solid var(--border); padding-top: 16px; margin-top: 4px; }
+
+/* The case's own history, collapsed. It is the answer to "what happened to
+   this?", which is a question somebody asks occasionally and not on arrival. */
+.history { margin-top: 16px; border-top: 1px solid var(--border); padding-top: 12px; }
+
+.historySummary {
+  font-size: 13.5px; font-weight: 700; color: var(--text-secondary);
+  cursor: pointer; list-style-position: inside;
+}
+
+.historyList { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 8px; }
+
+.historyRow {
+  display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  font-size: 13.5px; color: var(--text-secondary);
+}
+
+.scoreSet { border: 0; padding: 0; margin: 0 0 16px; }
+
+.scoreRow { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+
+.score {
+  appearance: none; font: inherit; font-size: 15px; font-weight: 700;
+  color: var(--text-secondary); background: var(--canvas);
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  min-width: 46px; min-height: 44px; cursor: pointer;
+}
+
+.scoreOn { color: var(--brand-ink); background: var(--brand); border-color: var(--brand); }
+
+.score:disabled { opacity: 0.5; cursor: not-allowed; }

@@ -93,3 +93,49 @@
   .nav { display: flex; }
   .spacer { display: none; }
 }
+
+/*
+ * Narrow screens.
+ *
+ * The nav used to be hidden below 860px with nothing in its place, so a phone
+ * showed the brand, a language control and a sign-out button — and no way to
+ * reach notifications or support. The links were not de-prioritised; they were
+ * gone.
+ *
+ * They now take a row of their own beneath the controls, scrolling sideways
+ * inside that row if there are more than fit. The row scrolls; the page must
+ * not, which is the second half of the same defect — the controls alone were
+ * wider than 390px and pushed the whole document sideways.
+ */
+@media (max-width: 859px) {
+  .barInner {
+    flex-wrap: wrap;
+    gap: 8px 10px;
+    padding-bottom: 0;
+  }
+
+  .brand { margin-inline-end: auto; }
+
+  /* `flex-shrink: 0` from the base rule kept this block at its max-content
+     width — 402px inside a 390px viewport — so `flex-wrap` alone changed
+     nothing. It has to be allowed to narrow before its children will wrap. */
+  .actions {
+    flex: 1 1 auto;
+    min-width: 0;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .nav {
+    display: flex;
+    order: 3;
+    width: 100%;
+    margin-inline-end: 0;
+    gap: 18px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-bottom: 7px;
+  }
+
+  .nav::-webkit-scrollbar { display: none; }
+}
