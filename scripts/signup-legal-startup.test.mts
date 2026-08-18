@@ -116,6 +116,7 @@ const webDocument = readFileSync('app/+html.tsx', 'utf8');
 const profile = readFileSync('app/(tabs)/profile.tsx', 'utf8');
 const environment = readFileSync('src/config/environment.ts', 'utf8');
 const workerBroker = readFileSync('supabase/functions/worker-auth/index.ts', 'utf8');
+const webAuthActions = readFileSync('web/lib/auth-actions.ts', 'utf8');
 
 check(/useState\(false\)/.test(createAccount), 'signup legal controls are not preselected');
 check(/disabled=\{[\s\S]*signupLegalSelectionSatisfied/.test(createAccount),
@@ -131,6 +132,8 @@ check(legalCopy.includes('أوافق على شروط استخدام ورشة و�
   'Arabic acceptance copy is a natural localized sentence');
 check(/legal_acceptances:\s*legalAcceptances/.test(authContext),
   'customer Auth metadata carries the exact transient manifest');
+check(/legal_acceptances:\s*input\.acceptances/.test(webAuthActions),
+  'web customer Auth metadata carries the same transient manifest');
 check(/legalAcceptances/.test(workerBroker) && /legal_acceptances:\s*legalAcceptances/.test(workerBroker),
   'trusted worker broker requires and forwards the same manifest');
 check(!/terms_accepted_at:\s*new Date|privacy_accepted_at:\s*new Date/.test(authContext + workerBroker),

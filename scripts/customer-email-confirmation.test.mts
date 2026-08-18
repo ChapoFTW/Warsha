@@ -76,6 +76,7 @@ const profile = readFileSync('app/(tabs)/profile.tsx', 'utf8');
 const callbackScreen = readFileSync('app/auth/confirm.tsx', 'utf8');
 const authCopy = readFileSync('src/auth/auth-translations.ts', 'utf8');
 const translations = readFileSync('src/i18n/translations.ts', 'utf8');
+const webAppCopy = readFileSync('web/lib/app-copy.ts', 'utf8');
 const authRoutes = readFileSync('src/navigation/auth-route-policy.ts', 'utf8');
 const workerBroker = readFileSync('supabase/functions/worker-auth/index.ts', 'utf8');
 const migration = readFileSync(
@@ -97,6 +98,14 @@ check(authRoutes.includes("'/auth/confirm'"), 'confirmation callback remains rea
 check(authCopy.includes('cannot verify sending or delivery'), 'English status copy is explicit about evidence');
 check(authCopy.includes('ما تقدرش تتأكد من الإرسال أو الوصول'),
   'Arabic status copy is explicit about evidence');
+const webPendingCopy = [...webAppCopy.matchAll(/signUpCheckEmailBody: '([^']+)'/g)]
+  .map(match => match[1]);
+check(webPendingCopy.length === 2, 'web confirmation-pending copy exists in both languages');
+check(webPendingCopy.every(copy => !/we sent|sent you|بعتنا|بعتنالك/i.test(copy)),
+  'web never turns a no-session signup response into an email-sent claim');
+check(webPendingCopy.some(copy => copy.includes('cannot verify sending or delivery'))
+  && webPendingCopy.some(copy => copy.includes('ما تقدرش تتأكد من الإرسال أو الوصول')),
+  'web explains the same evidence boundary in English and Arabic');
 check(translations.includes('authEmailDeliveryRestricted')
   && translations.includes('authEmailDeliveryFailed')
   && translations.includes('authSignupUnavailable'),
