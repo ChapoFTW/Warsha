@@ -63,6 +63,9 @@ export const appCopy = {
     loading: 'Loading…',
     loadFailed: 'That could not be loaded. Try again.',
     retry: 'Try again',
+    accountSetupIncomplete: 'This signed-in account did not finish Warsha account setup.',
+    accountSetupIncompleteBody:
+      'Warsha cannot safely infer the missing registration choice. Try loading it again, or sign out and contact support.',
 
     workerNextStep: 'What to do next',
     workerVerificationPending: 'Your application is with a reviewer. You will be told the outcome and the reason.',
@@ -856,6 +859,9 @@ export const appCopy = {
     loading: 'بيحمّل…',
     loadFailed: 'ما قدرناش نحمّل ده. حاول تاني.',
     retry: 'حاول تاني',
+    accountSetupIncomplete: 'الحساب اللي داخل بيه ما كمّلش إعداد حساب ورشة.',
+    accountSetupIncompleteBody:
+      'ورشة مش هتخمّن اختيار التسجيل الناقص. حاول تحمّله تاني، أو اخرج وتواصل مع الدعم.',
 
     workerNextStep: 'الخطوة الجاية',
     workerVerificationPending: 'طلبك مع حد بيراجعه. هتعرف النتيجة والسبب.',

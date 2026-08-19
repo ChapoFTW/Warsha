@@ -61,6 +61,7 @@ function readPreferredMode(userId: string): ProductMode | null {
 export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [state, setState] = useState<OnboardingState | null>(null);
+  const [accountStateError, setAccountStateError] = useState(false);
   const [authSettled, setAuthSettled] = useState(false);
   const [preferredMode, setPreferredMode] = useState<ProductMode | null>(null);
   const accountGeneration = useRef(0);
@@ -70,12 +71,14 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     if (!active() || accountGeneration.current !== generation) return;
     if (error) {
       // A readable session with unreadable account state is not a product the
-      // client may guess at. Treat it as unresolved rather than assume
-      // customer.
+      // client may guess at. Resolve to an explicit recovery state rather
+      // than assume customer or leave the loading mark spinning forever.
       setState(null);
+      setAccountStateError(true);
       return;
     }
     setState({ ...emptyOnboardingState, ...(data as Partial<OnboardingState>) });
+    setAccountStateError(false);
   }, []);
 
   useEffect(() => {
@@ -98,11 +101,15 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
 
         if (!active) return;
         setSession(verified);
+        setAccountStateError(false);
         setPreferredMode(verified ? readPreferredMode(verified.user.id) : null);
         const generation = ++accountGeneration.current;
         if (verified) await loadAccountState(generation, isActive);
       } catch {
-        if (active) setSession(null);
+        if (active) {
+          setSession(null);
+          setAccountStateError(false);
+        }
       } finally {
         if (active) setAuthSettled(true);
       }
@@ -114,6 +121,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       setSession(next);
       if (!next) {
         setState(null);
+        setAccountStateError(false);
         setPreferredMode(null);
         try { window.sessionStorage.removeItem(PREFERRED_MODE_KEY); } catch { /* optional storage */ }
         return;
@@ -122,6 +130,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         // Never combine a new identity with the previous identity's product
         // authority while the replacement account is hydrating.
         setState(null);
+        setAccountStateError(false);
         setPreferredMode(readPreferredMode(next.user.id));
         void loadAccountState(generation, isActive);
       }
@@ -146,6 +155,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
 
   const refresh = useCallback(async () => {
     const generation = ++accountGeneration.current;
+    setAccountStateError(false);
     await loadAccountState(generation, () => true);
   }, [loadAccountState]);
 
@@ -154,13 +164,14 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       authSettled,
       signedIn: session !== null,
       state,
+      accountStateError,
       preferredMode,
     }),
     session,
     preferredMode,
     chooseMode,
     refresh,
-  }), [authSettled, session, state, preferredMode, chooseMode, refresh]);
+  }), [accountStateError, authSettled, session, state, preferredMode, chooseMode, refresh]);
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }

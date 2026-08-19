@@ -64,3 +64,20 @@ export function signupErrorKey(state: SignupState): TranslationKey | null {
 export function signupAfterRoleChange(): SignupState {
   return signupIdle;
 }
+
+/**
+ * Recover only the role that the interrupted canonical signup recorded.
+ *
+ * A historical Auth-only identity has no such marker and must not be invited
+ * to manufacture a new account history from this client. Normal customer and
+ * trusted worker registration both write this value before the session can
+ * reach the startup gate, so retrying `select_my_account_role` is idempotent
+ * and preserves the person's original choice.
+ */
+export function signupRoleFromMetadata(
+  metadata: Record<string, unknown> | null | undefined,
+): 'customer' | 'worker' | null {
+  if (metadata?.account_role === 'customer') return 'customer';
+  if (metadata?.account_role === 'provider') return 'worker';
+  return null;
+}

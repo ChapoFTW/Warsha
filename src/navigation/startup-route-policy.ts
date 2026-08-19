@@ -35,6 +35,12 @@ function canonicalPathname(pathname: string): string {
   return segments.length ? `/${segments.join('/')}` : '/';
 }
 
+function moveTo(pathname: string, destination: string): StartupRouteDecision {
+  return canonicalPathname(pathname) === canonicalPathname(destination)
+    ? { status: 'render', redirect: null }
+    : { status: 'redirecting', redirect: destination };
+}
+
 /** Privacy, support, appeals and account closure remain reachable even when a
  * material legal update is awaiting a decision. */
 export function isLegalAccessRoute(pathname: string): boolean {
@@ -68,13 +74,13 @@ export function startupRouteDecision(input: StartupRouteInput): StartupRouteDeci
   // but they are also valid shared surfaces for an authenticated account.
   // Only the account-entry routes should eject a signed-in user.
   if (isPublicAuthRoute(input.pathname) && !isLegalAccessRoute(input.pathname)) {
-    return { status: 'redirecting', redirect: homeRouteFor(input.target) };
+    return moveTo(input.pathname, homeRouteFor(input.target));
   }
 
   const surface = routeSurface(input.pathname);
 
   if (input.target === 'account_blocked' || input.target === 'role_choice') {
-    return { status: 'redirecting', redirect: homeRouteFor(input.target) };
+    return moveTo(input.pathname, homeRouteFor(input.target));
   }
 
   if (

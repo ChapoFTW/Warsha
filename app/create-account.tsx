@@ -23,6 +23,7 @@ import {
   signupFailed,
   signupIdle,
   signupPendingNotice,
+  signupRoleFromMetadata,
   signupSubmitting,
   signupSucceeded,
   type SignupState,
@@ -61,6 +62,8 @@ export default function CreateAccount() {
   const busy = isSignupBusy(signup);
   const pendingConfirmation = signupPendingNotice(signup);
   const errorKey = signupErrorKey(signup);
+  const recoveryRole = signupRoleFromMetadata(auth.user?.user_metadata);
+  const recoveringExistingSignup = Boolean(auth.user && onboarding.route === 'role_choice');
 
   const chooseRole = (choice: AccountRoleChoice | null) => {
     setRole(choice);
@@ -125,6 +128,67 @@ export default function CreateAccount() {
       setSignup(signupFailed(authMessageKey(error)));
     }
   };
+
+  const retryAccountState = async () => {
+    setSignup(signupSubmitting());
+    await onboarding.reload();
+    setSignup(signupIdle);
+  };
+
+  const resumeExistingSignup = async (choice: AccountRoleChoice) => {
+    if (!auth.user) return;
+    setSignup(signupSubmitting());
+    const recorded = await onboarding.selectRole(choice, auth.user.id);
+    setSignup(recorded ? signupSucceeded() : signupFailed('authError'));
+  };
+
+  // A session may exist when canonical signup was interrupted after Auth but
+  // before the idempotent role RPC. Never show another credential form in that
+  // state: it would ask the signed-in person to create a second identity. The
+  // original metadata can resume its own role selection; a historical/manual
+  // identity with no signup marker gets a safe recovery surface instead.
+  if (recoveringExistingSignup) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.recovery}>
+          <BrandLockup size={48} />
+          <AppText accessibilityRole="header" style={styles.title}>
+            {ot.text('accountSetupIncomplete')}
+          </AppText>
+          <AppText style={styles.note}>
+            {ot.text(recoveryRole ? 'accountSetupResume' : 'accountSetupUnavailable')}
+          </AppText>
+          {recoveryRole ? (
+            <>
+              <AppText style={styles.optionTitle}>
+                {ot.text(recoveryRole === 'worker' ? 'roleWorker' : 'roleCustomer')}
+              </AppText>
+              <BrandButton
+                label={ot.text('roleContinue')}
+                loading={busy}
+                onPress={() => void resumeExistingSignup(recoveryRole)}
+              />
+            </>
+          ) : (
+            <BrandButton
+              label={t('tryAgain')}
+              loading={busy}
+              onPress={() => void retryAccountState()}
+            />
+          )}
+          <BrandButton
+            label={t('signOut')}
+            variant="ghost"
+            disabled={busy}
+            onPress={() => void openSignIn()}
+          />
+          {errorKey ? (
+            <AppText accessibilityRole="alert" style={styles.error}>{t(errorKey)}</AppText>
+          ) : null}
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (!role) {
     return (
@@ -278,6 +342,13 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.canvas },
   page: {
     flexGrow: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.xl,
+    gap: spacing.lg,
+  },
+  recovery: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     padding: spacing.xl,

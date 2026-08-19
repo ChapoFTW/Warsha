@@ -7,6 +7,8 @@ import { useEffect } from 'react';
 import { BrandMark } from '@/components/brand-mark';
 import { useSession } from '@/components/session-provider';
 import { webHomeFor } from '@/lib/account';
+import { appCopy } from '@/lib/app-copy';
+import { useAppLocale } from '@/lib/use-app-locale';
 
 import styles from './startup-gate.module.css';
 
@@ -69,7 +71,9 @@ function isCallbackAppRoute(path: string): boolean {
 }
 
 export function StartupGate({ children }: { children: React.ReactNode }) {
-  const { resolution } = useSession();
+  const locale = useAppLocale();
+  const words = appCopy[locale];
+  const { resolution, refresh } = useSession();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -78,7 +82,7 @@ export function StartupGate({ children }: { children: React.ReactNode }) {
   const path = pathname.replace(/^\/app/, '') || '/';
 
   let redirect: string | null = null;
-  let status: 'loading' | 'redirecting' | 'render' = 'loading';
+  let status: 'loading' | 'redirecting' | 'render' | 'recovery' = 'loading';
 
   if (isCallbackAppRoute(path)) {
     // Checked before the resolution is even consulted, including while it is
@@ -87,6 +91,8 @@ export function StartupGate({ children }: { children: React.ReactNode }) {
     status = 'render';
   } else if (resolution.status === 'loading') {
     status = 'loading';
+  } else if (resolution.status === 'error') {
+    status = 'recovery';
   } else if (resolution.status === 'signed_out') {
     status = isPublicAppRoute(path) ? 'render' : 'redirecting';
     redirect = status === 'redirecting' ? '/sign-in' : null;
@@ -94,45 +100,67 @@ export function StartupGate({ children }: { children: React.ReactNode }) {
     status = path === '/choose-mode' ? 'render' : 'redirecting';
     redirect = status === 'redirecting' ? '/choose-mode' : null;
   } else {
-    const home = webHomeFor(resolution.target);
-    // A signed-in account sitting on sign-in is sent onward; that is what
-    // makes signing in land in the right place without the form knowing where.
-    if (isPublicAppRoute(path)) {
-      status = 'redirecting';
-      redirect = home;
-    } else if (path === '/choose-mode') {
-      status = resolution.roles.both ? 'render' : 'redirecting';
-      redirect = status === 'redirecting' ? home : null;
-    } else if (resolution.target === 'account_blocked' && path !== '/account/unavailable') {
-      status = 'redirecting';
-      redirect = '/account/unavailable';
-    } else if (resolution.target === 'worker_onboarding'
-        && path !== '/worker/onboarding'
-        && !path.startsWith('/worker/verification')
-        && path !== '/notifications'
-        && path !== '/support') {
-      status = 'redirecting';
-      redirect = home;
-    } else if (resolution.target === 'customer_home' && path.startsWith('/worker')) {
-      status = 'redirecting';
-      redirect = home;
-    } else if (resolution.target === 'worker_home'
-        && !path.startsWith('/worker')
-        && path !== '/notifications'
-        && path !== '/support') {
-      status = 'redirecting';
-      redirect = home;
-    } else if (path === '/' && home !== '/') {
-      status = 'redirecting';
-      redirect = home;
+    if (resolution.target === 'role_choice') {
+      status = 'recovery';
     } else {
-      status = 'render';
+      const home = webHomeFor(resolution.target);
+      // A signed-in account sitting on sign-in is sent onward; that is what
+      // makes signing in land in the right place without the form knowing where.
+      if (isPublicAppRoute(path)) {
+        status = 'redirecting';
+        redirect = home;
+      } else if (path === '/choose-mode') {
+        status = resolution.roles.both ? 'render' : 'redirecting';
+        redirect = status === 'redirecting' ? home : null;
+      } else if (resolution.target === 'account_blocked' && path !== '/account/unavailable') {
+        status = 'redirecting';
+        redirect = '/account/unavailable';
+      } else if (resolution.target === 'worker_onboarding'
+          && path !== '/worker/onboarding'
+          && !path.startsWith('/worker/verification')
+          && path !== '/notifications'
+          && path !== '/support') {
+        status = 'redirecting';
+        redirect = home;
+      } else if (resolution.target === 'customer_home' && path.startsWith('/worker')) {
+        status = 'redirecting';
+        redirect = home;
+      } else if (resolution.target === 'worker_home'
+          && !path.startsWith('/worker')
+          && path !== '/notifications'
+          && path !== '/support') {
+        status = 'redirecting';
+        redirect = home;
+      } else if (path === '/' && home !== '/') {
+        status = 'redirecting';
+        redirect = home;
+      } else {
+        status = 'render';
+      }
     }
   }
 
   useEffect(() => {
     if (redirect) router.replace(redirect as Route);
   }, [redirect, router]);
+
+  if (status === 'recovery') {
+    const missingSetup = resolution.status === 'resolved'
+      && resolution.target === 'role_choice';
+    return (
+      <div className={styles.startup} role="alert">
+        <div className={styles.recovery}>
+          <BrandMark size={56} />
+          <h1>{missingSetup ? words.accountSetupIncomplete : words.loadFailed}</h1>
+          {missingSetup ? <p>{words.accountSetupIncompleteBody}</p> : null}
+          <div className={styles.actions}>
+            <button type="button" onClick={() => void refresh()}>{words.retry}</button>
+            <a href="/sign-out">{words.signOut}</a>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (status !== 'render') {
     return (

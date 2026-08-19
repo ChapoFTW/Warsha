@@ -94,10 +94,29 @@ equal(resolveAccount({ authSettled: true, signedIn: false, state: null, preferre
 equal(resolveAccount({ authSettled: true, signedIn: true, state: null, preferredMode: null }),
   { status: 'loading' },
   'A SESSION WITHOUT ACCOUNT STATE NEVER GUESSES A PRODUCT');
+equal(resolveAccount({
+  authSettled: true,
+  signedIn: true,
+  state: null,
+  accountStateError: true,
+  preferredMode: null,
+}), { status: 'error' },
+  'AN ACCOUNT RPC FAILURE TERMINATES ON RECOVERY INSTEAD OF INFINITE LOADING');
 check(/auth\.getUser\(\)/.test(provider),
   'a stored session is validated with the server before it is trusted');
 check(/signOut\(\{ scope: 'local' \}\)/.test(provider),
   'a stale session resolves safely to signed out');
+check(/setAccountStateError\(true\)/.test(provider)
+    && /accountStateError/.test(provider),
+  'the web preserves the distinction between an in-flight account read and a failed one');
+
+const startupGate = readWeb('components', 'startup-gate.tsx');
+check(/resolution\.status === 'error'[\s\S]{0,100}status = 'recovery'/.test(startupGate),
+  'a failed web account authority renders a retryable neutral recovery surface');
+check(/resolution\.target === 'role_choice'[\s\S]{0,100}status = 'recovery'/.test(startupGate),
+  'a historical Auth-only web identity cannot be redirected to the missing role route');
+check(/void refresh\(\)/.test(startupGate) && /href="\/sign-out"/.test(startupGate),
+  'web recovery offers retry and safe account switching without mounting a product shell');
 
 // --- Role resolution ---------------------------------------------------------
 const customerOnly = { ...emptyOnboardingState, roleSelected: true, intendedRole: 'customer' as const, addressConfirmed: true };
@@ -160,9 +179,17 @@ equal(webHomeFor('customer_home'), '/', 'the customer home is the application ro
 equal(webHomeFor('worker_home'), '/worker', 'the worker home is its own tree');
 equal(webHomeFor('worker_onboarding'), '/worker/onboarding',
   'an incomplete worker resumes onboarding');
+equal(webHomeFor('customer_address'), '/addresses',
+  'an incomplete customer reaches the real governed address surface');
 equal(webHomeFor('account_blocked'), '/account/unavailable',
   'a blocked account gets an explanation, not a product');
+equal(webHomeFor('role_choice'), '/account/unavailable',
+  'a historical role-less account has a real fail-closed fallback route');
 equal(webHomeFor('gateway'), '/sign-in', 'no session lands on sign-in');
+const addressesPage = readWeb('app', 'app', 'addresses', 'page.tsx');
+check(/confirm_my_service_address/.test(addressesPage)
+    && /await refreshAccount\(\)/.test(addressesPage),
+  'confirming the first web address refreshes onboarding authority before navigating home');
 
 // --- Preference storage --------------------------------------------------------
 check(PREFERRED_MODE_KEY.startsWith('warsha:'),

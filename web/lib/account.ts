@@ -24,6 +24,8 @@ export type AccountResolution =
   /** Auth or account state has not settled. Nothing may render yet. */
   | { status: 'loading' }
   | { status: 'signed_out' }
+  /** Auth is valid, but the account authority failed closed and may be retried. */
+  | { status: 'error' }
   /** Signed in, product surface known. */
   | { status: 'resolved'; target: RouteTarget; state: OnboardingState; roles: ProductRoles }
   /** Compatibility shape for an explicit chooser during hydration. */
@@ -63,10 +65,12 @@ export function resolveAccount(input: {
   authSettled: boolean;
   signedIn: boolean;
   state: OnboardingState | null;
+  accountStateError?: boolean;
   preferredMode: ProductMode | null;
 }): AccountResolution {
   if (!input.authSettled) return { status: 'loading' };
   if (!input.signedIn) return { status: 'signed_out' };
+  if (input.accountStateError) return { status: 'error' };
   if (!input.state) return { status: 'loading' };
 
   const roles = productRolesFor(input.state);
@@ -91,9 +95,9 @@ export function webHomeFor(target: RouteTarget): string {
     case 'worker_onboarding':
       return '/worker/onboarding';
     case 'customer_address':
-      return '/onboarding/address';
+      return '/addresses';
     case 'role_choice':
-      return '/onboarding/role';
+      return '/account/unavailable';
     case 'account_blocked':
       return '/account/unavailable';
     case 'customer_home':

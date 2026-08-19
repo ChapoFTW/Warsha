@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { AppShell } from '@/components/app-shell';
+import { useSession } from '@/components/session-provider';
 import { appCopy } from '@/lib/app-copy';
 import { parseAddresses, type Address } from '@/lib/customer';
 import {
@@ -47,6 +48,7 @@ type Coordinate = {
 export default function AddressesPage() {
   const locale = useAppLocale();
   const words = appCopy[locale] as Record<string, string>;
+  const { refresh: refreshAccount } = useSession();
 
   const [addresses, setAddresses] = useState<Address[] | null>(null);
   const [failed, setFailed] = useState(false);
@@ -257,6 +259,7 @@ export default function AddressesPage() {
     }
 
     await load();
+    await refreshAccount();
     setEditorId(null);
     setBusyId(null);
   };

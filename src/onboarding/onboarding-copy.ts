@@ -34,6 +34,12 @@ export const onboardingCopy = {
     roleContinue: 'Continue',
     roleBothNote: 'Every account can book services. Choosing Worker also starts your application.',
     roleLocked: 'Your account type cannot be changed while your application is being reviewed.',
+    accountSetupIncomplete: 'This signed-in account did not finish Warsha account setup.',
+    accountSetupResume: 'Continue the registration you already started.',
+    accountSetupUnavailable:
+      'We cannot safely recover how this account was registered. Try loading it again, or sign out and contact support.',
+    accountStateUnavailable:
+      'We could not load this account setup. Try again, or sign out and use another account.',
 
     // Customer address
     addressTitle: 'Where do you need the work done?',
@@ -220,6 +226,12 @@ export const onboardingCopy = {
     roleContinue: 'كمّل',
     roleBothNote: 'أي حساب يقدر يحجز خدمات. لو اخترت صنايعي هيبدأ طلبك كمان.',
     roleLocked: 'مش هينفع تغيّر نوع الحساب وطلبك تحت المراجعة.',
+    accountSetupIncomplete: 'الحساب اللي داخل بيه ما كمّلش إعداد حساب ورشة.',
+    accountSetupResume: 'كمّل التسجيل اللي بدأته قبل كده.',
+    accountSetupUnavailable:
+      'مش قادرين نحدد بأمان الحساب ده اتسجل إزاي. حاول تحمّله تاني، أو اخرج وتواصل مع الدعم.',
+    accountStateUnavailable:
+      'مقدرناش نحمّل إعداد الحساب ده. حاول تاني، أو اخرج واستخدم حساب تاني.',
 
     addressTitle: 'الشغل هيتعمل فين؟',
     addressIntro: 'الصنايعي مش هيشوف العنوان غير بعد ما تحجز، وبس اللي يوصله ليك.',

@@ -7,6 +7,7 @@ import {
   signupLegalSelectionSatisfied,
 } from '../src/legal/signup-legal.ts';
 import { startupRouteDecision } from '../src/navigation/startup-route-policy.ts';
+import { signupRoleFromMetadata } from '../src/auth/signup-machine.ts';
 
 let checks = 0;
 function check(condition: unknown, message: string) {
@@ -59,6 +60,29 @@ equal(startupRouteDecision({ ...workerBase, ready: false, pathname: '/', target:
 equal(startupRouteDecision({ ...workerBase, ready: true, pathname: '/', target: 'worker_onboarding' }),
   { status: 'redirecting', redirect: '/onboarding/worker' },
   'new worker root remains neutral until worker onboarding is current');
+
+// Exact historical/manual-auth incident: Auth and every account provider had
+// settled, the backend correctly returned role_choice, and the old policy
+// replaced /create-account with itself forever. The route must become
+// renderable once Expo Router reports the canonical recovery destination.
+const authOnlyTrace = [
+  startupRouteDecision({ ...base, ready: false, pathname: '/sign-in', target: 'gateway' }),
+  startupRouteDecision({ ...base, ready: true, pathname: '/sign-in', target: 'role_choice' }),
+  startupRouteDecision({ ...base, ready: true, pathname: '/create-account', target: 'role_choice' }),
+];
+equal(authOnlyTrace.map(step => step.status), ['loading', 'redirecting', 'render'],
+  'an Auth-only account reaches a terminal recovery screen instead of a same-route redirect loop');
+equal(authOnlyTrace[1], { status: 'redirecting', redirect: '/create-account' },
+  'role hydration moves the signed-in account to the canonical setup recovery route');
+equal(authOnlyTrace[2], { status: 'render', redirect: null },
+  'the canonical setup route is renderable and never replaced with itself');
+
+equal(signupRoleFromMetadata({ account_role: 'customer' }), 'customer',
+  'an interrupted customer signup may retry only its recorded customer role');
+equal(signupRoleFromMetadata({ account_role: 'provider' }), 'worker',
+  'an interrupted trusted-worker signup may retry only its recorded worker role');
+equal(signupRoleFromMetadata({}), null,
+  'a historical/manual Auth identity cannot invent missing signup intent');
 
 // A stale token follows the same unresolved -> signed-out route sequence.
 const staleTrace = [
@@ -143,6 +167,14 @@ check(/getSession\(\)[\s\S]*getUser\(\)/.test(authContext),
   'persisted sessions are server-validated before Auth readiness');
 check(/decisionStatus !== 'render'/.test(authGate),
   'unresolved and redirecting states do not mount the application shell');
+check(/onboarding\.error/.test(authGate)
+  && /accountStateUnavailable/.test(authGate)
+  && /onboarding\.reload\(\)/.test(authGate),
+  'a failed onboarding authority terminates on a neutral, retryable recovery surface');
+check(/recoveringExistingSignup/.test(createAccount)
+  && /signupRoleFromMetadata/.test(createAccount)
+  && /resumeExistingSignup/.test(createAccount),
+  'partial signup recovery never mounts a second credential form');
 check(/legal\.obligations\.enforced \|\| legal\.unavailable/.test(authGate),
   'an unreadable enforced-consent authority fails closed to the legal surface');
 check(/SplashScreen\.preventAutoHideAsync/.test(rootLayout)

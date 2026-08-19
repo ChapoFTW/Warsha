@@ -3,9 +3,15 @@
   "items": [
     {
       "id": "auth-startup-indefinite-loading",
-      "status": "investigating",
-      "summary": "Existing-account authentication can remain indefinitely in startup resolution; diagnosis and any account retirement remain intentionally separate from tooling work.",
-      "humanBoundary": "Do not retire or mutate the historical account until its ownership/cascade/audit impact is reported and approved."
+      "status": "complete",
+      "summary": "The authenticated role-choice self-redirect and web account-state error loop are fixed and cross-platform validation is complete.",
+      "humanBoundary": "Manual Preview verification remains separate from the validated code checkpoint."
+    },
+    {
+      "id": "historical-auth-account-retirement",
+      "status": "awaiting_human_approval",
+      "summary": "The historical Auth-only account remains unchanged; retirement is unsafe until hosted ownership is fully inventoried and an audit-preserving identity-retirement path is approved.",
+      "humanBoundary": "Do not delete, anonymize, revoke, ban, rename, or recreate the account without explicit approval after the hosted inventory and immutable staff-grant impact are reviewed."
     }
   ]
 }

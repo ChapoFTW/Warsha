@@ -1,12 +1,15 @@
 import { usePathname, useRouter } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
-import { StyleSheet, View, type ViewStyle } from 'react-native';
+import { StyleSheet, View, type TextStyle, type ViewStyle } from 'react-native';
 
 import { BrandLoadingMark } from '@/components/warsha/BrandMark';
-import { type ThemeColors } from '@/constants/theme';
+import { BrandButton } from '@/components/warsha/BrandUI';
+import { AppText } from '@/components/warsha/Typography';
+import { spacing, type ThemeColors } from '@/constants/theme';
 import { useThemedStyles } from '@/src/appearance/appearance-context';
 import { useAuth } from '@/src/auth/auth-context';
+import { useLocalization } from '@/src/i18n/localization';
 import {
   defaultModeFor,
   routeAfterHydration,
@@ -43,9 +46,11 @@ import { useProviderFoundation } from '@/src/providers/provider-context';
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const styles = useThemedStyles(makeStyles);
   const ot = useOnboardingText();
+  const { t } = useLocalization();
   const router = useRouter();
   const pathname = usePathname();
-  const { loading: authLoading } = useAuth();
+  const auth = useAuth();
+  const { loading: authLoading } = auth;
   const onboarding = useOnboarding();
   const provider = useProviderFoundation();
   const legal = useLegal();
@@ -64,6 +69,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   const legalReady = !signedIn
     || (legal.ready && legal.accountKey === onboarding.accountKey);
   const ready = providersReady && modeReady && legalReady;
+  const accountAuthorityUnavailable = signedIn && onboarding.ready && onboarding.error;
 
   // Mode is initialized once per authenticated app session/account. Customer
   // mode remains available to a worker, but it is an explicit in-memory
@@ -93,8 +99,10 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
       && !legal.satisfied
       && (legal.obligations.enforced || legal.unavailable),
   });
-  const decisionStatus = decision.status;
-  const redirect = decision.status === 'redirecting' ? decision.redirect : null;
+  const decisionStatus = accountAuthorityUnavailable ? 'render' : decision.status;
+  const redirect = !accountAuthorityUnavailable && decision.status === 'redirecting'
+    ? decision.redirect
+    : null;
 
   useEffect(() => {
     if (redirect) router.replace(redirect);
@@ -120,14 +128,42 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     );
   }
 
+  if (accountAuthorityUnavailable) {
+    return (
+      <View style={styles.recovery} accessibilityRole="alert">
+        <BrandLoadingMark size={56} accessibilityLabel={ot.text('gatewayLoading')} />
+        <AppText style={styles.recoveryBody}>{ot.text('accountStateUnavailable')}</AppText>
+        <BrandButton label={t('tryAgain')} onPress={() => void onboarding.reload()} />
+        <BrandButton label={t('signOut')} variant="ghost" onPress={() => void auth.signOut()} />
+      </View>
+    );
+  }
+
   return <>{children}</>;
 }
 
-const makeStyles = (colors: ThemeColors): { loading: ViewStyle } => StyleSheet.create({
+const makeStyles = (colors: ThemeColors): {
+  loading: ViewStyle;
+  recovery: ViewStyle;
+  recoveryBody: TextStyle;
+} => StyleSheet.create({
   loading: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.canvas,
+  },
+  recovery: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.lg,
+    padding: spacing.xl,
+    backgroundColor: colors.canvas,
+  },
+  recoveryBody: {
+    maxWidth: 420,
+    textAlign: 'center',
+    color: colors.textSecondary,
   },
 });
