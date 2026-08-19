@@ -30,7 +30,8 @@ four parallel jobs:
 
 1. **Static** — install, typecheck, lint, mojibake, whitespace, secret scan,
    migration audit, environment audit, forbidden files
-2. **Regressions** — all eighteen suites, including the brand and motto checks
+2. **Regressions** — the explicit deterministic inventory in
+   `scripts/warsha-automation/policy.mjs`, including automation guard tests
 3. **Database** — clean Supabase start applying the whole forward chain, then
    every pgTAP suite
 4. **Build** — Expo Doctor, three cache-cleared exports, and a credential-shape
@@ -115,3 +116,7 @@ change is unreachable.
 **CI has never executed.** The workflows are committed and the same gates pass
 locally on every commit, but no run exists on a remote. Confirming the first
 green CI run is a private beta prerequisite.
+
+For source-state recovery, impact-based QA planning, evidence artifacts, and
+guarded Preview release orchestration, use
+`docs/operations/engineering-automation-runbook.md`.

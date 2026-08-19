@@ -56,12 +56,7 @@ function validate() {
     // once, and a commit that added a colour literal outside the theme reached
     // origin/main green: the gate could not see the class of failure at all.
     'typecheck', 'lint', 'check:mojibake', 'audit:migrations', 'audit:secrets',
-    'audit:appearance',
-    'test:qa-preview', 'test:platform-preferences', 'test:onboarding-stabilization',
-    'test:signup-legal-startup', 'test:signup-state', 'test:web-platform',
-    'test:web-bilingual', 'test:identity-signin', 'test:rtl-direction', 'test:web-brand', 'test:brand-assets', 'test:web-auth', 'test:web-app', 'test:admin-console', 'test:web-navigation',
-    'test:wps018', 'test:wps023', 'test:wps024',
-    'test:wps025', 'test:worker-auth', 'test:customer-email-confirmation', 'test:password-recovery',
+    'audit:appearance', 'test:all',
   ]) npmScript(name);
   run(commands.npx, ['expo-doctor']);
   inPreviewEnvironment('node ./scripts/qa-release.mjs export-preview');

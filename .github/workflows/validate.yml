@@ -64,6 +64,12 @@ jobs:
       - name: Migration audit
         run: npm run audit:migrations
 
+      - name: Appearance authority audit
+        run: npm run audit:appearance
+
+      - name: Automation guard regressions
+        run: npm run test:automation
+
       - name: Environment, route, and asset audit
         run: npm run audit:environment
 
@@ -93,18 +99,10 @@ jobs:
           cache: npm
       - run: npm ci
 
-      # Includes the brand and motto regressions, which assert the approved
-      # identity and the active motto have not drifted.
+      # The inventory is explicit in policy.mjs. A package script cannot be
+      # added and silently omitted from the high-level gate.
       - name: Run every regression suite
-        run: |
-          set -euo pipefail
-          for suite in payments wps008-alignment device-p1 brand provider-card worker-auth \
-                       profile-phone wps009 wps010 wps011 wps012 wps013 wps014 wps015 \
-                       wps016 wps017 wps018 marketplace; do
-            echo "::group::test:$suite"
-            npm run "test:$suite"
-            echo "::endgroup::"
-          done
+        run: npm run test:all
 
   database:
     name: Migrations and pgTAP
@@ -157,6 +155,12 @@ jobs:
 
       - name: Web export
         run: npx expo export --platform web --clear --output-dir dist/ci-web
+
+      - name: Next.js typecheck
+        run: npm run web:typecheck
+
+      - name: Next.js production build
+        run: npm run web:build
 
       # A shipped artefact must never carry a credential, whatever the source
       # audit said about the repository: a build can inject one from the

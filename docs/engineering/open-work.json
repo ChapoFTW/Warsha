@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "items": [
+    {
+      "id": "auth-startup-indefinite-loading",
+      "status": "investigating",
+      "summary": "Existing-account authentication can remain indefinitely in startup resolution; diagnosis and any account retirement remain intentionally separate from tooling work.",
+      "humanBoundary": "Do not retire or mutate the historical account until its ownership/cascade/audit impact is reported and approved."
+    }
+  ]
+}

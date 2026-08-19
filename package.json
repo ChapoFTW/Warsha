@@ -69,7 +69,20 @@
     "test:web-app": "node --no-warnings --experimental-strip-types scripts/web-app-surfaces.test.mts",
     "test:admin-console": "node --no-warnings --experimental-strip-types scripts/admin-console.test.mts",
     "test:web-navigation": "node --no-warnings --experimental-strip-types scripts/web-navigation.test.mts",
-    "test:password-recovery": "node --no-warnings --experimental-strip-types scripts/password-recovery.test.mts"
+    "test:password-recovery": "node --no-warnings --experimental-strip-types scripts/password-recovery.test.mts",
+    "test:automation": "node --no-warnings --experimental-strip-types scripts/warsha-automation.test.mts",
+    "test:all": "node scripts/run-deterministic-tests.mjs",
+    "web:typecheck": "npm --prefix web run typecheck",
+    "warsha:handoff": "node scripts/warsha-engineering.mjs handoff",
+    "warsha:recover": "node scripts/warsha-engineering.mjs recover",
+    "warsha:impact": "node scripts/warsha-engineering.mjs impact",
+    "warsha:plan-qa": "node scripts/warsha-engineering.mjs plan-qa",
+    "warsha:validate": "node scripts/warsha-engineering.mjs validate",
+    "warsha:release-check": "node scripts/warsha-engineering.mjs release-check",
+    "warsha:release": "node scripts/warsha-engineering.mjs release",
+    "warsha:smoke": "node scripts/warsha-engineering.mjs smoke",
+    "warsha:acceptance": "node scripts/warsha-engineering.mjs acceptance",
+    "warsha:agent-handoff": "node scripts/warsha-engineering.mjs agent-handoff"
   },
   "dependencies": {
     "@expo-google-fonts/cairo": "^0.4.2",

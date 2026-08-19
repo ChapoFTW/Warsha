@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://engineering.usewarsha.com/schemas/handoff-v1.json",
+  "title": "Warsha engineering handoff",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "baseline",
+    "sourceFingerprint",
+    "git",
+    "repository",
+    "changes",
+    "platformImpact",
+    "validation",
+    "deployment",
+    "release",
+    "humanVerification",
+    "unfinishedWork",
+    "warnings"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "baseline": { "type": "string" },
+    "sourceFingerprint": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "git": { "type": "object" },
+    "repository": { "type": "object" },
+    "changes": { "type": "object" },
+    "platformImpact": { "type": "object" },
+    "validation": { "type": "object" },
+    "deployment": { "type": "object" },
+    "release": { "type": "object" },
+    "humanVerification": { "type": "array" },
+    "unfinishedWork": { "type": "array" },
+    "warnings": { "type": "array", "items": { "type": "string" } }
+  }
+}

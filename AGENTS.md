@@ -19,3 +19,17 @@ for the existing authority — Warsha already has one for each.
 
 **Read `docs/constitution/cross-platform-parity.md` before starting work that
 touches more than one surface.**
+
+# Engineering automation and release boundaries
+
+Use `docs/operations/engineering-automation-runbook.md` for recovery, impact,
+validation, release classification and handoff commands. Generated handoffs
+are advisory: verify them against Git, preserve dirty work, and capture the
+underlying command's real exit code directly.
+
+Administration is web-only. Search existing backend authority before adding
+an RPC. OTA cannot carry a native dependency/configuration change. Releases
+require a clean exact validated source state; Preview automation never grants
+Production backend authority. A human-only boundary stops that action, not
+safe independent work. Put substantial final reports in one fenced Markdown
+block.

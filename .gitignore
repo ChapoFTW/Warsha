@@ -49,5 +49,6 @@ app-example
 /supabase/.branches/
 
 tmp/
+/artifacts/
 .vercel
 .env*
