@@ -7,7 +7,10 @@ import {
   signupLegalSelectionSatisfied,
 } from '../src/legal/signup-legal.ts';
 import { startupRouteDecision } from '../src/navigation/startup-route-policy.ts';
-import { signupRoleFromMetadata } from '../src/auth/signup-machine.ts';
+import {
+  customerSetupRecoveryEligible,
+  signupRoleFromMetadata,
+} from '../src/auth/signup-machine.ts';
 
 let checks = 0;
 function check(condition: unknown, message: string) {
@@ -83,6 +86,14 @@ equal(signupRoleFromMetadata({ account_role: 'provider' }), 'worker',
   'an interrupted trusted-worker signup may retry only its recorded worker role');
 equal(signupRoleFromMetadata({}), null,
   'a historical/manual Auth identity cannot invent missing signup intent');
+equal(customerSetupRecoveryEligible({ roles: ['customer'], hasCustomerProfile: true }), true,
+  'an exact existing customer role and profile permit the narrow legacy setup recovery');
+equal(customerSetupRecoveryEligible({ roles: ['customer'], hasCustomerProfile: false }), false,
+  'a role without its customer profile cannot manufacture missing setup history');
+equal(customerSetupRecoveryEligible({ roles: ['customer', 'provider'], hasCustomerProfile: true }), false,
+  'a worker-capable account cannot be relabelled through customer recovery');
+equal(customerSetupRecoveryEligible({ roles: [], hasCustomerProfile: true }), false,
+  'a profile without an authoritative customer role is not recovery evidence');
 
 // A stale token follows the same unresolved -> signed-out route sequence.
 const staleTrace = [
@@ -175,6 +186,17 @@ check(/recoveringExistingSignup/.test(createAccount)
   && /signupRoleFromMetadata/.test(createAccount)
   && /resumeExistingSignup/.test(createAccount),
   'partial signup recovery never mounts a second credential form');
+check(/customerRecoveryEligible/.test(createAccount)
+  && /resumeCustomerSetup\(auth\.user\.id\)/.test(createAccount),
+  'mobile offers the governed legacy-customer recovery without handling credentials');
+const onboardingRepository = readFileSync('src/onboarding/onboarding-repository.ts', 'utf8');
+check(/auth\.getUser\(\)/.test(onboardingRepository)
+  && /from\('user_roles'\)/.test(onboardingRepository)
+  && /from\('customer_profiles'\)/.test(onboardingRepository)
+  && /customerSetupRecoveryEligible/.test(onboardingRepository),
+  'mobile derives recovery eligibility from fresh self-authentication and RLS-scoped product rows');
+check(/resumeCustomerSetup[\s\S]*customerRecoveryEligible[\s\S]*selectRole\(expectedAccount, 'customer'\)/.test(onboardingRepository),
+  'mobile rechecks eligibility immediately before the existing role-selection authority');
 check(/legal\.obligations\.enforced \|\| legal\.unavailable/.test(authGate),
   'an unreadable enforced-consent authority fails closed to the legal surface');
 check(/SplashScreen\.preventAutoHideAsync/.test(rootLayout)

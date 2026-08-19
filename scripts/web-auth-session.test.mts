@@ -11,6 +11,7 @@ import {
 } from '../web/lib/account.ts';
 import { emptyOnboardingState, routeFor } from '../src/onboarding/onboarding-types.ts';
 import { classifySignInIdentity } from '../src/auth/auth-identifier.ts';
+import { customerSetupRecoveryEligible } from '../src/auth/signup-machine.ts';
 
 let checks = 0;
 function check(condition: unknown, message: string) {
@@ -33,8 +34,13 @@ check(/export \{ routeFor/.test(account),
 const provider = readWeb('components', 'session-provider.tsx');
 check(/rpc\('get_my_onboarding_state'\)/.test(provider),
   'account state comes from the same RPC the mobile client calls');
-check(!/customer_profiles|provider_profiles|from\('profiles'\)/.test(provider),
-  'the web does not read account tables directly around the governed RPC');
+check(/from\('user_roles'\)/.test(provider)
+  && /from\('customer_profiles'\)/.test(provider)
+  && !/provider_profiles|from\('profiles'\)/.test(provider),
+  'legacy recovery reads only the signed-in account evidence exposed by existing RLS');
+check(customerSetupRecoveryEligible({ roles: ['customer'], hasCustomerProfile: true })
+  && !customerSetupRecoveryEligible({ roles: ['customer', 'provider'], hasCustomerProfile: true }),
+  'web and mobile share the same exact-customer recovery predicate');
 
 // --- No second auth system ---------------------------------------------------
 const browserClient = readWeb('lib', 'supabase-browser.ts');
@@ -115,8 +121,18 @@ check(/resolution\.status === 'error'[\s\S]{0,100}status = 'recovery'/.test(star
   'a failed web account authority renders a retryable neutral recovery surface');
 check(/resolution\.target === 'role_choice'[\s\S]{0,100}status = 'recovery'/.test(startupGate),
   'a historical Auth-only web identity cannot be redirected to the missing role route');
-check(/void refresh\(\)/.test(startupGate) && /href="\/sign-out"/.test(startupGate),
+check(/void refresh\(\)/.test(startupGate) && /'\/sign-out'/.test(startupGate),
   'web recovery offers retry and safe account switching without mounting a product shell');
+check(/customerRecoveryEligible/.test(startupGate)
+  && /resumeCustomerSetup\(\)/.test(startupGate),
+  'eligible web customers receive a credential-free governed recovery action');
+check(/readCustomerRecoveryEligibility\(userId\)[\s\S]*rpc\('select_my_account_role',\s*\{[\s\S]*p_role: 'customer'/.test(provider),
+  'web rechecks RLS evidence immediately before the single existing customer role RPC');
+check(/customerRecoveryInFlight\.current/.test(provider)
+  && /customerRecoveryBusy/.test(provider),
+  'web recovery prevents concurrent duplicate submissions');
+check(!/updateUser|raw_user_meta_data|service_role/i.test(provider),
+  'recovery neither mutates Auth metadata nor introduces privileged credentials');
 
 // --- Role resolution ---------------------------------------------------------
 const customerOnly = { ...emptyOnboardingState, roleSelected: true, intendedRole: 'customer' as const, addressConfirmed: true };

@@ -1,6 +1,7 @@
 import { File } from 'expo-file-system';
 
 import { environment } from '@/src/config/environment';
+import { customerSetupRecoveryEligible } from '@/src/auth/signup-machine';
 import { getSupabaseClient } from '@/src/lib/supabase';
 
 import {
@@ -58,6 +59,35 @@ export const onboardingRepository = {
     const { data, error } = await client.rpc('select_my_account_role', { p_role: role });
     if (error) throw error;
     return { ...emptyOnboardingState, ...(data as Partial<OnboardingState>) };
+  },
+
+  async customerRecoveryEligible(accountKey: string | null): Promise<boolean> {
+    if (environment.dataMode === 'mock') return true;
+    const expectedAccount = requireAccount(accountKey);
+    const client = getSupabaseClient();
+    const { data: authData, error: authError } = await client.auth.getUser();
+    if (authError) throw authError;
+    if (authData.user?.id !== expectedAccount) throw new Error('The active account changed.');
+
+    const [rolesResult, profileResult] = await Promise.all([
+      client.from('user_roles').select('role').eq('user_id', expectedAccount),
+      client.from('customer_profiles').select('id').eq('id', expectedAccount).maybeSingle(),
+    ]);
+    if (rolesResult.error) throw rolesResult.error;
+    if (profileResult.error) throw profileResult.error;
+
+    return customerSetupRecoveryEligible({
+      roles: (rolesResult.data ?? []).map((row) => String(row.role)),
+      hasCustomerProfile: Boolean(profileResult.data),
+    });
+  },
+
+  async resumeCustomerSetup(accountKey: string | null): Promise<OnboardingState> {
+    const expectedAccount = requireAccount(accountKey);
+    if (!(await this.customerRecoveryEligible(expectedAccount))) {
+      throw new Error('This account is not eligible for customer setup recovery.');
+    }
+    return this.selectRole(expectedAccount, 'customer');
   },
 
   async confirmAddress(

@@ -63,6 +63,8 @@ export default function CreateAccount() {
   const pendingConfirmation = signupPendingNotice(signup);
   const errorKey = signupErrorKey(signup);
   const recoveryRole = signupRoleFromMetadata(auth.user?.user_metadata);
+  const recoveryChoice = recoveryRole
+    ?? (onboarding.customerRecoveryEligible ? 'customer' : null);
   const recoveringExistingSignup = Boolean(auth.user && onboarding.route === 'role_choice');
 
   const chooseRole = (choice: AccountRoleChoice | null) => {
@@ -138,7 +140,11 @@ export default function CreateAccount() {
   const resumeExistingSignup = async (choice: AccountRoleChoice) => {
     if (!auth.user) return;
     setSignup(signupSubmitting());
-    const recorded = await onboarding.selectRole(choice, auth.user.id);
+    const recorded = recoveryRole
+      ? await onboarding.selectRole(choice, auth.user.id)
+      : choice === 'customer'
+        ? await onboarding.resumeCustomerSetup(auth.user.id)
+        : false;
     setSignup(recorded ? signupSucceeded() : signupFailed('authError'));
   };
 
@@ -156,17 +162,25 @@ export default function CreateAccount() {
             {ot.text('accountSetupIncomplete')}
           </AppText>
           <AppText style={styles.note}>
-            {ot.text(recoveryRole ? 'accountSetupResume' : 'accountSetupUnavailable')}
+            {ot.text(
+              recoveryRole
+                ? 'accountSetupResume'
+                : recoveryChoice === 'customer'
+                  ? 'accountSetupCustomerRecovery'
+                  : 'accountSetupUnavailable',
+            )}
           </AppText>
-          {recoveryRole ? (
+          {recoveryChoice ? (
             <>
               <AppText style={styles.optionTitle}>
-                {ot.text(recoveryRole === 'worker' ? 'roleWorker' : 'roleCustomer')}
+                {ot.text(recoveryChoice === 'worker' ? 'roleWorker' : 'roleCustomer')}
               </AppText>
               <BrandButton
-                label={ot.text('roleContinue')}
+                label={ot.text(
+                  recoveryRole ? 'roleContinue' : 'accountSetupCustomerRecoveryAction',
+                )}
                 loading={busy}
-                onPress={() => void resumeExistingSignup(recoveryRole)}
+                onPress={() => void resumeExistingSignup(recoveryChoice)}
               />
             </>
           ) : (

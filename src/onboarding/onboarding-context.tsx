@@ -44,11 +44,13 @@ type OnboardingValue = {
   ready: boolean;
   refreshing: boolean;
   accountKey: string | null;
+  customerRecoveryEligible: boolean;
   state: OnboardingState;
   candidates: IdentityCandidate[];
   route: RouteTarget;
   error: boolean;
   selectRole: (role: AccountRoleChoice, expectedAccountKey?: string) => Promise<boolean>;
+  resumeCustomerSetup: (expectedAccountKey?: string) => Promise<boolean>;
   confirmAddress: (input: {
     addressId: string;
     latitude: number;
@@ -97,6 +99,7 @@ export function OnboardingProvider({ children }: PropsWithChildren) {
   const [refreshing, setRefreshing] = useState(false);
   const [state, setState] = useState<OnboardingState>(emptyOnboardingState);
   const [candidates, setCandidates] = useState<IdentityCandidate[]>([]);
+  const [customerRecoveryEligible, setCustomerRecoveryEligible] = useState(false);
   const [error, setError] = useState(false);
 
   const generation = useRef(0);
@@ -111,6 +114,7 @@ export function OnboardingProvider({ children }: PropsWithChildren) {
     if (!key) {
       setState(emptyOnboardingState);
       setCandidates([]);
+      setCustomerRecoveryEligible(false);
       setLoadedAccount(null);
       loadedAccountRef.current = null;
       setError(false);
@@ -130,8 +134,20 @@ export function OnboardingProvider({ children }: PropsWithChildren) {
     else setReady(false);
     try {
       const next = await onboardingRepository.state(key);
+      let nextCustomerRecoveryEligible = false;
+      if (!next.roleSelected) {
+        try {
+          nextCustomerRecoveryEligible = await onboardingRepository.customerRecoveryEligible(key);
+        } catch {
+          // This proof only controls whether the narrow legacy-customer action
+          // is shown. If it cannot be read, fail that action closed without
+          // hiding metadata-backed recovery for a canonical interrupted signup.
+          nextCustomerRecoveryEligible = false;
+        }
+      }
       if (current !== generation.current || accountRef.current !== key) return;
       setState(next);
+      setCustomerRecoveryEligible(nextCustomerRecoveryEligible);
       setLoadedAccount(key);
       loadedAccountRef.current = key;
       setError(false);
@@ -159,6 +175,7 @@ export function OnboardingProvider({ children }: PropsWithChildren) {
       // customer home and quietly imply their application vanished.
       setState(emptyOnboardingState);
       setCandidates([]);
+      setCustomerRecoveryEligible(false);
       setLoadedAccount(key);
       loadedAccountRef.current = key;
       setError(true);
@@ -201,6 +218,9 @@ export function OnboardingProvider({ children }: PropsWithChildren) {
   );
 
   const visibleState = loadedAccount === accountKey ? state : emptyOnboardingState;
+  const visibleCustomerRecoveryEligible = loadedAccount === accountKey
+    ? customerRecoveryEligible
+    : false;
   const signedIn = mode === 'mock' || Boolean(user);
   const accountReady = accountHydrationReady({
     activeAccountKey: accountKey,
@@ -215,6 +235,7 @@ export function OnboardingProvider({ children }: PropsWithChildren) {
       ready: accountReady && !authLoading,
       refreshing,
       accountKey,
+      customerRecoveryEligible: visibleCustomerRecoveryEligible,
       state: visibleState,
       candidates: loadedAccount === accountKey ? candidates : [],
       route: routeFor(loadedAccount === accountKey && !error ? visibleState : null, signedIn),
@@ -223,6 +244,12 @@ export function OnboardingProvider({ children }: PropsWithChildren) {
         (await run(
           'selectRole',
           (key) => onboardingRepository.selectRole(key, role),
+          expectedAccountKey,
+        )) !== null,
+      resumeCustomerSetup: async (expectedAccountKey) =>
+        (await run(
+          'resumeCustomerSetup',
+          (key) => onboardingRepository.resumeCustomerSetup(key),
           expectedAccountKey,
         )) !== null,
       confirmAddress: async (input) =>
@@ -243,7 +270,7 @@ export function OnboardingProvider({ children }: PropsWithChildren) {
         (await run('submitAppeal', (key) => onboardingRepository.submitAppeal(key, statement))) !== null,
       reload: load,
     }),
-    [accountReady, authLoading, accountKey, visibleState, loadedAccount, candidates, error, signedIn, refreshing, run, load],
+    [accountReady, authLoading, accountKey, visibleCustomerRecoveryEligible, visibleState, loadedAccount, candidates, error, signedIn, refreshing, run, load],
   );
 
   return <OnboardingContext.Provider value={value}>{children}</OnboardingContext.Provider>;

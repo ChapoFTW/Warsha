@@ -66,6 +66,11 @@ export const appCopy = {
     accountSetupIncomplete: 'This signed-in account did not finish Warsha account setup.',
     accountSetupIncompleteBody:
       'Warsha cannot safely infer the missing registration choice. Try loading it again, or sign out and contact support.',
+    accountSetupCustomerRecoveryBody:
+      'This account already has a customer profile. Continue to finish its customer setup.',
+    accountSetupCustomerRecoveryAction: 'Continue customer setup',
+    accountSetupCustomerRecoveryFailed:
+      'Customer setup could not be resumed. Nothing was changed. Try again.',
 
     workerNextStep: 'What to do next',
     workerVerificationPending: 'Your application is with a reviewer. You will be told the outcome and the reason.',
@@ -862,6 +867,11 @@ export const appCopy = {
     accountSetupIncomplete: 'الحساب اللي داخل بيه ما كمّلش إعداد حساب ورشة.',
     accountSetupIncompleteBody:
       'ورشة مش هتخمّن اختيار التسجيل الناقص. حاول تحمّله تاني، أو اخرج وتواصل مع الدعم.',
+    accountSetupCustomerRecoveryBody:
+      'الحساب ده عنده ملف عميل بالفعل. كمّل إعداد حساب العميل.',
+    accountSetupCustomerRecoveryAction: 'كمّل إعداد العميل',
+    accountSetupCustomerRecoveryFailed:
+      'مقدرناش نكمّل إعداد العميل. مفيش حاجة اتغيّرت. حاول تاني.',
 
     workerNextStep: 'الخطوة الجاية',
     workerVerificationPending: 'طلبك مع حد بيراجعه. هتعرف النتيجة والسبب.',

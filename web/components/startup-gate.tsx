@@ -73,7 +73,14 @@ function isCallbackAppRoute(path: string): boolean {
 export function StartupGate({ children }: { children: React.ReactNode }) {
   const locale = useAppLocale();
   const words = appCopy[locale];
-  const { resolution, refresh } = useSession();
+  const {
+    resolution,
+    customerRecoveryEligible,
+    customerRecoveryBusy,
+    customerRecoveryError,
+    resumeCustomerSetup,
+    refresh,
+  } = useSession();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -152,10 +159,30 @@ export function StartupGate({ children }: { children: React.ReactNode }) {
         <div className={styles.recovery}>
           <BrandMark size={56} />
           <h1>{missingSetup ? words.accountSetupIncomplete : words.loadFailed}</h1>
-          {missingSetup ? <p>{words.accountSetupIncompleteBody}</p> : null}
+          {missingSetup ? (
+            <p>
+              {customerRecoveryEligible
+                ? words.accountSetupCustomerRecoveryBody
+                : words.accountSetupIncompleteBody}
+            </p>
+          ) : null}
+          {missingSetup && customerRecoveryError ? (
+            <p role="alert">{words.accountSetupCustomerRecoveryFailed}</p>
+          ) : null}
           <div className={styles.actions}>
-            <button type="button" onClick={() => void refresh()}>{words.retry}</button>
-            <a href="/sign-out">{words.signOut}</a>
+            {missingSetup && customerRecoveryEligible ? (
+              <button
+                type="button"
+                disabled={customerRecoveryBusy}
+                onClick={() => void resumeCustomerSetup()}>
+                {customerRecoveryBusy ? words.loading : words.accountSetupCustomerRecoveryAction}
+              </button>
+            ) : (
+              <button type="button" onClick={() => void refresh()}>{words.retry}</button>
+            )}
+            <a aria-disabled={customerRecoveryBusy} href={customerRecoveryBusy ? undefined : '/sign-out'}>
+              {words.signOut}
+            </a>
           </div>
         </div>
       </div>

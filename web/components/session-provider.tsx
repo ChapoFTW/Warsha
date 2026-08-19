@@ -13,6 +13,7 @@ import {
   type ProductMode,
 } from '@/lib/account';
 import { supabase } from '@/lib/supabase';
+import { customerSetupRecoveryEligible } from '../../src/auth/signup-machine.ts';
 
 /**
  * The web's session and account authority.
@@ -40,7 +41,11 @@ type SessionValue = {
   resolution: AccountResolution;
   session: Session | null;
   preferredMode: ProductMode | null;
+  customerRecoveryEligible: boolean;
+  customerRecoveryBusy: boolean;
+  customerRecoveryError: boolean;
   chooseMode: (mode: ProductMode) => void;
+  resumeCustomerSetup: () => Promise<boolean>;
   refresh: () => Promise<void>;
 };
 
@@ -58,15 +63,42 @@ function readPreferredMode(userId: string): ProductMode | null {
   }
 }
 
+async function readCustomerRecoveryEligibility(userId: string): Promise<boolean> {
+  const client = supabase();
+  const { data: authData, error: authError } = await client.auth.getUser();
+  if (authError) throw authError;
+  if (authData.user?.id !== userId) throw new Error('The active account changed.');
+
+  const [rolesResult, profileResult] = await Promise.all([
+    client.from('user_roles').select('role').eq('user_id', userId),
+    client.from('customer_profiles').select('id').eq('id', userId).maybeSingle(),
+  ]);
+  if (rolesResult.error) throw rolesResult.error;
+  if (profileResult.error) throw profileResult.error;
+
+  return customerSetupRecoveryEligible({
+    roles: (rolesResult.data ?? []).map((row) => String(row.role)),
+    hasCustomerProfile: Boolean(profileResult.data),
+  });
+}
+
 export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [state, setState] = useState<OnboardingState | null>(null);
   const [accountStateError, setAccountStateError] = useState(false);
   const [authSettled, setAuthSettled] = useState(false);
   const [preferredMode, setPreferredMode] = useState<ProductMode | null>(null);
+  const [customerRecoveryEligible, setCustomerRecoveryEligible] = useState(false);
+  const [customerRecoveryBusy, setCustomerRecoveryBusy] = useState(false);
+  const [customerRecoveryError, setCustomerRecoveryError] = useState(false);
   const accountGeneration = useRef(0);
+  const customerRecoveryInFlight = useRef(false);
 
-  const loadAccountState = useCallback(async (generation: number, active: () => boolean) => {
+  const loadAccountState = useCallback(async (
+    generation: number,
+    active: () => boolean,
+    userId: string,
+  ) => {
     const { data, error } = await supabase().rpc('get_my_onboarding_state');
     if (!active() || accountGeneration.current !== generation) return;
     if (error) {
@@ -75,10 +107,26 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       // than assume customer or leave the loading mark spinning forever.
       setState(null);
       setAccountStateError(true);
+      setCustomerRecoveryEligible(false);
       return;
     }
-    setState({ ...emptyOnboardingState, ...(data as Partial<OnboardingState>) });
+    const next = { ...emptyOnboardingState, ...(data as Partial<OnboardingState>) };
+    let nextCustomerRecoveryEligible = false;
+    if (!next.roleSelected) {
+      try {
+        nextCustomerRecoveryEligible = await readCustomerRecoveryEligibility(userId);
+      } catch {
+        // Eligibility is an additional proof for one legacy recovery action.
+        // If its RLS reads fail, hide that action without turning customer into
+        // a guessed role or obscuring the authoritative onboarding response.
+        nextCustomerRecoveryEligible = false;
+      }
+    }
+    if (!active() || accountGeneration.current !== generation) return;
+    setState(next);
     setAccountStateError(false);
+    setCustomerRecoveryEligible(nextCustomerRecoveryEligible);
+    setCustomerRecoveryError(false);
   }, []);
 
   useEffect(() => {
@@ -102,13 +150,17 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         if (!active) return;
         setSession(verified);
         setAccountStateError(false);
+        setCustomerRecoveryEligible(false);
+        setCustomerRecoveryError(false);
         setPreferredMode(verified ? readPreferredMode(verified.user.id) : null);
         const generation = ++accountGeneration.current;
-        if (verified) await loadAccountState(generation, isActive);
+        if (verified) await loadAccountState(generation, isActive, verified.user.id);
       } catch {
         if (active) {
           setSession(null);
           setAccountStateError(false);
+          setCustomerRecoveryEligible(false);
+          setCustomerRecoveryError(false);
         }
       } finally {
         if (active) setAuthSettled(true);
@@ -118,7 +170,11 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     const { data: subscription } = supabase().auth.onAuthStateChange((event, next) => {
       if (!active) return;
       const generation = ++accountGeneration.current;
+      customerRecoveryInFlight.current = false;
+      setCustomerRecoveryBusy(false);
       setSession(next);
+      setCustomerRecoveryEligible(false);
+      setCustomerRecoveryError(false);
       if (!next) {
         setState(null);
         setAccountStateError(false);
@@ -132,7 +188,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         setState(null);
         setAccountStateError(false);
         setPreferredMode(readPreferredMode(next.user.id));
-        void loadAccountState(generation, isActive);
+        void loadAccountState(generation, isActive, next.user.id);
       }
     });
 
@@ -153,11 +209,45 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     }
   }, [session?.user.id]);
 
+  const resumeCustomerSetup = useCallback(async (): Promise<boolean> => {
+    const userId = session?.user.id;
+    if (!userId || !customerRecoveryEligible || customerRecoveryInFlight.current) return false;
+
+    customerRecoveryInFlight.current = true;
+    setCustomerRecoveryBusy(true);
+    setCustomerRecoveryError(false);
+    const generation = accountGeneration.current;
+    try {
+      // Re-read the RLS-scoped evidence immediately before mutation. The UI's
+      // earlier proof can never authorize a different or newly changed account.
+      if (!(await readCustomerRecoveryEligibility(userId))) {
+        throw new Error('This account is not eligible for customer setup recovery.');
+      }
+      const { data, error } = await supabase().rpc('select_my_account_role', {
+        p_role: 'customer',
+      });
+      if (error) throw error;
+      if (accountGeneration.current !== generation) return false;
+
+      setState({ ...emptyOnboardingState, ...(data as Partial<OnboardingState>) });
+      setAccountStateError(false);
+      setCustomerRecoveryEligible(false);
+      return true;
+    } catch {
+      if (accountGeneration.current === generation) setCustomerRecoveryError(true);
+      return false;
+    } finally {
+      customerRecoveryInFlight.current = false;
+      if (accountGeneration.current === generation) setCustomerRecoveryBusy(false);
+    }
+  }, [customerRecoveryEligible, session?.user.id]);
+
   const refresh = useCallback(async () => {
+    if (!session?.user.id) return;
     const generation = ++accountGeneration.current;
     setAccountStateError(false);
-    await loadAccountState(generation, () => true);
-  }, [loadAccountState]);
+    await loadAccountState(generation, () => true, session.user.id);
+  }, [loadAccountState, session?.user.id]);
 
   const value = useMemo<SessionValue>(() => ({
     resolution: resolveAccount({
@@ -169,9 +259,15 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     }),
     session,
     preferredMode,
+    customerRecoveryEligible,
+    customerRecoveryBusy,
+    customerRecoveryError,
     chooseMode,
+    resumeCustomerSetup,
     refresh,
-  }), [accountStateError, authSettled, session, state, preferredMode, chooseMode, refresh]);
+  }), [accountStateError, authSettled, session, state, preferredMode,
+    customerRecoveryEligible, customerRecoveryBusy, customerRecoveryError,
+    chooseMode, resumeCustomerSetup, refresh]);
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }

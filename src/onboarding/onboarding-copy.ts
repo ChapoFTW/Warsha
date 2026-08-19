@@ -36,6 +36,9 @@ export const onboardingCopy = {
     roleLocked: 'Your account type cannot be changed while your application is being reviewed.',
     accountSetupIncomplete: 'This signed-in account did not finish Warsha account setup.',
     accountSetupResume: 'Continue the registration you already started.',
+    accountSetupCustomerRecovery:
+      'This account already has a customer profile. Continue to finish its customer setup.',
+    accountSetupCustomerRecoveryAction: 'Continue customer setup',
     accountSetupUnavailable:
       'We cannot safely recover how this account was registered. Try loading it again, or sign out and contact support.',
     accountStateUnavailable:
@@ -228,6 +231,9 @@ export const onboardingCopy = {
     roleLocked: 'مش هينفع تغيّر نوع الحساب وطلبك تحت المراجعة.',
     accountSetupIncomplete: 'الحساب اللي داخل بيه ما كمّلش إعداد حساب ورشة.',
     accountSetupResume: 'كمّل التسجيل اللي بدأته قبل كده.',
+    accountSetupCustomerRecovery:
+      'الحساب ده عنده ملف عميل بالفعل. كمّل إعداد حساب العميل.',
+    accountSetupCustomerRecoveryAction: 'كمّل إعداد العميل',
     accountSetupUnavailable:
       'مش قادرين نحدد بأمان الحساب ده اتسجل إزاي. حاول تحمّله تاني، أو اخرج وتواصل مع الدعم.',
     accountStateUnavailable:

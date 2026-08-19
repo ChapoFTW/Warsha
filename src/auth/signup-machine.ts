@@ -81,3 +81,23 @@ export function signupRoleFromMetadata(
   if (metadata?.account_role === 'provider') return 'worker';
   return null;
 }
+
+/**
+ * A narrowly scoped fallback for accounts created before canonical signup
+ * recorded its role provenance.
+ *
+ * This is evidence about existing product state, not a client-side role
+ * choice: the authenticated account must already own its customer profile and
+ * its complete visible product-role set must be exactly `customer`. A worker
+ * or ambiguous account therefore cannot be relabelled through the recovery
+ * surface. Both mobile and web use this same predicate before offering the
+ * existing governed `select_my_account_role('customer')` operation.
+ */
+export function customerSetupRecoveryEligible(input: {
+  roles: readonly string[];
+  hasCustomerProfile: boolean;
+}): boolean {
+  return input.hasCustomerProfile
+    && input.roles.length === 1
+    && input.roles[0] === 'customer';
+}

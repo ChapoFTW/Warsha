@@ -50,3 +50,9 @@
   text-decoration: none;
   cursor: pointer;
 }
+
+.actions button:disabled,
+.actions a[aria-disabled='true'] {
+  cursor: default;
+  opacity: 0.58;
+}
