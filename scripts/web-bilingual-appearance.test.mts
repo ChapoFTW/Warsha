@@ -169,19 +169,53 @@ check(/LOCALES\.map/.test(controls),
 const chrome = readFileSync('web/components/site-chrome.tsx', 'utf8');
 check(/LanguageSwitch/.test(chrome) && /AppearanceSwitch/.test(chrome),
   'both switchers are present in the site chrome, on every page');
-check(/aria-label=\{copy\[locale\]\.appearanceLabel\}/.test(controls)
-  && /role="group"/.test(controls),
-  'the appearance control is a labelled group for assistive technology');
-check(/aria-pressed=/.test(controls),
-  'the selected appearance is exposed to assistive technology, not only by colour');
-check(/hrefLang=\{option\}/.test(controls),
-  'the language switch is a real link with hreflang, not a scripted toggle');
+// Both controls are menus on web. Mobile keeps its own control: same languages
+// and same appearance semantics, a control shaped for the platform.
+check(/role="menu"/.test(controls) && /aria-label=\{controlLabel\}/.test(controls),
+  'each preference control is a labelled menu for assistive technology');
+check(/role: 'menuitemradio'/.test(controls) && /'aria-checked': checked/.test(controls),
+  'the chosen option is exposed as a checked radio item, not only by colour');
+check(/aria-haspopup="menu"/.test(controls) && /aria-expanded=\{open\}/.test(controls),
+  'the trigger states whether its menu is open');
+check(/hrefLang=\{option\.lang\}/.test(controls),
+  'the public language switch is still a real link with hreflang, not a scripted toggle');
+check(/mode === 'path' \? `\/\$\{option\}\$\{rest\}` : undefined/.test(controls),
+  'only the locale-prefixed surfaces build a path; the app surfaces still record a preference');
+
+// --- Keyboard and dismissal -------------------------------------------------
+check(/case 'ArrowDown'/.test(controls) && /case 'ArrowUp'/.test(controls)
+  && /case 'Home'/.test(controls) && /case 'End'/.test(controls),
+  'the menus are fully navigable by keyboard');
+check(/case 'Escape'/.test(controls) && /close\(true\)/.test(controls),
+  'Escape closes the menu and returns focus to the trigger');
+check(/pointerdown/.test(controls),
+  'a pointer press outside the menu closes it');
+check(/selected=\{mounted \? preference : null\}/.test(controls),
+  'no appearance is claimed as chosen until the stored value is known');
+
+// --- Mobile is deliberately untouched ---------------------------------------
+const mobileControls = readFileSync('components/warsha/GlobalPreferenceControls.tsx', 'utf8');
+check(/accessibilityRole="radiogroup"/.test(mobileControls),
+  'the mobile control keeps its own native semantics; the web menus did not replace it');
 
 // --- The switchers must not overlap content ---------------------------------
 const controlStyles = readFileSync('web/components/preference-controls.module.css', 'utf8');
 const chromeStyles = readFileSync('web/components/site-chrome.module.css', 'utf8');
-check(!/position:\s*(fixed|absolute)/.test(controlStyles),
-  'THE SWITCHERS ARE IN NORMAL FLOW AND CANNOT OVERLAP CONTENT AT ANY WIDTH');
+// A menu must leave the flow to sit over the page — that is what a menu is.
+// The invariant that matters is unchanged: nothing is anchored to the viewport,
+// so no control can end up parked on top of the footer at 380px.
+check(!/position:\s*fixed/.test(controlStyles),
+  'NO PREFERENCE CONTROL IS A FIXED WIDGET THAT CAN SIT ON TOP OF CONTENT');
+check(/\.menuRoot\s*\{[^}]*position:\s*relative/.test(controlStyles),
+  'the open menu is anchored to its own trigger, not to the viewport');
+check(/max-width:\s*min\(/.test(controlStyles) && /max-height:\s*min\(/.test(controlStyles),
+  'the menu is bounded by the viewport at every width and cannot clip offscreen');
+// Arabic is not a mirrored afterthought: the menu is placed with logical
+// properties, so it opens on the correct edge in RTL without a second rule.
+check(/inset-inline-end/.test(controlStyles) && /inset-block-start/.test(controlStyles),
+  'the menu is positioned with logical properties and flips correctly in Arabic');
+check(!/(^|[^-])\b(left|right):\s*\d/.test(controlStyles),
+  'no physical left/right offset overrides the logical placement');
 // Wrapping was the defect, not the safeguard: five navigation labels breaking
 // onto second lines is what made the header 122px tall at 1440px. The header
 // now reorganises at explicit breakpoints and never reflows.

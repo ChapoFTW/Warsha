@@ -2,79 +2,113 @@
  * The controls sit inside the header's normal flow rather than floating over
  * the page. A fixed corner widget is the usual shortcut and it is the reason
  * so many sites have a language button sitting on top of their own footer at
- * 380px. Nothing here overlaps content at any width because nothing here is
- * taken out of flow.
+ * 380px. Only the open menu is taken out of flow, and it is anchored to its
+ * own trigger, so nothing overlaps content at any width.
+ *
+ * Everything here is written in logical properties. Arabic is a first-class
+ * language rather than a mirrored afterthought, and `inset-inline-end` is the
+ * difference between a menu that opens correctly in both directions and one
+ * that hangs off the side of the viewport in one of them.
  */
 
-.languageGroup {
+.menuRoot {
+  position: relative;
   display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  flex-wrap: wrap;
+  flex-shrink: 0;
 }
 
-.language {
+.menuTrigger {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
+  gap: 6px;
   min-height: 36px;
   padding: 0 10px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text-primary);
+  font: inherit;
   font-size: 13px;
   font-weight: 650;
   white-space: nowrap;
-  flex-shrink: 0;
+  cursor: pointer;
 }
 
-.language[aria-current='page'],
-.language[aria-pressed='true'] {
-  background: var(--brand);
-  color: var(--brand-ink);
-}
-
-.language:hover {
+.menuTrigger:hover {
   border-color: var(--border-strong);
 }
 
-.appearance {
-  display: inline-flex;
-  align-items: center;
-  gap: 1px;
-  padding: 2px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-  background: var(--surface);
-  flex-shrink: 0;
+.menuTrigger[aria-expanded='true'] {
+  border-color: var(--border-strong);
 }
 
-.appearanceOption {
+.menuTriggerLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 14ch;
+}
+
+/* A caret drawn from a border rather than shipped as an asset or a font. */
+.menuCaret {
+  width: 0;
+  height: 0;
+  flex-shrink: 0;
+  border-inline-start: 4px solid transparent;
+  border-inline-end: 4px solid transparent;
+  border-block-start: 5px solid currentColor;
+}
+
+.menuList {
+  position: absolute;
+  z-index: 40;
+  inset-block-start: calc(100% + 4px);
+  /* Anchored to the trigger's end edge, which flips with direction. */
+  inset-inline-end: 0;
+  min-width: 100%;
+  /* Never wider than the viewport it has to open inside. */
+  max-width: min(72vw, 240px);
+  max-height: min(60vh, 320px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  padding: 4px;
+  gap: 1px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-raised);
+}
+
+.menuList[hidden] {
+  display: none;
+}
+
+.menuItem {
   appearance: none;
   border: 0;
   background: transparent;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   font: inherit;
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 600;
-  padding: 5px 8px;
-  min-height: 30px;
+  text-align: start;
+  text-decoration: none;
+  padding: 7px 10px;
+  min-height: 34px;
+  display: flex;
+  align-items: center;
   border-radius: 6px;
   cursor: pointer;
   white-space: nowrap;
 }
 
-.appearanceOption:hover {
+.menuItem:hover {
   color: var(--text-primary);
 }
 
-/* The pressed state is driven by aria-pressed, so the visual and the
-   accessible state cannot disagree. */
-.appearanceOption[aria-pressed='true'] {
+/* The chosen state is driven by aria-checked, so the visual and the accessible
+   state cannot disagree. */
+.menuItem[aria-checked='true'] {
   background: var(--brand);
   color: var(--brand-ink);
 }
-
-/* Narrow screens: the appearance control keeps its full labels but tightens.
-   Abbreviating to icons would make "System" unguessable in either language. */
