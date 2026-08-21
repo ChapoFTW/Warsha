@@ -34,7 +34,7 @@
     "test:marketplace": "node --no-warnings --experimental-strip-types scripts/marketplace-intelligence.test.mts",
     "smoke:wps007": "node --no-warnings --experimental-strip-types scripts/wps007-smoke.mjs",
     "check:mojibake": "node ./scripts/check-mojibake.js",
-    "db:test": "supabase test db",
+    "db:test": "npx supabase test db",
     "auth:cleanup-seed": "node ./scripts/cleanup-malformed-seed-users.mjs",
     "auth:create-dev-user": "node --no-warnings --experimental-strip-types ./scripts/create-dev-auth-user.mjs",
     "test:wps017": "node --no-warnings --experimental-strip-types scripts/wps017-operations-admin.test.mts",

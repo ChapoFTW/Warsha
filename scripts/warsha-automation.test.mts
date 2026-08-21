@@ -135,6 +135,11 @@ test('command runner preserves real nonzero exit status', () => {
   assert.equal(result.exitCode, 9);
 });
 
+test('database validation resolves the repository CLI without a global install', () => {
+  const packageJson = JSON.parse(readFileSync(join(repositoryRoot, 'package.json'), 'utf8'));
+  assert.equal(packageJson.scripts['db:test'], 'npx supabase test db');
+});
+
 test('unified validation fails on the underlying command and records it', () => {
   const root = fixture({ failingSecretAudit: true });
   const result = runCli(root, 'validate');
