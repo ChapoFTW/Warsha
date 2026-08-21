@@ -30,6 +30,20 @@ the latest Preview update/build identifiers. The default remains deterministic
 and local; Vercel/host and unavailable provider evidence stays explicitly
 `UNKNOWN` rather than being guessed.
 
+## Windows-native execution
+
+Warsha is operated on Windows native. `npm` and `npx` are command shims there,
+so an agent shell must invoke `npm.cmd` and `npx.cmd`. Bare `npm`/`npx` is
+unreliable, and its failure is never a reason to hand the command back to a
+human — retry with the shim form first. Apply `.cmd` only to shims, never to
+`node`, `git`, or a real executable.
+
+The automation itself does not depend on that shell detail, and must not start
+to. `commandSpec` in `scripts/warsha-automation/runtime.mjs` resolves `npm`,
+`npx`, and `eas` to `process.execPath` plus the package's own JS entrypoint,
+which is correct on every platform and needs no `.cmd` handling. Route new
+commands through `executeCommand` rather than spawning a shim by name.
+
 ## Evidence and schema
 
 Transient reports live under ignored `artifacts/`. The handoff JSON is schema

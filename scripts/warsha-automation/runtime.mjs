@@ -270,12 +270,21 @@ function listFromJson(value, keys) {
 export function queryPreviewDeployment(root) {
   const updateCommand = executeCommand('eas', ['update:list', '--branch', 'preview', '--limit', '2', '--json', '--non-interactive'], { cwd: root });
   const buildCommand = executeCommand('eas', ['build:list', '--profile', 'preview', '--limit', '4', '--json', '--non-interactive'], { cwd: root });
-  const updates = listFromJson(parsedCommandJson(updateCommand.stdout), ['updates', 'updateGroups']);
+  const updates = listFromJson(parsedCommandJson(updateCommand.stdout), ['updates', 'updateGroups', 'currentPage']);
   const builds = listFromJson(parsedCommandJson(buildCommand.stdout), ['builds']);
+  // update:list reports one row per update group and carries no per-platform
+  // update id. Those live in update:view, which rejects --non-interactive.
+  const latestGroupId = updates[0]?.group ?? updates[0]?.groupId ?? null;
+  const viewCommand = latestGroupId
+    ? executeCommand('eas', ['update:view', latestGroupId, '--json'], { cwd: root })
+    : null;
+  const members = viewCommand?.exitCode === 0
+    ? listFromJson(parsedCommandJson(viewCommand.stdout), ['updates'])
+    : [];
   const byPlatform = (values, platform) => values.find((entry) => entry?.platform?.toLowerCase?.() === platform)
     ?? values.flatMap((entry) => Array.isArray(entry?.updates) ? entry.updates : []).find((entry) => entry?.platform?.toLowerCase?.() === platform);
-  const androidUpdate = byPlatform(updates, 'android');
-  const iosUpdate = byPlatform(updates, 'ios');
+  const androidUpdate = byPlatform(members.length ? members : updates, 'android');
+  const iosUpdate = byPlatform(members.length ? members : updates, 'ios');
   const latest = updates[0] ?? androidUpdate ?? iosUpdate ?? {};
   const buildFor = (platform) => builds.find((entry) => entry?.platform?.toLowerCase?.() === platform) ?? {};
   const androidBuild = buildFor('android');
@@ -284,7 +293,8 @@ export function queryPreviewDeployment(root) {
     previewOta: {
       groupId: latest.group ?? latest.groupId ?? 'UNKNOWN',
       runtime: latest.runtimeVersion ?? androidUpdate?.runtimeVersion ?? iosUpdate?.runtimeVersion ?? 'UNKNOWN',
-      sourceCommit: latest.gitCommitHash ?? latest.sourceCommit ?? 'UNKNOWN',
+      sourceCommit: latest.gitCommitHash ?? latest.sourceCommit
+        ?? androidUpdate?.gitCommitHash ?? iosUpdate?.gitCommitHash ?? 'UNKNOWN',
       androidUpdateId: androidUpdate?.id ?? 'UNKNOWN',
       iosUpdateId: iosUpdate?.id ?? 'UNKNOWN',
     },
@@ -294,6 +304,7 @@ export function queryPreviewDeployment(root) {
     },
     queryEvidence: {
       updates: updateCommand.exitCode === 0 ? 'QUERIED' : 'UNKNOWN',
+      updateMembers: viewCommand?.exitCode === 0 ? 'QUERIED' : 'UNKNOWN',
       builds: buildCommand.exitCode === 0 ? 'QUERIED' : 'UNKNOWN',
     },
   };
