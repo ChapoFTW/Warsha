@@ -13,6 +13,10 @@ import {
   needsReauth, needsSecondPerson, reauthNeedFor, REAUTH_CAPABILITIES,
 } from '../web/lib/reauth.ts';
 import { buildCapabilityHelp, capabilityLabel } from '../web/lib/capabilities.ts';
+import {
+  BINDABLE_ENVIRONMENTS, bindingOffer, bindingReasonValid, parseVerification,
+  projectRefFromSupabaseUrl, summarizeVerification,
+} from '../web/lib/platform.ts';
 import { environmentBinding, parseStaffSession } from '../web/lib/staff.ts';
 
 let checks = 0;
@@ -41,6 +45,7 @@ const CAPABILITY_OF: Record<string, string> = {
   verification: 'review_worker_vetting',
   staff: 'manage_staff_roles',
   audit: 'view_audit_logs',
+  platform: 'manage_feature_flags',
 };
 for (const [key, capability] of Object.entries(CAPABILITY_OF)) {
   const area = CONSOLE_AREAS.find((candidate) => candidate.key === key);
@@ -54,6 +59,8 @@ const RPC_CAPABILITY: Record<string, string> = {
   staff_worker_vetting_queue: 'review_worker_vetting',
   get_staff_role_directory: 'manage_staff_roles',
   staff_audit_search: 'view_audit_logs',
+  staff_bind_platform_environment: 'manage_feature_flags',
+  verify_platform_release: 'view_audit_logs',
 };
 for (const [rpc, capability] of Object.entries(RPC_CAPABILITY)) {
   const body = migrations.slice(migrations.indexOf(`function public.${rpc}`));
@@ -784,5 +791,83 @@ check(capabilityHelp('review_privacy_incidents') !== null,
   'a capability offers the manual section that explains it');
 check(capabilityHelp('not_a_capability') === null,
   'and claims no explanation it does not have');
+
+// --- Platform environment binding and release verification ------------------
+// Both reuse existing database authority. The console decides only what to
+// offer; every guard below is also enforced by the RPC.
+equal(projectRefFromSupabaseUrl('https://lrhipbcapzfxuwixfoog.supabase.co'),
+  'lrhipbcapzfxuwixfoog',
+  'the project reference is read from the connection, not typed by an operator');
+equal(projectRefFromSupabaseUrl('http://127.0.0.1:54321'), null,
+  'a local stack yields no project reference, so no binding is offered');
+equal(projectRefFromSupabaseUrl('https://short.supabase.co'), null,
+  'a reference that cannot satisfy the RPC is refused before it is offered');
+equal(projectRefFromSupabaseUrl(undefined), null, 'and a missing URL offers nothing');
+
+const staff = (environment?: string) => parseStaffSession({ isStaff: true, environment });
+equal(bindingOffer(staff('local'), 'lrhipbcapzfxuwixfoog'),
+  { kind: 'available', from: 'local', projectRef: 'lrhipbcapzfxuwixfoog' },
+  'the one-way transition is offered from the unbound bootstrap row');
+equal(bindingOffer(staff('development'), 'lrhipbcapzfxuwixfoog').kind, 'bound',
+  'an already-bound project is stated as fact, not offered as an action');
+equal(bindingOffer(staff('production'), 'lrhipbcapzfxuwixfoog').kind, 'bound',
+  'AND PRODUCTION IS NEVER OFFERED A BINDING CONTROL');
+equal(bindingOffer(staff('local'), null).kind, 'unavailable',
+  'no project reference means no actionable control: fail closed');
+equal(bindingOffer(staff(undefined), 'lrhipbcapzfxuwixfoog').kind, 'unavailable',
+  'an unknown environment means no actionable control either');
+equal(bindingOffer(parseStaffSession({ isStaff: false }), 'lrhipbcapzfxuwixfoog').kind,
+  'unavailable', 'and a non-staff session is offered nothing at all');
+check(!(BINDABLE_ENVIRONMENTS as readonly string[]).includes('production'),
+  'THE CONSOLE CANNOT TARGET PRODUCTION THROUGH THIS OPERATION');
+
+check(!bindingReasonValid('too short'), 'a reason below the RPC minimum is refused early');
+check(bindingReasonValid('Identifying the hosted development backend.'),
+  'a meaningful reason is accepted');
+check(!bindingReasonValid('x'.repeat(1001)), 'and one beyond the RPC maximum is refused');
+
+const verification = parseVerification({
+  environment: 'development', failures: 2, passed: false,
+  generatedAt: '2026-08-21T00:00:00Z',
+  checks: [
+    { check: 'public_tables_without_rls', observed: 0, expected: 0, passed: true, description: 'RLS' },
+    { check: 'unowned_rate_limits', observed: 1, expected: 0, passed: false, description: 'rate limits' },
+    { check: 'anon_private_grants', observed: 3, expected: 0, passed: false, description: 'private grants' },
+  ],
+});
+check(verification !== null, 'a verification payload is parsed');
+const digest = summarizeVerification(verification!);
+equal(digest.passed.length, 1, 'passing checks are counted');
+equal(digest.expectedFailures.map((entry) => entry.check), ['unowned_rate_limits'],
+  'the recorded open gap is reported as expected rather than hidden');
+equal(digest.unexpectedFailures.map((entry) => entry.check), ['anon_private_grants'],
+  'anything else that fails is unexpected');
+check(digest.blocking, 'and an unexpected failure blocks');
+check(!summarizeVerification(parseVerification({
+  checks: [{ check: 'unowned_rate_limits', observed: 1, expected: 0, passed: false, description: '' }],
+})!).blocking,
+  'THE KNOWN OPEN GAP ALONE DOES NOT BLOCK A RELEASE');
+equal(parseVerification(null), null, 'a missing payload is not invented');
+
+for (const key of ['platformTitle', 'platformEnvHeading', 'platformEnvExplain',
+  'platformEnvUnconfigured', 'platformEnvDevelopment', 'platformEnvConfirmOneWay',
+  'platformEnvConfirmNoDeploy', 'platformEnvBlocked', 'platformVerifyHeading',
+  'platformVerifyExpected', 'platformVerifyUnexpected', 'platformVerifyTechnical',
+  'console_platform']) {
+  check(inBoth(key), `the platform tools say "${key}" in both languages`);
+}
+
+const platformPage = readFileSync('web/app/admin/platform/page.tsx', 'utf8');
+check(!/service_role|serviceRole/.test(platformPage),
+  'THE PLATFORM TOOLS NEVER REACH FOR A SERVICE ROLE');
+check(/rpc\('staff_bind_platform_environment'/.test(platformPage)
+  && /rpc\('verify_platform_release'/.test(platformPage),
+  'both tools call the existing RPCs rather than mutating tables');
+check(/p_expected_current_environment: 'local'/.test(platformPage),
+  'the expected-current-environment guard is sent, not omitted');
+check(/isReauthRefusal/.test(platformPage),
+  'a freshness refusal is recovered in place rather than swallowed');
+check(/platformEnvConfirmTitle/.test(platformPage) && /confirming/.test(platformPage),
+  'the change requires an explicit confirmation step');
 
 console.log(`Admin console: ${checks} checks passed.`);

@@ -25,6 +25,9 @@ export const CONSOLE_AREAS: readonly ConsoleArea[] = [
   { key: 'verification', href: '/verification', capability: 'review_worker_vetting' },
   { key: 'analytics', href: '/analytics', capability: 'view_analytics' },
   { key: 'staff', href: '/staff', capability: 'manage_staff_roles' },
+  // Environment binding is the tool that needs this door; release verification
+  // shares the page and is gated separately on `view_audit_logs` inside it.
+  { key: 'platform', href: '/platform', capability: 'manage_feature_flags' },
   { key: 'audit', href: '/audit', capability: 'view_audit_logs' },
   { key: 'help', href: '/help', capability: '' },
 ];

@@ -1,0 +1,21 @@
+/* The same fact list the dashboard uses, so platform state reads identically
+   to the session state an operator has already learned to scan. */
+.facts { margin: 0 0 16px; display: grid; gap: 10px; }
+.facts div { display: flex; justify-content: space-between; gap: 16px; font-size: 14.5px; }
+.facts dt { color: var(--text-muted); }
+.facts dd { margin: 0; color: var(--text-primary); font-weight: 600; }
+
+/* Raw verification output is a disclosure for engineering, never the primary
+   reading. It scrolls in its own box rather than stretching the page. */
+.raw {
+  margin: 12px 0 0;
+  padding: 12px;
+  max-height: 320px;
+  overflow: auto;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.6;
+}

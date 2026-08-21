@@ -53,6 +53,9 @@ const acceptedFrenchCognates = new Set([
   'colAction', 'source_configuration_history', 'pagerPage', 'category_messages',
   'supportMessageCount', 'detailEnforcement', 'caseDocument', 'enforcement_suspension',
   'reason_discrimination', 'currencyEgp', 'quoteMinutes',
+  // "Warsha Production" is the same in French. Development and Staging are
+  // genuinely translated alongside it, so this is a cognate, not a fallback.
+  'platformEnvProduction',
 ]);
 const untranslatedAppKeys = Object.keys(appCopy.en).filter(key =>
   appCopy.en[key as keyof typeof appCopy.en] === appCopy.fr[key as keyof typeof appCopy.fr]
