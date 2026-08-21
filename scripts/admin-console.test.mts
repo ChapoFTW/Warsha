@@ -12,7 +12,8 @@ import {
   DUAL_CONTROL_CAPABILITIES, freshnessRemaining, isReauthRefusal,
   needsReauth, needsSecondPerson, reauthNeedFor, REAUTH_CAPABILITIES,
 } from '../web/lib/reauth.ts';
-import { parseStaffSession } from '../web/lib/staff.ts';
+import { buildCapabilityHelp, capabilityLabel } from '../web/lib/capabilities.ts';
+import { environmentBinding, parseStaffSession } from '../web/lib/staff.ts';
 
 let checks = 0;
 function check(condition: unknown, message: string) {
@@ -736,5 +737,52 @@ for (const key of ['decisionTitle', 'decisionImpact', 'decisionSafeReason',
   'caseOcrNote', 'decision_approve', 'decision_reject', 'decision_activate']) {
   check(inBoth(key), `the console says "${key}" in both languages`);
 }
+
+// --- The console may not misrepresent which data it is showing --------------
+// A hosted project is born carrying the `local` bootstrap row, so `local` is
+// the truth on a laptop and a configuration fault anywhere else. Reporting it
+// as a quiet badge in both cases is what let a hosted console look local.
+const bound = (environment?: string) => parseStaffSession({ isStaff: true, environment });
+
+equal(environmentBinding(bound('local'), 'localhost').state, 'labelled',
+  'a developer machine may legitimately report local');
+equal(environmentBinding(bound('local'), '127.0.0.1').state, 'labelled',
+  'the loopback address is a developer machine too');
+equal(environmentBinding(bound('local'), 'admin.usewarsha.com'),
+  { state: 'misconfigured', reason: 'unbound', reported: 'local' },
+  'A HOSTED CONSOLE REPORTING local IS AN UNBOUND BACKEND, NOT A LABEL');
+equal(environmentBinding(bound('development'), 'admin.usewarsha.com'),
+  { state: 'labelled', label: 'DEVELOPMENT' },
+  'a bound development project says so');
+equal(environmentBinding(bound('staging'), 'admin.usewarsha.com').state, 'labelled',
+  'staging is a bound hosted environment');
+equal(environmentBinding(bound('production'), 'admin.usewarsha.com').state, 'production',
+  'production is concluded only from the exact string');
+equal(environmentBinding(bound(undefined), 'admin.usewarsha.com'),
+  { state: 'misconfigured', reason: 'unbound', reported: null },
+  'A MISSING ENVIRONMENT IS A FAULT AND IS NEVER READ AS PRODUCTION');
+equal(environmentBinding(bound('prod'), 'admin.usewarsha.com'),
+  { state: 'misconfigured', reason: 'unknown', reported: 'prod' },
+  'an unrecognised environment is a fault, not a near-enough match');
+check(environmentBinding(bound(undefined), 'localhost').state === 'misconfigured',
+  'even locally, no environment at all is still unbound');
+
+for (const key of ['consoleEnvironmentFault', 'consoleEnvironmentUnbound',
+  'consoleEnvironmentUnknown']) {
+  check(inBoth(key), `the console explains "${key}" in both languages`);
+}
+
+// --- Capability identifiers are not operator-facing vocabulary --------------
+equal(capabilityLabel('manage_kill_switches'), 'Manage kill switches',
+  'a capability key is spoken as words');
+equal(capabilityLabel('view_audit_logs'), 'View audit logs',
+  'and reads as a sentence, not an identifier');
+const capabilityHelp = buildCapabilityHelp(
+  JSON.parse(readFileSync('web/lib/generated-admin-help.json', 'utf8')).articles,
+);
+check(capabilityHelp('review_privacy_incidents') !== null,
+  'a capability offers the manual section that explains it');
+check(capabilityHelp('not_a_capability') === null,
+  'and claims no explanation it does not have');
 
 console.log(`Admin console: ${checks} checks passed.`);

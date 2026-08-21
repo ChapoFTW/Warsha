@@ -3,9 +3,15 @@
 import { ConsoleShell } from '@/components/console-shell';
 import { useStaff } from '@/components/staff-gate';
 import { appCopy } from '@/lib/app-copy';
+import adminHelp from '@/lib/generated-admin-help.json';
+import { buildCapabilityHelp, capabilityLabel, type HelpArticle } from '@/lib/capabilities';
 import { useAppLocale } from '@/lib/use-app-locale';
 
 import styles from './page.module.css';
+
+const capabilityHelp = buildCapabilityHelp(
+  (adminHelp as { articles: HelpArticle[] }).articles ?? [],
+);
 
 /**
  * The console dashboard.
@@ -46,9 +52,18 @@ export default function ConsoleDashboard() {
         </h2>
         {session.capabilities.length ? (
           <ul className={styles.chips}>
-            {session.capabilities.map((capability) => (
-              <li key={capability} className={styles.chipQuiet}>{capability}</li>
-            ))}
+            {session.capabilities.map((capability) => {
+              const help = capabilityHelp(capability);
+              return (
+                <li key={capability} className={styles.chipQuiet} title={capability}>
+                  {help ? (
+                    <a href={`/admin/help#${help.id}`}>{capabilityLabel(capability)}</a>
+                  ) : (
+                    capabilityLabel(capability)
+                  )}
+                </li>
+              );
+            })}
           </ul>
         ) : (
           <p className={styles.muted}>{words.consoleNoCapabilities}</p>

@@ -10,7 +10,7 @@ import { supabase } from '@/lib/supabase';
 import { useAppLocale } from '@/lib/use-app-locale';
 import {
   canUseConsole,
-  environmentLabel,
+  environmentBinding,
   NO_STAFF_SESSION,
   parseStaffSession,
   type StaffSession,
@@ -111,16 +111,28 @@ export function StaffGate({ children }: { children: React.ReactNode }) {
     );
   }
 
-  const environment = environmentLabel(session);
+  const binding = environmentBinding(
+    session,
+    typeof window === 'undefined' ? '' : window.location.hostname,
+  );
 
   return (
     <StaffContext.Provider value={{ session, refresh: load }}>
       {/* The environment is stated at the top of every page, permanently.
           Mistaking QA data for production is the expensive error a console
-          makes possible, and a banner is cheap. */}
-      {environment && environment !== 'PRODUCTION' ? (
+          makes possible, and a banner is cheap. An environment the console
+          cannot vouch for is louder still: it is a fault, not a label. */}
+      {binding.state === 'misconfigured' ? (
+        <div className={styles.environmentFault} role="alert">
+          <strong>{words.consoleEnvironmentFault}</strong>{' '}
+          {binding.reason === 'unbound'
+            ? words.consoleEnvironmentUnbound
+            : words.consoleEnvironmentUnknown}
+        </div>
+      ) : null}
+      {binding.state === 'labelled' ? (
         <div className={styles.environment} role="status">
-          {environment} — {words.consoleNotProduction}
+          {binding.label} — {words.consoleNotProduction}
         </div>
       ) : null}
       {children}

@@ -890,7 +890,7 @@
       "locale": "en",
       "title": "Staff roles, fresh authentication, and dual control",
       "summary": "Grant only reviewed roles, never self-escalate, and keep immutable evidence.",
-      "version": 1,
+      "version": 2,
       "lastReviewedDate": "2026-08-21",
       "features": [
         "staff_roles",
@@ -922,7 +922,7 @@
       "locale": "ar",
       "title": "أدوار الموظفين والتحقق الحديث والتحكم المزدوج",
       "summary": "امنح دور مراجع بس، ما ترفعش صلاحيتك بنفسك، وحافظ على الدليل الدائم.",
-      "version": 1,
+      "version": 2,
       "lastReviewedDate": "2026-08-21",
       "features": [
         "staff_roles",
@@ -1490,7 +1490,7 @@
       "locale": "fr",
       "title": "Rôles du personnel, authentification récente et double contrôle",
       "summary": "Accordez le minimum nécessaire tout en conservant une preuve complète.",
-      "version": 1,
+      "version": 2,
       "lastReviewedDate": "2026-08-21",
       "features": [
         "staff_roles",

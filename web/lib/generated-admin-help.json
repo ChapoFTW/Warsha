@@ -209,7 +209,7 @@
       "locale": "en",
       "title": "Staff roles, fresh authentication, and dual control",
       "summary": "Grant only reviewed roles, never self-escalate, and keep immutable evidence.",
-      "version": 1,
+      "version": 2,
       "lastReviewedDate": "2026-08-21",
       "features": [
         "staff_roles",
@@ -234,7 +234,7 @@
         "dual control",
         "audit"
       ],
-      "body": "Staff roles are reviewed capability bundles. `manage_staff_roles` can grant or revoke them through the governed UI; it does not allow self-grant. State the business reason and choose the narrowest role. Revocation ends future authority but preserves grant history.\n\nFresh authentication proves the same operator authenticated recently. It does not add a missing capability. Dual control requires two different authorized identities; never ask one person to impersonate the other.\n\nThe first Security Administrator is the only exceptional bootstrap. It is performed by the documented one-time database-owner procedure, only when no effective administrator exists, and creates an immutable grant with a bootstrap idempotency key. Ordinary staff changes must never repeat that procedure."
+      "body": "Staff roles are reviewed capability bundles. `manage_staff_roles` can grant or revoke them through the governed UI; it does not allow self-grant. State the business reason and choose the narrowest role. Revocation ends future authority but preserves grant history.\n\nFresh authentication proves the same operator authenticated recently. It does not add a missing capability. Dual control requires two different authorized identities; never ask one person to impersonate the other.\n\nThe first Security Administrator is the only exceptional bootstrap. It is performed by the documented one-time database-owner procedure, only when no effective administrator exists, and creates an immutable grant with a bootstrap idempotency key. Ordinary staff changes must never repeat that procedure.\n\nThe console states its environment on every page. DEVELOPMENT or STAGING means the backend is bound to that hosted project. LOCAL is correct only on a developer machine. If the console shows an environment fault instead, the backend is still carrying the unbound bootstrap configuration and cannot say which data you are looking at: stop, and have the platform environment bound before trusting anything on screen.\n\nCapabilities are listed by name rather than by database identifier, and each links to the manual section that explains it. The identifier remains the authority behind every grant and every refusal; the name is only how it is read."
     },
     {
       "id": "admin-staff-security",
@@ -242,7 +242,7 @@
       "locale": "ar",
       "title": "أدوار الموظفين والتحقق الحديث والتحكم المزدوج",
       "summary": "امنح دور مراجع بس، ما ترفعش صلاحيتك بنفسك، وحافظ على الدليل الدائم.",
-      "version": 1,
+      "version": 2,
       "lastReviewedDate": "2026-08-21",
       "features": [
         "staff_roles",
@@ -267,7 +267,7 @@
         "تحكم مزدوج",
         "سجل"
       ],
-      "body": "أدوار الموظفين مجموعات صلاحيات مراجعة. صلاحية `manage_staff_roles` تقدر تمنح أو تسحب الأدوار من الواجهة المنظمة؛ ما تسمحش للموظف يمنح نفسه. اكتب سبب الشغل واختار أضيق دور مناسب. سحب الدور بيوقف الصلاحية بعد كده لكنه بيحافظ على تاريخ المنح.\n\nالتحقق الحديث بيثبت إن نفس الموظف سجل دخوله قريب. ما بيديش صلاحية ناقصة. التحكم المزدوج محتاج هويتين مختلفتين مصرح ليهم؛ ما تطلبش من شخص يمثل الشخص التاني.\n\nأول مسؤول أمان هو الاستثناء الوحيد. بيتعمل بإجراء مالك قاعدة البيانات الموثق لمرة واحدة، بس لما ما يكونش فيه مسؤول فعال، وبيعمل منحة دائمة بمفتاح منع تكرار. تغييرات الموظفين العادية ممنوع تكرر الإجراء ده."
+      "body": "أدوار الموظفين مجموعات صلاحيات مراجعة. صلاحية `manage_staff_roles` تقدر تمنح أو تسحب الأدوار من الواجهة المنظمة؛ ما تسمحش للموظف يمنح نفسه. اكتب سبب الشغل واختار أضيق دور مناسب. سحب الدور بيوقف الصلاحية بعد كده لكنه بيحافظ على تاريخ المنح.\n\nالتحقق الحديث بيثبت إن نفس الموظف سجل دخوله قريب. ما بيديش صلاحية ناقصة. التحكم المزدوج محتاج هويتين مختلفتين مصرح ليهم؛ ما تطلبش من شخص يمثل الشخص التاني.\n\nأول مسؤول أمان هو الاستثناء الوحيد. بيتعمل بإجراء مالك قاعدة البيانات الموثق لمرة واحدة، بس لما ما يكونش فيه مسؤول فعال، وبيعمل منحة دائمة بمفتاح منع تكرار. تغييرات الموظفين العادية ممنوع تكرر الإجراء ده.\n\nالكونسول بيقول البيئة بتاعته في كل صفحة. DEVELOPMENT أو STAGING يعني الباك إند مربوط بالمشروع المستضاف ده. LOCAL صح بس على جهاز مطوّر. لو ظهر بدل كده عطل في البيئة، يبقى الباك إند لسه شايل إعدادات البداية غير المربوطة ومش قادر يقول لك إنت شايف بيانات إيه: وقّف، واربط بيئة المنصة قبل ما تثق في أي حاجة على الشاشة.\n\nالصلاحيات بتتعرض بأسماء مفهومة مش بمعرّفات قاعدة البيانات، وكل واحدة فيها وصلة للقسم اللي بيشرحها في الدليل. المعرّف فضل هو المرجع في كل منح وكل رفض؛ الاسم ده بس طريقة القراءة."
     },
     {
       "id": "admin-audit-analytics",
@@ -558,7 +558,7 @@
       "locale": "fr",
       "title": "Rôles du personnel, authentification récente et double contrôle",
       "summary": "Accordez le minimum nécessaire tout en conservant une preuve complète.",
-      "version": 1,
+      "version": 2,
       "lastReviewedDate": "2026-08-21",
       "features": [
         "staff_roles",
@@ -582,7 +582,7 @@
         "double contrôle",
         "audit"
       ],
-      "body": "Les rôles du personnel sont des ensembles révisés de capacités. `manage_staff_roles` permet d’accorder ou de révoquer un rôle depuis l’autorité gouvernée ; l’auto-attribution reste interdite. Saisissez une raison professionnelle et choisissez le rôle le plus restreint. Révoquer coupe l’accès futur tout en conservant l’historique de l’attribution.\n\nL’authentification récente prouve une connexion récente sans combler une capacité absente. Le double contrôle exige deux identités autorisées distinctes. Le premier Administrateur de sécurité est l’unique procédure exceptionnelle, utilisable seulement lorsqu’aucun administrateur effectif n’existe et protégée par une clé d’idempotence."
+      "body": "Les rôles du personnel sont des ensembles révisés de capacités. `manage_staff_roles` permet d’accorder ou de révoquer un rôle depuis l’autorité gouvernée ; l’auto-attribution reste interdite. Saisissez une raison professionnelle et choisissez le rôle le plus restreint. Révoquer coupe l’accès futur tout en conservant l’historique de l’attribution.\n\nL’authentification récente prouve une connexion récente sans combler une capacité absente. Le double contrôle exige deux identités autorisées distinctes. Le premier Administrateur de sécurité est l’unique procédure exceptionnelle, utilisable seulement lorsqu’aucun administrateur effectif n’existe et protégée par une clé d’idempotence.\n\nLa console indique son environnement sur chaque page. DEVELOPMENT ou STAGING signifie que le backend est lié à ce projet hébergé. LOCAL n’est correct que sur une machine de développement. Si la console affiche plutôt une erreur d’environnement, le backend porte encore la configuration d’amorçage non liée et ne peut pas indiquer quelles données vous consultez : arrêtez-vous et faites lier l’environnement de la plateforme avant de vous fier à quoi que ce soit à l’écran.\n\nLes capacités sont affichées par nom plutôt que par identifiant de base de données, et chacune renvoie à la section du manuel qui l’explique. L’identifiant reste l’autorité derrière chaque octroi et chaque refus ; le nom n’en est que la lecture."
     },
     {
       "id": "admin-audit-analytics",

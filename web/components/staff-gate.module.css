@@ -35,6 +35,28 @@
   border-radius: var(--radius-sm);
 }
 
+/* A fault is not a label. It sits above the environment strip, states a whole
+   sentence rather than a word, and keeps the heavier rule so it cannot be
+   mistaken for the routine banner at a glance. */
+.environmentFault {
+  position: sticky;
+  top: 0;
+  z-index: 31;
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.45;
+  padding: 10px 14px;
+  background: var(--brand);
+  color: var(--brand-ink);
+  border-bottom: 3px solid var(--border-strong);
+}
+
+.environmentFault strong {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 800;
+}
+
 .environment {
   position: sticky;
   top: 0;

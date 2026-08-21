@@ -114,8 +114,10 @@ check(!hasCapability(parseStaffSession({ isStaff: true, capabilities: ['manage_u
   'AN UNGRANTED CAPABILITY IS NEVER INFERRED FROM ANOTHER');
 equal(environmentLabel(parseStaffSession({ isStaff: true, environment: 'development' })), 'DEVELOPMENT',
   'the environment is stated so QA data is not mistaken for production');
-check(/environment !== 'PRODUCTION'/.test(staffGate),
+check(/binding\.state === 'labelled'/.test(staffGate),
   'a non-production console is banner-labelled on every page');
+check(/binding\.state === 'misconfigured'/.test(staffGate) && /role="alert"/.test(staffGate),
+  'AND AN ENVIRONMENT IT CANNOT VOUCH FOR IS RAISED AS A FAULT, NOT A QUIET LABEL');
 
 // --- Both languages, everywhere ---------------------------------------------
 const enKeys = Object.keys(appCopy.en).sort();

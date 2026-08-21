@@ -98,3 +98,55 @@ export function environmentLabel(session: StaffSession): string | null {
   if (!session.environment) return null;
   return session.environment.toUpperCase();
 }
+
+/** The environments a bound platform may legitimately report. */
+const BOUND_ENVIRONMENTS = ['development', 'staging', 'production'] as const;
+
+/**
+ * Whether the console is being served from a developer's own machine.
+ *
+ * This is the only context in which the `local` bootstrap row is the truth
+ * rather than a symptom.
+ */
+export function isLocalOrigin(hostname: string): boolean {
+  const host = hostname.toLowerCase().replace(/^\[|\]$/g, '');
+  return host === 'localhost' || host === '127.0.0.1' || host === '::1'
+    || host.endsWith('.localhost');
+}
+
+/**
+ * What the console may honestly claim about the data it is showing.
+ *
+ * A hosted project is born carrying the `local` bootstrap row, because the same
+ * migrations replay in Docker. `staff_bind_platform_environment` is what turns
+ * that row into a real binding. Until it is called, the backend truthfully
+ * reports `local` — so a hosted console showing a quiet LOCAL badge is
+ * indistinguishable from a laptop, which is precisely the confusion the badge
+ * exists to prevent.
+ *
+ * This therefore fails closed rather than decorating: an unbound or
+ * unrecognised environment on a hosted origin is a configuration fault and is
+ * reported as one. `production` is only ever concluded from the exact string;
+ * it is never inferred from an absent or unreadable value.
+ */
+export type EnvironmentBinding =
+  | { state: 'production' }
+  | { state: 'labelled'; label: string }
+  | { state: 'misconfigured'; reason: 'unbound' | 'unknown'; reported: string | null };
+
+export function environmentBinding(
+  session: StaffSession,
+  hostname: string,
+): EnvironmentBinding {
+  const reported = session.environment ?? null;
+  if (reported === 'production') return { state: 'production' };
+  if (reported && (BOUND_ENVIRONMENTS as readonly string[]).includes(reported)) {
+    return { state: 'labelled', label: reported.toUpperCase() };
+  }
+  if (reported === 'local') {
+    return isLocalOrigin(hostname)
+      ? { state: 'labelled', label: 'LOCAL' }
+      : { state: 'misconfigured', reason: 'unbound', reported };
+  }
+  return { state: 'misconfigured', reason: reported ? 'unknown' : 'unbound', reported };
+}
