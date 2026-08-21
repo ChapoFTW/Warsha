@@ -44,16 +44,29 @@ export async function generateMetadata(
   const { locale } = await params;
   if (!isLocale(locale)) return {};
   const words = copy[locale];
+  const siteTitle: Record<Locale, string> = {
+    en: 'Warsha — home services in Egypt',
+    ar: 'ورشة — خدمات المنزل في مصر',
+    fr: 'Warsha — services à domicile en Égypte',
+  };
+  const openGraphLocale: Record<Locale, string> = {
+    en: 'en_EG',
+    ar: 'ar_EG',
+    fr: 'fr_EG',
+  };
+  const alternateOpenGraphLocales = LOCALES
+    .filter((option) => option !== locale)
+    .map((option) => openGraphLocale[option]);
 
   return {
     metadataBase: new URL('https://usewarsha.com'),
     title: {
-      default: locale === 'ar' ? 'ورشة — خدمات المنزل في مصر' : 'Warsha — home services in Egypt',
+      default: siteTitle[locale],
       template: `%s · ${words.brand}`,
     },
     description: words.heroBody,
     applicationName: words.brand,
-    // Both languages are real, generated routes, so these alternates point at
+    // Every supported language is a real generated route, so these alternates point at
     // pages that exist. An hreflang naming a 404 is worse than none.
     alternates: {
       canonical: `/${locale}`,
@@ -62,9 +75,9 @@ export async function generateMetadata(
     openGraph: {
       type: 'website',
       siteName: words.brand,
-      locale: locale === 'ar' ? 'ar_EG' : 'en_EG',
-      alternateLocale: locale === 'ar' ? 'en_EG' : 'ar_EG',
-      title: locale === 'ar' ? 'ورشة — خدمات المنزل في مصر' : 'Warsha — home services in Egypt',
+      locale: openGraphLocale[locale],
+      alternateLocale: alternateOpenGraphLocales,
+      title: siteTitle[locale],
       description: words.heroBody,
       url: `/${locale}`,
       images: [{

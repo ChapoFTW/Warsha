@@ -96,6 +96,10 @@ const middleware = read('web/middleware.ts');
 check(middleware.includes("'fr'"), 'middleware accepts the /fr locale');
 const publicLayout = read('web/app/[locale]/layout.tsx');
 check(/directionOf\(typed\)/.test(publicLayout), 'public route direction is locale-derived');
+check(publicLayout.includes('Warsha — services à domicile en Égypte'),
+  'French public metadata has a localized site title');
+check(publicLayout.includes("fr: 'fr_EG'"),
+  'French Open Graph metadata uses the French Egyptian locale');
 const appStartup = read('web/app/app/layout.tsx');
 check(/lang === 'fr'/.test(appStartup) || /language === 'fr'/.test(appStartup) || /value === 'fr'/.test(appStartup),
   'authenticated web startup accepts persisted French before first paint');
