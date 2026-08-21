@@ -14,7 +14,12 @@ import {
 } from '@/lib/location';
 import { customerNav } from '@/lib/nav';
 import { supabase } from '@/lib/supabase';
+import type { Locale } from '@/lib/preferences';
 import { useAppLocale } from '@/lib/use-app-locale';
+import {
+  egyptAreaForStoredValue, egyptGovernorateForStoredValue,
+  listEgyptAreas, listEgyptGovernorates,
+} from '@/src/locations/egypt-locations';
 import {
   addressResolutionState,
   classifyBrowserLocationError,
@@ -145,7 +150,7 @@ export default function AddressesPage() {
     } catch (reason) {
       setLocationStatus('idle');
       const outcome = classifyBrowserLocationError(reason);
-      setEditorFailure(outcome === 'permission_denied' ? words.addressLocationPermission
+      setEditorFailure(outcome === 'permission_denied' ? words.addressLocationDenied
         : outcome === 'timed_out' ? words.addressLocationTimeout
           : outcome === 'unavailable' || outcome === 'unsupported'
             ? words.addressLocationUnavailable : words.addressLocationFailed);
@@ -280,6 +285,15 @@ export default function AddressesPage() {
             {editorId === 'new' ? words.addressAdd : words.addressEdit}
           </h2>
 
+          {/* The confirmed pin is mandatory server-side: `confirm_my_service_address`
+              refuses without one. It is therefore stated as required and
+              explained here, rather than left to a silently disabled button. */}
+          <h3 className={styles.sectionTitle}>
+            {words.addressLocationSection}{' '}
+            <span className={styles.fieldRequirement}>({words.formRequired})</span>
+          </h3>
+          <p className={styles.hint}>{words.addressLocationWhy}</p>
+
           <div className={styles.actions}>
             <button type="button" className={styles.action} onClick={() => void useCurrent()} disabled={busyId !== null}>
               {busyId === 'location' ? words.loading : words.addressUseCurrent}
@@ -311,9 +325,16 @@ export default function AddressesPage() {
             </p>
           ) : null}
 
-          <AddressFields draft={draft} setDraft={setDraft} words={words} disabled={busyId !== null} />
+          <AddressFields draft={draft} setDraft={setDraft} words={words}
+            language={locale} disabled={busyId !== null} />
 
           {editorFailure ? <p className={styles.error} role="alert">{editorFailure}</p> : null}
+          {!coordinate ? (
+            <p className={styles.note} role="status">
+              {words.addressLocationMissing}
+            </p>
+          ) : null}
+
           <div className={styles.actions}>
             <button type="submit" className={styles.action}
               disabled={busyId !== null || !coordinate || !draft.label.trim()
@@ -372,11 +393,13 @@ function AddressFields({
   draft,
   setDraft,
   words,
+  language,
   disabled,
 }: {
   draft: Draft;
   setDraft: React.Dispatch<React.SetStateAction<Draft>>;
   words: Record<string, string>;
+  language: Locale;
   disabled: boolean;
 }) {
   const field = (key: keyof Draft, label: string, helper: string, required = false) => (
@@ -392,12 +415,89 @@ function AddressFields({
       <span id={`address-${key}-help`} className={styles.hint}>{helper}</span>
     </label>
   );
+  // Governorate and area are a controlled taxonomy, not free text. The list is
+  // the same CAPMAS/OCHA dataset mobile uses; nothing is redefined here.
+  //
+  // What is stored stays the English canonical name rather than the dataset id,
+  // because that is what mobile writes and what existing rows already contain,
+  // and analytics groups these values by string equality. Switching new writes
+  // to `EG02` would split one governorate into two buckets.
+  const governorateOption = egyptGovernorateForStoredValue(draft.governorate);
+  const governorateId = governorateOption?.id ?? '';
+  const governorates = listEgyptGovernorates(language);
+  const areas = governorateId ? listEgyptAreas(governorateId, language) : [];
+  const areaOption = governorateId
+    ? egyptAreaForStoredValue(governorateId, draft.district)
+    : null;
+
+  const chooseGovernorate = (id: string) => {
+    const next = id ? listEgyptGovernorates(language).find(item => item.id === id) : null;
+    setDraft((current) => {
+      // An area only means something inside its governorate, so an incompatible
+      // one is cleared rather than silently submitted against the wrong parent.
+      const keep = next && egyptAreaForStoredValue(next.id, current.district);
+      return { ...current, governorate: next ? next.en : '', district: keep ? current.district : '' };
+    });
+  };
+
+  const selectRow = (
+    id: string,
+    label: string,
+    helper: string,
+    value: string,
+    options: { id: string; en: string; ar: string; fr: string }[],
+    onPick: (id: string) => void,
+    required: boolean,
+    disabledSelect: boolean,
+    placeholder: string,
+  ) => (
+    <label className={styles.field}>
+      <span className={styles.label}>
+        {label} <span className={styles.fieldRequirement}>
+          ({required ? words.formRequired : words.formOptional})
+        </span>
+      </span>
+      <select
+        className={styles.input}
+        value={value}
+        required={required}
+        disabled={disabled || disabledSelect}
+        aria-describedby={`address-${id}-help`}
+        onChange={(event) => onPick(event.target.value)}
+      >
+        <option value="">{placeholder}</option>
+        {options.map((option) => (
+          <option key={option.id} value={option.id}>{option[language]}</option>
+        ))}
+      </select>
+      <span id={`address-${id}-help`} className={styles.hint}>{helper}</span>
+    </label>
+  );
+
+  const governorateField = selectRow(
+    'governorate', words.addressGovernorate, words.addressGovernorateHelp,
+    governorateId, governorates, chooseGovernorate, true, false,
+    words.addressGovernorateChoose,
+  );
+
+  const areaField = selectRow(
+    'district', words.addressDistrict,
+    governorateId ? words.addressDistrictHelp : words.addressDistrictPickGovernorate,
+    areaOption?.id ?? '', areas,
+    (id) => {
+      const picked = areas.find(item => item.id === id);
+      setDraft((current) => ({ ...current, district: picked ? picked.en : '' }));
+    },
+    false, !governorateId,
+    words.addressDistrictChoose,
+  );
+
   return (
     <div className={styles.formGrid}>
       {field('label', words.addressLabel, words.addressLabelHelp, true)}
       {field('addressLine', words.addressLine, words.addressLineHelp, true)}
-      {field('governorate', words.addressGovernorate, words.addressGovernorateHelp, true)}
-      {field('district', words.addressDistrict, words.addressDistrictHelp)}
+      {governorateField}
+      {areaField}
       {field('building', words.addressBuilding, words.addressBuildingHelp)}
       {field('floor', words.addressFloor, words.addressFloorHelp)}
       {field('apartment', words.addressApartment, words.addressApartmentHelp)}

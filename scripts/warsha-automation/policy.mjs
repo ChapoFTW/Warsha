@@ -45,6 +45,7 @@ export const DETERMINISTIC_TEST_SCRIPTS = [
   'test:form-clarity',
   'test:french-localization',
   'test:service-labels',
+  'test:address-contract',
   'test:help-docs',
   'test:signup-legal-startup',
   'test:signup-state',

@@ -236,7 +236,7 @@
       "locale": "en",
       "title": "Addresses and location",
       "summary": "Save a clear service address without losing the exact map pin.",
-      "version": 1,
+      "version": 2,
       "lastReviewedDate": "2026-08-21",
       "features": [
         "addresses",
@@ -263,7 +263,7 @@
       "locale": "ar",
       "title": "العناوين والموقع",
       "summary": "احفظ عنوان خدمة واضح من غير ما تفقد مكان الدبوس الدقيق.",
-      "version": 1,
+      "version": 2,
       "lastReviewedDate": "2026-08-21",
       "features": [
         "addresses",
@@ -526,7 +526,7 @@
       "locale": "en",
       "title": "Onboarding, service areas, and verification",
       "summary": "Understand every application stage and what customers can see.",
-      "version": 1,
+      "version": 2,
       "lastReviewedDate": "2026-08-21",
       "features": [
         "worker_onboarding",
@@ -554,7 +554,7 @@
       "locale": "ar",
       "title": "التقديم ومناطق الشغل والتوثيق",
       "summary": "افهم كل مرحلة في التقديم وإيه اللي العميل يقدر يشوفه.",
-      "version": 1,
+      "version": 2,
       "lastReviewedDate": "2026-08-21",
       "features": [
         "worker_onboarding",
@@ -1171,7 +1171,7 @@
       "locale": "fr",
       "title": "Adresses et localisation",
       "summary": "Enregistrez une adresse claire tout en conservant la position exacte.",
-      "version": 1,
+      "version": 2,
       "lastReviewedDate": "2026-08-21",
       "features": [
         "addresses",
@@ -1315,7 +1315,7 @@
       "locale": "fr",
       "title": "Profil, métiers, zone de service et vérification",
       "summary": "Comprenez les étapes nécessaires avant de pouvoir recevoir des interventions.",
-      "version": 1,
+      "version": 2,
       "lastReviewedDate": "2026-08-21",
       "features": [
         "worker_onboarding",

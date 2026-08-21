@@ -75,7 +75,7 @@
       "locale": "en",
       "title": "Addresses and location",
       "summary": "Save a clear service address without losing the exact map pin.",
-      "version": 1,
+      "version": 2,
       "lastReviewedDate": "2026-08-21",
       "features": [
         "addresses",
@@ -95,7 +95,7 @@
         "home",
         "work"
       ],
-      "body": "## Add an address\n\nGive the address a familiar name such as Home or Work. Search for an address or use your current location when those options are available. Warsha keeps the exact coordinates separately from the editable address text.\n\nFill in the street and governorate. Building, floor, apartment, landmark, and worker directions are optional unless the screen says otherwise. Confirm the pin before booking.\n\n## If current location fails\n\nAllow location access in your browser or device settings, make sure location services are on, and try again. If Warsha gets coordinates but cannot find an address, it says so and lets you search or edit the address manually.\n\nChanging the words in the form does not silently move the saved pin."
+      "body": "## Add an address\n\nGive the address a familiar name such as Home or Work. Search for an address or use your current location when those options are available. Warsha keeps the exact coordinates separately from the editable address text.\n\nFill in the street and governorate. Building, floor, apartment, landmark, and worker directions are optional unless the screen says otherwise. Confirm the pin before booking.\n\n## If current location fails\n\nAllow location access in your browser or device settings, make sure location services are on, and try again. If Warsha gets coordinates but cannot find an address, it says so and lets you search or edit the address manually.\n\nChanging the words in the form does not silently move the saved pin.\n\nGovernorate and area are chosen from Egypt's official administrative list rather than typed, so the address you save matches the one workers and support see. Choosing a governorate shows only its own areas, and changing the governorate clears an area that no longer belongs to it.\n\nLocation is its own required step. Warsha needs the exact spot so the worker can reach you, so an address cannot be saved until the location is confirmed by searching for the address or using your current location. If saving is unavailable the form says which step is outstanding. If location permission is blocked, allow it for the site in your browser settings, or search for the address instead. Address name, building, floor, apartment, nearby landmark and notes for the worker are all optional and can be left empty."
     },
     {
       "id": "customer-addresses-location",
@@ -103,7 +103,7 @@
       "locale": "ar",
       "title": "العناوين والموقع",
       "summary": "احفظ عنوان خدمة واضح من غير ما تفقد مكان الدبوس الدقيق.",
-      "version": 1,
+      "version": 2,
       "lastReviewedDate": "2026-08-21",
       "features": [
         "addresses",
@@ -123,7 +123,7 @@
         "البيت",
         "الشغل"
       ],
-      "body": "## ضيف عنوان\n\nسمّي العنوان باسم مألوف زي «البيت» أو «الشغل». دور على عنوان أو استخدم موقعك الحالي لما الاختيارات دي تكون متاحة. ورشة بتحفظ الإحداثيات الدقيقة لوحدها بعيد عن كلام العنوان اللي تقدر تعدله.\n\nاكتب الشارع والمحافظة. المبنى والدور والشقة والعلامة المميزة وتعليمات الوصول اختيارية إلا لو الشاشة قالت غير كده. أكّد الدبوس قبل الحجز.\n\n## لو الموقع الحالي ما اشتغلش\n\nاسمح لورشة بالموقع من إعدادات المتصفح أو الجهاز، واتأكد إن خدمة الموقع شغالة، وجرّب تاني. لو ورشة جابت الإحداثيات بس ما عرفتش العنوان، هتقولك بوضوح وتقدر تدور أو تعدل العنوان بنفسك.\n\nتعديل كلام العنوان ما بيحرّكش الدبوس المحفوظ من غير ما تعرف."
+      "body": "## ضيف عنوان\n\nسمّي العنوان باسم مألوف زي «البيت» أو «الشغل». دور على عنوان أو استخدم موقعك الحالي لما الاختيارات دي تكون متاحة. ورشة بتحفظ الإحداثيات الدقيقة لوحدها بعيد عن كلام العنوان اللي تقدر تعدله.\n\nاكتب الشارع والمحافظة. المبنى والدور والشقة والعلامة المميزة وتعليمات الوصول اختيارية إلا لو الشاشة قالت غير كده. أكّد الدبوس قبل الحجز.\n\n## لو الموقع الحالي ما اشتغلش\n\nاسمح لورشة بالموقع من إعدادات المتصفح أو الجهاز، واتأكد إن خدمة الموقع شغالة، وجرّب تاني. لو ورشة جابت الإحداثيات بس ما عرفتش العنوان، هتقولك بوضوح وتقدر تدور أو تعدل العنوان بنفسك.\n\nتعديل كلام العنوان ما بيحرّكش الدبوس المحفوظ من غير ما تعرف.\n\nالمحافظة والمنطقة بتتختار من القائمة الإدارية الرسمية لمصر مش بتتكتب، عشان العنوان اللي بتحفظه يبقى مطابق للي الصنايعي والدعم بيشوفوه. لما تختار محافظة بتظهر مناطقها هي بس، ولو غيّرت المحافظة بتتشال المنطقة اللي مبقتش تابعة ليها.\n\nالموقع خطوة مطلوبة لوحدها. ورشة محتاجة المكان بالظبط عشان الصنايعي يوصلك، فمش هينفع تحفظ عنوان قبل ما تأكّد الموقع بالبحث عن العنوان أو باستخدام موقعك الحالي. لو الحفظ مش متاح، الفورم بيقول لك الخطوة الناقصة. ولو إذن الموقع متمنوع، اسمح بيه للموقع من إعدادات المتصفح، أو ابحث عن العنوان بدل كده. اسم العنوان والمبنى والدور والشقة والعلامة المميزة وملاحظات الصنايعي كلها اختيارية وممكن تسيبها فاضية."
     },
     {
       "id": "customer-requests-quotes-jobs",
@@ -375,7 +375,7 @@
       "locale": "en",
       "title": "Onboarding, service areas, and verification",
       "summary": "Understand every application stage and what customers can see.",
-      "version": 1,
+      "version": 2,
       "lastReviewedDate": "2026-08-21",
       "features": [
         "worker_onboarding",
@@ -396,7 +396,7 @@
         "verification",
         "rejected"
       ],
-      "body": "Trades describe the work you offer. Services are the specific tasks customers can request. Service areas describe where you will travel. Your exact work/home location is private and is used for nearby matching; customers do not see it.\n\nVerification can be Not started, Draft, Submitted, Under review, Approved, More information required, Rejected, or Expired. The app shows the safe reason and next action. Identity documents and criminal-record evidence are private. A certificate upload is reviewed by a person and is not claimed to be checked with a government system.\n\nIf more information is required, correct only the requested step and submit again. If rejected, use the appeal path when the app offers it or contact Support."
+      "body": "Trades describe the work you offer. Services are the specific tasks customers can request. Service areas describe where you will travel. Your exact work/home location is private and is used for nearby matching; customers do not see it.\n\nVerification can be Not started, Draft, Submitted, Under review, Approved, More information required, Rejected, or Expired. The app shows the safe reason and next action. Identity documents and criminal-record evidence are private. A certificate upload is reviewed by a person and is not claimed to be checked with a government system.\n\nIf more information is required, correct only the requested step and submit again. If rejected, use the appeal path when the app offers it or contact Support.\n\nWhere a worker supplies a service area, the governorate and area come from the same official administrative list customers use, so coverage and requests are compared against identical values rather than two spellings of the same place."
     },
     {
       "id": "worker-onboarding-verification",
@@ -404,7 +404,7 @@
       "locale": "ar",
       "title": "التقديم ومناطق الشغل والتوثيق",
       "summary": "افهم كل مرحلة في التقديم وإيه اللي العميل يقدر يشوفه.",
-      "version": 1,
+      "version": 2,
       "lastReviewedDate": "2026-08-21",
       "features": [
         "worker_onboarding",
@@ -425,7 +425,7 @@
         "توثيق",
         "رفض"
       ],
-      "body": "المهن بتوضح نوع الشغل اللي بتقدمه. الخدمات هي المهام المحددة اللي العميل يطلبها. مناطق الخدمة بتوضح هتتحرك فين. موقع شغلك أو بيتك الدقيق خاص وبيستخدم للمطابقة القريبة؛ العملاء مش بيشوفوه.\n\nحالة التوثيق ممكن تكون: لسه ما بدأش، مسودة، اتبعت، تحت المراجعة، اتوافق عليه، محتاج معلومات تانية، اترفض، أو انتهت صلاحيته. التطبيق بيعرض السبب الآمن والخطوة الجاية. مستندات الهوية والفيش خاصة. المستند بيراجعه شخص، وورشة ما بيدّعيش إنه اتراجع مع جهة حكومية.\n\nلو مطلوب معلومات تانية، صحح الخطوة المطلوبة بس وابعت من جديد. لو اترفضت، استخدم الاعتراض لما التطبيق يتيحه أو كلم الدعم."
+      "body": "المهن بتوضح نوع الشغل اللي بتقدمه. الخدمات هي المهام المحددة اللي العميل يطلبها. مناطق الخدمة بتوضح هتتحرك فين. موقع شغلك أو بيتك الدقيق خاص وبيستخدم للمطابقة القريبة؛ العملاء مش بيشوفوه.\n\nحالة التوثيق ممكن تكون: لسه ما بدأش، مسودة، اتبعت، تحت المراجعة، اتوافق عليه، محتاج معلومات تانية، اترفض، أو انتهت صلاحيته. التطبيق بيعرض السبب الآمن والخطوة الجاية. مستندات الهوية والفيش خاصة. المستند بيراجعه شخص، وورشة ما بيدّعيش إنه اتراجع مع جهة حكومية.\n\nلو مطلوب معلومات تانية، صحح الخطوة المطلوبة بس وابعت من جديد. لو اترفضت، استخدم الاعتراض لما التطبيق يتيحه أو كلم الدعم.\n\nلما الصنايعي يحدد منطقة خدمة، المحافظة والمنطقة بييجوا من نفس القائمة الإدارية الرسمية اللي العملاء بيستخدموها، فالتغطية والطلبات بتتقارن بنفس القيم مش بكتابتين مختلفتين لنفس المكان."
     },
     {
       "id": "worker-opportunities-jobs",
@@ -641,7 +641,7 @@
       "locale": "fr",
       "title": "Adresses et localisation",
       "summary": "Enregistrez une adresse claire tout en conservant la position exacte.",
-      "version": 1,
+      "version": 2,
       "lastReviewedDate": "2026-08-21",
       "features": [
         "addresses",
@@ -661,7 +661,7 @@
         "maison",
         "travail"
       ],
-      "body": "## Ajouter une adresse\n\nDonnez-lui un nom familier, comme Maison ou Travail. Recherchez une adresse ou utilisez votre position actuelle lorsque ces options sont disponibles. Warsha conserve les coordonnées exactes séparément du texte que vous pouvez corriger.\n\nRenseignez la rue et le gouvernorat. Le bâtiment, l’étage, l’appartement, le point de repère et les indications sont facultatifs sauf mention contraire. Confirmez la position avant de réserver.\n\n## Si la position actuelle échoue\n\nAutorisez la localisation dans les réglages du navigateur ou de l’appareil, vérifiez que les services de localisation sont actifs, puis réessayez. Si Warsha obtient les coordonnées sans trouver l’adresse, l’écran le précise et vous laisse rechercher ou corriger les informations."
+      "body": "## Ajouter une adresse\n\nDonnez-lui un nom familier, comme Maison ou Travail. Recherchez une adresse ou utilisez votre position actuelle lorsque ces options sont disponibles. Warsha conserve les coordonnées exactes séparément du texte que vous pouvez corriger.\n\nRenseignez la rue et le gouvernorat. Le bâtiment, l’étage, l’appartement, le point de repère et les indications sont facultatifs sauf mention contraire. Confirmez la position avant de réserver.\n\n## Si la position actuelle échoue\n\nAutorisez la localisation dans les réglages du navigateur ou de l’appareil, vérifiez que les services de localisation sont actifs, puis réessayez. Si Warsha obtient les coordonnées sans trouver l’adresse, l’écran le précise et vous laisse rechercher ou corriger les informations.\n\nLe gouvernorat et la zone se choisissent dans la liste administrative officielle de l’Égypte plutôt qu’en saisie libre, afin que l’adresse enregistrée corresponde à celle que voient les professionnels et le support. Choisir un gouvernorat n’affiche que ses propres zones, et en changer efface une zone qui n’en dépend plus.\n\nL’emplacement est une étape obligatoire à part entière. Warsha a besoin de l’endroit exact pour que le professionnel puisse vous rejoindre : une adresse ne peut donc pas être enregistrée tant que l’emplacement n’est pas confirmé, par recherche d’adresse ou avec votre position actuelle. Si l’enregistrement est indisponible, le formulaire indique l’étape manquante. Si l’autorisation de localisation est bloquée, autorisez-la pour le site dans les réglages de votre navigateur, ou recherchez l’adresse. Le nom de l’adresse, le bâtiment, l’étage, l’appartement, le point de repère et les indications pour le professionnel sont tous facultatifs et peuvent rester vides."
     },
     {
       "id": "customer-requests-quotes-jobs",
@@ -790,7 +790,7 @@
       "locale": "fr",
       "title": "Profil, métiers, zone de service et vérification",
       "summary": "Comprenez les étapes nécessaires avant de pouvoir recevoir des interventions.",
-      "version": 1,
+      "version": 2,
       "lastReviewedDate": "2026-08-21",
       "features": [
         "worker_onboarding",
@@ -812,7 +812,7 @@
         "document",
         "position"
       ],
-      "body": "Le profil indique aux clients qui vous êtes et les services que vous proposez. Choisissez uniquement vos métiers réels et les zones où vous acceptez de vous déplacer. La position de travail sert à trouver des interventions proches ; les clients ne voient pas votre domicile exact.\n\nLa vérification est une procédure gouvernée. Saisissez les informations demandées, téléversez des images lisibles et vérifiez les valeurs extraites avant l’envoi. Les états En attente, Approuvé, Refusé ou Informations supplémentaires ont un sens précis affiché à l’écran. Un refus ne doit pas être contourné en créant un autre compte."
+      "body": "Le profil indique aux clients qui vous êtes et les services que vous proposez. Choisissez uniquement vos métiers réels et les zones où vous acceptez de vous déplacer. La position de travail sert à trouver des interventions proches ; les clients ne voient pas votre domicile exact.\n\nLa vérification est une procédure gouvernée. Saisissez les informations demandées, téléversez des images lisibles et vérifiez les valeurs extraites avant l’envoi. Les états En attente, Approuvé, Refusé ou Informations supplémentaires ont un sens précis affiché à l’écran. Un refus ne doit pas être contourné en créant un autre compte.\n\nLorsqu’un professionnel indique une zone d’intervention, le gouvernorat et la zone proviennent de la même liste administrative officielle que celle utilisée par les clients : la couverture et les demandes sont donc comparées à des valeurs identiques plutôt qu’à deux orthographes d’un même lieu."
     },
     {
       "id": "worker-opportunities-jobs",
