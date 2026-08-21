@@ -15,6 +15,7 @@ import {
 } from '@/lib/customer';
 import { supabase } from '@/lib/supabase';
 import { useAppLocale } from '@/lib/use-app-locale';
+import { serviceCategoryDescription, serviceCategoryLabel } from '@/src/i18n/service-labels';
 
 import type { Route } from 'next';
 import styles from '@/components/product-surface.module.css';
@@ -94,7 +95,7 @@ export default function DiscoverPage() {
     const needle = query.trim().toLowerCase();
     if (!needle) return categories;
     return categories.filter((category) => {
-      const label = words[category.translationKey] ?? category.id;
+      const label = serviceCategoryLabel(category.translationKey, locale, category.id);
       return label.toLowerCase().includes(needle) || category.id.includes(needle);
     });
   }, [categories, query, words]);
@@ -158,11 +159,11 @@ export default function DiscoverPage() {
                 href={`/requests/new?category=${encodeURIComponent(category.id)}`}
               >
                 <span className={styles.cardName}>
-                  {words[category.translationKey] ?? category.id}
+                  {serviceCategoryLabel(category.translationKey, locale, category.id)}
                 </span>
                 {category.descriptionKey ? (
                   <span className={styles.cardMeta}>
-                    {words[category.descriptionKey] ?? ''}
+                    {serviceCategoryDescription(category.descriptionKey, locale) ?? ''}
                   </span>
                 ) : null}
               </a>

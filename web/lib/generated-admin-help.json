@@ -275,7 +275,7 @@
       "locale": "en",
       "title": "Audit, analytics, and exports",
       "summary": "Read immutable history, interpret metric definitions, and export aggregate data safely.",
-      "version": 1,
+      "version": 2,
       "lastReviewedDate": "2026-08-21",
       "features": [
         "audit",
@@ -301,7 +301,7 @@
         "export",
         "financial"
       ],
-      "body": "Audit is append-only evidence of actions that happened. Search by bounded period, source, actor, or exact subject; do not treat it as an editable case note. Reading sensitive sources is itself logged.\n\nAnalytics derives first-party aggregate facts from authoritative Warsha tables and histories. Read the metric definition before comparing numbers. Reporting days use Africa/Cairo while storage remains UTC. A partial period includes today. Financial cards show ledger facts only and do not claim external settlement or revenue.\n\nCSV export requires `export_operational_report`, fresh authentication, a reason, an expiring request owned by the operator, and an audit entry. It contains aggregate snake_case columns and no PII. Do not combine it with another dataset to identify people. Detailed exports are not available without separate privacy authority."
+      "body": "Audit is append-only evidence of actions that happened. Search by bounded period, source, actor, or exact subject; do not treat it as an editable case note. Reading sensitive sources is itself logged.\n\nAnalytics derives first-party aggregate facts from authoritative Warsha tables and histories. Read the metric definition before comparing numbers. Reporting days use Africa/Cairo while storage remains UTC. A partial period includes today. Financial cards show ledger facts only and do not claim external settlement or revenue.\n\nCSV export requires `export_operational_report`, fresh authentication, a reason, an expiring request owned by the operator, and an audit entry. It contains aggregate snake_case columns and no PII. Do not combine it with another dataset to identify people. Detailed exports are not available without separate privacy authority.\n\nCategory filters and dimension breakdowns show the localized service name. The stable category identifier remains the value stored and exported, so a report exported in one language is comparable with one exported in another."
     },
     {
       "id": "admin-audit-analytics",
@@ -309,7 +309,7 @@
       "locale": "ar",
       "title": "السجل والتحليلات والتنزيل",
       "summary": "اقرأ التاريخ الدائم وافهم تعريفات الأرقام ونزّل بيانات مجمعة بأمان.",
-      "version": 1,
+      "version": 2,
       "lastReviewedDate": "2026-08-21",
       "features": [
         "audit",
@@ -335,7 +335,7 @@
         "تنزيل",
         "مالي"
       ],
-      "body": "السجل دليل بيتضاف عليه بس للإجراءات اللي حصلت. دور بمدة محدودة أو مصدر أو موظف أو موضوع مطابق؛ ما تتعاملش معاه كملاحظة حالة قابلة للتعديل. قراءة المصادر الحساسة نفسها بتتسجل.\n\nالتحليلات بتطلع أرقام مجمعة من جداول وتواريخ ورشة الرسمية. اقرأ تعريف الرقم قبل المقارنة. أيام التقرير بتوقيت القاهرة والتخزين UTC. المدة الجزئية شاملة النهارده. الكروت المالية حقائق من الدفتر بس وما بتدّعيش إن التحويل الخارجي تم أو إنها إيرادات.\n\nتنزيل CSV محتاج `export_operational_report` وتحقق حديث وسبب وطلب مؤقت مملوك للموظف وسجل مراجعة. الملف فيه أعمدة مجمعة ثابتة ومن غير بيانات شخصية. ما تدمجوش مع بيانات تانية عشان تحدد أشخاص. مفيش تنزيل تفصيلي من غير صلاحية خصوصية منفصلة."
+      "body": "السجل دليل بيتضاف عليه بس للإجراءات اللي حصلت. دور بمدة محدودة أو مصدر أو موظف أو موضوع مطابق؛ ما تتعاملش معاه كملاحظة حالة قابلة للتعديل. قراءة المصادر الحساسة نفسها بتتسجل.\n\nالتحليلات بتطلع أرقام مجمعة من جداول وتواريخ ورشة الرسمية. اقرأ تعريف الرقم قبل المقارنة. أيام التقرير بتوقيت القاهرة والتخزين UTC. المدة الجزئية شاملة النهارده. الكروت المالية حقائق من الدفتر بس وما بتدّعيش إن التحويل الخارجي تم أو إنها إيرادات.\n\nتنزيل CSV محتاج `export_operational_report` وتحقق حديث وسبب وطلب مؤقت مملوك للموظف وسجل مراجعة. الملف فيه أعمدة مجمعة ثابتة ومن غير بيانات شخصية. ما تدمجوش مع بيانات تانية عشان تحدد أشخاص. مفيش تنزيل تفصيلي من غير صلاحية خصوصية منفصلة.\n\nفلاتر التصنيف وتفصيل الأبعاد بيعرضوا اسم الخدمة المترجم. معرّف التصنيف الثابت فضل هو القيمة اللي بتتخزّن وبتتصدّر، فالتقرير المصدَّر بلغة يبقى قابل للمقارنة بتقرير مصدَّر بلغة تانية."
     },
     {
       "id": "admin-recovery",
@@ -590,7 +590,7 @@
       "locale": "fr",
       "title": "Audit, analyses et exports",
       "summary": "Lisez l’historique immuable, interprétez les métriques et exportez des agrégats en sécurité.",
-      "version": 1,
+      "version": 2,
       "lastReviewedDate": "2026-08-21",
       "features": [
         "audit",
@@ -616,7 +616,7 @@
         "export",
         "financier"
       ],
-      "body": "L’audit est une preuve ajoutée sans modification des actions passées. Recherchez par période bornée, source, acteur ou sujet exact ; ce n’est pas une note de dossier modifiable. La lecture de sources sensibles est elle-même auditée.\n\nLes analyses calculent des faits agrégés depuis les tables et historiques officiels de Warsha. Lisez la définition avant de comparer une métrique. Les journées de rapport suivent Africa/Cairo, tandis que le stockage reste en UTC. Les cartes financières ne s’affichent qu’avec `view_financial_ledger` et ne prétendent pas qu’un règlement externe a eu lieu.\n\nL’export CSV exige `export_operational_report`, une authentification récente, une raison et une demande temporaire auditée. Il ne contient pas de données personnelles."
+      "body": "L’audit est une preuve ajoutée sans modification des actions passées. Recherchez par période bornée, source, acteur ou sujet exact ; ce n’est pas une note de dossier modifiable. La lecture de sources sensibles est elle-même auditée.\n\nLes analyses calculent des faits agrégés depuis les tables et historiques officiels de Warsha. Lisez la définition avant de comparer une métrique. Les journées de rapport suivent Africa/Cairo, tandis que le stockage reste en UTC. Les cartes financières ne s’affichent qu’avec `view_financial_ledger` et ne prétendent pas qu’un règlement externe a eu lieu.\n\nL’export CSV exige `export_operational_report`, une authentification récente, une raison et une demande temporaire auditée. Il ne contient pas de données personnelles.\n\nLes filtres de catégorie et les répartitions affichent le nom localisé du service. L’identifiant de catégorie stable reste la valeur stockée et exportée : un rapport exporté dans une langue reste comparable à un rapport exporté dans une autre."
     },
     {
       "id": "admin-recovery",

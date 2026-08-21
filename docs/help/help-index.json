@@ -290,7 +290,7 @@
       "locale": "en",
       "title": "Requests, quotes, and jobs",
       "summary": "Understand what happens from posting a request to completing or cancelling a job.",
-      "version": 1,
+      "version": 2,
       "lastReviewedDate": "2026-08-21",
       "features": [
         "marketplace",
@@ -320,7 +320,7 @@
       "locale": "ar",
       "title": "الطلبات والعروض والشغل",
       "summary": "افهم اللي بيحصل من نشر الطلب لحد اكتمال الشغل أو إلغائه.",
-      "version": 1,
+      "version": 2,
       "lastReviewedDate": "2026-08-21",
       "features": [
         "marketplace",
@@ -582,7 +582,7 @@
       "locale": "en",
       "title": "Opportunities, quotes, and jobs",
       "summary": "Review matching requests, write clear quotes, and update real job progress.",
-      "version": 1,
+      "version": 2,
       "lastReviewedDate": "2026-08-21",
       "features": [
         "marketplace",
@@ -610,7 +610,7 @@
       "locale": "ar",
       "title": "الفرص والعروض والشغل",
       "summary": "راجع الطلبات المناسبة، اكتب عرض واضح، وحدّث تقدم الشغل الحقيقي.",
-      "version": 1,
+      "version": 2,
       "lastReviewedDate": "2026-08-21",
       "features": [
         "marketplace",
@@ -954,7 +954,7 @@
       "locale": "en",
       "title": "Audit, analytics, and exports",
       "summary": "Read immutable history, interpret metric definitions, and export aggregate data safely.",
-      "version": 1,
+      "version": 2,
       "lastReviewedDate": "2026-08-21",
       "features": [
         "audit",
@@ -987,7 +987,7 @@
       "locale": "ar",
       "title": "السجل والتحليلات والتنزيل",
       "summary": "اقرأ التاريخ الدائم وافهم تعريفات الأرقام ونزّل بيانات مجمعة بأمان.",
-      "version": 1,
+      "version": 2,
       "lastReviewedDate": "2026-08-21",
       "features": [
         "audit",
@@ -1198,7 +1198,7 @@
       "locale": "fr",
       "title": "Demandes, devis et interventions",
       "summary": "Comprenez le parcours d’une demande jusqu’à la fin ou l’annulation de l’intervention.",
-      "version": 1,
+      "version": 2,
       "lastReviewedDate": "2026-08-21",
       "features": [
         "marketplace",
@@ -1344,7 +1344,7 @@
       "locale": "fr",
       "title": "Opportunités, devis et interventions",
       "summary": "Répondez aux demandes admissibles et mettez à jour le déroulement réel du travail.",
-      "version": 1,
+      "version": 2,
       "lastReviewedDate": "2026-08-21",
       "features": [
         "marketplace",
@@ -1521,7 +1521,7 @@
       "locale": "fr",
       "title": "Audit, analyses et exports",
       "summary": "Lisez l’historique immuable, interprétez les métriques et exportez des agrégats en sécurité.",
-      "version": 1,
+      "version": 2,
       "lastReviewedDate": "2026-08-21",
       "features": [
         "audit",

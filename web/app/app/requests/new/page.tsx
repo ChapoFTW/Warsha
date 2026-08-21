@@ -23,6 +23,7 @@ import {
 import { customerNav } from '@/lib/nav';
 import { supabase } from '@/lib/supabase';
 import { useAppLocale } from '@/lib/use-app-locale';
+import { serviceCategoryLabel } from '@/src/i18n/service-labels';
 
 import type { Route } from 'next';
 import styles from '@/components/product-surface.module.css';
@@ -217,7 +218,7 @@ export default function NewRequestPage() {
             <option value="">{words.requestChooseCategory}</option>
             {(categories ?? []).map((category) => (
               <option key={category.id} value={category.id}>
-                {words[category.translationKey] ?? category.id}
+                {serviceCategoryLabel(category.translationKey, locale, category.id)}
               </option>
             ))}
           </select>

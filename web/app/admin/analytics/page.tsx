@@ -20,6 +20,7 @@ import { hasCapability } from '@/lib/staff';
 import { intlLocale, type Locale } from '@/lib/preferences';
 import { supabase } from '@/lib/supabase';
 import { useAppLocale } from '@/lib/use-app-locale';
+import { serviceCategoryLabel } from '@/src/i18n/service-labels';
 
 import styles from './reporting.module.css';
 
@@ -142,7 +143,7 @@ export default function AnalyticsPage() {
       </> : null}
       <Field label={words.analyticsCategory}><select value={category} onChange={event => setCategory(event.target.value)}>
         <option value="">{words.analyticsAll}</option>
-        {categories.map(item => <option key={item.id} value={item.id}>{copy[item.translationKey] ?? item.id}</option>)}
+        {categories.map(item => <option key={item.id} value={item.id}>{serviceCategoryLabel(item.translationKey, locale, item.id)}</option>)}
       </select></Field>
       <Field label={words.analyticsGovernorate}><input value={governorate} maxLength={100} onChange={event => setGovernorate(event.target.value)} /></Field>
       <Field label={words.analyticsVerification}><select value={verification} onChange={event => setVerification(event.target.value)}>
@@ -188,7 +189,7 @@ export default function AnalyticsPage() {
 
       <section className={styles.panel} aria-labelledby="dimensions-title"><h2 id="dimensions-title">{words.analyticsDimensions}</h2>
         <ul className={styles.dimensionList}>{report.dimensions.categories.map(item => <li key={item.categoryId}>
-          <span>{copy[categories.find(categoryItem => categoryItem.id === item.categoryId)?.translationKey ?? ''] ?? words.analyticsUnknownCategory}</span>
+          <span>{(() => { const found = categories.find(categoryItem => categoryItem.id === item.categoryId); return found ? serviceCategoryLabel(found.translationKey, locale, found.id) : words.analyticsUnknownCategory; })()}</span>
           <strong>{item.requestCount}</strong>
         </li>)}</ul>
       </section>

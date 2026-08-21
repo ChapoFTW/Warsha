@@ -8,7 +8,9 @@ const read = (path: string) => readFileSync(path, 'utf8');
 const addressCopy = read('src/i18n/address-form-copy.ts');
 for (const token of [
   'Address name', 'اسم العنوان', 'Nom de l’adresse',
-  'Give this address a name', 'سمّي العنوان', 'Donnez un nom à cette adresse',
+  // The helper names the concept and gives examples. The Arabic wording was
+  // revised to read as natural Arabic rather than a translation of "label".
+  'Give this address a name', 'سمِّ هذا العنوان', 'Donnez un nom à cette adresse',
   'Optional', 'اختياري', 'Facultatif',
 ]) check(addressCopy.includes(token), `address form authority contains ${token}`);
 

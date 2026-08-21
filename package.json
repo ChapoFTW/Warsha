@@ -58,6 +58,7 @@
     "test:business-analytics": "node --no-warnings --experimental-strip-types scripts/business-analytics.test.mts",
     "test:form-clarity": "node --no-warnings --experimental-strip-types scripts/form-clarity.test.mts",
     "test:french-localization": "node --no-warnings --experimental-strip-types scripts/french-localization.test.mts",
+    "test:service-labels": "node --no-warnings --experimental-strip-types scripts/service-labels.test.mts",
     "test:help-docs": "node scripts/help-docs.mjs",
     "warsha:docs-check": "node scripts/help-docs.mjs",
     "warsha:docs-generate": "node scripts/help-docs.mjs --write",
