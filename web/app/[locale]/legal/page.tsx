@@ -20,7 +20,7 @@ export async function generateMetadata(
     description: copy[locale].legalCentreLead,
     alternates: {
       canonical: localeHref(locale, '/legal'),
-      languages: { en: '/en/legal', ar: '/ar/legal' },
+      languages: { en: '/en/legal', ar: '/ar/legal', fr: '/fr/legal' },
     },
   };
 }
@@ -41,6 +41,7 @@ export default async function LegalIndexPage({
   if (!isLocale(locale)) notFound();
   const typed: Locale = locale;
   const words = copy[typed];
+  const legalLocale = typed === 'ar' ? 'ar' : 'en';
 
   const mandatory = legalCorpus.filter((document) => document.requiresAcceptance);
   const reference = legalCorpus.filter((document) => !document.requiresAcceptance);
@@ -53,8 +54,8 @@ export default async function LegalIndexPage({
             href={localeHref(typed, `/legal/${document.key.replace(/_/g, '-')}`)}
             className={styles.item}
           >
-            <span className={styles.itemTitle}>{document[typed].title}</span>
-            <span className={styles.itemSummary}>{document[typed].summary}</span>
+            <span className={styles.itemTitle}>{document[legalLocale].title}</span>
+            <span className={styles.itemSummary}>{document[legalLocale].summary}</span>
             <span className={styles.itemMeta}>
               {words.legalVersion} {document.version} ·{' '}
               {document.audience === 'all' ? words.legalAudienceEveryone : document.audience}

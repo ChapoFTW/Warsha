@@ -15,6 +15,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { BrandLoadingMark as ActivityIndicator } from "@/components/warsha/BrandMark";
+import { AddressLocationPicker, type AddressLocationPickerCopy } from "@/components/warsha/AddressLocationPicker";
 import { ScreenHeader } from "@/components/warsha/ScreenHeader";
 import { AppText } from "@/components/warsha/Typography";
 import { colors, radii, spacing, typography } from "@/constants/theme";
@@ -32,7 +33,9 @@ import {
 import type { Service } from "@/src/data/marketplace-types";
 import { useMarketplaceData } from "@/src/data/marketplace-context";
 import { useLocalization } from "@/src/i18n/localization";
+import { useAddressFormText } from "@/src/i18n/address-form-copy";
 import type { TranslationKey } from "@/src/i18n/translations";
+import { resolvedAddressFields } from "@/src/providers/location-address";
 import {
   formatBookingDateTime,
   formatNumber,
@@ -52,6 +55,7 @@ export default function NewBookingScreen() {
   const { bookings, createBooking, creating } = useBookings();
   const provider = getProvider(providerId);
   const { t, isRTL, language } = useLocalization();
+  const addressText = useAddressFormText();
   const [step, setStep] = useState(0);
   const [service, setService] = useState<Service | undefined>(() =>
     provider?.services.find(
@@ -83,6 +87,17 @@ export default function NewBookingScreen() {
   const [time, setTime] = useState("");
   const [type, setType] = useState<"scheduled" | "emergency">("scheduled");
   const [error, setError] = useState("");
+  const locationPickerCopy: AddressLocationPickerCopy = {
+    useCurrentLocation: addressText('useCurrentLocation'), chooseOnMap: addressText('chooseOnMap'),
+    searchAddress: addressText('searchAddress'), searchPlaceholder: addressText('searchPlaceholder'),
+    locationSaved: addressText('locationSaved'), locationPartial: addressText('locationPartial'),
+    addressLookupFailed: addressText('lookupFailed'), locating: addressText('locating'),
+    resolvingAddress: addressText('resolving'), locationFailed: addressText('locationFailed'),
+    locationPermissionDenied: addressText('permissionDenied'), locationServicesDisabled: addressText('servicesDisabled'),
+    locationDeviceUnavailable: addressText('deviceUnavailable'), noSearchResults: addressText('noResults'),
+    providerUnavailable: addressText('providerUnavailable'), permissionOptional: addressText('permissionOptional'),
+    mapUnavailable: addressText('mapUnavailable'), mapDragHint: addressText('mapHint'), loading: addressText('loading'),
+  };
   useEffect(
     () => () => {
       if (!bookingCreated.current)
@@ -193,7 +208,9 @@ export default function NewBookingScreen() {
       !draft.governorate ||
       !draft.district ||
       !draft.street ||
-      !draft.building
+      draft.latitude === undefined ||
+      draft.longitude === undefined ||
+      !draft.pinSource
     ) {
       setError(t("addressRequired"));
       return;
@@ -435,30 +452,34 @@ export default function NewBookingScreen() {
               </Pressable>
               {adding ? (
                 <View style={styles.addressForm}>
-                  {(
-                    [
-                      "label",
-                      "governorate",
-                      "district",
-                      "street",
-                      "building",
-                      "floor",
-                      "apartment",
-                      "landmark",
-                      "instructions",
-                    ] as const
-                  ).map((key) => (
-                    <TextInput
-                      key={key}
-                      value={draft[key]}
-                      onChangeText={(value) =>
-                        setDraft((current) => ({ ...current, [key]: value }))
-                      }
-                      placeholder={t(key as TranslationKey)}
-                      placeholderTextColor={colors.textMuted}
-                      style={styles.input}
-                    />
-                  ))}
+                  <AddressLocationPicker
+                    value={draft.latitude !== undefined && draft.longitude !== undefined
+                      ? { latitude: draft.latitude, longitude: draft.longitude }
+                      : null}
+                    copy={locationPickerCopy}
+                    resolutionRequirement="structured"
+                    onChange={(position, source, place) => {
+                      const fields = place ? resolvedAddressFields(place) : {};
+                      setDraft(current => ({
+                        ...current,
+                        latitude: position.latitude,
+                        longitude: position.longitude,
+                        pinSource: source,
+                        ...(fields.addressLine ? { street: fields.addressLine } : {}),
+                        ...(fields.governorate ? { governorate: fields.governorate } : {}),
+                        ...(fields.district ? { district: fields.district } : {}),
+                      }));
+                    }}
+                  />
+                  <Field label={`${addressText('addressName')} (${addressText('required')})`} helper={addressText('addressNameHelp')} value={draft.label} onChangeText={value => setDraft(current => ({ ...current, label: value }))} />
+                  <Field label={`${addressText('address')} (${addressText('required')})`} helper={addressText('addressHelp')} value={draft.street} onChangeText={value => setDraft(current => ({ ...current, street: value }))} />
+                  <Field label={`${addressText('governorate')} (${addressText('required')})`} helper={addressText('governorateHelp')} value={draft.governorate} onChangeText={value => setDraft(current => ({ ...current, governorate: value }))} />
+                  <Field label={`${addressText('area')} (${addressText('required')})`} helper={addressText('areaHelp')} value={draft.district} onChangeText={value => setDraft(current => ({ ...current, district: value }))} />
+                  <Field label={`${addressText('building')} (${addressText('optional')})`} helper={addressText('buildingHelp')} value={draft.building} onChangeText={value => setDraft(current => ({ ...current, building: value }))} />
+                  <Field label={`${addressText('floor')} (${addressText('optional')})`} helper={addressText('floorHelp')} value={draft.floor} onChangeText={value => setDraft(current => ({ ...current, floor: value }))} />
+                  <Field label={`${addressText('apartment')} (${addressText('optional')})`} helper={addressText('apartmentHelp')} value={draft.apartment} onChangeText={value => setDraft(current => ({ ...current, apartment: value }))} />
+                  <Field label={`${addressText('landmark')} (${addressText('optional')})`} helper={addressText('landmarkHelp')} value={draft.landmark} onChangeText={value => setDraft(current => ({ ...current, landmark: value }))} />
+                  <Field label={`${addressText('workerNotes')} (${addressText('optional')})`} helper={addressText('workerNotesHelp')} value={draft.instructions} onChangeText={value => setDraft(current => ({ ...current, instructions: value }))} multiline />
                   <Pressable
                     onPress={() => void saveAddress()}
                     style={styles.primarySmall}
@@ -673,15 +694,16 @@ function Choice({
   );
 }
 function Field(
-  props: React.ComponentProps<typeof TextInput> & { label: string },
+  props: React.ComponentProps<typeof TextInput> & { label: string; helper?: string },
 ) {
   const { isRTL } = useLocalization();
-  const { label, ...input } = props;
+  const { label, helper, ...input } = props;
   return (
     <View style={styles.field}>
       <AppText style={styles.cardTitle}>{label}</AppText>
       <TextInput
         {...input}
+        accessibilityLabel={label}
         placeholderTextColor={colors.textMuted}
         multiline={props.multiline}
         blurOnSubmit={props.multiline ? false : undefined}
@@ -696,6 +718,7 @@ function Field(
           },
         ]}
       />
+      {helper ? <AppText style={styles.help}>{helper}</AppText> : null}
     </View>
   );
 }

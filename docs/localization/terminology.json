@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "lastReviewedDate": "2026-08-21",
+  "notes": "Product wording authority. Internal identifiers are included only to help writers avoid exposing them.",
+  "terms": [
+    { "key": "customer", "en": "Customer", "ar": "العميل", "fr": "Client", "meaning": "A person requesting or booking a service." },
+    { "key": "worker", "en": "Worker", "ar": "الصنايعي", "fr": "Professionnel", "meaning": "A person offering a trade or service. Do not show provider as a synonym in product copy." },
+    { "key": "service_request", "en": "Service request", "ar": "طلب خدمة", "fr": "Demande de service", "meaning": "A customer's request for workers to submit quotes." },
+    { "key": "quote", "en": "Quote", "ar": "عرض سعر", "fr": "Devis", "meaning": "A worker's price and proposed terms for a request." },
+    { "key": "job", "en": "Job", "ar": "شغل", "fr": "Travail", "meaning": "Accepted work being coordinated or completed." },
+    { "key": "address", "en": "Address", "ar": "العنوان", "fr": "Adresse", "meaning": "A saved customer service destination." },
+    { "key": "service_area", "en": "Service area", "ar": "منطقة الخدمة", "fr": "Zone de service", "meaning": "An area where a worker chooses to receive opportunities." },
+    { "key": "verification", "en": "Verification", "ar": "التوثيق", "fr": "Vérification", "meaning": "Warsha's review of worker identity and eligibility information." },
+    { "key": "support", "en": "Support", "ar": "الدعم", "fr": "Assistance", "meaning": "Help from the Warsha support team." },
+    { "key": "account", "en": "Account", "ar": "الحساب", "fr": "Compte", "meaning": "A person's Warsha sign-in and product profile." },
+    { "key": "notification", "en": "Notification", "ar": "إشعار", "fr": "Notification", "meaning": "An in-product or device update about account activity." },
+    { "key": "profession", "en": "Trade", "ar": "حرفة", "fr": "Métier", "meaning": "A service profession selected by a worker." },
+    { "key": "admin", "en": "Admin portal", "ar": "بوابة الإدارة", "fr": "Portail d’administration", "meaning": "The separate web-only staff operations product." },
+    { "key": "staff_role", "en": "Staff role", "ar": "دور الموظف", "fr": "Rôle du personnel", "meaning": "A governed bundle of staff capabilities; not a customer or worker role." },
+    { "key": "product_role", "en": "Product role", "ar": "دور استخدام التطبيق", "fr": "Rôle dans le produit", "meaning": "Customer or worker participation in Warsha." },
+    { "key": "capability", "en": "Permission", "ar": "صلاحية", "fr": "Autorisation", "meaning": "A specific staff authority. Prefer permission in ordinary operator copy." },
+    { "key": "suspension", "en": "Temporary suspension", "ar": "إيقاف مؤقت", "fr": "Suspension temporaire", "meaning": "A reversible restriction applied through the governed safety workflow." },
+    { "key": "ban", "en": "Permanent ban", "ar": "حظر دائم", "fr": "Interdiction définitive", "meaning": "A permanent account restriction requiring the governed enforcement process." },
+    { "key": "audit_log", "en": "Audit history", "ar": "سجل المراجعة", "fr": "Historique d’audit", "meaning": "Immutable evidence of governed staff activity." },
+    { "key": "analytics", "en": "Analytics and reports", "ar": "التحليلات والتقارير", "fr": "Analyses et rapports", "meaning": "First-party aggregate business reporting derived from authoritative records." },
+    { "key": "export", "en": "Data export", "ar": "تصدير البيانات", "fr": "Export de données", "meaning": "A governed downloadable report with a recorded business reason." },
+    { "key": "fresh_authentication", "en": "Recent sign-in confirmation", "ar": "تأكيد تسجيل الدخول حديثًا", "fr": "Confirmation récente de connexion", "meaning": "Re-entering credentials before a sensitive staff action. The technical term is fresh authentication." },
+    { "key": "dual_control", "en": "Second-person approval", "ar": "موافقة شخص ثانٍ", "fr": "Approbation par une deuxième personne", "meaning": "A sensitive action that cannot be completed by its requester alone. The technical term is dual control." }
+  ]
+}

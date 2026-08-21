@@ -18,6 +18,7 @@ import { isValidPhone, isValidSmsOtp, normalizePhone } from '@/src/auth/phone-au
 import { supabaseTarget } from '@/src/config/environment';
 import { dataErrorKey, logDataError } from '@/src/data/data-errors';
 import { useLocalization } from '@/src/i18n/localization';
+import type { SupportedLanguage } from '@/src/i18n/language-preference';
 import { useProviderText } from '@/src/i18n/provider-translations';
 import { useProviderFoundation } from '@/src/providers/provider-context';
 import { supabaseCustomerProfileRepository } from '@/src/repositories/supabase-user-repositories';
@@ -53,7 +54,7 @@ export default function Profile() {
   const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
-  const [preferred, setPreferred] = useState<'en' | 'ar'>(language);
+  const [preferred, setPreferred] = useState<SupportedLanguage>(language);
   const [otpSent, setOtpSent] = useState(false);
   const [phoneEnrollment, setPhoneEnrollment] = useState(false);
   const [editing, setEditing] = useState(false);

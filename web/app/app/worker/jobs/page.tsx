@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AppShell } from '@/components/app-shell';
 import { appCopy } from '@/lib/app-copy';
 import { workerNav } from '@/lib/nav';
+import { intlLocale, type Locale } from '@/lib/preferences';
 import { supabase } from '@/lib/supabase';
 import { useAppLocale } from '@/lib/use-app-locale';
 import {
@@ -14,7 +15,7 @@ import {
   parseWorkerBookings,
   type WorkerBooking,
 } from '@/lib/worker';
-import { workerCopy } from '@/lib/worker-copy';
+import { workerCopy, type WorkerWords } from '@/lib/worker-copy';
 
 import styles from '@/components/product-surface.module.css';
 
@@ -77,9 +78,9 @@ export default function WorkerJobsPage() {
 
 function WorkerJobDetail({ booking, locale, appWords, words, onClose, onChanged }: {
   booking: WorkerBooking;
-  locale: 'en' | 'ar';
+  locale: Locale;
   appWords: Record<string, string>;
-  words: (typeof workerCopy)['en'] | (typeof workerCopy)['ar'];
+  words: WorkerWords;
   onClose: () => void;
   onChanged: () => Promise<void>;
 }) {
@@ -192,7 +193,7 @@ function WorkerJobDetail({ booking, locale, appWords, words, onClose, onChanged 
 }
 
 function WorkerJobList({ title, empty, rows, locale, appWords, onOpen }: {
-  title: string; empty: string; rows: WorkerBooking[] | null; locale: 'en' | 'ar';
+  title: string; empty: string; rows: WorkerBooking[] | null; locale: Locale;
   appWords: Record<string, string>; onOpen: (id: string) => void;
 }) {
   return <section className={styles.panel}><h2 className={styles.sectionTitle}>{title}</h2>
@@ -208,5 +209,5 @@ function WorkerJobList({ title, empty, rows, locale, appWords, onOpen }: {
 function Field({ label, children }: { label: string; children: React.ReactNode }) { return <label className={styles.field}><span className={styles.label}>{label}</span>{children}</label>; }
 function Fact({ label, value }: { label: string; value: string }) { return <div className={styles.fact}><span className={styles.factLabel}>{label}</span><span className={styles.factValue}>{value || '—'}</span></div>; }
 function today() { const date = new Date(); return new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 10); }
-function formatDay(value: string, locale: 'en' | 'ar') { const date = new Date(value); return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat(locale === 'ar' ? 'ar-EG' : 'en-GB', { dateStyle: 'medium' }).format(date); }
-function formatMoment(value: string, locale: 'en' | 'ar') { const date = new Date(value); return Number.isNaN(date.getTime()) ? '—' : new Intl.DateTimeFormat(locale === 'ar' ? 'ar-EG' : 'en-GB', { dateStyle: 'medium', timeStyle: 'short' }).format(date); }
+function formatDay(value: string, locale: Locale) { const date = new Date(value); return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat(intlLocale(locale), { dateStyle: 'medium' }).format(date); }
+function formatMoment(value: string, locale: Locale) { const date = new Date(value); return Number.isNaN(date.getTime()) ? '—' : new Intl.DateTimeFormat(intlLocale(locale), { dateStyle: 'medium', timeStyle: 'short' }).format(date); }

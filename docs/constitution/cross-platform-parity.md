@@ -18,7 +18,7 @@ The surfaces:
 | | |
 | --- | --- |
 | Clients | public web · customer web · worker web · admin web · Android · iOS |
-| Languages | English · Arabic (RTL) |
+| Languages | English · Arabic (RTL) · French (LTR) |
 | Appearance | light · dark · system-derived |
 
 Report the audit even when it finds nothing. "Checked Android and iOS; the

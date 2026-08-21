@@ -57,7 +57,7 @@ export async function generateMetadata(
     // pages that exist. An hreflang naming a 404 is worse than none.
     alternates: {
       canonical: `/${locale}`,
-      languages: { en: '/en', ar: '/ar' },
+      languages: { en: '/en', ar: '/ar', fr: '/fr' },
     },
     openGraph: {
       type: 'website',

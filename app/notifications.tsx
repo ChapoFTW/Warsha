@@ -10,6 +10,7 @@ import { AppText } from '@/components/warsha/Typography';
 import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
 import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
 import { useLocalization } from '@/src/i18n/localization';
+import type { SupportedLanguage } from '@/src/i18n/language-preference';
 import { useNotifications } from '@/src/notifications/notification-context';
 import { useEngagementText } from '@/src/notifications/notification-engagement-translations';
 import { notificationCategories, type WarshaNotification } from '@/src/notifications/notification-types';
@@ -69,7 +70,7 @@ function NotificationCard({ item }: { item: WarshaNotification }) {
 const makePriorityStyle = (colors: ThemeColors) => StyleSheet.create({ critical: { backgroundColor: colors.error }, action_required: { backgroundColor: colors.warning }, important: { backgroundColor: colors.white }, informational: { backgroundColor: colors.textMuted } });
 function State({ icon, text, body, action, onPress, loading }: { icon?: React.ComponentProps<typeof MaterialIcons>['name']; text: string; body?: string; action?: string; onPress?: () => void; loading?: boolean }) {
   const styles = useThemedStyles(makeStyles); return <View style={styles.state}><EmptyState title={text} body={body} icon={icon} action={action} onAction={onPress} loading={loading}/></View>; }
-function relativeTime(value: string, language: 'en' | 'ar', justNow: string) { const elapsed = Date.now() - Date.parse(value); const formatter = new Intl.RelativeTimeFormat(localeFor(language), { numeric: 'auto' }); if (elapsed < 60_000) return justNow; if (elapsed < 3_600_000) return formatter.format(-Math.max(1, Math.round(elapsed / 60_000)), 'minute'); if (elapsed < 86_400_000) return formatter.format(-Math.max(1, Math.round(elapsed / 3_600_000)), 'hour'); return formatter.format(-Math.max(1, Math.round(elapsed / 86_400_000)), 'day'); }
+function relativeTime(value: string, language: SupportedLanguage, justNow: string) { const elapsed = Date.now() - Date.parse(value); const formatter = new Intl.RelativeTimeFormat(localeFor(language), { numeric: 'auto' }); if (elapsed < 60_000) return justNow; if (elapsed < 3_600_000) return formatter.format(-Math.max(1, Math.round(elapsed / 60_000)), 'minute'); if (elapsed < 86_400_000) return formatter.format(-Math.max(1, Math.round(elapsed / 3_600_000)), 'hour'); return formatter.format(-Math.max(1, Math.round(elapsed / 86_400_000)), 'day'); }
 
 const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background }, content: { padding: spacing.lg, paddingBottom: spacing.xxxl, maxWidth: 760, width: '100%', alignSelf: 'center', flexGrow: 1 },

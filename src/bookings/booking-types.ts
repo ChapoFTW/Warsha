@@ -1,10 +1,11 @@
 import type { TranslationKey } from '@/src/i18n/translations';
+import type { PinSource } from '@/src/onboarding/onboarding-types';
 
 export type BookingStatus='pending_provider_approval'|'accepted'|'rejected'|'rescheduling_requested'|'confirmed'|'provider_on_the_way'|'provider_arrived'|'job_started'|'work_in_progress'|'completed'|'disputed'|'cancelled'|'refunded'|'no_show';
 export type BookingType='scheduled'|'emergency';
 export type BookingStatusHistory={status:BookingStatus;at:string;note?:string};
 export type BookingAttachment={id:string;uri:string;fileName?:string;mimeType?:string;kind?:'customer_issue'|'completion_evidence'};
-export type Address={id:string;label:string;governorate:string;district:string;street:string;building:string;floor:string;apartment:string;landmark:string;instructions:string;isDefault?:boolean};
+export type Address={id:string;label:string;governorate:string;district:string;street:string;building:string;floor:string;apartment:string;landmark:string;instructions:string;isDefault?:boolean;latitude?:number;longitude?:number;pinSource?:PinSource};
 export type TimeSlot={value:string;available:boolean;reason?:string};
 export type PriceBreakdown={servicePrice:number;inspectionFee:number;transportationFee:number;emergencySurcharge:number;discount:number;estimatedTotal:number;pricingType:'fixed'|'starting'|'hourly'|'inspection'|'quote'};
 export type CancellationReason='plans_changed'|'booked_by_mistake'|'provider_delay'|'price_concern'|'other';

@@ -15,11 +15,13 @@ import { radii, spacing, typography, type ThemeColors } from '@/constants/theme'
 import { useAppearance, useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
 import { appearancePreferences, type AppearancePreference } from '@/src/appearance/appearance-types';
 import { useLocalization } from '@/src/i18n/localization';
+import { languageMetadata, supportedLanguages, type SupportedLanguage } from '@/src/i18n/language-preference';
 
 const copy = {
   en: {
     language: 'Language',
-    switchLanguage: 'Switch to Arabic',
+    chooseLanguage: 'Choose language',
+    closeLanguage: 'Close language options',
     appearance: 'Appearance',
     close: 'Close appearance options',
     system: 'System',
@@ -31,7 +33,8 @@ const copy = {
   },
   ar: {
     language: 'اللغة',
-    switchLanguage: 'التبديل إلى الإنجليزية',
+    chooseLanguage: 'اختار اللغة',
+    closeLanguage: 'اقفل اختيارات اللغة',
     appearance: 'المظهر',
     close: 'إغلاق خيارات المظهر',
     system: 'النظام',
@@ -40,6 +43,19 @@ const copy = {
     systemHint: 'اتباع إعداد الجهاز',
     lightHint: 'استخدام المظهر الفاتح دائمًا',
     darkHint: 'استخدام المظهر الداكن دائمًا',
+  },
+  fr: {
+    language: 'Langue',
+    chooseLanguage: 'Choisir la langue',
+    closeLanguage: 'Fermer les options de langue',
+    appearance: 'Apparence',
+    close: "Fermer les options d'apparence",
+    system: 'Système',
+    light: 'Clair',
+    dark: 'Sombre',
+    systemHint: "Suivre les réglages de l'appareil",
+    lightHint: 'Toujours utiliser le thème clair',
+    darkHint: 'Toujours utiliser le thème sombre',
   },
 } as const;
 
@@ -60,9 +76,10 @@ export function GlobalPreferenceControls({ embedded = false }: { embedded?: bool
   const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const { language, isRTL, toggleLanguage } = useLocalization();
+  const { language, isRTL, setLanguage } = useLocalization();
   const { preference, setPreference } = useAppearance();
   const [appearanceOpen, setAppearanceOpen] = useState(false);
+  const [languageOpen, setLanguageOpen] = useState(false);
   const [focused, setFocused] = useState<string | null>(null);
   const text = copy[language];
   const expanded = Platform.OS === 'web' && width >= 840;
@@ -81,14 +98,15 @@ export function GlobalPreferenceControls({ embedded = false }: { embedded?: bool
       <View style={[styles.dock, isRTL && styles.reverse]}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`${text.language}. ${text.switchLanguage}`}
+          accessibilityLabel={`${text.language}. ${text.chooseLanguage}`}
+          accessibilityState={{ expanded: languageOpen }}
           onFocus={() => setFocused('language')}
           onBlur={() => setFocused(null)}
-          onPress={toggleLanguage}
+          onPress={() => setLanguageOpen(true)}
           style={({ pressed }) => [styles.control, focusStyle('language'), pressed && styles.pressed]}>
           <MaterialIcons name="language" size={18} color={colors.textPrimary} />
           <AppText style={styles.controlText}>
-            {expanded ? (language === 'en' ? 'العربية' : 'English') : (language === 'en' ? 'AR' : 'EN')}
+            {expanded ? languageMetadata[language].label : language.toUpperCase()}
           </AppText>
         </Pressable>
 
@@ -104,6 +122,38 @@ export function GlobalPreferenceControls({ embedded = false }: { embedded?: bool
           {expanded ? <AppText style={styles.controlText}>{appearanceLabel}</AppText> : null}
         </Pressable>
       </View>
+
+      <Modal
+        animationType="fade"
+        transparent
+        visible={languageOpen}
+        onRequestClose={() => setLanguageOpen(false)}>
+        <View style={styles.modalRoot}>
+          <Pressable accessibilityRole="button" accessibilityLabel={text.closeLanguage} onPress={() => setLanguageOpen(false)} style={styles.scrim} />
+          <View accessibilityRole="radiogroup" accessibilityLabel={text.language} style={[styles.menu, isRTL ? styles.menuStart : styles.menuEnd]}>
+            <View style={[styles.menuHeading, isRTL && styles.reverse]}>
+              <AppText style={styles.menuTitle}>{text.chooseLanguage}</AppText>
+              <Pressable accessibilityRole="button" accessibilityLabel={text.closeLanguage} onPress={() => setLanguageOpen(false)} style={styles.close}>
+                <MaterialIcons name="close" size={20} color={colors.textPrimary} />
+              </Pressable>
+            </View>
+            {supportedLanguages.map(option => {
+              const selected = language === option;
+              return <Pressable
+                key={option}
+                accessibilityRole="radio"
+                accessibilityLabel={languageMetadata[option].label}
+                accessibilityState={{ checked: selected, selected }}
+                onPress={() => { setLanguage(option as SupportedLanguage); setLanguageOpen(false); }}
+                style={[styles.option, isRTL && styles.reverse, selected && styles.optionSelected]}>
+                <MaterialIcons name="language" size={20} color={colors.textPrimary} />
+                <AppText style={styles.optionTitle}>{languageMetadata[option].label}</AppText>
+                <MaterialIcons name={selected ? 'radio-button-checked' : 'radio-button-unchecked'} size={20} color={selected ? colors.textPrimary : colors.textMuted} />
+              </Pressable>;
+            })}
+          </View>
+        </View>
+      </Modal>
 
       <Modal
         animationType="fade"

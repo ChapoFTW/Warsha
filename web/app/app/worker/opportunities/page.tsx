@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AppShell } from '@/components/app-shell';
 import { appCopy } from '@/lib/app-copy';
 import { workerNav } from '@/lib/nav';
+import { intlLocale, type Locale } from '@/lib/preferences';
 import { supabase } from '@/lib/supabase';
 import { useAppLocale } from '@/lib/use-app-locale';
 import {
@@ -15,7 +16,7 @@ import {
   type QuoteInvitation,
   type WorkerQuote,
 } from '@/lib/worker';
-import { workerCopy } from '@/lib/worker-copy';
+import { workerCopy, type WorkerWords } from '@/lib/worker-copy';
 
 import styles from '@/components/product-surface.module.css';
 
@@ -99,9 +100,9 @@ function OpportunityDetail({
   invitation, locale, appWords, words, onClose, onChanged,
 }: {
   invitation: QuoteInvitation;
-  locale: 'en' | 'ar';
+  locale: Locale;
   appWords: Record<string, string>;
-  words: (typeof workerCopy)['en'] | (typeof workerCopy)['ar'];
+  words: WorkerWords;
   onClose: () => void;
   onChanged: () => Promise<void>;
 }) {
@@ -283,7 +284,7 @@ function OpportunityDetail({
 function QuoteForm({ draft, setDraft, words, disabled, action, actionDisabled, requiresRevisionReason, onSubmit }: {
   draft: QuoteDraft;
   setDraft: (value: QuoteDraft) => void;
-  words: (typeof workerCopy)['en'] | (typeof workerCopy)['ar'];
+  words: WorkerWords;
   disabled: boolean;
   action: string;
   actionDisabled: boolean;
@@ -332,9 +333,9 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 function Fact({ label, value }: { label: string; value: string }) {
   return <div className={styles.fact}><span className={styles.factLabel}>{label}</span><span className={styles.factValue}>{value || '—'}</span></div>;
 }
-function formatMoment(value: string, locale: 'en' | 'ar'): string {
+function formatMoment(value: string, locale: Locale): string {
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? '—' : new Intl.DateTimeFormat(locale === 'ar' ? 'ar-EG' : 'en-GB', { dateStyle: 'medium', timeStyle: 'short' }).format(date);
+  return Number.isNaN(date.getTime()) ? '—' : new Intl.DateTimeFormat(intlLocale(locale), { dateStyle: 'medium', timeStyle: 'short' }).format(date);
 }
 function minorToInput(value: string): string {
   try { const minor = BigInt(value); return `${minor / 100n}.${String(minor % 100n).padStart(2, '0')}`; } catch { return ''; }

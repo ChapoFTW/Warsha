@@ -1,4 +1,5 @@
 import { useLocalization } from '@/src/i18n/localization';
+import type { SupportedLanguage } from '@/src/i18n/language-preference';
 import { legacyNotificationEventCopy } from './notification-translations';
 import type { NotificationCategory, NotificationPriority } from './notification-types';
 
@@ -29,11 +30,15 @@ const ui = {
     quietHours: 'ساعات الهدوء', quietHoursBody: 'الإشعارات غير الحرجة هتستنى في الفترة دي لو المزوّد اتفعّل. إشعارات التطبيق بتوصل فورًا.', start: 'البداية', end: 'النهاية', timezone: 'المنطقة الزمنية',
     genericPreviews: 'معاينات خاصة على شاشة القفل', genericPreviewsBody: 'استخدم كلام عام من غير تفاصيل رسائل أو دفع أو عنوان أو نزاع.', save: 'احفظ الإعدادات', saved: 'اتحفظت الإعدادات', saving: 'جاري الحفظ…',
   },
+  fr: {
+    notifications:'Notifications',notificationBell:'Ouvrir les notifications',markAllRead:'Tout marquer comme lu',markRead:'Marquer comme lu',close:'Fermer la bannière',archive:'Archiver la notification',archiveBlocked:'Terminez l’action obligatoire avant d’archiver cette notification.',empty:'Aucune notification',emptyBody:'Les mises à jour importantes du service et du compte apparaîtront ici.',archivedEmpty:'Aucune notification archivée.',loadError:'Impossible de charger les notifications.',retry:'Réessayer',loadMore:'Afficher plus',newUpdate:'nouveau',justNow:'À l’instant',current:'Actuelles',archived:'Archivées',all:'Toutes',preferences:'Préférences de notification',preferencesAction:'Ouvrir les préférences',grouped:'mises à jour',unread:'Non lue',read:'Lue',actionRequired:'Action requise',critical:'Critique',important:'Important',informational:'Information',noAction:'Cette mise à jour n’a aucune action à ouvrir.',inaccessible:'Cette mise à jour n’est plus disponible pour ce compte.',stale:'Cette mise à jour n’est plus disponible.',preferencesIntro:'Choisissez des catégories simples dans l’application. Les alertes critiques et les actions obligatoires restent disponibles.',inApp:'Notifications dans l’application',inAppAlways:'Toujours disponibles pour les mises à jour critiques et les actions obligatoires',push:'Notifications push',pushUnavailable:'Préparées, mais indisponibles tant qu’un prestataire de confiance n’est pas activé.',quietHours:'Heures calmes',quietHoursBody:'Les notifications push non critiques attendraient pendant cette période. Les mises à jour dans l’application restent immédiates.',start:'Début',end:'Fin',timezone:'Fuseau horaire',genericPreviews:'Aperçus privés sur l’écran verrouillé',genericPreviewsBody:'Utilisez un texte général qui ne révèle aucun message, paiement, adresse ni litige.',save:'Enregistrer les préférences',saved:'Préférences enregistrées',saving:'Enregistrement…'
+  },
 } as const;
 
-const categories: Record<'en' | 'ar', Record<NotificationCategory, string>> = {
+const categories: Record<SupportedLanguage, Record<NotificationCategory, string>> = {
   en: { marketplace: 'Marketplace', bookings: 'Bookings', messages: 'Messages', payments: 'Payments', worker_account: 'Worker account', reviews: 'Reviews', disputes: 'Disputes', security: 'Security', system: 'System', support: 'Support' },
   ar: { marketplace: 'السوق والعروض', bookings: 'الحجوزات', messages: 'الرسائل', payments: 'المدفوعات', worker_account: 'حساب الصنايعي', reviews: 'التقييمات', disputes: 'النزاعات', security: 'الأمان', system: 'النظام', support: 'الدعم' },
+  fr: { marketplace:'Demandes et devis',bookings:'Travaux',messages:'Messages',payments:'Paiements',worker_account:'Compte professionnel',reviews:'Avis',disputes:'Litiges',security:'Sécurité',system:'Système',support:'Assistance' },
 };
 
 const eventCopy: Record<'en' | 'ar', Record<string, { title: string; body: string; action?: string }>> = {
@@ -161,7 +166,7 @@ const eventCopy: Record<'en' | 'ar', Record<string, { title: string; body: strin
   },
 };
 
-const generic: Record<'en' | 'ar', Record<NotificationCategory, { title: string; body: string }>> = {
+const generic: Record<SupportedLanguage, Record<NotificationCategory, { title: string; body: string }>> = {
   en: {
     marketplace: { title: 'Marketplace update', body: 'Your service request has an update.' }, bookings: { title: 'Booking update', body: 'Your booking has an update.' },
     messages: { title: 'New message', body: 'You have a new message in Warsha.' }, payments: { title: 'Payment update', body: 'Your payment status changed.' },
@@ -175,6 +180,9 @@ const generic: Record<'en' | 'ar', Record<NotificationCategory, { title: string;
     worker_account: { title: 'تحديث حساب الصنايعي', body: 'حساب الصنايعي عليه تحديث.' }, reviews: { title: 'تحديث تقييم', body: 'فيه تقييم عليه تحديث.' },
     disputes: { title: 'تحديث نزاع', body: 'النزاع عليه تحديث.' }, security: { title: 'تحديث أمان الحساب', body: 'أمان حسابك على ورشة اتغيّر.' }, system: { title: 'تحديث من ورشة', body: 'عندك تحديث جديد على ورشة.' },
     support: { title: 'تحديث من الدعم', body: 'حالة الدعم بتاعتك عليها تحديث.' },
+  },
+  fr: {
+    marketplace:{title:'Mise à jour de la demande',body:'Votre demande de service a été mise à jour.'},bookings:{title:'Mise à jour du travail',body:'Votre travail a été mis à jour.'},messages:{title:'Nouveau message',body:'Vous avez un nouveau message dans Warsha.'},payments:{title:'Mise à jour du paiement',body:'Le statut de votre paiement a changé.'},worker_account:{title:'Mise à jour du compte professionnel',body:'Votre compte professionnel a été mis à jour.'},reviews:{title:'Mise à jour d’un avis',body:'Un avis a été mis à jour.'},disputes:{title:'Mise à jour du litige',body:'Votre litige a été mis à jour.'},security:{title:'Mise à jour de sécurité',body:'La sécurité de votre compte Warsha a changé.'},system:{title:'Mise à jour Warsha',body:'Vous avez une nouvelle mise à jour dans Warsha.'},support:{title:'Mise à jour de l’assistance',body:'Votre demande d’assistance a été mise à jour.'}
   },
 };
 
@@ -191,15 +199,27 @@ const reminderCopy = {
     review_opportunity: 'لسه تقدر تقيّم الحجز المكتمل.', dispute_deadline: 'ميعاد رد أو دليل في النزاع محتاج اهتمام.',
     verification_correction: 'تعديل التوثيق لسه مش مكتمل.', worker_profile_incomplete: 'لسه فيه متطلب مانع في حساب الصنايعي.',
   },
+  fr: {
+    worker_confirmation:'Confirmez le travail choisi avant la fin du délai de réponse.',booking_approaching:'L’heure de votre travail confirmé approche.',inspection_pending:'Le travail terminé attend encore votre contrôle.',payment_pending:'Un paiement lié au travail exige encore une action.',review_opportunity:'Vous pouvez encore évaluer le travail terminé.',dispute_deadline:'Une échéance de réponse ou de preuve demande votre attention.',verification_correction:'La correction de votre vérification est incomplète.',worker_profile_incomplete:'Une exigence bloque encore votre profil professionnel.'
+  },
 } as const;
 
 export type ReminderPolicyKey = keyof typeof reminderCopy.en;
-export function notificationReminderCopy(language: 'en' | 'ar', policy: ReminderPolicyKey) { return reminderCopy[language][policy]; }
+export function notificationReminderCopy(language: SupportedLanguage, policy: ReminderPolicyKey) { return reminderCopy[language][policy]; }
 
 export type EngagementTextKey = keyof typeof ui.en;
-export function notificationEventCopy(language: 'en' | 'ar', eventKey: string, category: NotificationCategory) { return eventCopy[language][eventKey] ?? legacyNotificationEventCopy(language, eventKey) ?? generic[language][category]; }
-export function notificationCategoryLabel(language: 'en' | 'ar', category: NotificationCategory) { return categories[language][category]; }
-export function notificationPriorityLabel(language: 'en' | 'ar', priority: NotificationPriority) {
+type NotificationEventText = { title: string; body: string; action?: string };
+export function notificationEventCopy(language: SupportedLanguage, eventKey: string, category: NotificationCategory): NotificationEventText {
+  if (language === 'fr') {
+    const localized = legacyNotificationEventCopy('fr', eventKey);
+    const english = legacyNotificationEventCopy('en', eventKey);
+    return localized && (!english || (localized.title !== english.title && localized.body !== english.body))
+      ? localized : generic.fr[category];
+  }
+  return eventCopy[language][eventKey] ?? legacyNotificationEventCopy(language, eventKey) ?? generic[language][category];
+}
+export function notificationCategoryLabel(language: SupportedLanguage, category: NotificationCategory) { return categories[language][category]; }
+export function notificationPriorityLabel(language: SupportedLanguage, priority: NotificationPriority) {
   const key = priority === 'action_required' ? 'actionRequired' : priority;
   return ui[language][key];
 }

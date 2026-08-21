@@ -1,0 +1,684 @@
+{
+  "schemaVersion": 1,
+  "generatedFrom": [
+    "docs/help/articles.json",
+    "docs/help/articles.fr.json"
+  ],
+  "articles": [
+    {
+      "id": "admin-getting-started",
+      "audience": "admin",
+      "locale": "en",
+      "title": "Admin portal: getting started",
+      "summary": "Understand the separate staff portal, capabilities, reauthentication, dual control, privacy, and auditability.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "admin",
+        "staff_auth",
+        "governance"
+      ],
+      "routes": [
+        "/admin",
+        "/admin/help"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "admin",
+        "staff",
+        "capability",
+        "role",
+        "fresh authentication",
+        "dual control"
+      ],
+      "body": "The Warsha Console is web-only and separate from customer and worker experiences. A product role answers whether an account books or performs work. A staff role grants a reviewed set of operational capabilities. One never substitutes for the other.\n\nThe server checks the required capability on every RPC. Hiding a link is convenience, not authorization. Sensitive actions can require a recent real authentication. Dual control means a different authorized person must complete the second decision.\n\nUse development data for safe training. Read the action's scope, reversibility, evidence, and audit notice before confirming. Never work around a refusal with direct table edits, service credentials, disabled RLS, or invented audit rows. Ask a Security Administrator or follow the named runbook."
+    },
+    {
+      "id": "admin-getting-started",
+      "audience": "admin",
+      "locale": "ar",
+      "title": "ابدأ في بوابة الإدارة",
+      "summary": "افهم بوابة الموظفين المنفصلة والصلاحيات وإعادة التحقق والتحكم المزدوج والخصوصية والسجل.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "admin",
+        "staff_auth",
+        "governance"
+      ],
+      "routes": [
+        "/admin",
+        "/admin/help"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "إدارة",
+        "موظف",
+        "صلاحية",
+        "دور",
+        "تحقق حديث",
+        "تحكم مزدوج"
+      ],
+      "body": "بوابة ورشة للموظفين موجودة على الويب بس ومنفصلة عن تجربة العميل والصنايعي. دور المنتج بيحدد الحساب بيحجز شغل ولا بينفذه. دور الموظف بيدي مجموعة صلاحيات تشغيلية مراجعة. واحد ما ينفعش يحل مكان التاني.\n\nالسيرفر بيراجع الصلاحية المطلوبة مع كل طلب. إخفاء اللينك للراحة مش وسيلة حماية. الإجراءات الحساسة ممكن تحتاج تسجيل دخول حديث فعلي. التحكم المزدوج معناه إن شخص تاني مصرح له لازم يكمل القرار الثاني.\n\nاستخدم بيانات التطوير للتدريب الآمن. اقرأ نطاق الإجراء وإمكانية الرجوع والدليل وإشعار السجل قبل التأكيد. ما تتجاوزش الرفض بتعديل جداول مباشر أو مفاتيح خادم أو تعطيل RLS أو سجل مصنوع. ارجع لمسؤول الأمان أو دليل التشغيل المحدد."
+    },
+    {
+      "id": "admin-users-roles",
+      "audience": "admin",
+      "locale": "en",
+      "title": "User lookup and product roles",
+      "summary": "Find one redacted record and understand customer/worker state without treating the console as a directory.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "admin_search",
+        "product_roles",
+        "account_recovery"
+      ],
+      "routes": [
+        "/admin/users"
+      ],
+      "capabilities": [
+        "safe_search",
+        "view_safe_customer_profile",
+        "view_safe_worker_profile",
+        "view_contact_details"
+      ],
+      "keywords": [
+        "search",
+        "user",
+        "customer",
+        "worker",
+        "product role",
+        "recovery"
+      ],
+      "body": "Record lookup finds one exact identifier. It is not a browsable user directory. Results are redacted to the operator's capabilities, and the lookup itself is logged. Contact details require the separate `view_contact_details` capability and fresh authentication.\n\nCustomer and worker are product roles. Worker capability additionally depends on onboarding, vetting, activation, and enforcement. Do not create, remove, or infer product roles with raw database edits. Use an existing governed product action or documented recovery authority.\n\nA malformed historical account must be inventoried before any retirement. Preserve bookings, jobs, support, audit, financial, and staff history. Authentication success does not prove Warsha onboarding is complete."
+    },
+    {
+      "id": "admin-users-roles",
+      "audience": "admin",
+      "locale": "ar",
+      "title": "البحث عن المستخدم وأدوار المنتج",
+      "summary": "دور على سجل واحد مخفي البيانات وافهم حالة العميل أو الصنايعي من غير ما تحول البوابة لدليل مستخدمين.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "admin_search",
+        "product_roles",
+        "account_recovery"
+      ],
+      "routes": [
+        "/admin/users"
+      ],
+      "capabilities": [
+        "safe_search",
+        "view_safe_customer_profile",
+        "view_safe_worker_profile",
+        "view_contact_details"
+      ],
+      "keywords": [
+        "بحث",
+        "مستخدم",
+        "عميل",
+        "صنايعي",
+        "دور المنتج",
+        "استرجاع"
+      ],
+      "body": "البحث بيجيب معرّف واحد مطابق. مش دليل تقدر تتصفح منه كل المستخدمين. النتيجة بتخفي البيانات حسب صلاحيات الموظف، والبحث نفسه بيتسجل. بيانات التواصل محتاجة صلاحية `view_contact_details` وتحقق حديث منفصل.\n\nالعميل والصنايعي أدوار منتج. صلاحية الشغل كصنايعي بتعتمد كمان على التقديم والمراجعة والتفعيل وإجراءات الأمان. ما تعملش أو تشيل أو تستنتج دور منتج بتعديل جداول مباشر. استخدم إجراء منتج منظم موجود أو مسار استرجاع موثق.\n\nأي حساب تاريخي ناقص لازم يتعمل له حصر قبل التقاعد. حافظ على تاريخ الحجوزات والشغل والدعم والسجل والمال وأدوار الموظفين. نجاح تسجيل الدخول مش معناه إن إعداد حساب ورشة كامل."
+    },
+    {
+      "id": "admin-verification-enforcement",
+      "audience": "admin",
+      "locale": "en",
+      "title": "Worker verification and enforcement",
+      "summary": "Review evidence, record safe reasons, and understand approval, rejection, suspension, ban, and appeal boundaries.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "worker_vetting",
+        "trust",
+        "enforcement",
+        "appeals"
+      ],
+      "routes": [
+        "/admin/verification",
+        "/admin/users"
+      ],
+      "capabilities": [
+        "review_worker_vetting",
+        "review_identity_verification",
+        "review_criminal_records",
+        "activate_worker",
+        "reject_worker_application",
+        "issue_temporary_restriction",
+        "approve_permanent_ban",
+        "review_appeals"
+      ],
+      "keywords": [
+        "verification",
+        "approve",
+        "reject",
+        "suspend",
+        "ban",
+        "appeal",
+        "evidence"
+      ],
+      "body": "Review the submitted identity and criminal-record steps against the active policy. Record evidence only in the private evidence field and give the worker a separate safe, useful reason. Warsha does not claim an automated government check.\n\nApproval and activation are separate authorities. Rejection can require dual control. A temporary restriction or suspension is time/scope bounded when the policy says so. A permanent ban is high-risk, requires the specific capability, investigated evidence, fresh authentication, and the configured second-person approval.\n\nNever put offence detail, document contents, reviewer identity, or private notes into worker-visible text. Appeals do not erase the original decision; they add an auditable later decision."
+    },
+    {
+      "id": "admin-verification-enforcement",
+      "audience": "admin",
+      "locale": "ar",
+      "title": "مراجعة الصنايعي وإجراءات الأمان",
+      "summary": "راجع الدليل وسجل سبب آمن وافهم حدود الموافقة والرفض والإيقاف والحظر والاعتراض.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "worker_vetting",
+        "trust",
+        "enforcement",
+        "appeals"
+      ],
+      "routes": [
+        "/admin/verification",
+        "/admin/users"
+      ],
+      "capabilities": [
+        "review_worker_vetting",
+        "review_identity_verification",
+        "review_criminal_records",
+        "activate_worker",
+        "reject_worker_application",
+        "issue_temporary_restriction",
+        "approve_permanent_ban",
+        "review_appeals"
+      ],
+      "keywords": [
+        "توثيق",
+        "موافقة",
+        "رفض",
+        "إيقاف",
+        "حظر",
+        "اعتراض",
+        "دليل"
+      ],
+      "body": "راجع خطوات الهوية والفيش المرسلة حسب السياسة النشطة. سجل الدليل في خانة الدليل الخاصة بس، واكتب للصنايعي سبب آمن ومفيد منفصل. ورشة ما بيدّعيش إن فيه كشف حكومي آلي.\n\nالموافقة والتفعيل صلاحيتين منفصلتين. الرفض ممكن يحتاج تحكم مزدوج. التقييد المؤقت أو الإيقاف بيكون بمدة ونطاق لما السياسة تقول كده. الحظر الدائم عالي الخطورة ومحتاج الصلاحية المحددة ودليل متحقق وتسجيل دخول حديث وموافقة الشخص الثاني حسب الإعداد.\n\nما تحطش تفاصيل مخالفة أو محتوى مستند أو اسم المراجع أو ملاحظات خاصة في الكلام اللي الصنايعي هيشوفه. الاعتراض ما بيمسحش القرار الأول؛ بيضيف قرار جديد قابل للمراجعة."
+    },
+    {
+      "id": "admin-staff-security",
+      "audience": "admin",
+      "locale": "en",
+      "title": "Staff roles, fresh authentication, and dual control",
+      "summary": "Grant only reviewed roles, never self-escalate, and keep immutable evidence.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "staff_roles",
+        "reauth",
+        "dual_control",
+        "audit"
+      ],
+      "routes": [
+        "/admin/staff",
+        "/admin/audit"
+      ],
+      "capabilities": [
+        "manage_staff_roles",
+        "view_audit_logs"
+      ],
+      "keywords": [
+        "grant",
+        "revoke",
+        "staff role",
+        "capability",
+        "reauthentication",
+        "dual control",
+        "audit"
+      ],
+      "body": "Staff roles are reviewed capability bundles. `manage_staff_roles` can grant or revoke them through the governed UI; it does not allow self-grant. State the business reason and choose the narrowest role. Revocation ends future authority but preserves grant history.\n\nFresh authentication proves the same operator authenticated recently. It does not add a missing capability. Dual control requires two different authorized identities; never ask one person to impersonate the other.\n\nThe first Security Administrator is the only exceptional bootstrap. It is performed by the documented one-time database-owner procedure, only when no effective administrator exists, and creates an immutable grant with a bootstrap idempotency key. Ordinary staff changes must never repeat that procedure."
+    },
+    {
+      "id": "admin-staff-security",
+      "audience": "admin",
+      "locale": "ar",
+      "title": "أدوار الموظفين والتحقق الحديث والتحكم المزدوج",
+      "summary": "امنح دور مراجع بس، ما ترفعش صلاحيتك بنفسك، وحافظ على الدليل الدائم.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "staff_roles",
+        "reauth",
+        "dual_control",
+        "audit"
+      ],
+      "routes": [
+        "/admin/staff",
+        "/admin/audit"
+      ],
+      "capabilities": [
+        "manage_staff_roles",
+        "view_audit_logs"
+      ],
+      "keywords": [
+        "منح",
+        "سحب",
+        "دور موظف",
+        "صلاحية",
+        "تحقق حديث",
+        "تحكم مزدوج",
+        "سجل"
+      ],
+      "body": "أدوار الموظفين مجموعات صلاحيات مراجعة. صلاحية `manage_staff_roles` تقدر تمنح أو تسحب الأدوار من الواجهة المنظمة؛ ما تسمحش للموظف يمنح نفسه. اكتب سبب الشغل واختار أضيق دور مناسب. سحب الدور بيوقف الصلاحية بعد كده لكنه بيحافظ على تاريخ المنح.\n\nالتحقق الحديث بيثبت إن نفس الموظف سجل دخوله قريب. ما بيديش صلاحية ناقصة. التحكم المزدوج محتاج هويتين مختلفتين مصرح ليهم؛ ما تطلبش من شخص يمثل الشخص التاني.\n\nأول مسؤول أمان هو الاستثناء الوحيد. بيتعمل بإجراء مالك قاعدة البيانات الموثق لمرة واحدة، بس لما ما يكونش فيه مسؤول فعال، وبيعمل منحة دائمة بمفتاح منع تكرار. تغييرات الموظفين العادية ممنوع تكرر الإجراء ده."
+    },
+    {
+      "id": "admin-audit-analytics",
+      "audience": "admin",
+      "locale": "en",
+      "title": "Audit, analytics, and exports",
+      "summary": "Read immutable history, interpret metric definitions, and export aggregate data safely.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "audit",
+        "analytics",
+        "exports"
+      ],
+      "routes": [
+        "/admin/audit",
+        "/admin/analytics"
+      ],
+      "capabilities": [
+        "view_audit_logs",
+        "view_analytics",
+        "export_operational_report",
+        "view_financial_ledger"
+      ],
+      "keywords": [
+        "audit",
+        "analytics",
+        "metric",
+        "report",
+        "csv",
+        "export",
+        "financial"
+      ],
+      "body": "Audit is append-only evidence of actions that happened. Search by bounded period, source, actor, or exact subject; do not treat it as an editable case note. Reading sensitive sources is itself logged.\n\nAnalytics derives first-party aggregate facts from authoritative Warsha tables and histories. Read the metric definition before comparing numbers. Reporting days use Africa/Cairo while storage remains UTC. A partial period includes today. Financial cards show ledger facts only and do not claim external settlement or revenue.\n\nCSV export requires `export_operational_report`, fresh authentication, a reason, an expiring request owned by the operator, and an audit entry. It contains aggregate snake_case columns and no PII. Do not combine it with another dataset to identify people. Detailed exports are not available without separate privacy authority."
+    },
+    {
+      "id": "admin-audit-analytics",
+      "audience": "admin",
+      "locale": "ar",
+      "title": "السجل والتحليلات والتنزيل",
+      "summary": "اقرأ التاريخ الدائم وافهم تعريفات الأرقام ونزّل بيانات مجمعة بأمان.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "audit",
+        "analytics",
+        "exports"
+      ],
+      "routes": [
+        "/admin/audit",
+        "/admin/analytics"
+      ],
+      "capabilities": [
+        "view_audit_logs",
+        "view_analytics",
+        "export_operational_report",
+        "view_financial_ledger"
+      ],
+      "keywords": [
+        "سجل",
+        "تحليلات",
+        "رقم",
+        "تقرير",
+        "CSV",
+        "تنزيل",
+        "مالي"
+      ],
+      "body": "السجل دليل بيتضاف عليه بس للإجراءات اللي حصلت. دور بمدة محدودة أو مصدر أو موظف أو موضوع مطابق؛ ما تتعاملش معاه كملاحظة حالة قابلة للتعديل. قراءة المصادر الحساسة نفسها بتتسجل.\n\nالتحليلات بتطلع أرقام مجمعة من جداول وتواريخ ورشة الرسمية. اقرأ تعريف الرقم قبل المقارنة. أيام التقرير بتوقيت القاهرة والتخزين UTC. المدة الجزئية شاملة النهارده. الكروت المالية حقائق من الدفتر بس وما بتدّعيش إن التحويل الخارجي تم أو إنها إيرادات.\n\nتنزيل CSV محتاج `export_operational_report` وتحقق حديث وسبب وطلب مؤقت مملوك للموظف وسجل مراجعة. الملف فيه أعمدة مجمعة ثابتة ومن غير بيانات شخصية. ما تدمجوش مع بيانات تانية عشان تحدد أشخاص. مفيش تنزيل تفصيلي من غير صلاحية خصوصية منفصلة."
+    },
+    {
+      "id": "admin-recovery",
+      "audience": "admin",
+      "locale": "en",
+      "title": "Incidents, recovery, and actions that must stay governed",
+      "summary": "Respond safely when a provider, account, or admin authority is unavailable.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "incidents",
+        "provider_governance",
+        "account_recovery",
+        "privacy"
+      ],
+      "routes": [
+        "/admin",
+        "/admin/audit"
+      ],
+      "capabilities": [
+        "manage_incidents",
+        "manage_feature_flags",
+        "manage_kill_switches",
+        "review_privacy_incidents"
+      ],
+      "keywords": [
+        "incident",
+        "recovery",
+        "provider",
+        "feature flag",
+        "kill switch",
+        "emergency"
+      ],
+      "body": "Open an operational incident when a real service failure needs ownership and a timeline. Record the affected systems and a factual summary. A kill switch stops a risky capability; it is not a substitute for diagnosing or repairing the cause.\n\nProvider activation follows the provider registry, environment binding, privacy/subprocessor review where required, health checks, feature flag, and kill switch. Never make a direct table edit just to turn a disabled button on. Human legal or dual-control approval must remain human.\n\nFor account recovery, authenticate the identity, inventory every dependency, and prefer an existing self-service or governed RPC. Do not delete/recreate an account that owns retained audit, staff, booking, job, support, or ledger history. Never use service-role credentials as an application workaround."
+    },
+    {
+      "id": "admin-recovery",
+      "audience": "admin",
+      "locale": "ar",
+      "title": "الحوادث والاسترجاع والإجراءات المنظمة",
+      "summary": "اتصرف بأمان لما مزود أو حساب أو صلاحية إدارة ما تكونش متاحة.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "incidents",
+        "provider_governance",
+        "account_recovery",
+        "privacy"
+      ],
+      "routes": [
+        "/admin",
+        "/admin/audit"
+      ],
+      "capabilities": [
+        "manage_incidents",
+        "manage_feature_flags",
+        "manage_kill_switches",
+        "review_privacy_incidents"
+      ],
+      "keywords": [
+        "حادث",
+        "استرجاع",
+        "مزود",
+        "ميزة",
+        "إيقاف",
+        "طوارئ"
+      ],
+      "body": "افتح حادث تشغيلي لما عطل حقيقي محتاج مسؤول وتاريخ متابعة. سجل الأنظمة المتأثرة وملخص واقعي. مفتاح الإيقاف بيوقف صلاحية فيها خطر؛ مش بديل عن تشخيص السبب وإصلاحه.\n\nتفعيل المزود بيمشي من سجل المزود وربط البيئة ومراجعة الخصوصية أو المقاول الفرعي لما تكون مطلوبة وفحص الصحة وعلم الميزة ومفتاح الإيقاف. ما تعملش تعديل جدول مباشر عشان تفتح زر مقفول. موافقة القانون أو التحكم المزدوج لازم تفضل بشرية.\n\nفي استرجاع الحساب، اتأكد من الهوية واعمل حصر لكل الاعتماديات واستخدم خدمة ذاتية أو RPC منظم موجود. ما تحذفش وتعمل حساب من جديد لو مالك لتاريخ محفوظ في السجل أو الموظفين أو الحجوزات أو الشغل أو الدعم أو الدفتر. ما تستخدمش مفتاح الخدمة كحل للتطبيق."
+    },
+    {
+      "id": "warsha-glossary",
+      "audience": "all",
+      "locale": "en",
+      "title": "Warsha glossary",
+      "summary": "Plain-language meanings for the words Warsha uses.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "glossary"
+      ],
+      "routes": [
+        "/help",
+        "/admin/help"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "customer",
+        "worker",
+        "request",
+        "quote",
+        "booking",
+        "role",
+        "capability",
+        "audit"
+      ],
+      "body": "- **Customer:** a person using Warsha to request or book work.\n- **Worker / provider:** a person offering services after the required onboarding and approval. “Provider” is the internal data term; the product says Worker.\n- **Request:** a description of work sent to matching workers.\n- **Quote:** a worker's offer with price and terms.\n- **Job / booking:** the authoritative agreement and its progress. The product usually says Job; some stored authorities say Booking.\n- **Service area:** the approximate places a worker agrees to serve.\n- **Verification:** the governed review of required worker information.\n- **Product role:** Customer or Worker; what the account does in the product.\n- **Staff role:** a reviewed bundle of admin capabilities.\n- **Capability:** one server-checked admin permission.\n- **Fresh authentication:** proof that the operator authenticated recently; it does not add permission.\n- **Dual control:** a second, different authorized person must approve.\n- **Suspension:** an account or worker capability is stopped under a governed state.\n- **Ban:** a high-risk permanent enforcement action.\n- **Recovery:** a governed way to restore a valid state without rewriting history.\n- **Audit log:** append-only evidence of an action.\n- **Onboarding:** the required steps before the permanent experience.\n- **Address pin:** exact stored coordinates confirmed separately from editable address words.\n- **Default address:** the saved address Warsha selects first; it can be changed."
+    },
+    {
+      "id": "warsha-glossary",
+      "audience": "all",
+      "locale": "ar",
+      "title": "قاموس ورشة",
+      "summary": "معاني بسيطة للكلمات اللي ورشة بيستخدمها.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "glossary"
+      ],
+      "routes": [
+        "/help",
+        "/admin/help"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "عميل",
+        "صنايعي",
+        "طلب",
+        "عرض",
+        "حجز",
+        "دور",
+        "صلاحية",
+        "سجل"
+      ],
+      "body": "- **العميل:** شخص بيستخدم ورشة عشان يطلب أو يحجز شغل.\n- **الصنايعي / مقدم الخدمة:** شخص بيقدم خدمات بعد التقديم والموافقة المطلوبة. «Provider» اسم داخلي في البيانات، والمنتج بيقول صنايعي.\n- **الطلب:** وصف للشغل بيتبعت للصنايعية المناسبين.\n- **العرض:** اقتراح الصنايعي وفيه السعر والشروط.\n- **الشغل / الحجز:** الاتفاق الرسمي ومراحل تنفيذه. المنتج غالبًا بيقول شغل، وبعض الجداول بتقول حجز.\n- **منطقة الخدمة:** الأماكن التقريبية اللي الصنايعي موافق يشتغل فيها.\n- **التوثيق:** مراجعة منظمة لمعلومات الصنايعي المطلوبة.\n- **دور المنتج:** عميل أو صنايعي؛ الحساب بيعمل إيه في المنتج.\n- **دور الموظف:** مجموعة صلاحيات إدارة مراجعة.\n- **الصلاحية:** إذن إدارة واحد بيراجعه السيرفر.\n- **التحقق الحديث:** دليل إن الموظف سجل دخوله قريب؛ ما بيديش صلاحية جديدة.\n- **التحكم المزدوج:** شخص تاني مختلف ومصرح له لازم يوافق.\n- **الإيقاف:** وقف الحساب أو صلاحية الشغل حسب حالة منظمة.\n- **الحظر:** إجراء أمان دائم وعالي الخطورة.\n- **الاسترجاع:** طريقة منظمة ترجع الحالة الصحيحة من غير ما تمسح التاريخ.\n- **سجل المراجعة:** دليل بيتضاف عليه بس للإجراءات.\n- **التقديم:** الخطوات المطلوبة قبل التجربة الدائمة.\n- **دبوس العنوان:** الإحداثيات الدقيقة المتأكدة لوحدها عن كلام العنوان القابل للتعديل.\n- **العنوان الأساسي:** العنوان المحفوظ اللي ورشة بيختاره الأول، وتقدر تغيره."
+    },
+    {
+      "id": "admin-getting-started",
+      "audience": "admin",
+      "locale": "fr",
+      "title": "Bien démarrer dans la console d’administration",
+      "summary": "Comprenez la console, ses autorisations et les règles de sécurité avant d’agir.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "admin",
+        "staff_auth",
+        "governance"
+      ],
+      "routes": [
+        "/admin",
+        "/admin/users",
+        "/admin/audit"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "admin",
+        "personnel",
+        "capacité",
+        "connexion récente",
+        "double contrôle"
+      ],
+      "body": "La console d’administration est réservée au web. Un rôle produit décrit l’usage Client ou Professionnel ; un rôle du personnel regroupe des capacités administratives vérifiées par le serveur. Cacher un bouton n’accorde ni ne retire aucune autorisation.\n\nUne authentification récente confirme que l’opérateur s’est reconnecté récemment ; elle n’ajoute aucune capacité. Le double contrôle exige l’approbation d’une deuxième personne autorisée distincte. Les actions sensibles demandent une raison factuelle et créent une preuve d’audit.\n\nCommencez par lire la finalité de chaque section et utilisez des données de développement pour les essais. Ne contournez jamais un refus avec l’éditeur SQL, un rôle de service ou une modification directe de table."
+    },
+    {
+      "id": "admin-users-roles",
+      "audience": "admin",
+      "locale": "fr",
+      "title": "Recherche d’utilisateurs et rôles produit",
+      "summary": "Trouvez le bon compte et gérez ses rôles produit sans confondre accès client et accès du personnel.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "admin_search",
+        "product_roles",
+        "account_recovery"
+      ],
+      "routes": [
+        "/admin/users"
+      ],
+      "capabilities": [
+        "safe_search",
+        "view_user_detail",
+        "manage_product_roles"
+      ],
+      "keywords": [
+        "utilisateur",
+        "recherche",
+        "client",
+        "professionnel",
+        "rôle produit"
+      ],
+      "body": "La recherche sûre accepte les critères prévus par l’interface et limite les résultats. Ouvrez le détail avant toute action afin de vérifier l’identité, l’état du compte, les rôles produit et les dépendances visibles.\n\nLes rôles Client et Professionnel déterminent les expériences du produit. Ils ne donnent aucun accès administratif. Ajouter ou retirer un rôle exige la capacité correspondante, une raison et parfois une authentification récente selon les métadonnées affichées. Vérifiez l’effet sur l’onboarding avant de confirmer. Ne modifiez jamais les métadonnées Auth pour simuler un rôle produit."
+    },
+    {
+      "id": "admin-verification-enforcement",
+      "audience": "admin",
+      "locale": "fr",
+      "title": "Vérification, suspension et mesures de sécurité",
+      "summary": "Examinez les preuves et appliquez une mesure proportionnée avec une raison claire.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "worker_vetting",
+        "trust",
+        "enforcement",
+        "appeals"
+      ],
+      "routes": [
+        "/admin/verification",
+        "/admin/users"
+      ],
+      "capabilities": [
+        "review_worker_vetting",
+        "manage_suspensions",
+        "manage_bans"
+      ],
+      "keywords": [
+        "vérification",
+        "approuver",
+        "refuser",
+        "suspendre",
+        "bannir",
+        "preuve"
+      ],
+      "body": "Comparez les informations soumises avec les preuves disponibles. Approuver rend la décision effective selon les règles d’admissibilité ; demander de nouvelles informations renvoie le dossier au professionnel ; refuser conserve l’historique et doit expliquer ce qui manque.\n\nUne suspension arrête temporairement le périmètre indiqué et peut être levée par le parcours gouverné. Un bannissement est une mesure permanente à haut risque. L’interface doit afficher le périmètre, la réversibilité, la raison, les exigences d’authentification récente ou de double contrôle et l’événement d’audit avant confirmation. Ne choisissez jamais une mesure plus large pour gagner du temps."
+    },
+    {
+      "id": "admin-staff-security",
+      "audience": "admin",
+      "locale": "fr",
+      "title": "Rôles du personnel, authentification récente et double contrôle",
+      "summary": "Accordez le minimum nécessaire tout en conservant une preuve complète.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "staff_roles",
+        "reauth",
+        "dual_control",
+        "audit"
+      ],
+      "routes": [
+        "/admin/staff",
+        "/admin/audit"
+      ],
+      "capabilities": [
+        "manage_staff_roles",
+        "view_audit_logs"
+      ],
+      "keywords": [
+        "personnel",
+        "rôle",
+        "capacité",
+        "authentification récente",
+        "double contrôle",
+        "audit"
+      ],
+      "body": "Les rôles du personnel sont des ensembles révisés de capacités. `manage_staff_roles` permet d’accorder ou de révoquer un rôle depuis l’autorité gouvernée ; l’auto-attribution reste interdite. Saisissez une raison professionnelle et choisissez le rôle le plus restreint. Révoquer coupe l’accès futur tout en conservant l’historique de l’attribution.\n\nL’authentification récente prouve une connexion récente sans combler une capacité absente. Le double contrôle exige deux identités autorisées distinctes. Le premier Administrateur de sécurité est l’unique procédure exceptionnelle, utilisable seulement lorsqu’aucun administrateur effectif n’existe et protégée par une clé d’idempotence."
+    },
+    {
+      "id": "admin-audit-analytics",
+      "audience": "admin",
+      "locale": "fr",
+      "title": "Audit, analyses et exports",
+      "summary": "Lisez l’historique immuable, interprétez les métriques et exportez des agrégats en sécurité.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "audit",
+        "analytics",
+        "exports"
+      ],
+      "routes": [
+        "/admin/audit",
+        "/admin/analytics"
+      ],
+      "capabilities": [
+        "view_audit_logs",
+        "view_analytics",
+        "export_operational_report",
+        "view_financial_ledger"
+      ],
+      "keywords": [
+        "audit",
+        "analyse",
+        "métrique",
+        "rapport",
+        "CSV",
+        "export",
+        "financier"
+      ],
+      "body": "L’audit est une preuve ajoutée sans modification des actions passées. Recherchez par période bornée, source, acteur ou sujet exact ; ce n’est pas une note de dossier modifiable. La lecture de sources sensibles est elle-même auditée.\n\nLes analyses calculent des faits agrégés depuis les tables et historiques officiels de Warsha. Lisez la définition avant de comparer une métrique. Les journées de rapport suivent Africa/Cairo, tandis que le stockage reste en UTC. Les cartes financières ne s’affichent qu’avec `view_financial_ledger` et ne prétendent pas qu’un règlement externe a eu lieu.\n\nL’export CSV exige `export_operational_report`, une authentification récente, une raison et une demande temporaire auditée. Il ne contient pas de données personnelles."
+    },
+    {
+      "id": "admin-recovery",
+      "audience": "admin",
+      "locale": "fr",
+      "title": "Incidents, récupération et actions gouvernées",
+      "summary": "Réagissez en sécurité lorsqu’un fournisseur, un compte ou une autorité administrative est indisponible.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "incidents",
+        "provider_governance",
+        "account_recovery",
+        "privacy"
+      ],
+      "routes": [
+        "/admin",
+        "/admin/audit"
+      ],
+      "capabilities": [
+        "manage_incidents",
+        "manage_feature_flags",
+        "manage_kill_switches",
+        "review_privacy_incidents"
+      ],
+      "keywords": [
+        "incident",
+        "récupération",
+        "fournisseur",
+        "fonctionnalité",
+        "arrêt",
+        "urgence"
+      ],
+      "body": "Ouvrez un incident opérationnel lorsqu’une panne réelle nécessite un responsable et une chronologie. Indiquez les systèmes touchés et un résumé factuel. Un interrupteur d’arrêt bloque une capacité risquée ; il ne remplace pas le diagnostic.\n\nL’activation d’un fournisseur passe par le registre, la liaison d’environnement, l’examen confidentialité ou sous-traitant si nécessaire, les contrôles de santé, le drapeau de fonctionnalité et l’interrupteur d’arrêt. Ne modifiez jamais directement une table pour activer un bouton. Les approbations juridiques ou à double contrôle restent humaines.\n\nPour récupérer un compte, authentifiez l’identité, inventoriez les dépendances et préférez un RPC gouverné existant. Ne supprimez pas un compte qui possède un historique conservé."
+    },
+    {
+      "id": "warsha-glossary",
+      "audience": "all",
+      "locale": "fr",
+      "title": "Glossaire Warsha",
+      "summary": "Définitions simples des mots utilisés dans Warsha.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "glossary"
+      ],
+      "routes": [
+        "/help",
+        "/admin/help"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "client",
+        "professionnel",
+        "demande",
+        "devis",
+        "intervention",
+        "rôle",
+        "capacité",
+        "audit"
+      ],
+      "body": "- **Client :** personne qui utilise Warsha pour demander ou réserver un service.\n- **Professionnel / prestataire :** personne qui propose des services après l’onboarding et l’approbation nécessaires. Provider est le terme interne ; le produit dit Professionnel.\n- **Demande de service :** description d’un besoin envoyée aux professionnels correspondants.\n- **Devis :** offre d’un professionnel avec prix et conditions.\n- **Intervention / réservation :** accord officiel et suivi de son déroulement.\n- **Zone de service :** lieux approximatifs où un professionnel accepte d’intervenir.\n- **Vérification :** examen gouverné des informations requises du professionnel.\n- **Rôle produit :** Client ou Professionnel, c’est-à-dire l’usage du compte.\n- **Rôle du personnel :** ensemble révisé de capacités d’administration.\n- **Capacité :** autorisation administrative vérifiée par le serveur.\n- **Authentification récente :** preuve d’une connexion récente, sans permission supplémentaire.\n- **Double contrôle :** approbation obligatoire d’une deuxième personne autorisée distincte.\n- **Suspension :** arrêt gouverné d’un compte ou d’une capacité de travail.\n- **Bannissement :** mesure permanente à haut risque.\n- **Journal d’audit :** preuve ajoutée sans modification d’une action.\n- **Analyses :** métriques agrégées issues des autorités métier.\n- **Export :** fichier gouverné destiné à une analyse autorisée.\n- **Repère d’adresse :** coordonnées exactes confirmées séparément du texte modifiable."
+    }
+  ]
+}

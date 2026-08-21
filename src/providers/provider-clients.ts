@@ -5,6 +5,13 @@ import {
   type DeviceFixResult,
 } from '@/src/providers/device-location-policy';
 import type { MapRenderDescriptor } from '@/src/providers/map-renderer-types';
+import {
+  parsePlaceSuggestions,
+  parseResolvedPlace,
+  type AddressSearchOutcome,
+  type LocationLanguage,
+  type ResolvedPlace,
+} from '@/src/providers/location-address';
 
 /**
  * WPS-024 live external-provider clients.
@@ -66,13 +73,7 @@ export type ExtractionResult =
     }
   | { outcome: 'unavailable' | 'no_text_found' | 'unreadable' | 'provider_error'; reason: string };
 
-export type PlaceSuggestion = { placeId: string; primary: string; secondary: string };
-export type ResolvedPlace = {
-  placeId: string;
-  formattedAddress: string;
-  latitude: number;
-  longitude: number;
-};
+export type { PlaceSuggestion, ResolvedPlace } from '@/src/providers/location-address';
 
 /** Capability while offline or in Mock: everything unavailable, nothing blocked. */
 const OFFLINE_EXTRACTION: ExtractionCapabilityLive = {
@@ -189,28 +190,39 @@ export const providerClients = {
     }
   },
 
-  async searchAddresses(input: string, sessionToken: string): Promise<PlaceSuggestion[]> {
-    if (environment.dataMode === 'mock' || input.trim().length < 3) return [];
+  async searchAddresses(
+    input: string,
+    sessionToken: string,
+    language: LocationLanguage,
+  ): Promise<AddressSearchOutcome> {
+    if (environment.dataMode === 'mock') return { outcome: 'unavailable', suggestions: [] };
+    if (input.trim().length < 3) return { outcome: 'succeeded', suggestions: [] };
     try {
       const { data, error } = await getSupabaseClient().functions.invoke('location-proxy', {
-        body: { operation: 'autocomplete', input, sessionToken },
+        body: { operation: 'autocomplete', input, sessionToken, language },
       });
-      if (error) return [];
-      return ((data as { suggestions?: PlaceSuggestion[] })?.suggestions ?? []);
+      if (error) return { outcome: 'failed', suggestions: [] };
+      const payload = data as { available?: boolean; suggestions?: unknown } | null;
+      if (payload?.available !== true) return { outcome: 'unavailable', suggestions: [] };
+      return { outcome: 'succeeded', suggestions: parsePlaceSuggestions(payload.suggestions) };
     } catch {
       // An unavailable search is not an error state. The person places a pin.
-      return [];
+      return { outcome: 'failed', suggestions: [] };
     }
   },
 
-  async resolvePlace(placeId: string, sessionToken: string): Promise<ResolvedPlace | null> {
+  async resolvePlace(
+    placeId: string,
+    sessionToken: string,
+    language: LocationLanguage,
+  ): Promise<ResolvedPlace | null> {
     if (environment.dataMode === 'mock') return null;
     try {
       const { data, error } = await getSupabaseClient().functions.invoke('location-proxy', {
-        body: { operation: 'place_details', placeId, sessionToken },
+        body: { operation: 'place_details', placeId, sessionToken, language },
       });
       if (error) return null;
-      return ((data as { place?: ResolvedPlace | null })?.place ?? null);
+      return parseResolvedPlace((data as { place?: unknown } | null)?.place);
     } catch {
       return null;
     }
@@ -223,14 +235,18 @@ export const providerClients = {
    * no geocodable address, and the pin is what a worker navigates to anyway.
    * The caller shows the coordinate and carries on.
    */
-  async describePin(latitude: number, longitude: number): Promise<ResolvedPlace | null> {
+  async describePin(
+    latitude: number,
+    longitude: number,
+    language: LocationLanguage,
+  ): Promise<ResolvedPlace | null> {
     if (environment.dataMode === 'mock') return null;
     try {
       const { data, error } = await getSupabaseClient().functions.invoke('location-proxy', {
-        body: { operation: 'reverse_geocode', latitude, longitude },
+        body: { operation: 'reverse_geocode', latitude, longitude, language },
       });
       if (error) return null;
-      return ((data as { place?: ResolvedPlace | null })?.place ?? null);
+      return parseResolvedPlace((data as { place?: unknown } | null)?.place);
     } catch {
       return null;
     }

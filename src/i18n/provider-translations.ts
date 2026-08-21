@@ -104,9 +104,13 @@ const copy = {
 } as const;
 
 export type ProviderCopyKey = keyof typeof copy.en;
+const fr: Record<ProviderCopyKey, string> = {
+  become:'Devenir professionnel',customerMode:'Mode client',providerMode:'Mode professionnel',dashboard:'Tableau de bord',jobs:'Travaux',calendar:'Calendrier',messages:'Messages',providerProfile:'Profil professionnel',foundation:'Configuration du profil',completion:'Avancement',continueSetup:'Continuer la configuration',jobComing:'Les demandes apparaîtront ici après l’activation.',messagesComing:'Les messages liés aux travaux apparaîtront ici.',publicInfo:'Informations publiques',servicesPricing:'Services et tarifs',areasAvailability:'Zones et disponibilité',reviewSubmit:'Vérifier et envoyer',displayName:'Nom affiché',profession:'Métier principal',bio:'Présentation',experience:'Années d’expérience',skillsHint:'Compétences, séparées par des virgules',languagesHint:'Langues, séparées par des virgules',profilePhoto:'Photo de profil',categoriesLabel:'Métiers proposés',offeredServices:'Services proposés',price:'Prix de base',pricingModel:'Mode de tarification',transport:'Frais de déplacement',emergencyFee:'Supplément d’urgence',governorate:'Gouvernorat',district:'Quartier ou zone',radius:'Rayon de service (km)',available:'Disponible maintenant',unavailable:'Indisponible',emergency:'Disponible pour les urgences',agreement:'Je confirme que ces informations sont exactes et peuvent être examinées par Warsha.',saveDraft:'Enregistrer le brouillon',submit:'Envoyer pour examen',saved:'Enregistré',status:'Statut',required:'Obligatoire',retry:'Réessayer',temporary:'Enregistrement temporaire sur cet appareil.',editProfile:'Modifier le profil',readyForWork:'Prêt à travailler',readyForWorkHelp:'Activez votre disponibilité uniquement lorsque vous pouvez répondre aux demandes.',goLive:'Publier le profil'
+};
 
 export function useProviderText() {
   const { language } = useLocalization();
+  const localized = language === 'fr' ? fr : copy[language];
   return (key: ProviderCopyKey | 'profile') =>
-    key === 'profile' ? copy[language].providerProfile : copy[language][key];
+    key === 'profile' ? localized.providerProfile : localized[key];
 }

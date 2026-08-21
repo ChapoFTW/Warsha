@@ -3,6 +3,7 @@ import {
   type NotificationCopyKey,
   copy as notificationCopy,
 } from '../../src/notifications/notification-copy.ts';
+import type { Locale } from './preferences.ts';
 
 /**
  * Notifications for the browser, on the same authority the app uses.
@@ -89,7 +90,7 @@ export function parseCounts(value: unknown): NotificationCounts {
  * somebody as if it were a sentence.
  */
 export function notificationText(
-  locale: 'en' | 'ar',
+  locale: Locale,
   eventKey: string,
 ): { title: string; body: string } {
   const known = legacyNotificationEventCopy(locale, eventKey);
@@ -99,7 +100,7 @@ export function notificationText(
 }
 
 /** The shared chrome strings — "Mark all as read" and friends — also shared. */
-export function notificationChrome(locale: 'en' | 'ar') {
+export function notificationChrome(locale: Locale) {
   const table = notificationCopy[locale] as Record<string, string>;
   return {
     title: table.notifications,

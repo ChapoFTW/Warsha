@@ -1,7 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { AddressSearch } from '@/components/address-search';
 import { AppShell } from '@/components/app-shell';
 import { useSession } from '@/components/session-provider';
 import { appCopy } from '@/lib/app-copy';
@@ -10,14 +11,16 @@ import {
   currentBrowserLocation,
   describeCoordinates,
   getLocationCapability,
-  newPlaceSessionToken,
-  resolvePlace,
-  searchAddresses,
-  type PlaceSuggestion,
 } from '@/lib/location';
 import { customerNav } from '@/lib/nav';
 import { supabase } from '@/lib/supabase';
 import { useAppLocale } from '@/lib/use-app-locale';
+import {
+  addressResolutionState,
+  classifyBrowserLocationError,
+  resolvedAddressFields,
+  type AddressResolutionState,
+} from '@/src/providers/location-address';
 
 import styles from '@/components/product-surface.module.css';
 
@@ -44,6 +47,8 @@ type Coordinate = {
   source: 'device_location' | 'address_search';
 };
 
+type LocationStatus = 'idle' | 'locating' | 'resolving' | AddressResolutionState;
+
 /** Customer service addresses, through the same RLS and pin-confirmation RPC as mobile. */
 export default function AddressesPage() {
   const locale = useAppLocale();
@@ -58,11 +63,9 @@ export default function AddressesPage() {
   const [coordinate, setCoordinate] = useState<Coordinate | null>(null);
   const [coordinateChanged, setCoordinateChanged] = useState(false);
   const [searchAvailable, setSearchAvailable] = useState(false);
-  const [searchText, setSearchText] = useState('');
-  const [searching, setSearching] = useState(false);
-  const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
-  const [sessionToken, setSessionToken] = useState(newPlaceSessionToken);
+  const [locationStatus, setLocationStatus] = useState<LocationStatus>('idle');
   const [editorFailure, setEditorFailure] = useState<string | null>(null);
+  const saveInFlight = useRef(false);
 
   const load = useCallback(async () => {
     setFailed(false);
@@ -98,9 +101,7 @@ export default function AddressesPage() {
     setDraft(EMPTY);
     setCoordinate(null);
     setCoordinateChanged(false);
-    setSearchText('');
-    setSuggestions([]);
-    setSessionToken(newPlaceSessionToken());
+    setLocationStatus('idle');
     setEditorFailure(null);
   };
 
@@ -121,9 +122,7 @@ export default function AddressesPage() {
       ? { latitude: address.latitude, longitude: address.longitude, source: 'device_location' }
       : null);
     setCoordinateChanged(false);
-    setSearchText('');
-    setSuggestions([]);
-    setSessionToken(newPlaceSessionToken());
+    setLocationStatus(address.latitude !== null && address.longitude !== null ? 'resolved' : 'idle');
     setEditorFailure(null);
   };
 
@@ -131,55 +130,42 @@ export default function AddressesPage() {
     if (busyId) return;
     setBusyId('location');
     setEditorFailure(null);
+    setLocationStatus('locating');
     try {
       const position = await currentBrowserLocation();
       setCoordinate({ ...position, source: 'device_location' });
       setCoordinateChanged(true);
-      const place = await describeCoordinates(position.latitude, position.longitude);
-      if (place) setDraft((current) => ({ ...current, addressLine: place.formattedAddress }));
+      setLocationStatus('resolving');
+      const place = await describeCoordinates(position.latitude, position.longitude, locale);
+      if (place) {
+        const fields = resolvedAddressFields(place);
+        setDraft((current) => ({ ...current, ...fields }));
+      }
+      setLocationStatus(addressResolutionState(place));
     } catch (reason) {
-      const code = typeof reason === 'object' && reason && 'code' in reason
-        ? Number((reason as { code: unknown }).code) : 0;
-      setEditorFailure(code === 1 ? words.addressLocationPermission : words.addressLocationFailed);
+      setLocationStatus('idle');
+      const outcome = classifyBrowserLocationError(reason);
+      setEditorFailure(outcome === 'permission_denied' ? words.addressLocationPermission
+        : outcome === 'timed_out' ? words.addressLocationTimeout
+          : outcome === 'unavailable' || outcome === 'unsupported'
+            ? words.addressLocationUnavailable : words.addressLocationFailed);
     }
     setBusyId(null);
   };
 
-  const runSearch = async () => {
-    if (!searchAvailable || searchText.trim().length < 3 || searching) return;
-    setSearching(true);
+  const chooseSearchResult = (place: import('@/src/providers/location-address').ResolvedPlace) => {
     setEditorFailure(null);
-    const result = await searchAddresses(searchText, sessionToken);
-    setSuggestions(result);
-    if (result.length === 0) setEditorFailure(words.addressSearchNone);
-    setSearching(false);
-  };
-
-  const chooseSuggestion = async (suggestion: PlaceSuggestion) => {
-    if (searching) return;
-    setSearching(true);
-    setEditorFailure(null);
-    const place = await resolvePlace(suggestion.placeId, sessionToken);
-    if (!place) {
-      setEditorFailure(words.addressLocationFailed);
-    } else {
-      setDraft((current) => ({ ...current, addressLine: place.formattedAddress }));
-      setCoordinate({
-        latitude: place.latitude,
-        longitude: place.longitude,
-        source: 'address_search',
-      });
-      setCoordinateChanged(true);
-      setSuggestions([]);
-      setSearchText(place.formattedAddress);
-    }
-    setSearching(false);
+    setDraft((current) => ({ ...current, ...resolvedAddressFields(place) }));
+    setCoordinate({ latitude: place.latitude, longitude: place.longitude, source: 'address_search' });
+    setCoordinateChanged(true);
+    setLocationStatus(addressResolutionState(place));
   };
 
   const save = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!editorId || busyId || !draft.label.trim() || !draft.addressLine.trim()
+    if (!editorId || busyId || saveInFlight.current || !draft.label.trim() || !draft.addressLine.trim()
         || !draft.governorate.trim() || !coordinate) return;
+    saveInFlight.current = true;
     setBusyId('save');
     setEditorFailure(null);
     const client = supabase();
@@ -189,6 +175,7 @@ export default function AddressesPage() {
       const { data: userData, error: userError } = await client.auth.getUser();
       if (userError || !userData.user) {
         setEditorFailure(words.addressSaveFailed);
+        saveInFlight.current = false;
         setBusyId(null);
         return;
       }
@@ -209,6 +196,7 @@ export default function AddressesPage() {
       }).select('id').single();
       if (error || !data?.id) {
         setEditorFailure(words.addressSaveFailed);
+        saveInFlight.current = false;
         setBusyId(null);
         return;
       }
@@ -229,6 +217,7 @@ export default function AddressesPage() {
       }).eq('id', editorId);
       if (error) {
         setEditorFailure(words.addressSaveFailed);
+        saveInFlight.current = false;
         setBusyId(null);
         return;
       }
@@ -253,6 +242,7 @@ export default function AddressesPage() {
           }).eq('id', addressId);
         }
         setEditorFailure(words.addressSaveFailed);
+        saveInFlight.current = false;
         setBusyId(null);
         return;
       }
@@ -261,6 +251,7 @@ export default function AddressesPage() {
     await load();
     await refreshAccount();
     setEditorId(null);
+    saveInFlight.current = false;
     setBusyId(null);
   };
 
@@ -295,38 +286,30 @@ export default function AddressesPage() {
             </button>
           </div>
 
-          {searchAvailable ? (
-            <div className={styles.searchRow}>
-              <label className={styles.field}>
-                <span className={styles.label}>{words.addressSearch}</span>
-                <input className={styles.input} value={searchText}
-                  onChange={(event) => setSearchText(event.target.value)} />
-              </label>
-              <button type="button" className={styles.secondary}
-                onClick={() => void runSearch()}
-                disabled={searchText.trim().length < 3 || searching}>
-                {searching ? words.loading : words.discoverSearchAction}
-              </button>
-            </div>
-          ) : (
-            <p className={styles.note}>{words.addressSearchUnavailable}</p>
-          )}
+          <AddressSearch
+            available={searchAvailable}
+            disabled={busyId !== null}
+            language={locale}
+            copy={{
+              label: words.addressSearch,
+              placeholder: words.addressSearchPlaceholder,
+              unavailable: words.addressSearchUnavailable,
+              noResults: words.addressSearchNone,
+              failed: words.addressSearchFailed,
+              loading: words.addressSearching,
+            }}
+            onSelect={chooseSearchResult}
+          />
 
-          {suggestions.length > 0 ? (
-            <ul className={styles.list}>
-              {suggestions.map((suggestion) => (
-                <li key={suggestion.placeId} className={styles.row}>
-                  <button type="button" className={styles.rowTitle}
-                    onClick={() => void chooseSuggestion(suggestion)}>
-                    {suggestion.primary}
-                  </button>
-                  <span className={styles.cardMeta}>{suggestion.secondary}</span>
-                </li>
-              ))}
-            </ul>
+          {locationStatus !== 'idle' ? (
+            <p className={locationStatus === 'resolved' ? styles.ok : styles.note} role="status">
+              {locationStatus === 'locating' ? words.addressLocating
+                : locationStatus === 'resolving' ? words.addressResolving
+                  : locationStatus === 'resolved' ? words.addressLocationSaved
+                    : locationStatus === 'partial' ? words.addressLocationPartial
+                      : words.addressLookupFailed}
+            </p>
           ) : null}
-
-          {coordinate ? <p className={styles.ok} role="status">{words.addressLocationSaved}</p> : null}
 
           <AddressFields draft={draft} setDraft={setDraft} words={words} disabled={busyId !== null} />
 
@@ -396,24 +379,30 @@ function AddressFields({
   words: Record<string, string>;
   disabled: boolean;
 }) {
-  const field = (key: keyof Draft, label: string, required = false) => (
+  const field = (key: keyof Draft, label: string, helper: string, required = false) => (
     <label className={styles.field}>
-      <span className={styles.label}>{label}</span>
+      <span className={styles.label}>
+        {label} <span className={styles.fieldRequirement}>
+          ({required ? words.formRequired : words.formOptional})
+        </span>
+      </span>
       <input className={styles.input} value={draft[key]} required={required} disabled={disabled}
+        aria-describedby={`address-${key}-help`}
         onChange={(event) => setDraft((current) => ({ ...current, [key]: event.target.value }))} />
+      <span id={`address-${key}-help`} className={styles.hint}>{helper}</span>
     </label>
   );
   return (
     <div className={styles.formGrid}>
-      {field('label', words.addressLabel, true)}
-      {field('addressLine', words.addressLine, true)}
-      {field('governorate', words.addressGovernorate, true)}
-      {field('district', words.addressDistrict)}
-      {field('building', words.addressBuilding)}
-      {field('floor', words.addressFloor)}
-      {field('apartment', words.addressApartment)}
-      {field('landmark', words.addressLandmark)}
-      {field('serviceNotes', words.addressServiceNotes)}
+      {field('label', words.addressLabel, words.addressLabelHelp, true)}
+      {field('addressLine', words.addressLine, words.addressLineHelp, true)}
+      {field('governorate', words.addressGovernorate, words.addressGovernorateHelp, true)}
+      {field('district', words.addressDistrict, words.addressDistrictHelp)}
+      {field('building', words.addressBuilding, words.addressBuildingHelp)}
+      {field('floor', words.addressFloor, words.addressFloorHelp)}
+      {field('apartment', words.addressApartment, words.addressApartmentHelp)}
+      {field('landmark', words.addressLandmark, words.addressLandmarkHelp)}
+      {field('serviceNotes', words.addressServiceNotes, words.addressServiceNotesHelp)}
     </div>
   );
 }

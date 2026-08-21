@@ -39,9 +39,13 @@ export type PlaceSuggestion = {
   secondary: string;
 };
 
+export type MapLanguage = 'en' | 'ar';
+
 export type ResolvedPlace = {
   placeId: string;
   formattedAddress: string;
+  governorate: string | null;
+  district: string | null;
   latitude: number;
   longitude: number;
 };
@@ -82,10 +86,10 @@ export interface MapProvider {
   readonly providerKey: string;
   readonly providerVersion: string;
   isConfigured(): boolean;
-  autocomplete(input: string, sessionToken: string): Promise<MapsOutcome<PlaceSuggestion[]>>;
-  placeDetails(placeId: string, sessionToken: string): Promise<MapsOutcome<ResolvedPlace>>;
-  forwardGeocode(address: string): Promise<MapsOutcome<ResolvedPlace>>;
-  reverseGeocode(latitude: number, longitude: number): Promise<MapsOutcome<ResolvedPlace>>;
+  autocomplete(input: string, sessionToken: string, language: MapLanguage): Promise<MapsOutcome<PlaceSuggestion[]>>;
+  placeDetails(placeId: string, sessionToken: string, language: MapLanguage): Promise<MapsOutcome<ResolvedPlace>>;
+  forwardGeocode(address: string, language: MapLanguage): Promise<MapsOutcome<ResolvedPlace>>;
+  reverseGeocode(latitude: number, longitude: number, language: MapLanguage): Promise<MapsOutcome<ResolvedPlace>>;
   renderMap(): MapRenderDescriptor;
 }
 

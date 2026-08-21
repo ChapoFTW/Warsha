@@ -1,20 +1,23 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
+import { AddressSearch } from '@/components/address-search';
 import {
   currentBrowserLocation,
   describeCoordinates,
   getLocationCapability,
-  newPlaceSessionToken,
-  resolvePlace,
-  searchAddresses,
-  type PlaceSuggestion,
 } from '@/lib/location';
 import { supabase } from '@/lib/supabase';
 import { useAppLocale } from '@/lib/use-app-locale';
 import type { WorkerArea } from '@/lib/worker';
 import { workerCopy } from '@/lib/worker-copy';
+import {
+  addressResolutionState,
+  classifyBrowserLocationError,
+  type AddressResolutionState,
+  type ResolvedPlace,
+} from '@/src/providers/location-address';
 
 import styles from './product-surface.module.css';
 
@@ -24,6 +27,8 @@ type Pin = {
   source: 'device_location' | 'address_search';
   address: string;
 };
+
+type LocationStatus = 'idle' | 'locating' | 'resolving' | AddressResolutionState;
 
 /**
  * Worker-only presentation over the shared location infrastructure.
@@ -38,11 +43,10 @@ export function WorkerLocation({ area, onSaved }: { area: WorkerArea; onSaved: (
   const words = workerCopy[locale];
   const [pin, setPin] = useState<Pin | null>(null);
   const [searchAvailable, setSearchAvailable] = useState(false);
-  const [query, setQuery] = useState('');
-  const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
-  const [token, setToken] = useState(newPlaceSessionToken);
   const [busy, setBusy] = useState(false);
-  const [failed, setFailed] = useState(false);
+  const [failure, setFailure] = useState<string | null>(null);
+  const [locationStatus, setLocationStatus] = useState<LocationStatus>('idle');
+  const saveInFlight = useRef(false);
 
   useEffect(() => {
     void getLocationCapability().then((capability) => setSearchAvailable(capability.searchAvailable));
@@ -51,58 +55,50 @@ export function WorkerLocation({ area, onSaved }: { area: WorkerArea; onSaved: (
   const current = async () => {
     if (busy) return;
     setBusy(true);
-    setFailed(false);
+    setFailure(null);
+    setLocationStatus('locating');
     try {
       const position = await currentBrowserLocation();
-      const place = await describeCoordinates(position.latitude, position.longitude);
+      setLocationStatus('resolving');
+      const place = await describeCoordinates(position.latitude, position.longitude, locale);
       setPin({
         ...position,
         source: 'device_location',
         address: place?.formattedAddress || [area.district, area.governorate].filter(Boolean).join(', '),
       });
-    } catch {
-      setFailed(true);
+      setLocationStatus(addressResolutionState(place, 'formatted'));
+    } catch (reason) {
+      setLocationStatus('idle');
+      const outcome = classifyBrowserLocationError(reason);
+      setFailure(outcome === 'permission_denied' ? words.workLocationPermissionDenied
+        : outcome === 'timed_out' ? words.workLocationTimeout
+          : outcome === 'unavailable' || outcome === 'unsupported'
+            ? words.workLocationUnavailable : words.workLocationFailed);
     }
     setBusy(false);
   };
 
-  const search = async () => {
-    if (busy || !searchAvailable || query.trim().length < 3) return;
-    setBusy(true);
-    setFailed(false);
-    const result = await searchAddresses(query, token);
-    setSuggestions(result);
-    if (result.length === 0) setFailed(true);
-    setBusy(false);
-  };
-
-  const choose = async (suggestion: PlaceSuggestion) => {
-    if (busy) return;
-    setBusy(true);
-    setFailed(false);
-    const place = await resolvePlace(suggestion.placeId, token);
-    if (!place) setFailed(true);
-    else {
-      setPin({
-        latitude: place.latitude,
-        longitude: place.longitude,
-        source: 'address_search',
-        address: place.formattedAddress,
-      });
-      setQuery(place.formattedAddress);
-      setSuggestions([]);
-    }
-    setBusy(false);
+  const choose = (place: ResolvedPlace) => {
+    setFailure(null);
+    setPin({
+      latitude: place.latitude,
+      longitude: place.longitude,
+      source: 'address_search',
+      address: place.formattedAddress,
+    });
+    setLocationStatus(addressResolutionState(place, 'formatted'));
   };
 
   const save = async () => {
-    if (!pin || busy) return;
+    if (!pin || busy || saveInFlight.current) return;
+    saveInFlight.current = true;
     setBusy(true);
-    setFailed(false);
+    setFailure(null);
     const client = supabase();
     const { data: userData, error: userError } = await client.auth.getUser();
     if (userError || !userData.user) {
-      setFailed(true);
+      setFailure(words.workLocationFailed);
+      saveInFlight.current = false;
       setBusy(false);
       return;
     }
@@ -122,7 +118,8 @@ export function WorkerLocation({ area, onSaved }: { area: WorkerArea; onSaved: (
       is_default: true,
     }).select('id').single();
     if (error || !data?.id) {
-      setFailed(true);
+      setFailure(words.workLocationFailed);
+      saveInFlight.current = false;
       setBusy(false);
       return;
     }
@@ -140,11 +137,11 @@ export function WorkerLocation({ area, onSaved }: { area: WorkerArea; onSaved: (
     });
     if (confirmError) {
       await client.from('addresses').update({ deleted_at: new Date().toISOString(), is_default: false }).eq('id', addressId);
-      setFailed(true);
+      setFailure(words.workLocationFailed);
     } else {
-      setToken(newPlaceSessionToken());
       await onSaved();
     }
+    saveInFlight.current = false;
     setBusy(false);
   };
 
@@ -161,29 +158,30 @@ export function WorkerLocation({ area, onSaved }: { area: WorkerArea; onSaved: (
           {busy ? words.loading : words.workLocationUseCurrent}
         </button>
       </div>
-      {searchAvailable ? (
-        <div className={styles.searchRow}>
-          <label className={styles.field}>
-            <span className={styles.label}>{words.workLocationSearch}</span>
-            <input className={styles.input} value={query} onChange={(event) => setQuery(event.target.value)} disabled={busy} />
-          </label>
-          <button type="button" className={styles.secondary} onClick={() => void search()} disabled={busy || query.trim().length < 3}>
-            {words.workLocationSearchAction}
-          </button>
-        </div>
-      ) : <p className={styles.note}>{words.workLocationSearchUnavailable}</p>}
-      {suggestions.length > 0 ? (
-        <ul className={styles.list}>
-          {suggestions.map((suggestion) => (
-            <li key={suggestion.placeId} className={styles.row}>
-              <button type="button" className={styles.rowTitle} onClick={() => void choose(suggestion)}>{suggestion.primary}</button>
-              <span className={styles.cardMeta}>{suggestion.secondary}</span>
-            </li>
-          ))}
-        </ul>
+      <AddressSearch
+        available={searchAvailable}
+        disabled={busy}
+        language={locale}
+        copy={{
+          label: words.workLocationSearch,
+          placeholder: words.workLocationSearchPlaceholder,
+          unavailable: words.workLocationSearchUnavailable,
+          noResults: words.workLocationSearchNone,
+          failed: words.workLocationSearchFailed,
+          loading: words.workLocationSearching,
+        }}
+        onSelect={choose}
+      />
+      {locationStatus !== 'idle' ? (
+        <p className={locationStatus === 'resolved' ? styles.ok : styles.note} role="status">
+          {locationStatus === 'locating' ? words.workLocationLocating
+            : locationStatus === 'resolving' ? words.workLocationResolving
+              : locationStatus === 'resolved' ? words.workLocationSaved
+                : locationStatus === 'partial' ? words.workLocationPartial
+                  : words.workLocationLookupFailed}
+        </p>
       ) : null}
-      {pin ? <p className={styles.ok} role="status">{words.workLocationSaved}</p> : null}
-      {failed ? <p className={styles.error} role="alert">{words.workLocationFailed}</p> : null}
+      {failure ? <p className={styles.error} role="alert">{failure}</p> : null}
       <button type="button" className={styles.action} onClick={() => void save()} disabled={busy || !pin}>
         {words.workLocationContinue}
       </button>

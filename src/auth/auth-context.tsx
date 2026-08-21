@@ -20,6 +20,7 @@ import {
 } from './email-confirmation';
 import { assertPhoneAuthAvailable } from './phone-auth-capability';
 import { isValidPhone, isValidSmsOtp, normalizePhone } from './phone-auth';
+import type { SupportedLanguage } from '@/src/i18n/language-preference';
 import { runAuthSingleFlight } from './auth-request-guard';
 import { registerWorker, signInWorker } from './worker-auth-client';
 
@@ -50,7 +51,7 @@ type Value = {
     password: string,
     phone: string,
     role: AccountRole,
-    language: 'en' | 'ar',
+    language: SupportedLanguage,
     legalAcceptances: readonly SignupLegalAcceptance[],
   ) => Promise<CustomerSignUpResult>;
   requestWorkerPhoneChange: (phone: string) => Promise<'code_sent' | 'already_verified'>;
@@ -250,7 +251,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
       const normalized = normalizePhone(phone);
       if (!isValidPhone(normalized)) throw new SafeAuthError('authInvalidPhone');
       const signupRole = role === 'provider' ? 'worker' : 'customer';
-      if (!isCurrentSignupLegalManifest(signupRole, language, legalAcceptances)) {
+      const legalLanguage = language === 'ar' ? 'ar' : 'en';
+      if (!isCurrentSignupLegalManifest(signupRole, legalLanguage, legalAcceptances)) {
         throw new SafeAuthError('authError');
       }
       if (environment.dataMode === 'mock') {

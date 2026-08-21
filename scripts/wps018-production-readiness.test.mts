@@ -286,13 +286,14 @@ match(validateWorkflow, /permissions:\s*\n\s*contents: read/, 'the validation wo
 notMatch(validateWorkflow, /secrets\./, 'the validation workflow uses no secret');
 match(validateWorkflow, /audit:bundle/, 'exported bundles are scanned for credential values');
 // The scan must match credential VALUES; a bare prefix appears in supabase-js's
-// own client-side guard and would fail every build.
+// own client-side guard and must remain a separate Hermes string literal.
 const bundleAudit = read('scripts/audit-bundle.mjs');
-notMatch(bundleAudit, /re: \/sb_secret_\[A-Za-z0-9_-\]\{\d+,\}\//,
-  'the bundle scan does not match a bare prefix followed by any characters');
-match(bundleAudit, /\(\?=\[A-Za-z0-9_-\]\*\[0-9\]\)/,
-  'the bundle scan requires key-material entropy');
-prose(bundleAudit, /not the primary control/i, 'the bundle scan records that it is a heuristic');
+match(bundleAudit, /-dump-bytecode/,
+  'Hermes artefacts are disassembled before credential scanning');
+match(bundleAudit, /new RegExp\('sb_' \+ 'secret_'/,
+  'the bundle scan detects a complete secret literal without self-triggering');
+match(bundleAudit, /Hermes bytecode could not be disassembled safely/,
+  'the bundle scan fails closed when literal-aware inspection is unavailable');
 ok(packageJson.includes('audit:bundle'), 'audit:bundle is registered');
 match(deployWorkflow, /workflow_dispatch/, 'database deployment is manual only');
 match(deployWorkflow, /environment: \$\{\{ inputs\.environment \}\}/,

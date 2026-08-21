@@ -9,6 +9,8 @@ import { ScreenHeader } from '@/components/warsha/ScreenHeader';
 import { AppText } from '@/components/warsha/Typography';
 import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
 import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
+import { helpUi, manualArticles, searchManual, type ManualArticle } from '@/src/help/help-registry';
+import { useLocalization } from '@/src/i18n/localization';
 import { useSupport } from '@/src/support/support-context';
 import { useSupportText } from '@/src/support/support-translations';
 import type { HelpArticleSummary, HelpSearchResult, SupportSurface } from '@/src/support/support-types';
@@ -30,15 +32,21 @@ export default function HelpCenterScreen() {
     : undefined;
   const support = useSupport();
   const copy = useSupportText();
+  const { language } = useLocalization();
+  const manualCopy = helpUi[language];
   const [query, setQuery] = useState('');
   const [searchResult, setSearchResult] = useState<HelpSearchResult | null>(null);
   const [searching, setSearching] = useState(false);
 
-  useEffect(() => { void support.loadHelpCenter(surface); }, [surface, support.locale]); // eslint-disable-line react-hooks/exhaustive-deps
+  const legacyHelpAvailable = language !== 'fr';
+  useEffect(() => {
+    if (legacyHelpAvailable) void support.loadHelpCenter(surface);
+  }, [surface, support.locale, legacyHelpAvailable]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function runSearch(value: string) {
     setQuery(value);
     if (value.trim().length < 2) { setSearchResult(null); return; }
+    if (!legacyHelpAvailable) { setSearchResult(null); return; }
     setSearching(true);
     try {
       setSearchResult(await support.search(value, surface));
@@ -50,6 +58,10 @@ export default function HelpCenterScreen() {
   }
 
   const center = support.helpCenter;
+  const manualMatches = query.trim().length >= 2 ? searchManual(language, query) : [];
+  const customerManual = manualArticles(language, 'customer').filter(article => article.audience !== 'all');
+  const workerManual = manualArticles(language, 'worker').filter(article => article.audience !== 'all');
+  const sharedManual = manualArticles(language).filter(article => article.audience === 'all');
 
   return <SafeAreaView style={styles.safe}>
     <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
@@ -73,9 +85,20 @@ export default function HelpCenterScreen() {
 
       {searching ? <BrandLoadingState label={copy.text('loading')} /> : null}
 
-      {!searching && searchResult ? <SearchResults result={searchResult} /> : null}
+      {query.trim().length >= 2 ? <Section title={manualCopy.manual}>
+        {manualMatches.length
+          ? manualMatches.map(article => <ManualArticleRow key={`${article.audience}:${article.id}`} article={article} />)
+          : <AppText style={styles.categoryBody}>{manualCopy.noResults}</AppText>}
+      </Section> : <>
+        <AppText style={styles.categoryBody}>{manualCopy.manualIntro}</AppText>
+        <Section title={manualCopy.customerGuide}>{customerManual.map(article => <ManualArticleRow key={article.id} article={article} />)}</Section>
+        <Section title={manualCopy.workerGuide}>{workerManual.map(article => <ManualArticleRow key={article.id} article={article} />)}</Section>
+        {sharedManual.map(article => <ManualArticleRow key={article.id} article={article} />)}
+      </>}
 
-      {!searchResult && support.suggestions && support.suggestions.recent.length > 0 ? <Section title={copy.text('recentSearches')}>
+      {legacyHelpAvailable && !searching && searchResult ? <SearchResults result={searchResult} /> : null}
+
+      {legacyHelpAvailable && !searchResult && support.suggestions && support.suggestions.recent.length > 0 ? <Section title={copy.text('recentSearches')}>
         <View style={[styles.chips, copy.isRTL && styles.reverse]}>
           {support.suggestions.recent.map(item => <Pressable
             key={item}
@@ -86,7 +109,7 @@ export default function HelpCenterScreen() {
         </View>
       </Section> : null}
 
-      {!searchResult && support.suggestions && support.suggestions.popular.length > 0 ? <Section title={copy.text('popularSearches')}>
+      {legacyHelpAvailable && !searchResult && support.suggestions && support.suggestions.popular.length > 0 ? <Section title={copy.text('popularSearches')}>
         <View style={[styles.chips, copy.isRTL && styles.reverse]}>
           {support.suggestions.popular.map(item => <Pressable
             key={item}
@@ -97,16 +120,16 @@ export default function HelpCenterScreen() {
         </View>
       </Section> : null}
 
-      {!searchResult && support.loading && !center ? <BrandLoadingState label={copy.text('loading')} /> : null}
+      {legacyHelpAvailable && !searchResult && support.loading && !center ? <BrandLoadingState label={copy.text('loading')} /> : null}
 
-      {!searchResult && support.error && !center ? <EmptyState
+      {legacyHelpAvailable && !searchResult && support.error && !center ? <EmptyState
         icon="error-outline"
         title={copy.text('loadError')}
         action={copy.text('retry')}
         onAction={() => void support.loadHelpCenter(surface)}
       /> : null}
 
-      {!searchResult && center ? <>
+      {legacyHelpAvailable && !searchResult && center ? <>
         {center.suggested.length > 0 ? <Section title={copy.text('suggestedForYou')}>
           {center.suggested.map(article => <ArticleRow key={article.slug} article={article} />)}
         </Section> : null}
@@ -155,6 +178,20 @@ export default function HelpCenterScreen() {
       </BrandCard>
     </ScrollView>
   </SafeAreaView>;
+}
+
+function ManualArticleRow({ article }: { article: ManualArticle }) {
+  const colors = useThemeColors();
+  const styles = useThemedStyles(makeStyles);
+  const { isRTL } = useLocalization();
+  return <Pressable
+    accessibilityRole="button"
+    accessibilityLabel={`${article.title}. ${article.summary}`}
+    onPress={() => router.push({ pathname: '/help/manual/[id]', params: { id: article.id } })}
+    style={[styles.articleRow, isRTL && styles.reverse]}>
+    <View style={styles.grow}><AppText style={styles.articleTitle}>{article.title}</AppText><AppText style={styles.articleBody}>{article.summary}</AppText></View>
+    <MaterialIcons name={isRTL ? 'chevron-left' : 'chevron-right'} size={20} color={colors.textMuted} />
+  </Pressable>;
 }
 
 function SearchResults({ result }: { result: HelpSearchResult }) {

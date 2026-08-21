@@ -126,7 +126,8 @@ export function StartupGate({ children }: { children: React.ReactNode }) {
           && path !== '/worker/onboarding'
           && !path.startsWith('/worker/verification')
           && path !== '/notifications'
-          && path !== '/support') {
+          && path !== '/support'
+          && !path.startsWith('/help')) {
         status = 'redirecting';
         redirect = home;
       } else if (resolution.target === 'customer_home' && path.startsWith('/worker')) {
@@ -135,7 +136,8 @@ export function StartupGate({ children }: { children: React.ReactNode }) {
       } else if (resolution.target === 'worker_home'
           && !path.startsWith('/worker')
           && path !== '/notifications'
-          && path !== '/support') {
+          && path !== '/support'
+          && !path.startsWith('/help')) {
         status = 'redirecting';
         redirect = home;
       } else if (path === '/' && home !== '/') {

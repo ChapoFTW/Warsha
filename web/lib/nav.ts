@@ -21,6 +21,7 @@ export function customerNav(words: Record<string, string>): NavLink[] {
     { href: '/addresses', label: words.navAddresses },
     { href: '/notifications', label: words.navNotifications },
     { href: '/support', label: words.navSupport },
+    { href: '/help', label: words.navHelp },
     { href: '/account', label: words.navAccount },
   ];
 }
@@ -35,5 +36,6 @@ export function workerNav(words: Record<string, string>): NavLink[] {
     { href: '/worker/verification', label: words.navVerification },
     { href: '/notifications', label: words.navNotifications },
     { href: '/support', label: words.navSupport },
+    { href: '/help', label: words.navHelp },
   ];
 }

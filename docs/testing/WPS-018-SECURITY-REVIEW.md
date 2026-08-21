@@ -66,6 +66,13 @@ control is that no secret is available to a build at all: the validation
 workflow references no secret, and `audit:environment` fails the build if a
 secret hides behind an `EXPO_PUBLIC_` name.
 
+**2026-08-21 follow-up.** The predicted false positive recurred after harmless
+bundle reordering. `audit:bundle` now disassembles Hermes bytecode with the
+repository-pinned compiler and scans the resulting literal-aware text. The
+short library guard and adjacent React Native identifiers are therefore
+separate again. The digit/entropy heuristic has been removed, real complete
+secret literals remain fatal, and an unavailable disassembler fails closed.
+
 ### F2 — Client-attested re-authentication removed (WPS-017 F2 closed)
 
 **Before.** `staff_reauthenticate` recorded that the client said it had

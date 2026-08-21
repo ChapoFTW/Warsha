@@ -27,6 +27,7 @@ import {
   MAPS_MAX_ATTEMPTS,
   MAPS_TIMEOUT_MS,
   type MapProvider,
+  type MapLanguage,
   type MapRenderDescriptor,
   type MapsOutcome,
   type PlaceSuggestion,
@@ -47,6 +48,42 @@ const DEFAULT_VIEWPORT = {
   latitudeDelta: 0.08,
   longitudeDelta: 0.08,
 };
+
+type GoogleAddressComponent = {
+  longText?: unknown;
+  long_name?: unknown;
+  types?: unknown;
+};
+
+function addressComponent(
+  components: unknown,
+  preferredTypes: string[],
+): string | null {
+  if (!Array.isArray(components)) return null;
+  for (const type of preferredTypes) {
+    const match = components.find((component: GoogleAddressComponent) =>
+      Array.isArray(component?.types) && component.types.includes(type));
+    const value = match?.longText ?? match?.long_name;
+    if (typeof value === 'string' && value.trim()) return value.trim();
+  }
+  return null;
+}
+
+export function structuredAddressComponents(components: unknown): {
+  governorate: string | null;
+  district: string | null;
+} {
+  return {
+    governorate: addressComponent(components, ['administrative_area_level_1']),
+    district: addressComponent(components, [
+      'administrative_area_level_2',
+      'sublocality_level_1',
+      'locality',
+      'sublocality',
+      'neighborhood',
+    ]),
+  };
+}
 
 function worthRetrying(status: number | null): boolean {
   if (status === null) return true;
@@ -146,7 +183,7 @@ export const googleMapsProvider: MapProvider = {
     return readSecret('mapsServerKey') !== null;
   },
 
-  autocomplete(input: string, sessionToken: string): Promise<MapsOutcome<PlaceSuggestion[]>> {
+  autocomplete(input: string, sessionToken: string, language: MapLanguage): Promise<MapsOutcome<PlaceSuggestion[]>> {
     const url = 'https://places.googleapis.com/v1/places:autocomplete';
     return call(url, (payload) => {
       const predictions = Array.isArray(payload.suggestions) ? payload.suggestions : [];
@@ -172,20 +209,20 @@ export const googleMapsProvider: MapProvider = {
       body: {
         input,
         includedRegionCodes: [REGION],
-        languageCode: 'ar',
+        languageCode: language,
         regionCode: 'EG',
         sessionToken,
       },
     });
   },
 
-  placeDetails(placeId: string, sessionToken: string): Promise<MapsOutcome<ResolvedPlace>> {
+  placeDetails(placeId: string, sessionToken: string, language: MapLanguage): Promise<MapsOutcome<ResolvedPlace>> {
     // `fields` is not an optimisation. Places bills by field group, and asking
     // for everything would both cost more and pull back reviews, photographs and
     // opening hours that Warsha has no business holding.
     const url = `https://places.googleapis.com/v1/places/${encodeURIComponent(placeId)}`
       + `?sessionToken=${encodeURIComponent(sessionToken)}`
-      + '&languageCode=ar&regionCode=EG';
+      + `&languageCode=${language}&regionCode=EG`;
     return call(url, (payload) => {
       const location = payload?.location;
       if (typeof location?.latitude !== 'number' || typeof location?.longitude !== 'number') {
@@ -194,27 +231,29 @@ export const googleMapsProvider: MapProvider = {
       return {
         placeId: String(payload.id ?? placeId),
         formattedAddress: String(payload.formattedAddress ?? ''),
+        ...structuredAddressComponents(payload.addressComponents),
         latitude: location.latitude,
         longitude: location.longitude,
       };
     }, {
       method: 'GET',
       keyInHeader: true,
-      fieldMask: 'id,formattedAddress,location',
+      fieldMask: 'id,formattedAddress,addressComponents,location',
     });
   },
 
-  reverseGeocode(latitude: number, longitude: number): Promise<MapsOutcome<ResolvedPlace>> {
+  reverseGeocode(latitude: number, longitude: number, language: MapLanguage): Promise<MapsOutcome<ResolvedPlace>> {
     const url = 'https://maps.googleapis.com/maps/api/geocode/json'
       + `?latlng=${latitude},${longitude}`
       + `&region=${REGION}`
-      + '&language=ar';
+      + `&language=${language}`;
     return call(url, (payload) => {
       const result = Array.isArray(payload.results) ? payload.results[0] : null;
       if (!result) return null;
       return {
         placeId: String(result.place_id ?? ''),
         formattedAddress: String(result.formatted_address ?? ''),
+        ...structuredAddressComponents(result.address_components),
         // The coordinates returned are the ones asked about, not the ones the
         // provider snapped to. The pin the person placed is the pin that counts:
         // a worker is going to the building somebody pointed at, not to the
@@ -225,11 +264,11 @@ export const googleMapsProvider: MapProvider = {
     });
   },
 
-  forwardGeocode(address: string): Promise<MapsOutcome<ResolvedPlace>> {
+  forwardGeocode(address: string, language: MapLanguage): Promise<MapsOutcome<ResolvedPlace>> {
     const url = 'https://maps.googleapis.com/maps/api/geocode/json'
       + `?address=${encodeURIComponent(address)}`
       + `&region=${REGION}`
-      + '&language=ar';
+      + `&language=${language}`;
     return call(url, (payload) => {
       const result = Array.isArray(payload.results) ? payload.results[0] : null;
       const location = result?.geometry?.location;
@@ -239,6 +278,7 @@ export const googleMapsProvider: MapProvider = {
       return {
         placeId: String(result.place_id ?? ''),
         formattedAddress: String(result.formatted_address ?? ''),
+        ...structuredAddressComponents(result.address_components),
         latitude: location.lat,
         longitude: location.lng,
       };

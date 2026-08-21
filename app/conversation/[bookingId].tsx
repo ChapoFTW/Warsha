@@ -45,6 +45,7 @@ import {
   type MessageDraft,
 } from '@/src/chat/chat-types';
 import { useLocalization } from '@/src/i18n/localization';
+import type { SupportedLanguage } from '@/src/i18n/language-preference';
 import { useProviderJobs } from '@/src/provider-jobs/provider-job-context';
 import { useProviderFoundation } from '@/src/providers/provider-context';
 import { realtimeService } from '@/src/realtime/realtime-service';
@@ -459,7 +460,7 @@ function State({ title, text }: { title: string; text: string }) {
   const styles = useThemedStyles(makeStyles);
   return <SafeAreaView style={styles.safe}><ScreenHeader title={title} /><View style={styles.state}><AppText>{text}</AppText></View></SafeAreaView>;
 }
-function DateLabel({ value, language, today, yesterday }: { value: string; language: 'en' | 'ar'; today: string; yesterday: string }) {
+function DateLabel({ value, language, today, yesterday }: { value: string; language: SupportedLanguage; today: string; yesterday: string }) {
   const styles = useThemedStyles(makeStyles);
   const now = new Date();
   const prior = new Date();
@@ -467,7 +468,7 @@ function DateLabel({ value, language, today, yesterday }: { value: string; langu
   const label = sameDay(value, now.toISOString()) ? today : sameDay(value, prior.toISOString()) ? yesterday : new Date(value).toLocaleDateString(localeFor(language), { day: 'numeric', month: 'short', year: 'numeric' });
   return <View style={styles.date}><AppText style={styles.dateText}>{label}</AppText></View>;
 }
-function Bubble({ message, own, isRTL, language, ct, onPreview }: { message: BookingMessage; own: boolean; isRTL: boolean; language: 'en' | 'ar'; ct: (key: ChatCopyKey) => string; onPreview: (url: string) => void }) {
+function Bubble({ message, own, isRTL, language, ct, onPreview }: { message: BookingMessage; own: boolean; isRTL: boolean; language: SupportedLanguage; ct: (key: ChatCopyKey) => string; onPreview: (url: string) => void }) {
   const colors = useThemeColors();
   const styles = useThemedStyles(makeStyles);
   if (['system', 'status', 'running_late'].includes(message.kind)) {

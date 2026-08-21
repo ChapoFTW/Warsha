@@ -10,6 +10,7 @@ import { radii, spacing, typography, type ThemeColors } from '@/constants/theme'
 import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
 import { useAuth } from '@/src/auth/auth-context';
 import { useLocalization } from '@/src/i18n/localization';
+import type { SupportedLanguage } from '@/src/i18n/language-preference';
 import { realtimeService } from '@/src/realtime/realtime-service';
 import { useReviews } from '@/src/reviews/review-context';
 import { useReviewText } from '@/src/reviews/review-translations';
@@ -45,7 +46,7 @@ export function ProviderReviewSummary({ providerId }: { providerId: string }) {
   );
 }
 
-function Reputation({ summary, language, isRTL }: { summary: RatingSummary; language: 'en' | 'ar'; isRTL: boolean }) {
+function Reputation({ summary, language, isRTL }: { summary: RatingSummary; language: SupportedLanguage; isRTL: boolean }) {
   const styles = useThemedStyles(makeStyles);
   const rt = useReviewText(); const percent = (value?: number) => value === undefined ? rt('unavailable') : `${formatNumber(value, language)}%`;
   const badges = [summary.badges.identityVerified && rt('identityVerified'), summary.badges.skillCertificateVerified && rt('skillVerified'), summary.badges.professionalCertificateVerified && rt('professionalVerified'), summary.badges.topRated && rt('topRated'), summary.badges.fastResponder && rt('fastResponder'), summary.badges.experienced && rt('experienced')].filter(Boolean) as string[];
@@ -53,7 +54,7 @@ function Reputation({ summary, language, isRTL }: { summary: RatingSummary; lang
   return <View style={styles.reputation}><View style={[styles.metrics, isRTL && styles.reverse]}>{metrics.map(([label, value]) => <View key={label} style={styles.metric}><AppText style={styles.metricValue}>{value}</AppText><AppText style={styles.muted}>{label}</AppText></View>)}</View><View style={[styles.badges, isRTL && styles.reverse]}>{badges.map(label => <StateBadge key={label} label={label} tone="success" compact />)}</View><AppText style={styles.strong}>{rt('ratingBreakdown')}</AppText><View style={[styles.dimensionGrid, isRTL && styles.reverse]}>{(['professionalism', 'quality', 'punctuality', 'communication', 'value'] as const).map(key => <AppText key={key} style={styles.dimension}>{rt(key)}: ★ {formatNumber(summary.dimensions[key], language)}</AppText>)}</View><AppText style={styles.strong}>{rt('ratingDistribution')}</AppText><View accessibilityLabel={rt('ratingDistribution')} style={styles.distribution}>{([5, 4, 3, 2, 1] as const).map(star => <View key={star} style={[styles.distributionRow, isRTL && styles.reverse]}><AppText style={styles.distributionStar}>{formatNumber(star, language)} ★</AppText><View style={styles.distributionTrack}><View style={[styles.distributionFill, { width: `${summary.count ? summary.distribution[star] / summary.count * 100 : 0}%` }]} /></View><AppText style={styles.distributionCount}>{formatNumber(summary.distribution[star], language)}</AppText></View>)}</View><View style={styles.confidence}><AppText style={styles.strong}>{rt('confidence')}: {formatNumber(summary.confidence.score, language)}/100</AppText><AppText style={styles.muted}>{rt('confidenceHelp')}</AppText></View></View>;
 }
 
-function ReviewItem({ review, isRTL, language, canAct, onAuth, onVote, onReport }: { review: BookingReview; isRTL: boolean; language: 'en' | 'ar'; canAct: boolean; onAuth: () => void; onVote: (vote: ReviewVote) => Promise<void>; onReport: (reason: ReviewReportReason, details: string) => Promise<void> }) {
+function ReviewItem({ review, isRTL, language, canAct, onAuth, onVote, onReport }: { review: BookingReview; isRTL: boolean; language: SupportedLanguage; canAct: boolean; onAuth: () => void; onVote: (vote: ReviewVote) => Promise<void>; onReport: (reason: ReviewReportReason, details: string) => Promise<void> }) {
   const colors = useThemeColors();
   const styles = useThemedStyles(makeStyles);
   const rt = useReviewText(); const [reporting, setReporting] = useState(false); const [reason, setReason] = useState<ReviewReportReason>('spam'); const [details, setDetails] = useState(''); const [sent, setSent] = useState(false); const [busy, setBusy] = useState(false);

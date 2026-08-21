@@ -38,10 +38,11 @@ const bootstrapAppearance = `
 
     var storedLanguage = window.localStorage.getItem(${JSON.stringify(languageStorageKey)});
     var explicitLanguage = window.localStorage.getItem(${JSON.stringify(languageExplicitKey)}) === 'true';
-    var preferredLanguage = explicitLanguage && (storedLanguage === 'ar' || storedLanguage === 'en')
+    var preferredLanguage = explicitLanguage && (storedLanguage === 'ar' || storedLanguage === 'en' || storedLanguage === 'fr')
       ? storedLanguage
       : ((navigator.languages && navigator.languages[0]) || navigator.language || 'en');
-    var language = String(preferredLanguage).toLowerCase().split(/[-_]/)[0] === 'ar' ? 'ar' : 'en';
+    var candidate = String(preferredLanguage).toLowerCase().split(/[-_]/)[0];
+    var language = candidate === 'ar' || candidate === 'fr' ? candidate : 'en';
     document.documentElement.lang = language;
     document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
     document.title = language === 'ar' ? 'ورشة' : 'Warsha';
@@ -77,7 +78,8 @@ const startupSurfaceStyle = `
 // must not announce English on an Arabic cold start before React hydrates.
 const localizeStartupAccessibility = `
 (function () {
-  var label = document.documentElement.lang === 'ar' ? 'جاري تحميل ورشة' : 'Loading Warsha';
+  var language = document.documentElement.lang;
+  var label = language === 'ar' ? 'جاري تحميل ورشة' : (language === 'fr' ? 'Chargement de Warsha' : 'Loading Warsha');
   var surface = document.getElementById('warsha-startup-surface');
   if (!surface) return;
   surface.setAttribute('lang', document.documentElement.lang);

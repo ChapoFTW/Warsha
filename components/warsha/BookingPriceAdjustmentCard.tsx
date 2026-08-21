@@ -5,6 +5,7 @@ import { radii, spacing, typography, type ThemeColors } from '@/constants/theme'
 import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
 import type { Booking } from '@/src/bookings/booking-types';
 import { useLocalization } from '@/src/i18n/localization';
+import type { SupportedLanguage } from '@/src/i18n/language-preference';
 import { usePaymentText } from '@/src/i18n/payment-translations';
 import {
   compareMinor,
@@ -140,7 +141,7 @@ export function BookingPriceAdjustmentCard({
 function formatDifference(
   previous: string,
   proposed: string,
-  language: 'en' | 'ar',
+  language: SupportedLanguage,
 ) {
   const comparison = compareMinor(proposed, previous);
   if (comparison === 0) return formatMinor('0', language);

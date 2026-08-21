@@ -4,6 +4,7 @@ import { getSupabaseClient } from '@/src/lib/supabase';
 
 import { SafeAuthError, type AuthFailure } from './auth-errors';
 import type { SignupLegalAcceptance } from '@/src/legal/signup-legal';
+import type { SupportedLanguage } from '@/src/i18n/language-preference';
 
 type WorkerSessionTokens = { accessToken: string; refreshToken: string };
 
@@ -11,7 +12,7 @@ type WorkerRegistration = {
   fullName: string;
   phone: string;
   password: string;
-  language: 'en' | 'ar';
+  language: SupportedLanguage;
   legalAcceptances: readonly SignupLegalAcceptance[];
 };
 

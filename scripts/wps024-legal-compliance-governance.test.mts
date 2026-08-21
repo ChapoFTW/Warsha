@@ -1123,7 +1123,7 @@ check(/readSecret\('mapsServerKey'\)/.test(mapsProvider),
   'the billed Maps key is read server-side only');
 check(/sessionToken/.test(mapsProvider),
   'Places calls carry a session token, so a search is billed once rather than per keystroke');
-check(/x-goog-fieldmask/.test(mapsProvider) && /id,formattedAddress,location/.test(mapsProvider),
+check(/x-goog-fieldmask/.test(mapsProvider) && /id,formattedAddress,(?:addressComponents,)?location/.test(mapsProvider),
   'Places API New requests use narrow field masks rather than fetching every field');
 check(/manualPinAlwaysAvailable/.test(locationFunction),
   'EVERY LOCATION FAILURE STILL REPORTS THAT MANUAL PIN PLACEMENT WORKS');
@@ -1134,7 +1134,7 @@ const mapsProviderRaw = read('supabase', 'functions', '_shared', 'google-maps-pr
 for (const [name, pattern] of [
   ['Places Autocomplete New', /places\.googleapis\.com\/v1\/places:autocomplete/],
   ['Place Details New', /places\.googleapis\.com\/v1\/places\//],
-  ['forward geocoding', /forwardGeocode\(address: string\)/],
+  ['forward geocoding', /forwardGeocode\(address: string, language: MapLanguage\)/],
   ['reverse geocoding', /reverseGeocode\(latitude: number/],
 ] as const) {
   check(pattern.test(mapsProviderRaw), `${name} is implemented`);

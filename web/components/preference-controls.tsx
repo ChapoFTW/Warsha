@@ -12,7 +12,7 @@ import {
   isAppearancePreference,
   languageExplicitKey,
   languageStorageKey,
-  otherLocale,
+  LOCALES,
   type AppearancePreference,
   type Locale,
 } from '@/lib/preferences';
@@ -55,14 +55,14 @@ function rememberLanguage(locale: Locale) {
  * Warsha has two locale architectures, and mixing them is what broke the
  * console.
  *
- * The public site is genuinely locale-prefixed: `/en/...` and `/ar/...` are
+ * The public site is genuinely locale-prefixed: `/en/...`, `/ar/...`, and `/fr/...` are
  * real routes under `app/[locale]`, so switching language there is a
  * navigation, and it should stay one — a real URL is bookmarkable, crawlable
  * and openable in a new tab.
  *
  * The customer, worker and staff applications are **not** prefixed. They read
  * the locale from the cookie and localStorage through `useAppLocale`, and no
- * `/en` or `/ar` route exists under them. The switcher used to prefix
+ * locale-prefixed route exists under them. The switcher used to prefix
  * unconditionally, so on admin.usewarsha.com it produced `/ar/users` — a route
  * that has never existed — and the operator got a 404 they could only escape by
  * editing the address bar.
@@ -80,38 +80,42 @@ export function LanguageSwitch({
   mode?: LanguageSwitchMode;
 }) {
   const pathname = usePathname();
-  const target = otherLocale(locale);
-  const label = target === 'ar' ? copy[locale].languageArabic : copy[locale].languageEnglish;
-  const ariaLabel = `${copy[locale].languageLabel}: ${label}`;
+  const labels: Record<Locale, string> = {
+    en: copy[locale].languageEnglish,
+    ar: copy[locale].languageArabic,
+    fr: copy[locale].languageFrench,
+  };
 
   if (mode === 'path') {
-    const rest = pathname.replace(/^\/(en|ar)(?=\/|$)/, '') || '';
+    const rest = pathname.replace(/^\/(en|ar|fr)(?=\/|$)/, '') || '';
     return (
-      <a
-        href={`/${target}${rest}`}
-        hrefLang={target}
-        lang={target}
-        className={styles.language}
-        onClick={() => rememberLanguage(target)}
-        aria-label={ariaLabel}
-      >
-        {label}
-      </a>
+      <div className={styles.languageGroup} role="group" aria-label={copy[locale].languageLabel}>
+        {LOCALES.map(option => <a
+          key={option}
+          href={`/${option}${rest}`}
+          hrefLang={option}
+          lang={option}
+          className={styles.language}
+          aria-current={option === locale ? 'page' : undefined}
+          onClick={() => rememberLanguage(option)}
+        >{labels[option]}</a>)}
+      </div>
     );
   }
 
   // Unprefixed surfaces: record the preference and refresh in place. No path is
   // constructed, so no path can be wrong.
   return (
-    <button
-      type="button"
-      lang={target}
-      className={styles.language}
-      onClick={() => rememberLanguage(target)}
-      aria-label={ariaLabel}
-    >
-      {label}
-    </button>
+    <div className={styles.languageGroup} role="group" aria-label={copy[locale].languageLabel}>
+      {LOCALES.map(option => <button
+        key={option}
+        type="button"
+        lang={option}
+        className={styles.language}
+        aria-pressed={option === locale}
+        onClick={() => rememberLanguage(option)}
+      >{labels[option]}</button>)}
+    </div>
   );
 }
 

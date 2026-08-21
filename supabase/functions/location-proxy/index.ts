@@ -87,6 +87,7 @@ Deno.serve(async (request) => {
     sessionToken?: string;
     latitude?: number;
     longitude?: number;
+    language?: string;
   };
   try {
     body = await request.json();
@@ -127,13 +128,14 @@ Deno.serve(async (request) => {
   const sessionToken = typeof body.sessionToken === 'string' && body.sessionToken.length >= 8
     ? body.sessionToken
     : null;
+  const language = body.language === 'en' ? 'en' : 'ar';
 
   switch (body.operation) {
     case 'autocomplete': {
       const input = typeof body.input === 'string' ? body.input.trim() : '';
       if (input.length < 3) return json({ available: true, suggestions: [] });
       if (!sessionToken) return json({ error: 'A session token is required' }, 400);
-      const result = await provider.autocomplete(input, sessionToken);
+      const result = await provider.autocomplete(input, sessionToken, language);
       await recordHealth(asService, provider, 'autocomplete', result);
       if (result.kind === 'ok') return json({ available: true, suggestions: result.value });
       if (result.kind === 'no_results') return json({ available: true, suggestions: [] });
@@ -144,7 +146,7 @@ Deno.serve(async (request) => {
       const placeId = typeof body.placeId === 'string' ? body.placeId : '';
       if (placeId.length === 0) return json({ error: 'A place is required' }, 400);
       if (!sessionToken) return json({ error: 'A session token is required' }, 400);
-      const result = await provider.placeDetails(placeId, sessionToken);
+      const result = await provider.placeDetails(placeId, sessionToken, language);
       await recordHealth(asService, provider, 'place_details', result);
       if (result.kind === 'ok') return json({ available: true, place: result.value });
       if (result.kind === 'no_results') return json({ available: true, place: null });
@@ -158,7 +160,7 @@ Deno.serve(async (request) => {
           || latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
         return json({ error: 'A valid coordinate is required' }, 400);
       }
-      const result = await provider.reverseGeocode(latitude, longitude);
+      const result = await provider.reverseGeocode(latitude, longitude, language);
       await recordHealth(asService, provider, 'reverse_geocode', result);
       if (result.kind === 'ok') return json({ available: true, place: result.value });
       if (result.kind === 'no_results') {
@@ -173,7 +175,7 @@ Deno.serve(async (request) => {
     case 'forward_geocode': {
       const input = typeof body.input === 'string' ? body.input.trim() : '';
       if (input.length < 3) return json({ error: 'An address is required' }, 400);
-      const result = await provider.forwardGeocode(input);
+      const result = await provider.forwardGeocode(input, language);
       await recordHealth(asService, provider, 'forward_geocode', result);
       if (result.kind === 'ok') return json({ available: true, place: result.value });
       if (result.kind === 'no_results') return json({ available: true, place: null });

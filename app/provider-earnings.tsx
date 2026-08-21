@@ -19,7 +19,7 @@ import { AppText } from '@/components/warsha/Typography';
 import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
 import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
 import { useLocalization } from '@/src/i18n/localization';
-import { usePaymentText } from '@/src/i18n/payment-translations';
+import { usePaymentText, withdrawalStatusText } from '@/src/i18n/payment-translations';
 import { normalizeEgyptianPhone } from '@/src/auth/phone-auth';
 import { compareMinor, egpDecimalToMinor, formatMinor } from '@/src/payments/money';
 import { usePayments } from '@/src/payments/payment-context';
@@ -283,7 +283,7 @@ export default function ProviderEarningsScreen() {
                   </View>
                   <View style={styles.money}>
                     <AppText style={styles.transactionAmount}>{formatMinor(item.amountMinor, language)}</AppText>
-                    <AppText style={styles.muted}>{item.status}</AppText>
+                    <AppText style={styles.muted}>{withdrawalStatusText(language, item.status)}</AppText>
                   </View>
                 </View>
               ))}
@@ -316,7 +316,7 @@ export default function ProviderEarningsScreen() {
               ))}
             </Card>
           ) : null}
-          {payments.error ? <AppText accessibilityRole="alert" style={styles.error}>{payments.error}</AppText> : null}
+          {payments.error ? <AppText accessibilityRole="alert" style={styles.error}>{pt('paymentFailed')}</AppText> : null}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

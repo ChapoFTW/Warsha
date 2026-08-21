@@ -40,6 +40,11 @@ export const DETERMINISTIC_TEST_SCRIPTS = [
   'test:marketplace',
   'test:platform-preferences',
   'test:onboarding-stabilization',
+  'test:address-location',
+  'test:business-analytics',
+  'test:form-clarity',
+  'test:french-localization',
+  'test:help-docs',
   'test:signup-legal-startup',
   'test:signup-state',
   'test:web-platform',
@@ -77,6 +82,8 @@ function emptyImpact(files) {
       localization: false,
       appearance: false,
       brandAssets: false,
+      documentation: false,
+      formClarity: false,
       testsToolingOnly: false,
     },
     sharedJsTs: false,
@@ -118,6 +125,12 @@ function pathDomain(impact, path) {
   }
   if (/(?:i18n|translation|locale|language|rtl|copy)/i.test(path)) {
     impact.domains.localization = true;
+  }
+  if (/(?:^|\/)(?:docs\/help|help)(?:\/|\.|-|$)|help-docs/i.test(path)) {
+    impact.domains.documentation = true;
+  }
+  if (/(?:form|field|input|address|location|helper|placeholder|accessibility)/i.test(path)) {
+    impact.domains.formClarity = true;
   }
   if (/(?:appearance|theme|dark|light|color|colour|style)/i.test(path)) {
     impact.domains.appearance = true;
@@ -291,6 +304,9 @@ export function planValidation(impact, options = {}) {
   add(npmStep('appearance-audit', 'audit:appearance', 'Theme token authority is repository-wide.'));
   add(npmStep('mojibake', 'check:mojibake', 'English/Arabic source encoding is repository-wide.'));
   add(npmStep('deterministic-tests', 'test:all', 'Run the explicit, repository-authoritative deterministic regression inventory.'));
+  if (impact.domains.documentation || impact.files.some((path) => /(?:auth|sign-in|create-account|password|address|location|verification|vetting|marketplace|quote|request|staff|capabilit|analytics|report|export)/i.test(path))) {
+    add(npmStep('docs-check', 'warsha:docs-check', 'Behavioral changes must map to current, audience-safe help documentation.'));
+  }
 
   const qaPipelineChanged = impact.files.some((path) => path === 'package.json'
     || path === 'scripts/qa-release.mjs' || path === 'scripts/qa-preview-environment.mjs');
@@ -416,10 +432,11 @@ export function manualAcceptanceFor(impact, validation, release) {
   if (impact.domains.auth) {
     if (impact.surfaces.android) items.push(acceptanceItem('Android Preview', 'Fresh Preview installation and test customer/worker accounts.', ['Sign up and sign in as customer.', 'Exercise confirmation and password recovery.', 'Restart and verify session/onboarding routing.', 'Repeat the affected worker identity flow.'], 'Every auth path settles without identity leakage or a guessed customer/worker route.'));
     if (impact.surfaces.ios) items.push(acceptanceItem('iOS Preview', 'Signed Preview build on a registered test device.', ['Repeat customer and worker sign-in/onboarding/session restoration.', 'Open confirmation and recovery deep links.'], 'Behavior matches Android; platform-native links return to the intended state.'));
-    if (impact.surfaces.customerWeb || impact.surfaces.workerWeb) items.push(acceptanceItem('Customer/worker web', 'The validated commit is deployed to the application origin.', ['Exercise sign-up, sign-in, recovery, sign-out and refresh.', 'Repeat in English and Arabic.'], 'Session and onboarding resolution match mobile and Arabic remains RTL.'));
+    if (impact.surfaces.customerWeb || impact.surfaces.workerWeb) items.push(acceptanceItem('Customer/worker web', 'The validated commit is deployed to the application origin.', ['Exercise sign-up, sign-in, recovery, sign-out and refresh.', 'Repeat in English, Arabic, and French.'], 'Session and onboarding resolution match mobile; Arabic remains RTL and French remains LTR.'));
   }
 
-  if (impact.surfaces.publicWeb) items.push(acceptanceItem('Public web', 'The validated commit is deployed.', ['Open English and Arabic entry/legal pages.', 'Check canonical navigation and dark/light system presentation.'], 'No 404, direction flash, incorrect host, or brand drift.'));
+  if (impact.surfaces.publicWeb) items.push(acceptanceItem('Public web', 'The validated commit is deployed.', ['Open English, Arabic, and French entry/help/legal pages.', 'Check canonical navigation and dark/light system presentation.'], 'No 404, direction flash, incorrect host, or brand drift.'));
+  if (impact.domains.documentation) items.push(acceptanceItem('Help and manuals', 'The generated help indexes match their source.', ['Search customer help in English, Arabic, and French.', 'Switch to worker mode and confirm worker topics replace customer-only topics.', 'As authorized staff, search the admin manual and confirm it is absent from public help.'], 'Help is readable, routes resolve, search works, and audience boundaries hold.'));
   if (impact.surfaces.adminWeb) items.push(acceptanceItem('Admin web', 'A staff account with the required capability, fresh reauthentication/MFA where enforced.', ['Sign in at the admin origin.', 'Exercise only the affected staff action.', 'Verify the audit result.'], 'The admin origin remains isolated and capability-gated.'));
   if (impact.backendMigrations) items.push(acceptanceItem('Hosted development backend', 'Recorded backup/restore point and approved development migration window.', ['Review linked dry-run.', 'Apply only the expected forward migration through the governed workflow.', 'Run platform verification and consuming-client smoke checks.'], 'Migration ledger matches and no unexpected verification failures appear.'));
   if (impact.humanVisualApprovalRequired) items.push(acceptanceItem('Brand/store presentation', 'Fresh Android and iOS native builds.', ['Inspect launcher, splash and notification presentation in light/dark/system.', 'Compare against the approved Warsha assets.'], 'No crop, obsolete mark, inversion or platform mismatch.'));

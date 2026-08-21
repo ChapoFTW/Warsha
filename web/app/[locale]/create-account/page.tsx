@@ -20,7 +20,7 @@ export async function generateMetadata(
     description: copy[locale].createLead,
     alternates: {
       canonical: localeHref(locale, '/create-account'),
-      languages: { en: '/en/create-account', ar: '/ar/create-account' },
+      languages: { en: '/en/create-account', ar: '/ar/create-account', fr: '/fr/create-account' },
     },
   };
 }
@@ -43,6 +43,7 @@ export default async function CreateAccountPage({
   if (!isLocale(locale)) notFound();
   const typed: Locale = locale;
   const words = copy[typed];
+  const legalLocale = typed === 'ar' ? 'ar' : 'en';
 
   const required = (documents: ReturnType<typeof signupLegalDocuments>) => (
     <ul className={styles.required}>
@@ -52,7 +53,7 @@ export default async function CreateAccountPage({
             href={localeHref(typed, `/legal/${document.key.replace(/_/g, '-')}`)}
             className={styles.requiredLink}
           >
-            {document[typed].title}
+            {document[legalLocale].title}
           </Link>
         </li>
       ))}

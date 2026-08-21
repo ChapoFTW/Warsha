@@ -60,10 +60,10 @@ for (const [rpc, capability] of Object.entries(RPC_CAPABILITY)) {
     `${rpc} REALLY DOES REQUIRE ${capability} IN THE DATABASE`);
 }
 
-// --- A session without capabilities sees nothing but the dashboard ----------
+// --- Capability-free staff may read the dashboard and internal manual -------
 const nobody = parseStaffSession({ isStaff: true, platformReady: true, capabilities: [] });
-equal(visibleAreas(nobody).map((a) => a.key), ['dashboard'],
-  'A STAFF ACCOUNT WITH NO CAPABILITIES IS OFFERED NO PRIVILEGED AREA');
+equal(visibleAreas(nobody).map((a) => a.key), ['dashboard', 'help'],
+  'A STAFF ACCOUNT WITH NO CAPABILITIES IS OFFERED ONLY NON-PRIVILEGED AREAS');
 for (const href of ['/users', '/verification', '/staff', '/audit']) {
   check(!mayEnter(nobody, href), `${href} is not offered without its capability`);
 }
@@ -71,7 +71,7 @@ for (const href of ['/users', '/verification', '/staff', '/audit']) {
 const support = parseStaffSession({
   isStaff: true, platformReady: true, capabilities: ['safe_search'],
 });
-equal(visibleAreas(support).map((a) => a.key), ['dashboard', 'users'],
+equal(visibleAreas(support).map((a) => a.key), ['dashboard', 'users', 'help'],
   'a capability grants exactly its own area and no other');
 check(mayEnter(support, '/users'), 'the granted area is reachable');
 check(!mayEnter(support, '/staff'),
@@ -79,7 +79,7 @@ check(!mayEnter(support, '/staff'),
 check(!mayEnter(support, '/audit'), 'nor reading the audit log');
 
 const anonymous = parseStaffSession(null);
-equal(visibleAreas(anonymous).map((a) => a.key), ['dashboard'],
+equal(visibleAreas(anonymous).map((a) => a.key), ['dashboard', 'help'],
   'a non-staff session is offered nothing privileged');
 check(!mayEnter(anonymous, '/users'), 'a non-staff session may enter nothing');
 

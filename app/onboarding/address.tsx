@@ -14,6 +14,7 @@ import { useThemedStyles } from '@/src/appearance/appearance-context';
 import { useOnboarding } from '@/src/onboarding/onboarding-context';
 import { useOnboardingText } from '@/src/onboarding/onboarding-translations';
 import type { PinSource } from '@/src/onboarding/onboarding-types';
+import { resolvedAddressFields } from '@/src/providers/location-address';
 import { useProviderFoundation } from '@/src/providers/provider-context';
 import type { PinPosition } from '@/src/providers/map-renderer-types';
 import type { ProviderAreaInput } from '@/src/providers/provider-types';
@@ -60,6 +61,10 @@ function WorkerCurrentLocationFlow({ area }: { area: ProviderAreaInput | null })
     searchAddress: wt.text('searchAddress'),
     searchPlaceholder: wt.text('searchAddressPlaceholder'),
     locationSaved: wt.text('locationSaved'),
+    locationPartial: wt.text('locationPartial'),
+    addressLookupFailed: wt.text('locationLookupFailed'),
+    locating: wt.text('locationLocating'),
+    resolvingAddress: wt.text('locationResolving'),
     locationFailed: wt.text('locationFailed'),
     locationPermissionDenied: wt.text('locationPermissionDenied'),
     locationServicesDisabled: wt.text('locationServicesDisabled'),
@@ -139,10 +144,11 @@ function WorkerCurrentLocationFlow({ area }: { area: ProviderAreaInput | null })
         <AddressLocationPicker
           value={pin}
           copy={pickerCopy}
-          onChange={(position, source, address) => {
+          resolutionRequirement="formatted"
+          onChange={(position, source, place) => {
             setPin(position);
             setPinSource(source);
-            setFormattedAddress(address);
+            setFormattedAddress(place?.formattedAddress ?? null);
             setMessage('');
           }}
         />
@@ -182,6 +188,10 @@ function CustomerDestinationAddressFlow() {
     searchAddress: ot.text('addressSearch'),
     searchPlaceholder: ot.text('addressSearchPlaceholder'),
     locationSaved: ot.text('addressLocationSaved'),
+    locationPartial: ot.text('addressLocationPartial'),
+    addressLookupFailed: ot.text('addressLookupFailed'),
+    locating: ot.text('addressLocating'),
+    resolvingAddress: ot.text('addressResolving'),
     locationFailed: ot.text('addressLocationFailed'),
     locationPermissionDenied: ot.text('addressLocationPermissionDenied'),
     locationServicesDisabled: ot.text('addressLocationServicesDisabled'),
@@ -249,10 +259,16 @@ function CustomerDestinationAddressFlow() {
         <AddressLocationPicker
           value={pin}
           copy={pickerCopy}
-          onChange={(position, source, address) => {
+          resolutionRequirement="structured"
+          onChange={(position, source, place) => {
             setPin(position);
             setPinSource(source);
-            if (address && !street.trim()) setStreet(address);
+            if (place) {
+              const fields = resolvedAddressFields(place);
+              if (fields.addressLine) setStreet(fields.addressLine);
+              if (fields.governorate) setGovernorate(fields.governorate);
+              if (fields.district) setDistrict(fields.district);
+            }
             setMessage('');
           }}
         />
@@ -266,19 +282,46 @@ function CustomerDestinationAddressFlow() {
               setDistrict(area.district);
             }}
             copy={{
-              governorate: ot.text('addressGovernorate'),
-              district: ot.text('addressCity'),
+              governorate: `${ot.text('addressGovernorate')} (${ot.text('formRequired')})`,
+              district: `${ot.text('addressCity')} (${ot.text('formRequired')})`,
               selectGovernorate: ot.text('addressSelectGovernorate'),
               selectDistrict: ot.text('addressSelectDistrict'),
               search: ot.text('addressSearchAdministrativeArea'),
               close: ot.text('close'),
+              governorateHelper: ot.text('addressGovernorateHelp'),
+              districtHelper: ot.text('addressDistrictHelp'),
             }}
           />
-          <BrandTextField label={ot.text('addressStreet')} value={street} onChangeText={setStreet} />
-          <BrandTextField label={ot.text('addressBuilding')} value={building} onChangeText={setBuilding} />
-          <BrandTextField label={ot.text('addressFloor')} value={floor} onChangeText={setFloor} />
-          <BrandTextField label={ot.text('addressApartment')} value={apartment} onChangeText={setApartment} />
-          <BrandTextField label={ot.text('addressLandmark')} value={landmark} onChangeText={setLandmark} />
+          <BrandTextField
+            label={`${ot.text('addressStreet')} (${ot.text('formRequired')})`}
+            helper={ot.text('addressStreetHelp')}
+            value={street}
+            onChangeText={setStreet}
+          />
+          <BrandTextField
+            label={`${ot.text('addressBuilding')} (${ot.text('formOptional')})`}
+            helper={ot.text('addressBuildingHelp')}
+            value={building}
+            onChangeText={setBuilding}
+          />
+          <BrandTextField
+            label={`${ot.text('addressFloor')} (${ot.text('formOptional')})`}
+            helper={ot.text('addressFloorHelp')}
+            value={floor}
+            onChangeText={setFloor}
+          />
+          <BrandTextField
+            label={`${ot.text('addressApartment')} (${ot.text('formOptional')})`}
+            helper={ot.text('addressApartmentHelp')}
+            value={apartment}
+            onChangeText={setApartment}
+          />
+          <BrandTextField
+            label={`${ot.text('addressLandmark')} (${ot.text('formOptional')})`}
+            helper={ot.text('addressLandmarkHelp')}
+            value={landmark}
+            onChangeText={setLandmark}
+          />
           <BrandButton
             label={ot.text('addressConfirm')}
             loading={busy}

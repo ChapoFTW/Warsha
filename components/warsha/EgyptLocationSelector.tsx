@@ -26,6 +26,8 @@ export type EgyptLocationSelectorCopy = {
   selectDistrict: string;
   search: string;
   close: string;
+  governorateHelper?: string;
+  districtHelper?: string;
 };
 
 export function EgyptLocationSelector({
@@ -77,6 +79,7 @@ export function EgyptLocationSelector({
         label={text.governorate}
         value={governorateOption?.[language] ?? governorate}
         placeholder={text.selectGovernorate}
+        helper={text.governorateHelper}
         icon="map"
         onPress={() => open('governorate')}
       />
@@ -84,6 +87,7 @@ export function EgyptLocationSelector({
         label={text.district}
         value={areaOption?.[language] ?? district}
         placeholder={text.selectDistrict}
+        helper={text.districtHelper}
         icon="location-on"
         disabled={!governorateOption}
         onPress={() => open('area')}
@@ -127,6 +131,7 @@ function SelectorButton({
   label,
   value,
   placeholder,
+  helper,
   icon,
   disabled,
   onPress,
@@ -134,6 +139,7 @@ function SelectorButton({
   label: string;
   value: string;
   placeholder: string;
+  helper?: string;
   icon: React.ComponentProps<typeof MaterialIcons>['name'];
   disabled?: boolean;
   onPress: () => void;
@@ -155,6 +161,7 @@ function SelectorButton({
         <AppText numberOfLines={1} style={[styles.selectorValue, !value && styles.placeholder]}>{value || placeholder}</AppText>
         <MaterialIcons name="keyboard-arrow-down" size={24} color={colors.textMuted} />
       </Pressable>
+      {helper ? <AppText style={styles.helper}>{helper}</AppText> : null}
     </View>
   );
 }
@@ -167,6 +174,7 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   selectorValue: { flex: 1, color: colors.textPrimary },
   placeholder: { color: colors.textMuted },
   disabled: { opacity: 0.45 },
+  helper: { color: colors.textMuted, fontSize: 13, lineHeight: 19 },
   reverse: { flexDirection: 'row-reverse' },
   modalSafe: { flex: 1, padding: spacing.lg, gap: spacing.md, backgroundColor: colors.canvas },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md },

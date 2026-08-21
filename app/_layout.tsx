@@ -159,6 +159,7 @@ function ThemedRoot() {
           <Stack.Screen name="reset-password" />
           <Stack.Screen name="auth/confirm" />
           <Stack.Screen name="help/index" />
+          <Stack.Screen name="help/manual/[id]" />
           <Stack.Screen name="support/index" />
         </Stack>
         </View>

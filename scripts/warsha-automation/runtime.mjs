@@ -345,8 +345,37 @@ function unfinishedWork(root) {
   return Array.isArray(state.items) ? state.items.filter((item) => item.status !== 'complete') : [];
 }
 
+function documentationEvidence(root, impact) {
+  const index = jsonFile(join(root, 'docs', 'help', 'help-index.json'), { articles: [], features: {} });
+  const rules = [
+    { pattern: /(?:auth|sign-in|create-account|password|session)/i, features: ['auth', 'onboarding'] },
+    { pattern: /(?:address|location|map)/i, features: ['addresses', 'location'] },
+    { pattern: /(?:verification|vetting)/i, features: ['verification'] },
+    { pattern: /(?:marketplace|quote|request)/i, features: ['marketplace'] },
+    { pattern: /(?:staff|capabilit|fresh-auth|dual-control)/i, features: ['staff_roles', 'reauth', 'dual_control'] },
+    { pattern: /(?:analytics|report|export)/i, features: ['analytics', 'audit'] },
+  ];
+  const affectedFeatures = [...new Set(rules
+    .filter(rule => impact.files.some(path => rule.pattern.test(path)))
+    .flatMap(rule => rule.features))].sort();
+  const ids = [...new Set(affectedFeatures.flatMap(feature => index.features?.[feature] ?? []))].sort();
+  const references = (index.articles ?? [])
+    .filter(article => ids.includes(article.id))
+    .map(article => ({ id: article.id, locale: article.locale, audience: article.audience, routes: article.routes }))
+    .sort((left, right) => `${left.id}:${left.locale}`.localeCompare(`${right.id}:${right.locale}`));
+  const sourceReviewed = impact.files.some(path => path === 'docs/help/articles.json' || path === 'docs/help/articles.fr.json');
+  return {
+    affected: affectedFeatures.length > 0,
+    affectedFeatures,
+    articleIds: ids,
+    references,
+    sourceReviewed,
+    status: affectedFeatures.length === 0 ? 'NOT_APPLICABLE' : sourceReviewed ? 'REVIEWED_IN_DIFF' : 'REVIEW_REQUIRED',
+  };
+}
+
 export function validateHandoff(value) {
-  const required = ['schemaVersion', 'generatedAt', 'baseline', 'git', 'repository', 'changes', 'platformImpact', 'validation', 'deployment', 'humanVerification', 'unfinishedWork', 'warnings'];
+  const required = ['schemaVersion', 'generatedAt', 'baseline', 'git', 'repository', 'changes', 'platformImpact', 'validation', 'deployment', 'documentation', 'humanVerification', 'unfinishedWork', 'warnings'];
   const errors = required.filter((key) => !(key in value)).map((key) => `Missing ${key}`);
   if (value.schemaVersion !== HANDOFF_SCHEMA_VERSION) errors.push('Unsupported schemaVersion');
   if (!Array.isArray(value.humanVerification)) errors.push('humanVerification must be an array');
@@ -364,6 +393,7 @@ export function buildHandoff(root, options = {}) {
   if (impact.files.length === 0 && validation.status === 'PASSED' && validation.impact) impact = validation.impact;
   const release = classifyRelease(impact);
   const deployment = deploymentEvidence(root, fingerprint, options.online === true);
+  const documentation = documentationEvidence(root, impact);
   const handoff = {
     schemaVersion: HANDOFF_SCHEMA_VERSION,
     generatedAt: new Date().toISOString(),
@@ -375,10 +405,15 @@ export function buildHandoff(root, options = {}) {
     platformImpact: impact,
     validation,
     deployment,
+    documentation,
     release,
     humanVerification: manualAcceptanceFor(impact, validation, release),
     unfinishedWork: unfinishedWork(root),
-    warnings: [...impact.warnings, 'Generated handoffs are advisory; verify them against Git before acting.'],
+    warnings: [
+      ...impact.warnings,
+      ...(documentation.status === 'REVIEW_REQUIRED' ? ['Relevant help documentation has not been reviewed in this source diff.'] : []),
+      'Generated handoffs are advisory; verify them against Git before acting.',
+    ],
   };
   const checked = validateHandoff(handoff);
   if (!checked.valid) throw new Error(`Invalid handoff: ${checked.errors.join('; ')}`);
@@ -389,7 +424,7 @@ function list(values) { return values.length ? values.map((value) => `- ${value}
 
 export function renderHandoff(handoff) {
   const affected = Object.entries(handoff.platformImpact.surfaces).filter(([, yes]) => yes).map(([name]) => name);
-  return `# Warsha engineering handoff\n\nGenerated: ${handoff.generatedAt}\n\n## Git\n\n- Branch: ${handoff.git.branch}\n- HEAD: ${handoff.git.head}\n- Baseline: ${handoff.baseline}\n- Clean: ${handoff.git.clean}\n- origin/main ahead/behind: ${handoff.git.originMain.ahead}/${handoff.git.originMain.behind}\n- Stashes: ${handoff.git.stashCount}\n\n### Changed files\n\n${list(handoff.changes.files)}\n\n## Impact\n\n- Affected surfaces: ${affected.join(', ') || 'none'}\n- OTA: ${handoff.platformImpact.otaEligibility}\n- Native build: ${handoff.platformImpact.nativeBuildRequirement}\n- Migration: ${handoff.platformImpact.backendMigrationRequired}\n- Release: ${handoff.release.classification}\n\n${list(handoff.platformImpact.reasons)}\n\n## Validation evidence\n\n- Status: ${handoff.validation.status}\n- Reason: ${handoff.validation.reason ?? 'Recorded for this source state.'}\n\n## Deployment evidence\n\n- Status: ${handoff.deployment.status}\n- Reason: ${handoff.deployment.reason ?? 'Recorded for this source state.'}\n\n## Human verification\n\n${list(handoff.humanVerification.map((item) => `${item.platform}: ${item.expected}`))}\n\n## Unfinished work\n\n${list(handoff.unfinishedWork.map((item) => `${item.id}: ${item.summary}`))}\n\n## Warnings\n\n${list(handoff.warnings)}\n`;
+  return `# Warsha engineering handoff\n\nGenerated: ${handoff.generatedAt}\n\n## Git\n\n- Branch: ${handoff.git.branch}\n- HEAD: ${handoff.git.head}\n- Baseline: ${handoff.baseline}\n- Clean: ${handoff.git.clean}\n- origin/main ahead/behind: ${handoff.git.originMain.ahead}/${handoff.git.originMain.behind}\n- Stashes: ${handoff.git.stashCount}\n\n### Changed files\n\n${list(handoff.changes.files)}\n\n## Impact\n\n- Affected surfaces: ${affected.join(', ') || 'none'}\n- OTA: ${handoff.platformImpact.otaEligibility}\n- Native build: ${handoff.platformImpact.nativeBuildRequirement}\n- Migration: ${handoff.platformImpact.backendMigrationRequired}\n- Release: ${handoff.release.classification}\n\n${list(handoff.platformImpact.reasons)}\n\n## Documentation\n\n- Status: ${handoff.documentation.status}\n- Features: ${handoff.documentation.affectedFeatures.join(', ') || 'none'}\n- Articles: ${handoff.documentation.articleIds.join(', ') || 'none'}\n\n## Validation evidence\n\n- Status: ${handoff.validation.status}\n- Reason: ${handoff.validation.reason ?? 'Recorded for this source state.'}\n\n## Deployment evidence\n\n- Status: ${handoff.deployment.status}\n- Reason: ${handoff.deployment.reason ?? 'Recorded for this source state.'}\n\n## Human verification\n\n${list(handoff.humanVerification.map((item) => `${item.platform}: ${item.expected}`))}\n\n## Unfinished work\n\n${list(handoff.unfinishedWork.map((item) => `${item.id}: ${item.summary}`))}\n\n## Warnings\n\n${list(handoff.warnings)}\n`;
 }
 
 export function currentContext(root, options = {}) {

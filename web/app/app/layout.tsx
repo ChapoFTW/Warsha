@@ -34,7 +34,7 @@ const applyStoredAppearance = `
       document.documentElement.setAttribute('data-theme', stored);
     }
     var lang = window.localStorage.getItem('warsha:language:v1');
-    if (lang === 'ar' || lang === 'en') {
+    if (lang === 'ar' || lang === 'en' || lang === 'fr') {
       document.documentElement.setAttribute('lang', lang);
       document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
     }

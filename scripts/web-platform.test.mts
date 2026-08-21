@@ -161,7 +161,7 @@ for (const file of webCode.filter(f => f.endsWith('page.tsx'))) {
   if (!languages) continue;
   for (const [, target] of languages[1].matchAll(/'\/([^']*)'/g)) {
     const [locale, ...rest] = target.split('/');
-    check(locale === 'en' || locale === 'ar',
+    check(locale === 'en' || locale === 'ar' || locale === 'fr',
       `${file} advertises an alternate under a supported locale (/${locale})`);
     const segment = rest[0] ?? '';
     check(segment === '' || localeRoutes.has(segment),

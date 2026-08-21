@@ -113,7 +113,7 @@ export default function CreateAccount() {
       const result = await auth.signUp(
         name.trim(), choice === 'worker' ? null : email.trim(), password, phone,
         choice === 'worker' ? 'provider' : 'customer', language,
-        signupLegalManifest(choice, language),
+        signupLegalManifest(choice, language === 'ar' ? 'ar' : 'en'),
       );
       if (choice === 'customer' && result.needsEmailConfirmation) {
         // Supabase may return an obfuscated user for an existing address, so

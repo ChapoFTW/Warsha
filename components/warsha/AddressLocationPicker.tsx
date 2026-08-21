@@ -1,5 +1,5 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AddressMap, type PinPosition } from '@/components/warsha/AddressMap';
@@ -10,6 +10,11 @@ import { useThemedStyles } from '@/src/appearance/appearance-context';
 import { useLocalization } from '@/src/i18n/localization';
 import { environment } from '@/src/config/environment';
 import type { PinSource } from '@/src/onboarding/onboarding-types';
+import {
+  addressResolutionState,
+  type AddressResolutionState,
+  type ResolvedPlace,
+} from '@/src/providers/location-address';
 import { resolveLocationExperienceAvailability, type LocationExperienceAvailability } from '@/src/providers/location-experience-policy';
 import { newSessionToken, providerClients, requestDeviceFix, type PlaceSuggestion } from '@/src/providers/provider-clients';
 
@@ -19,6 +24,10 @@ export type AddressLocationPickerCopy = {
   searchAddress: string;
   searchPlaceholder: string;
   locationSaved: string;
+  locationPartial: string;
+  addressLookupFailed: string;
+  locating: string;
+  resolvingAddress: string;
   locationFailed: string;
   locationPermissionDenied: string;
   locationServicesDisabled: string;
@@ -35,10 +44,12 @@ export function AddressLocationPicker({
   value,
   onChange,
   copy,
+  resolutionRequirement = 'formatted',
 }: {
   value: PinPosition | null;
-  onChange: (position: PinPosition, source: PinSource, formattedAddress: string | null) => void;
+  onChange: (position: PinPosition, source: PinSource, place: ResolvedPlace | null) => void;
   copy: AddressLocationPickerCopy;
+  resolutionRequirement?: 'formatted' | 'structured';
 }) {
   const styles = useThemedStyles(makeStyles);
   const [availability, setAvailability] = useState<LocationExperienceAvailability | null>(null);
@@ -48,8 +59,9 @@ export function AddressLocationPicker({
   const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
   const [busy, setBusy] = useState<'device' | 'search' | 'pin' | null>(null);
   const [message, setMessage] = useState('');
+  const [resolution, setResolution] = useState<AddressResolutionState | null>(null);
   const sessionToken = useRef(newSessionToken());
-  const { isRTL } = useLocalization();
+  const { language, isRTL } = useLocalization();
 
   useEffect(() => {
     let active = true;
@@ -76,31 +88,40 @@ export function AddressLocationPicker({
     let active = true;
     const timer = setTimeout(() => {
       setBusy('search');
-      providerClients.searchAddresses(query, sessionToken.current)
-        .then(next => {
+      providerClients.searchAddresses(query, sessionToken.current, language)
+        .then(result => {
           if (active) {
-            setSuggestions(next);
-            setMessage(next.length === 0 ? copy.noSearchResults : '');
+            setSuggestions(result.suggestions);
+            setMessage(result.outcome === 'succeeded'
+              ? result.suggestions.length === 0 ? copy.noSearchResults : ''
+              : result.outcome === 'unavailable' ? copy.providerUnavailable : copy.locationFailed);
           }
         })
         .finally(() => { if (active) setBusy(null); });
     }, 350);
     return () => { active = false; clearTimeout(timer); };
-  }, [availability?.addressSearchAvailable, copy.noSearchResults, query, searchOpen]);
+  }, [availability?.addressSearchAvailable, copy.locationFailed, copy.noSearchResults,
+    copy.providerUnavailable, language, query, searchOpen]);
 
   const choosePosition = async (position: PinPosition, source: PinSource) => {
     setBusy(source === 'manual_pin' ? 'pin' : 'device');
-    setMessage('');
+    setMessage(copy.resolvingAddress);
     const place = availability?.addressSearchAvailable
-      ? await providerClients.describePin(position.latitude, position.longitude)
+      ? await providerClients.describePin(position.latitude, position.longitude, language)
       : null;
-    onChange(position, source, place?.formattedAddress ?? null);
+    const nextResolution = addressResolutionState(place, resolutionRequirement);
+    onChange(position, source, place);
+    setResolution(nextResolution);
+    setMessage(nextResolution === 'partial'
+      ? copy.locationPartial
+      : nextResolution === 'lookup_failed' ? copy.addressLookupFailed : '');
     setBusy(null);
   };
 
   const chooseDeviceLocation = async () => {
     setBusy('device');
-    setMessage('');
+    setResolution(null);
+    setMessage(copy.locating);
     const result = await requestDeviceFix();
     if (result.outcome !== 'succeeded') {
       setBusy(null);
@@ -120,17 +141,20 @@ export function AddressLocationPicker({
   const selectSuggestion = async (suggestion: PlaceSuggestion) => {
     setBusy('search');
     setMessage('');
-    const place = await providerClients.resolvePlace(suggestion.placeId, sessionToken.current);
+    const place = await providerClients.resolvePlace(suggestion.placeId, sessionToken.current, language);
     if (!place) {
       setBusy(null);
       setMessage(copy.locationFailed);
       return;
     }
+    const nextResolution = addressResolutionState(place, resolutionRequirement);
     onChange(
       { latitude: place.latitude, longitude: place.longitude },
       'address_search',
-      place.formattedAddress,
+      place,
     );
+    setResolution(nextResolution);
+    setMessage(nextResolution === 'partial' ? copy.locationPartial : '');
     setQuery(place.formattedAddress);
     setSuggestions([]);
     setSearchOpen(false);
@@ -139,14 +163,25 @@ export function AddressLocationPicker({
   };
 
   const mockPin = () => {
-    onChange({ latitude: 30.0444, longitude: 31.2357 }, 'manual_pin', 'Cairo');
+    const place: ResolvedPlace = {
+      placeId: 'mock-cairo',
+      formattedAddress: 'Cairo',
+      governorate: 'Cairo',
+      district: 'Downtown Cairo',
+      latitude: 30.0444,
+      longitude: 31.2357,
+    };
+    onChange({ latitude: place.latitude, longitude: place.longitude }, 'manual_pin', place);
+    setResolution('resolved');
+    setMessage('');
   };
 
   const controlsReady = availability !== null;
   const mapAvailable = availability?.interactiveMapAvailable ?? false;
   const searchAvailable = availability?.addressSearchAvailable ?? false;
   const deviceAvailable = availability?.deviceLocationAvailable ?? false;
-  const locationLabel = useMemo(() => value ? copy.locationSaved : null, [copy.locationSaved, value]);
+  const loadingLabel = busy === 'device' ? copy.locating
+    : busy === 'pin' ? copy.resolvingAddress : copy.loading;
 
   return (
     <View style={styles.group}>
@@ -221,8 +256,10 @@ export function AddressLocationPicker({
         />
       ) : null}
 
-      {busy === 'pin' ? <BrandLoadingState label={copy.loading} /> : null}
-      {locationLabel ? <StateBadge label={locationLabel} icon="check-circle" tone="success" /> : null}
+      {busy === 'pin' ? <BrandLoadingState label={loadingLabel} /> : null}
+      {value && resolution === 'resolved'
+        ? <StateBadge label={copy.locationSaved} icon="check-circle" tone="success" />
+        : null}
       {message ? <AppText accessibilityRole="alert" style={styles.error}>{message}</AppText> : null}
     </View>
   );

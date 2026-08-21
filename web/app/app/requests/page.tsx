@@ -16,6 +16,7 @@ import {
   type QuoteSort,
 } from '@/lib/customer';
 import { customerNav } from '@/lib/nav';
+import { intlLocale, type Locale } from '@/lib/preferences';
 import { supabase } from '@/lib/supabase';
 import { useAppLocale } from '@/lib/use-app-locale';
 import { formatMinor } from '@/src/payments/money';
@@ -150,7 +151,7 @@ function RequestDetail({
 }: {
   requestId: string;
   words: Record<string, string>;
-  locale: 'en' | 'ar';
+  locale: Locale;
   onClose: () => void;
   onChanged: () => Promise<void>;
 }) {
@@ -420,11 +421,11 @@ function RequestDetail({
   );
 }
 
-function formatDate(value: string | null, locale: 'en' | 'ar', withTime = false): string {
+function formatDate(value: string | null, locale: Locale, withTime = false): string {
   if (!value) return '—';
   const at = new Date(value);
   if (Number.isNaN(at.getTime())) return '—';
-  return new Intl.DateTimeFormat(locale === 'ar' ? 'ar-EG' : 'en-GB', {
+  return new Intl.DateTimeFormat(intlLocale(locale), {
     dateStyle: 'medium',
     ...(withTime ? { timeStyle: 'short' as const } : {}),
   }).format(at);

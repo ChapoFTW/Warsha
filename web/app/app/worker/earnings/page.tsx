@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { AppShell } from '@/components/app-shell';
 import { appCopy } from '@/lib/app-copy';
 import { workerNav } from '@/lib/nav';
+import { intlLocale, type Locale } from '@/lib/preferences';
 import { supabase } from '@/lib/supabase';
 import { useAppLocale } from '@/lib/use-app-locale';
 import {
@@ -211,4 +212,4 @@ function Balance({ label, value, strong = false }: { label: string; value: strin
 }
 function Field({ label, children }: { label: string; children: React.ReactNode }) { return <label className={styles.field}><span className={styles.label}>{label}</span>{children}</label>; }
 function majorToMinor(value: string): string | null { if (!/^\d{1,9}(?:\.\d{1,2})?$/.test(value.trim())) return null; const [major, fraction = ''] = value.trim().split('.'); return (BigInt(major) * 100n + BigInt(fraction.padEnd(2, '0'))).toString(); }
-function formatMoment(value: string, locale: 'en' | 'ar') { const date = new Date(value); return Number.isNaN(date.getTime()) ? '—' : new Intl.DateTimeFormat(locale === 'ar' ? 'ar-EG' : 'en-GB', { dateStyle: 'medium', timeStyle: 'short' }).format(date); }
+function formatMoment(value: string, locale: Locale) { const date = new Date(value); return Number.isNaN(date.getTime()) ? '—' : new Intl.DateTimeFormat(intlLocale(locale), { dateStyle: 'medium', timeStyle: 'short' }).format(date); }

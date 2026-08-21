@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { AppShell, useAccount } from '@/components/app-shell';
 import { appCopy } from '@/lib/app-copy';
 import { customerNav, workerNav } from '@/lib/nav';
+import { intlLocale, type Locale } from '@/lib/preferences';
 import {
   cursorFrom,
   NOTIFICATION_CATEGORIES,
@@ -211,9 +212,9 @@ export default function NotificationsPage() {
 }
 
 
-function relative(at: string, locale: 'en' | 'ar'): string {
+function relative(at: string, locale: Locale): string {
   const seconds = (Date.now() - new Date(at).getTime()) / 1000;
-  const format = new Intl.RelativeTimeFormat(locale === 'ar' ? 'ar-EG' : 'en-GB', {
+  const format = new Intl.RelativeTimeFormat(intlLocale(locale), {
     numeric: 'auto',
   });
   const [amount, unit]: [number, Intl.RelativeTimeFormatUnit] =

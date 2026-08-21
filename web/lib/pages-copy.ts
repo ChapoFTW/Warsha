@@ -1,7 +1,7 @@
 import type { Locale } from './preferences.ts';
 
 /**
- * The body content of the public content pages, in both languages.
+ * The body content of the public content pages, in every supported language.
  *
  * Structured rather than stored as markup so that a translation cannot quietly
  * change a page's shape — every language renders the same headings, lists and
@@ -297,6 +297,117 @@ const ar: Record<PageSlug, PageContent> = {
   },
 };
 
-export const pageContent: Record<Locale, Record<PageSlug, PageContent>> = { en, ar };
+const fr: Record<PageSlug, PageContent> = {
+  'how-it-works': {
+    title: 'Comment fonctionne Warsha',
+    lead: 'Une demande avance en quatre étapes, avec votre accord sur le prix avant le début des travaux.',
+    description: 'Décrivez le travail, recevez des devis, acceptez un prix et suivez le travail jusqu’à sa fin.',
+    blocks: [
+      { kind: 'heading', text: '1. Décrivez le travail' },
+      { kind: 'paragraph', text: 'Choisissez le métier, expliquez le besoin et indiquez le lieu. Les photos sont facultatives, mais elles aident souvent à établir un devis précis.' },
+      { kind: 'heading', text: '2. Recevez des devis' },
+      { kind: 'paragraph', text: 'Les professionnels vérifiés dont le métier et la zone correspondent peuvent répondre avec leur prix et leurs conditions.' },
+      { kind: 'heading', text: '3. Choisissez un devis' },
+      { kind: 'paragraph', text: 'Aucun professionnel n’est réservé avant votre choix. Le devis accepté devient l’accord officiel du travail.' },
+      { kind: 'heading', text: '4. Suivez le travail' },
+      { kind: 'paragraph', text: 'La réservation, les messages, les étapes et les décisions restent réunis dans Warsha.' },
+      { kind: 'heading', text: 'Si un problème survient' },
+      { kind: 'paragraph', text: 'Une réservation peut être annulée et un litige peut être signalé. Chaque litige est examiné par une personne, et une décision défavorable peut être contestée auprès d’une autre personne.' },
+      { kind: 'note', text: 'Warsha est actuellement en test fermé. La couverture dépend des professionnels qui ont terminé leur vérification ; une demande peut donc ne pas trouver de correspondant pour le moment.' },
+    ],
+  },
+  services: {
+    title: 'Trouver un professionnel',
+    lead: 'Warsha couvre les métiers de réparation et d’entretien à domicile en Égypte.',
+    description: 'Services de réparation et d’entretien à domicile proposés sur Warsha.',
+    blocks: [
+      { kind: 'card', title: 'Plomberie', text: 'Fuites, canalisations, robinets, chauffe-eau et installations sanitaires.' },
+      { kind: 'card', title: 'Électricité', text: 'Prises, éclairage, tableaux électriques et recherche de pannes.' },
+      { kind: 'card', title: 'Climatisation', text: 'Installation, entretien, nettoyage et réparation.' },
+      { kind: 'card', title: 'Menuiserie', text: 'Portes, fenêtres, placards et réparation de meubles fixes.' },
+      { kind: 'card', title: 'Peinture', text: 'Peinture intérieure ou extérieure et préparation des surfaces.' },
+      { kind: 'card', title: 'Électroménager', text: 'Diagnostic et réparation des appareils ménagers.' },
+      { kind: 'note', text: 'La disponibilité dépend des professionnels vérifiés qui couvrent votre zone. Warsha ne publie pas de chiffres ou de délais qu’elle ne peut pas garantir.' },
+    ],
+  },
+  categories: {
+    title: 'Catégories de services',
+    lead: 'Les métiers enregistrés par les professionnels et les catégories utilisées pour classer une demande.',
+    description: 'Catégories officielles de services Warsha.',
+    blocks: [
+      { kind: 'paragraph', text: 'Le professionnel enregistre ses métiers. Warsha utilise ces métiers et ses zones de service pour lui proposer les demandes pertinentes.' },
+      { kind: 'heading', text: 'Pourquoi les catégories comptent' },
+      { kind: 'list', items: ['Elles déterminent quels professionnels voient une demande.', 'Elles déterminent les vérifications nécessaires.', 'Elles restent enregistrées dans l’historique du travail.'] },
+      { kind: 'note', text: 'Les catégories sont choisies dans une liste officielle afin que les demandes et les métiers correspondent de façon fiable.' },
+    ],
+  },
+  'become-a-worker': {
+    title: 'Travailler avec Warsha',
+    lead: 'Répondez aux travaux qui vous intéressent, à votre prix. Votre dossier est examiné par une personne.',
+    description: 'Inscription, vérification et fonctionnement des opportunités pour les professionnels Warsha.',
+    blocks: [
+      { kind: 'heading', text: 'Comment commencer' },
+      { kind: 'list', items: ['Inscrivez-vous avec votre numéro de téléphone et un mot de passe, sans e-mail.', 'Indiquez vos métiers et les zones couvertes.', 'Terminez les contrôles d’identité et de métier demandés.', 'Une personne examine votre dossier et enregistre une décision motivée.'] },
+      { kind: 'heading', text: 'Comment les travaux vous parviennent' },
+      { kind: 'paragraph', text: 'Vous voyez les demandes adaptées à vos métiers et zones enregistrés. Vous choisissez celles auxquelles répondre et fixez votre propre prix.' },
+      { kind: 'heading', text: 'Ce que Warsha ne promet pas' },
+      { kind: 'list', items: ['Un volume minimum de travaux.', 'Un prix imposé par la plateforme.', 'Une approbation automatique de votre dossier.'] },
+      { kind: 'note', text: 'La candidature ouvre un processus de vérification. Elle ne vous donne pas automatiquement le statut de professionnel Warsha et son approbation n’est pas garantie.' },
+    ],
+  },
+  'trust-and-safety': {
+    title: 'Confiance et sécurité',
+    lead: 'Ce que Warsha vérifie, ce qu’elle enregistre et ce qu’elle ne prétend pas garantir.',
+    description: 'Vérification, accords enregistrés, litiges et recours sur Warsha.',
+    blocks: [
+      { kind: 'heading', text: 'Les professionnels sont vérifiés avant de travailler' },
+      { kind: 'paragraph', text: 'Une personne examine l’identité et les justificatifs de métier requis, puis enregistre sa décision et son motif.' },
+      { kind: 'heading', text: 'Les accords sont enregistrés' },
+      { kind: 'paragraph', text: 'Le devis accepté, le travail convenu et la version des accords acceptés restent dans des historiques durables.' },
+      { kind: 'heading', text: 'Les litiges sont examinés par une personne' },
+      { kind: 'paragraph', text: 'Une décision défavorable peut faire l’objet d’un recours examiné par une autre personne autorisée.' },
+      { kind: 'heading', text: 'Ce que Warsha ne prétend pas garantir' },
+      { kind: 'list', items: ['Warsha ne publie pas d’avis qu’elle n’a pas reçus.', 'Warsha ne promet pas un délai de réponse fixe.', 'Warsha ne prétend pas couvrir une zone sans professionnel vérifié.'] },
+    ],
+  },
+  about: {
+    title: 'À propos de Warsha',
+    lead: 'Warsha est une place de marché égyptienne pour les réparations et l’entretien à domicile.',
+    description: 'À propos de Warsha et de son fonctionnement.',
+    blocks: [
+      { kind: 'paragraph', text: 'Warsha aide les clients et les professionnels à définir le travail, comparer les devis et conserver une trace claire de leur accord.' },
+      { kind: 'heading', text: 'Ce que Warsha apporte' },
+      { kind: 'list', items: ['Une vérification humaine des professionnels avant leur activation.', 'Un prix accepté par écrit avant le début.', 'Le travail, les messages et l’accord au même endroit.', 'Des décisions motivées avec une possibilité de recours lorsque le produit le prévoit.'] },
+      { kind: 'heading', text: 'Où Warsha est disponible' },
+      { kind: 'paragraph', text: 'En Égypte, dans le cadre d’un test fermé. La couverture suit les professionnels vérifiés réellement disponibles.' },
+    ],
+  },
+  contact: {
+    title: 'Contacter Warsha',
+    lead: 'L’assistance fonctionne depuis votre compte afin de retrouver la demande ou le travail concerné.',
+    description: 'Comment contacter l’assistance Warsha.',
+    blocks: [
+      { kind: 'heading', text: 'Si vous avez un compte' },
+      { kind: 'paragraph', text: 'Ouvrez Assistance depuis votre compte. La demande reste associée à votre identité et au travail concerné, avec un historique consultable.' },
+      { kind: 'heading', text: 'Si vous n’avez pas de compte' },
+      { kind: 'paragraph', text: 'Le Centre d’aide répond aux questions courantes sur les comptes, les devis, les travaux et la vérification.' },
+      { kind: 'heading', text: 'Demandes relatives à vos données' },
+      { kind: 'paragraph', text: 'Consultez les options de confidentialité dans votre compte pour demander l’accès, la correction, l’export ou la suppression de vos données.' },
+    ],
+  },
+  help: {
+    title: "Centre d'aide", lead: 'Comprendre Warsha et savoir quoi faire en cas de problème.', description: 'Aide pour utiliser Warsha comme client ou professionnel.',
+    blocks: [
+      { kind: 'card', title: 'Créer un compte', text: 'Les clients utilisent une adresse e-mail confirmée et un mot de passe. Les professionnels utilisent un numéro de téléphone et un mot de passe, sans SMS.' },
+      { kind: 'card', title: 'Accepter un prix', text: 'Vous choisissez un devis avant la création du travail. Le prix accepté est enregistré.' },
+      { kind: 'card', title: 'Vérification', text: 'Les professionnels terminent les contrôles requis. Une personne examine ensuite le dossier.' },
+      { kind: 'card', title: 'Annulation', text: 'Un travail peut être annulé selon son état. Le motif et l’historique restent enregistrés.' },
+      { kind: 'card', title: 'Litiges et recours', text: 'Ouvrez un litige depuis le travail. Une décision défavorable peut faire l’objet d’un recours lorsque le produit l’autorise.' },
+      { kind: 'card', title: 'Vos données', text: 'Les options d’accès, d’export, de correction et de suppression se trouvent dans la section Confidentialité du compte.' },
+    ],
+  },
+};
+
+export const pageContent: Record<Locale, Record<PageSlug, PageContent>> = { en, ar, fr };
 
 export const PAGE_SLUGS = Object.keys(en) as PageSlug[];

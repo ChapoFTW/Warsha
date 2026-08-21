@@ -6,6 +6,7 @@ import { AppShell } from '@/components/app-shell';
 import { appCopy } from '@/lib/app-copy';
 import { isFinished, parseBookings, type Booking } from '@/lib/customer';
 import { customerNav } from '@/lib/nav';
+import { intlLocale, type Locale } from '@/lib/preferences';
 import { supabase } from '@/lib/supabase';
 import { useAppLocale } from '@/lib/use-app-locale';
 
@@ -84,7 +85,7 @@ function JobDetail({
 }: {
   booking: Booking;
   words: Record<string, string>;
-  locale: 'en' | 'ar';
+  locale: Locale;
   onClose: () => void;
   onChanged: () => Promise<void>;
 }) {
@@ -208,7 +209,7 @@ function JobList({
   empty: string;
   bookings: Booking[] | null;
   words: Record<string, string>;
-  locale: 'en' | 'ar';
+  locale: Locale;
   onOpen: (id: string) => void;
 }) {
   return (
@@ -244,17 +245,17 @@ function today(): string {
   return new Date(now.getTime() - now.getTimezoneOffset() * 60_000).toISOString().slice(0, 10);
 }
 
-function formatDay(value: string, locale: 'en' | 'ar'): string {
+function formatDay(value: string, locale: Locale): string {
   if (!value) return '—';
   const at = new Date(value);
   if (Number.isNaN(at.getTime())) return value;
-  return new Intl.DateTimeFormat(locale === 'ar' ? 'ar-EG' : 'en-GB', { dateStyle: 'medium' }).format(at);
+  return new Intl.DateTimeFormat(intlLocale(locale), { dateStyle: 'medium' }).format(at);
 }
 
-function formatMoment(value: string, locale: 'en' | 'ar'): string {
+function formatMoment(value: string, locale: Locale): string {
   const at = new Date(value);
   if (Number.isNaN(at.getTime())) return '—';
-  return new Intl.DateTimeFormat(locale === 'ar' ? 'ar-EG' : 'en-GB', {
+  return new Intl.DateTimeFormat(intlLocale(locale), {
     dateStyle: 'medium', timeStyle: 'short',
   }).format(at);
 }

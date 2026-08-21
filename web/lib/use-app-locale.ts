@@ -36,6 +36,8 @@ export function useAppLocale(): Locale {
       } catch {
         // Storage refused; fall through to the document.
       }
+      const documentLocale = document.documentElement.getAttribute('lang');
+      if (isSupportedLanguage(documentLocale)) return documentLocale;
       return document.documentElement.getAttribute('dir') === 'rtl' ? 'ar' : 'en';
     };
 

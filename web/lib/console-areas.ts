@@ -23,8 +23,10 @@ export const CONSOLE_AREAS: readonly ConsoleArea[] = [
   { key: 'dashboard', href: '/', capability: '' },
   { key: 'users', href: '/users', capability: 'safe_search' },
   { key: 'verification', href: '/verification', capability: 'review_worker_vetting' },
+  { key: 'analytics', href: '/analytics', capability: 'view_analytics' },
   { key: 'staff', href: '/staff', capability: 'manage_staff_roles' },
   { key: 'audit', href: '/audit', capability: 'view_audit_logs' },
+  { key: 'help', href: '/help', capability: '' },
 ];
 
 export function visibleAreas(session: StaffSession): readonly ConsoleArea[] {

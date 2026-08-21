@@ -208,10 +208,12 @@ check(/warsha-startup-surface/.test(authGate)
   && /--warsha-startup-canvas/.test(webDocument)
   && /--warsha-startup-mark/.test(webDocument),
   'web static first paint applies stored/system dark or light tokens before hydration');
-check(/document\.documentElement\.lang === 'ar'/.test(webDocument)
+check(/(?:document\.documentElement\.lang|language) === 'ar'/.test(webDocument)
   && /جاري تحميل ورشة/.test(webDocument)
   && /surface\.setAttribute\('dir', document\.documentElement\.dir\)/.test(webDocument),
   'Arabic web startup accessibility is localized before hydration');
+check(/language === 'fr'/.test(webDocument) && /Chargement de Warsha/.test(webDocument),
+  'French web startup accessibility is localized before hydration');
 check(!/EXPO_PUBLIC_GOOGLE_MAPS|location_provider\s*:\s*true/.test(environment),
   'signup legal work does not activate Maps or the location provider');
 

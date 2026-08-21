@@ -6,6 +6,7 @@ import {
   documentMetadataFor,
   languageFromPreferredLocales,
   resolveLanguage,
+  supportedLanguages,
 } from './language-preference';
 import { readLocalLanguage, writeLocalLanguage } from './language-storage';
 import { Language, TranslationKey, translations } from './translations';
@@ -70,7 +71,9 @@ export function LocalizationProvider({ children }: PropsWithChildren) {
     explicit,
     t: (key: TranslationKey) => translations[language][key],
     setLanguage: selectLanguage,
-    toggleLanguage: () => selectLanguage(language === 'en' ? 'ar' : 'en'),
+    toggleLanguage: () => selectLanguage(
+      supportedLanguages[(supportedLanguages.indexOf(language) + 1) % supportedLanguages.length],
+    ),
   }), [explicit, language, selectLanguage]);
 
   return <LocalizationContext.Provider value={value}>{children}</LocalizationContext.Provider>;

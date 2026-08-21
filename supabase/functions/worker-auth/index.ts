@@ -100,7 +100,7 @@ Deno.serve(async (request) => {
 
   if (body.action === 'register') {
     const fullName = typeof body.fullName === 'string' ? body.fullName.trim() : '';
-    const language = body.language === 'ar' ? 'ar' : 'en';
+    const language = body.language === 'ar' || body.language === 'fr' ? body.language : 'en';
     const legalAcceptances = legalAcceptanceManifest(body.legalAcceptances);
     if (fullName.length < 2 || fullName.length > 120) {
       return json({ code: 'invalid_request' }, 400);

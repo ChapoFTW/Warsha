@@ -1,5 +1,5 @@
 /**
- * WPS-019 copy tables, in full English and full Egyptian Arabic.
+ * WPS-019 copy tables, in full English, Egyptian Arabic, and French.
  *
  * This module is deliberately free of imports so the regression suite can load
  * it directly under Node, which does not resolve the '@/' alias. The React hook
@@ -210,6 +210,63 @@ export const supportCopy = {
     staffNoteHint: 'الملاحظات الداخلية عمرها ما بتظهر للعميل.',
     staffSla: 'أهداف الرد',
     staffMockUnavailable: 'إجراءات الدعم للفريق محتاجة جلسة Supabase حقيقية.',
+  },
+  fr: {
+    helpCenter: 'Centre d’aide',
+    helpCenterIntro: 'Trouvez une réponse ou contactez-nous.',
+    searchPlaceholder: 'Rechercher dans l’aide',
+    searchAction: 'Rechercher dans les articles d’aide',
+    clearSearch: 'Effacer la recherche',
+    recentSearches: 'Recherches récentes',
+    popularSearches: 'Recherches fréquentes',
+    suggestedForYou: 'Suggestions pour vous',
+    popularArticles: 'Articles les plus consultés',
+    browseCategories: 'Parcourir par sujet',
+    articleCount: 'articles',
+    noResults: 'Aucun article ne correspond à cette recherche.',
+    noResultsBody: 'Essayez un autre mot ou contactez l’assistance pour obtenir une réponse.',
+    approximateMatch: 'Résultat le plus proche',
+    queryTooShort: 'Saisissez au moins deux caractères.',
+    wasThisHelpful: 'Cet article vous a-t-il aidé ?',
+    yes: 'Oui', no: 'Non',
+    thanksForFeedback: 'Merci — votre avis nous aide à améliorer nos articles.',
+    relatedArticles: 'Articles associés',
+    backToHelp: 'Retour au Centre d’aide',
+
+    contactSupport: 'Contacter l’assistance',
+    contactSupportBody: 'Si les articles ne répondent pas à votre question, ouvrez une demande. Une personne vous répondra.',
+    myCases: 'Mes demandes d’assistance',
+    noCases: 'Vous n’avez pas encore contacté l’assistance.',
+    noCasesBody: 'Vos demandes et toutes les réponses apparaîtront ici.',
+    newCase: 'Nouvelle demande d’assistance',
+    subject: 'Quel est le sujet ?', subjectPlaceholder: 'Un résumé court',
+    describe: 'Expliquez-nous ce qui s’est passé',
+    describePlaceholder: 'Plus vous donnez de détails utiles, plus nous pouvons vous aider rapidement.',
+    category: 'Sujet', submit: 'Envoyer à l’assistance', submitting: 'Envoi…',
+    caseOpened: 'Votre demande est ouverte. Nous vous répondrons ici.',
+
+    reply: 'Répondre', replyPlaceholder: 'Ajouter une réponse', sendReply: 'Envoyer la réponse',
+    caseClosed: 'Cette demande est fermée. Ouvrez-en une nouvelle si vous avez encore besoin d’aide.',
+    reopen: 'Rouvrir cette demande', reopenReason: 'Quel problème reste à résoudre ?',
+    reopenWindowPassed: 'Le délai de réouverture est dépassé. Ouvrez une nouvelle demande en mentionnant celle-ci.',
+    reopenLimit: 'Cette demande ne peut plus être rouverte.',
+    attach: 'Ajouter une photo ou un PDF', attachments: 'Pièces jointes',
+    attachmentLimit: 'Vous avez atteint le nombre maximal de fichiers.',
+    attachmentTooLarge: 'Ce fichier dépasse 8 Mo.',
+    attachmentWrongType: 'Seuls les fichiers JPEG, PNG, HEIC et PDF sont acceptés.',
+    attachmentDuplicate: 'Ce fichier est déjà joint.',
+    attachmentFailed: 'Le fichier n’a pas été entièrement envoyé. Réessayez.',
+    retryUpload: 'Réessayer l’envoi',
+
+    survey: 'Comment s’est passée notre assistance ?',
+    surveyBody: 'Votre réponse reste privée et nous aide à améliorer les délais.',
+    surveyComment: 'Souhaitez-vous ajouter quelque chose ?', surveySubmit: 'Envoyer l’évaluation', surveyThanks: 'Merci pour votre avis.',
+
+    status_open: 'Ouverte', status_in_progress: 'En cours', status_waiting_participant: 'En attente de votre réponse', status_escalated: 'Transmise', status_resolved: 'Résolue', status_closed: 'Fermée',
+    category_account_access: 'Connexion au compte', category_booking_help: 'Un travail', category_worker_onboarding: 'Devenir professionnel', category_verification_help: 'Vérification', category_payment_question: 'Un paiement', category_withdrawal_question: 'Retrait des revenus', category_technical_issue: 'Problème technique', category_app_feedback: 'Avis sur l’application', category_other: 'Autre sujet',
+    loading: 'Chargement', loadError: 'Impossible de charger ces informations.', retry: 'Réessayer', close: 'Fermer', notFound: 'Cet élément n’est pas disponible.',
+
+    staffQueue: 'File d’assistance', staffOpen: 'Ouvertes', staffInProgress: 'En cours', staffWaiting: 'En attente', staffEscalated: 'Transmises', staffMine: 'Mes demandes', staffBreached: 'Premier délai de réponse dépassé', staffAssign: 'Me l’attribuer', staffResolve: 'Résoudre', staffMacros: 'Modèles de réponse', staffResolutionReason: 'Motif de résolution', staffNote: 'Note interne', staffNoteHint: 'Les notes internes ne sont jamais affichées au client.', staffSla: 'Objectifs de réponse', staffMockUnavailable: 'Les actions du personnel exigent une véritable session Supabase.',
   },
 } as const;
 

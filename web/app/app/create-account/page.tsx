@@ -60,6 +60,7 @@ export default function CreateAccountPage() {
   const [done, setDone] = useState<'confirm' | 'ready' | null>(null);
 
   const documents = signupLegalDocuments('customer');
+  const legalLocale = locale === 'ar' ? 'ar' : 'en';
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -73,7 +74,7 @@ export default function CreateAccountPage() {
     const result = await signUpCustomer({
       name, email, phone, password,
       language: locale,
-      acceptances: signupLegalManifest('customer', locale),
+      acceptances: signupLegalManifest('customer', legalLocale),
     });
     if (!result.ok) {
       setFailure(result.failure);
@@ -190,7 +191,7 @@ export default function CreateAccountPage() {
                     target="_blank"
                     rel="noreferrer"
                   >
-                    {document[locale].title}
+                    {document[legalLocale].title}
                   </a>
                   <span className={styles.version}> ({document.version})</span>
                 </span>

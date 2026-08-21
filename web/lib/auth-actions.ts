@@ -2,6 +2,7 @@
 
 import { classifySignInIdentity } from '@/src/auth/auth-identifier';
 import { passwordMeetsPolicy } from '@/src/auth/password-policy';
+import type { SupportedLanguage } from '@/src/i18n/language-preference';
 
 import {
   classifySignUpError,
@@ -232,14 +233,15 @@ export async function signUpCustomer(input: {
   email: string;
   password: string;
   phone: string;
-  language: 'en' | 'ar';
+  language: SupportedLanguage;
   acceptances: readonly SignupLegalAcceptance[];
 }): Promise<SignUpResult> {
   if (!nameAcceptable(input.name)) return { ok: false, failure: 'invalid_name' };
   if (!emailAcceptable(input.email)) return { ok: false, failure: 'invalid_email' };
   if (!phoneAcceptable(input.phone)) return { ok: false, failure: 'invalid_phone' };
   if (!passwordAcceptable(input.password)) return { ok: false, failure: 'weak_password' };
-  if (!isCurrentSignupLegalManifest('customer', input.language, input.acceptances)) {
+  const legalLanguage = input.language === 'ar' ? 'ar' : 'en';
+  if (!isCurrentSignupLegalManifest('customer', legalLanguage, input.acceptances)) {
     return { ok: false, failure: 'legal_out_of_date' };
   }
 

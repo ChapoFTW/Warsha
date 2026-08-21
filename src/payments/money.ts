@@ -1,4 +1,5 @@
 import type { CurrencyCode, MinorAmount } from './payment-types';
+import type { SupportedLanguage } from '../i18n/language-preference';
 
 const MAX_MINOR = 1_000_000_000n;
 const arabicDigits = ['\u0660', '\u0661', '\u0662', '\u0663', '\u0664', '\u0665', '\u0666', '\u0667', '\u0668', '\u0669'];
@@ -44,7 +45,7 @@ export function egpDecimalToMinor(value: string): MinorAmount {
   return minor(BigInt(whole) * 100n + BigInt(fraction.padEnd(2, '0')));
 }
 
-function localizeDigits(value: string, language: 'en' | 'ar') {
+function localizeDigits(value: string, language: SupportedLanguage) {
   return language === 'ar'
     ? value.replace(/\d/g, digit => arabicDigits[Number(digit)])
     : value;
@@ -52,7 +53,7 @@ function localizeDigits(value: string, language: 'en' | 'ar') {
 
 export function formatMinor(
   amount: MinorAmount,
-  language: 'en' | 'ar',
+  language: SupportedLanguage,
   currency: CurrencyCode = 'EGP',
 ) {
   const value = minorValue(amount);
@@ -61,12 +62,12 @@ export function formatMinor(
   // Hermes does not consistently accept BigInt in Intl.NumberFormat. Keep
   // authoritative arithmetic in BigInt and format its decimal string here.
   const grouped = localizeDigits(
-    whole.replace(/\B(?=(\d{3})+(?!\d))/g, language === 'ar' ? '\u066C' : ','),
+    whole.replace(/\B(?=(\d{3})+(?!\d))/g, language === 'ar' ? '\u066C' : language === 'fr' ? '\u202F' : ','),
     language,
   );
   const number = value % 100n === 0n
     ? grouped
-    : `${grouped}${language === 'ar' ? '\u066B' : '.'}${localizeDigits(fraction, language)}`;
+    : `${grouped}${language === 'ar' ? '\u066B' : language === 'fr' ? ',' : '.'}${localizeDigits(fraction, language)}`;
   const label = currency === 'EGP' ? (language === 'ar' ? '\u062C.\u0645' : 'EGP') : currency;
-  return language === 'ar' ? `${number} ${label}` : `${label} ${number}`;
+  return language === 'ar' || language === 'fr' ? `${number} ${label}` : `${label} ${number}`;
 }

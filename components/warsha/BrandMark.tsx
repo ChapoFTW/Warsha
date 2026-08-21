@@ -115,7 +115,7 @@ export function BrandLockup({
         layout === 'horizontal' && isArabic && styles.horizontalRTL,
       ]}>
       <BrandMark size={size} variant={variant} accessibilityLabel="" />
-      <BrandWordmark size={size} variant={variant} language={resolvedLanguage} />
+      <BrandWordmark size={size} variant={variant} language={resolvedLanguage === 'ar' ? 'ar' : 'en'} />
     </View>
   );
 }

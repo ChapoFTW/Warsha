@@ -19,7 +19,7 @@ export async function generateMetadata(
     description: copy[locale].signInOneAccountBody,
     alternates: {
       canonical: localeHref(locale, '/sign-in'),
-      languages: { en: '/en/sign-in', ar: '/ar/sign-in' },
+      languages: { en: '/en/sign-in', ar: '/ar/sign-in', fr: '/fr/sign-in' },
     },
     robots: { index: false, follow: true },
   };

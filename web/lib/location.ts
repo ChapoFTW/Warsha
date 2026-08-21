@@ -1,6 +1,15 @@
 'use client';
 
 import { supabase } from '@/lib/supabase';
+import {
+  classifyBrowserLocationError,
+  parsePlaceSuggestions,
+  parseResolvedPlace,
+  type AddressSearchOutcome,
+  type LocationLanguage,
+  type PlaceSuggestion,
+  type ResolvedPlace,
+} from '@/src/providers/location-address';
 
 export type LocationCapability = {
   mapsAvailable: boolean;
@@ -9,13 +18,7 @@ export type LocationCapability = {
   pinRequiredBeforeBooking: boolean;
 };
 
-export type PlaceSuggestion = { placeId: string; primary: string; secondary: string };
-export type ResolvedPlace = {
-  placeId: string;
-  formattedAddress: string;
-  latitude: number;
-  longitude: number;
-};
+export type { PlaceSuggestion, ResolvedPlace } from '@/src/providers/location-address';
 
 const UNAVAILABLE: LocationCapability = {
   mapsAvailable: false,
@@ -25,12 +28,23 @@ const UNAVAILABLE: LocationCapability = {
 };
 
 export async function getLocationCapability(): Promise<LocationCapability> {
-  const { data, error } = await supabase().rpc('get_location_capability');
+  const client = supabase();
+  const [{ data, error }, descriptorResult] = await Promise.all([
+    client.rpc('get_location_capability'),
+    client.functions.invoke('location-proxy', { body: { operation: 'render_descriptor' } }),
+  ]);
   if (error || !data || typeof data !== 'object') return UNAVAILABLE;
   const value = data as Partial<LocationCapability>;
+  const descriptor = descriptorResult.data as {
+    available?: boolean;
+    descriptor?: { serverCredentialAvailable?: boolean };
+  } | null;
+  const serverCredentialAvailable = !descriptorResult.error
+    && descriptor?.available === true
+    && descriptor.descriptor?.serverCredentialAvailable === true;
   return {
     mapsAvailable: value.mapsAvailable === true,
-    searchAvailable: value.searchAvailable === true,
+    searchAvailable: value.searchAvailable === true && serverCredentialAvailable,
     manualPinAlwaysAvailable: true,
     pinRequiredBeforeBooking: true,
   };
@@ -45,65 +59,49 @@ export function newPlaceSessionToken(): string {
 export async function searchAddresses(
   input: string,
   sessionToken: string,
-): Promise<PlaceSuggestion[]> {
-  if (input.trim().length < 3) return [];
+  language: LocationLanguage,
+): Promise<AddressSearchOutcome> {
+  if (input.trim().length < 3) return { outcome: 'succeeded', suggestions: [] };
   const { data, error } = await supabase().functions.invoke('location-proxy', {
-    body: { operation: 'autocomplete', input: input.trim(), sessionToken },
+    body: { operation: 'autocomplete', input: input.trim(), sessionToken, language },
   });
-  if (error || data?.available !== true || !Array.isArray(data.suggestions)) return [];
-  return data.suggestions.filter((entry: unknown): entry is PlaceSuggestion => {
-    if (!entry || typeof entry !== 'object') return false;
-    const value = entry as Partial<PlaceSuggestion>;
-    return typeof value.placeId === 'string'
-      && typeof value.primary === 'string'
-      && typeof value.secondary === 'string';
-  });
+  if (error) return { outcome: 'failed', suggestions: [] };
+  if (data?.available !== true) return { outcome: 'unavailable', suggestions: [] };
+  return { outcome: 'succeeded', suggestions: parsePlaceSuggestions(data.suggestions) };
 }
 
 export async function resolvePlace(
   placeId: string,
   sessionToken: string,
+  language: LocationLanguage,
 ): Promise<ResolvedPlace | null> {
   const { data, error } = await supabase().functions.invoke('location-proxy', {
-    body: { operation: 'place_details', placeId, sessionToken },
+    body: { operation: 'place_details', placeId, sessionToken, language },
   });
-  return error ? null : parsePlace(data?.place);
+  return error ? null : parseResolvedPlace(data?.place);
 }
 
 export async function describeCoordinates(
   latitude: number,
   longitude: number,
+  language: LocationLanguage,
 ): Promise<ResolvedPlace | null> {
   const { data, error } = await supabase().functions.invoke('location-proxy', {
-    body: { operation: 'reverse_geocode', latitude, longitude },
+    body: { operation: 'reverse_geocode', latitude, longitude, language },
   });
-  return error ? null : parsePlace(data?.place);
+  return error ? null : parseResolvedPlace(data?.place);
 }
 
 export function currentBrowserLocation(): Promise<{ latitude: number; longitude: number }> {
   return new Promise((resolve, reject) => {
     if (!globalThis.navigator?.geolocation) {
-      reject(new Error('geolocation_unavailable'));
+      reject(new Error('unsupported'));
       return;
     }
     globalThis.navigator.geolocation.getCurrentPosition(
       ({ coords }) => resolve({ latitude: coords.latitude, longitude: coords.longitude }),
-      (error) => reject(error),
+      (error) => reject(new Error(classifyBrowserLocationError(error))),
       { enableHighAccuracy: false, timeout: 15_000, maximumAge: 60_000 },
     );
   });
-}
-
-function parsePlace(value: unknown): ResolvedPlace | null {
-  if (!value || typeof value !== 'object') return null;
-  const place = value as Partial<ResolvedPlace>;
-  if (typeof place.formattedAddress !== 'string'
-      || typeof place.latitude !== 'number'
-      || typeof place.longitude !== 'number') return null;
-  return {
-    placeId: typeof place.placeId === 'string' ? place.placeId : '',
-    formattedAddress: place.formattedAddress,
-    latitude: place.latitude,
-    longitude: place.longitude,
-  };
 }

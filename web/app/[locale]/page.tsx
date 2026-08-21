@@ -30,6 +30,7 @@ export default async function HomePage({
   if (!isLocale(locale)) notFound();
   const typed: Locale = locale;
   const words = copy[typed];
+  const legalLocale = typed === 'ar' ? 'ar' : 'en';
   const publicLegal = documentsForRole(null);
 
   const steps = [
@@ -136,7 +137,7 @@ export default async function HomePage({
                 href={localeHref(typed, `/legal/${document.key.replace(/_/g, '-')}`)}
                 className={styles.legalCard}
               >
-                <span className={styles.legalTitle}>{document[typed].title}</span>
+                <span className={styles.legalTitle}>{document[legalLocale].title}</span>
                 <span className={styles.legalMeta}>
                   {words.legalVersion} {document.version}
                 </span>

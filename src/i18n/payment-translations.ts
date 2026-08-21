@@ -1,4 +1,6 @@
 import { useLocalization } from './localization';
+import type { SupportedLanguage } from './language-preference';
+import type { WithdrawalStatus } from '../payments/payment-types';
 
 const paymentTranslations = {
   en: {
@@ -195,7 +197,22 @@ const paymentTranslations = {
 
 export type PaymentCopyKey = keyof typeof paymentTranslations.en;
 
+const frenchPaymentTranslations: Record<PaymentCopyKey, string> = {
+  payment: 'Paiement', payNow: 'Payer maintenant', payCash: 'Payer en espèces', onlinePayment: 'Paiement en ligne', paymentPending: 'Paiement en attente', paymentSuccessful: 'Paiement confirmé', paymentFailed: 'Le paiement n’a pas abouti. Réessayez.', paymentNotStarted: 'Choisissez votre mode de paiement.', paymentUnavailable: 'Le paiement en ligne n’est pas encore configuré.', tryAgain: 'Réessayer', receipt: 'Reçu', priceBreakdown: 'Détail du prix', serviceCost: 'Prix du service', calloutFee: 'Frais de déplacement', emergencyFee: 'Supplément d’urgence', discount: 'Réduction', promotion: 'Promotion financée par Warsha', tax: 'Taxe', total: 'Total', approvedJobPrice: 'Prix du travail approuvé', amountPaid: 'Montant payé', refundAmount: 'Montant remboursé', reference: 'Référence', paymentMethod: 'Mode de paiement', cash: 'Espèces', online: 'En ligne', refund: 'Remboursement', refundPending: 'Remboursement en cours', earnings: 'Revenus', availableWithdraw: 'Disponible au retrait', pending: 'En attente', paidOut: 'Versé', withdraw: 'Retirer', recentTransactions: 'Opérations récentes', noTransactions: 'Aucun revenu pour le moment.', warshaFee: 'Frais Warsha', heldIssue: 'Retenu pendant l’examen d’un problème', payoutDestination: 'Où envoyer le versement ?', mobileWallet: 'Portefeuille mobile', bankAccount: 'Compte bancaire', instapayPrep: 'Préparation InstaPay', manualPayout: 'Versement manuel', destinationLabel: 'Nom de la destination', destinationValue: 'Téléphone ou référence du compte', ownershipConfirm: 'Je confirme que cette destination de versement m’appartient.', saveDestination: 'Enregistrer la destination', amountToWithdraw: 'Montant à retirer (EGP)', withdrawalRequested: 'Retrait demandé', withdrawalRequestedBody: 'Cette page sera mise à jour lorsque le statut changera.', withdrawalHistory: 'Historique des retraits', contactSupport: 'Contacter l’assistance', mockControls: 'Simulation de paiement en développement', mockOnlineNotice: 'Développement uniquement : ce paiement par carte est simulé localement. Aucun paiement réel ne sera effectué.', mockPayoutNotice: 'Développement uniquement : les retraits sont simulés et ne sont envoyés à aucune banque ni aucun portefeuille.', simulatePending: 'Simuler l’attente', simulateSuccess: 'Simuler la réussite', simulateFailure: 'Simuler l’échec', simulateAvailable: 'Rendre les revenus disponibles', simulateWithdrawalPaid: 'Terminer le retrait', simulateWithdrawalFailed: 'Faire échouer le retrait', simulateRefund: 'Simuler le remboursement', simulateHold: 'Retenir les revenus', simulateReleaseHold: 'Libérer les revenus', hostedCheckoutNotice: 'Warsha ne collecte aucune donnée de carte.', cashNotice: 'Les espèces sont versées directement au professionnel ; Warsha ne les encaisse pas.', confirmCompletion: 'Confirmer que le travail est terminé', completionConfirmed: 'Fin du travail confirmée. Les revenus admissibles ont été libérés.', reportCashCollected: 'J’ai reçu les espèces', cashReported: 'En attente de la confirmation du paiement en espèces par le client.', confirmCashPaid: 'Oui, j’ai payé en espèces', denyCashPaid: 'Non, je n’ai pas payé', configuredLater: 'Cette option sera disponible après la configuration d’un prestataire de paiement agréé.', invalidAmount: 'Saisissez un montant compris dans vos revenus disponibles.', priceChange: 'Modification du prix', proposePrice: 'Proposer un nouveau total', newTotal: 'Nouveau total (EGP)', changeReason: 'Raison de la modification', sendPriceChange: 'Envoyer au client', oldTotal: 'Total actuel', difference: 'Différence', acceptPriceChange: 'Accepter le nouveau total', rejectPriceChange: 'Conserver le total actuel', waitingPriceApproval: 'En attente de l’approbation du nouveau total par le client.', loading: 'Chargement des informations de paiement…', withdrawalUnavailable: 'Les retraits réels ne sont pas encore activés.', minimumWithdrawal: 'Retrait minimum', zeroWithdrawalFee: 'Aucuns frais de retrait', cashCommissionDue: 'Commission due sur les travaux payés en espèces', cashRestricted: 'Les nouveaux paiements en espèces sont temporairement indisponibles jusqu’à la réduction de la commission due. Les travaux payés en ligne restent disponibles.', recoverableAdjustment: 'Ajustements financiers récupérables', debtOffset: 'Affecté aux ajustements financiers', releaseEligible: 'Libérable après', schedulerNotActive: 'La libération automatique différée n’est pas encore active.',
+};
+
+const withdrawalStatuses: Record<SupportedLanguage, Record<WithdrawalStatus, string>> = {
+  en: { requested: 'Requested', under_review: 'Under review', processing: 'Processing', paid: 'Paid', failed: 'Failed', cancelled: 'Cancelled', reversed: 'Reversed' },
+  ar: { requested: 'تم الطلب', under_review: 'قيد المراجعة', processing: 'قيد التنفيذ', paid: 'تم الصرف', failed: 'تعذر الصرف', cancelled: 'ملغي', reversed: 'تم عكس العملية' },
+  fr: { requested: 'Demandé', under_review: 'En cours d’examen', processing: 'En cours', paid: 'Versé', failed: 'Échec', cancelled: 'Annulé', reversed: 'Annulé et recrédité' },
+};
+
+export function withdrawalStatusText(language: SupportedLanguage, status: WithdrawalStatus) {
+  return withdrawalStatuses[language][status];
+}
+
 export function usePaymentText() {
   const { language } = useLocalization();
-  return (key: PaymentCopyKey) => paymentTranslations[language][key];
+  const localized = language === 'fr' ? frenchPaymentTranslations : paymentTranslations[language];
+  return (key: PaymentCopyKey) => localized[key];
 }

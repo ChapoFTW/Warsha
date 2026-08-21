@@ -100,12 +100,14 @@ check(authCopy.includes('ما تقدرش تتأكد من الإرسال أو ا�
   'Arabic status copy is explicit about evidence');
 const webPendingCopy = [...webAppCopy.matchAll(/signUpCheckEmailBody: '([^']+)'/g)]
   .map(match => match[1]);
-check(webPendingCopy.length === 2, 'web confirmation-pending copy exists in both languages');
+check(webPendingCopy.length === 3, 'web confirmation-pending copy exists in every supported language');
 check(webPendingCopy.every(copy => !/we sent|sent you|بعتنا|بعتنالك/i.test(copy)),
   'web never turns a no-session signup response into an email-sent claim');
 check(webPendingCopy.some(copy => copy.includes('cannot verify sending or delivery'))
   && webPendingCopy.some(copy => copy.includes('ما تقدرش تتأكد من الإرسال أو الوصول')),
   'web explains the same evidence boundary in English and Arabic');
+check(webPendingCopy.some(copy => copy.includes('ne peut vérifier ni son envoi ni sa réception')),
+  'French web copy explains the same email-delivery evidence boundary');
 check(translations.includes('authEmailDeliveryRestricted')
   && translations.includes('authEmailDeliveryFailed')
   && translations.includes('authSignupUnavailable'),

@@ -6,6 +6,13 @@
  * taken out of flow.
  */
 
+.languageGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex-wrap: wrap;
+}
+
 .language {
   display: inline-flex;
   align-items: center;
@@ -20,6 +27,12 @@
   font-weight: 650;
   white-space: nowrap;
   flex-shrink: 0;
+}
+
+.language[aria-current='page'],
+.language[aria-pressed='true'] {
+  background: var(--brand);
+  color: var(--brand-ink);
 }
 
 .language:hover {

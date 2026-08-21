@@ -137,7 +137,7 @@ function Field({ label, ...props }: { label: string } & React.ComponentProps<typ
   const colors = useThemeColors();
   const styles = useThemedStyles(makeStyles);
   const { isRTL } = useLocalization();
-  return <TextInput {...props} accessibilityLabel={label} placeholder={label} placeholderTextColor={colors.textMuted} style={[styles.input, props.multiline && styles.multiline, { textAlign: isRTL ? 'right' : 'left' }]} />;
+  return <View><AppText style={styles.strong}>{label}</AppText><TextInput {...props} accessibilityLabel={label} placeholder={label} placeholderTextColor={colors.textMuted} style={[styles.input, props.multiline && styles.multiline, { textAlign: isRTL ? 'right' : 'left' }]} /></View>;
 }
 
 function IconButton({ label, icon, disabled = false, onPress }: { label: string; icon: React.ComponentProps<typeof MaterialIcons>['name']; disabled?: boolean; onPress: () => void }) {

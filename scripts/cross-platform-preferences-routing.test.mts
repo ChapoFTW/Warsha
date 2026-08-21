@@ -50,15 +50,18 @@ check(/if \(auth\.user\) await auth\.signOut\(\)/.test(createAccount), 'role sel
 // Language precedence and fallback.
 equal(languageFromPreferredLocales([{ languageCode: 'ar', languageTag: 'ar-EG' }]), 'ar', 'Arabic device locale selects Arabic');
 equal(languageFromPreferredLocales([{ languageCode: 'en', languageTag: 'en-US' }]), 'en', 'English device locale selects English');
-equal(languageFromPreferredLocales([{ languageCode: 'fr', languageTag: 'fr-FR' }]), 'en', 'unsupported locale falls back to English');
+equal(languageFromPreferredLocales([{ languageCode: 'fr', languageTag: 'fr-FR' }]), 'fr', 'French device locale selects French');
+equal(languageFromPreferredLocales([{ languageCode: 'de', languageTag: 'de-DE' }]), 'en', 'an unsupported locale falls back to English');
 equal(resolveLanguage({ savedLanguage: 'ar', savedExplicitly: true, preferredLocales: ['en-US'] }).language, 'ar', 'explicit Arabic overrides English platform locale');
 equal(resolveLanguage({ savedLanguage: 'en', savedExplicitly: true, preferredLocales: ['ar-EG'] }).language, 'en', 'explicit English overrides Arabic platform locale');
+equal(resolveLanguage({ savedLanguage: 'fr', savedExplicitly: true, preferredLocales: ['ar-EG'] }).language, 'fr', 'explicit French overrides Arabic platform locale');
 equal(resolveLanguage({ savedLanguage: 'ar', savedExplicitly: false, preferredLocales: ['en-US'] }).language, 'en', 'a non-explicit cached value cannot override the platform');
 equal(documentMetadataFor('ar').direction, 'rtl', 'Arabic web metadata is RTL');
 equal(documentMetadataFor('en').manifest, '/manifest.webmanifest', 'English uses the default web manifest');
+equal(documentMetadataFor('fr').direction, 'ltr', 'French web metadata is LTR');
 
 // Appearance matrix and preference precedence.
-for (const language of ['en', 'ar'] as const) {
+for (const language of ['en', 'ar', 'fr'] as const) {
   for (const preference of ['system', 'light', 'dark'] as const) {
     const expected = preference === 'system' ? 'light' : preference;
     equal(resolveAppearance(preference, 'light'), expected, `${language} × ${preference} resolves against a light system`);

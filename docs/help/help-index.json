@@ -1,0 +1,1612 @@
+{
+  "schemaVersion": 1,
+  "generatedFrom": [
+    "docs/help/articles.json",
+    "docs/help/articles.fr.json"
+  ],
+  "locales": [
+    "en",
+    "ar",
+    "fr"
+  ],
+  "articleIds": [
+    "admin-audit-analytics",
+    "admin-getting-started",
+    "admin-recovery",
+    "admin-staff-security",
+    "admin-users-roles",
+    "admin-verification-enforcement",
+    "customer-account-security",
+    "customer-addresses-location",
+    "customer-getting-started",
+    "customer-requests-quotes-jobs",
+    "customer-support-faq",
+    "warsha-glossary",
+    "worker-earnings-profile",
+    "worker-getting-started",
+    "worker-onboarding-verification",
+    "worker-opportunities-jobs"
+  ],
+  "features": {
+    "auth": [
+      "customer-account-security",
+      "customer-getting-started"
+    ],
+    "onboarding": [
+      "customer-getting-started"
+    ],
+    "discovery": [
+      "customer-getting-started"
+    ],
+    "marketplace": [
+      "customer-getting-started",
+      "customer-requests-quotes-jobs",
+      "worker-opportunities-jobs"
+    ],
+    "bookings": [
+      "customer-getting-started",
+      "customer-requests-quotes-jobs",
+      "worker-opportunities-jobs"
+    ],
+    "addresses": [
+      "customer-addresses-location"
+    ],
+    "location": [
+      "customer-addresses-location",
+      "worker-onboarding-verification"
+    ],
+    "quotes": [
+      "customer-requests-quotes-jobs",
+      "worker-opportunities-jobs"
+    ],
+    "payments": [
+      "customer-requests-quotes-jobs",
+      "worker-earnings-profile"
+    ],
+    "disputes": [
+      "customer-requests-quotes-jobs"
+    ],
+    "password_recovery": [
+      "customer-account-security"
+    ],
+    "preferences": [
+      "customer-account-security"
+    ],
+    "privacy": [
+      "admin-recovery",
+      "customer-account-security"
+    ],
+    "legal": [
+      "customer-account-security",
+      "worker-onboarding-verification"
+    ],
+    "notifications": [
+      "customer-support-faq"
+    ],
+    "support": [
+      "customer-support-faq",
+      "worker-earnings-profile"
+    ],
+    "worker_auth": [
+      "worker-getting-started"
+    ],
+    "worker_onboarding": [
+      "worker-getting-started",
+      "worker-onboarding-verification"
+    ],
+    "worker_vetting": [
+      "admin-verification-enforcement",
+      "worker-getting-started"
+    ],
+    "verification": [
+      "worker-onboarding-verification"
+    ],
+    "job_operations": [
+      "worker-opportunities-jobs"
+    ],
+    "earnings": [
+      "worker-earnings-profile"
+    ],
+    "worker_profile": [
+      "worker-earnings-profile"
+    ],
+    "admin": [
+      "admin-getting-started"
+    ],
+    "staff_auth": [
+      "admin-getting-started"
+    ],
+    "governance": [
+      "admin-getting-started"
+    ],
+    "admin_search": [
+      "admin-users-roles"
+    ],
+    "product_roles": [
+      "admin-users-roles"
+    ],
+    "account_recovery": [
+      "admin-recovery",
+      "admin-users-roles"
+    ],
+    "trust": [
+      "admin-verification-enforcement"
+    ],
+    "enforcement": [
+      "admin-verification-enforcement"
+    ],
+    "appeals": [
+      "admin-verification-enforcement"
+    ],
+    "staff_roles": [
+      "admin-staff-security"
+    ],
+    "reauth": [
+      "admin-staff-security"
+    ],
+    "dual_control": [
+      "admin-staff-security"
+    ],
+    "audit": [
+      "admin-audit-analytics",
+      "admin-staff-security"
+    ],
+    "analytics": [
+      "admin-audit-analytics"
+    ],
+    "exports": [
+      "admin-audit-analytics"
+    ],
+    "incidents": [
+      "admin-recovery"
+    ],
+    "provider_governance": [
+      "admin-recovery"
+    ],
+    "glossary": [
+      "warsha-glossary"
+    ]
+  },
+  "articles": [
+    {
+      "id": "customer-getting-started",
+      "audience": "customer",
+      "locale": "en",
+      "title": "Getting started as a customer",
+      "summary": "Create an account, add an address, request work, compare quotes, and follow the job.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "auth",
+        "onboarding",
+        "discovery",
+        "marketplace",
+        "bookings"
+      ],
+      "routes": [
+        "/create-account",
+        "/addresses",
+        "/discover",
+        "/requests",
+        "/jobs"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "start",
+        "signup",
+        "book",
+        "service",
+        "quote"
+      ]
+    },
+    {
+      "id": "customer-getting-started",
+      "audience": "customer",
+      "locale": "ar",
+      "title": "ابدأ كعميل",
+      "summary": "اعمل حساب، ضيف عنوان، اطلب خدمة، قارن العروض، وتابع الشغل.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "auth",
+        "onboarding",
+        "discovery",
+        "marketplace",
+        "bookings"
+      ],
+      "routes": [
+        "/create-account",
+        "/addresses",
+        "/discover",
+        "/requests",
+        "/jobs"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "ابدأ",
+        "حساب",
+        "حجز",
+        "خدمة",
+        "عرض"
+      ]
+    },
+    {
+      "id": "customer-addresses-location",
+      "audience": "customer",
+      "locale": "en",
+      "title": "Addresses and location",
+      "summary": "Save a clear service address without losing the exact map pin.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "addresses",
+        "location"
+      ],
+      "routes": [
+        "/addresses",
+        "/onboarding/address"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "address",
+        "map",
+        "pin",
+        "location",
+        "permission",
+        "home",
+        "work"
+      ]
+    },
+    {
+      "id": "customer-addresses-location",
+      "audience": "customer",
+      "locale": "ar",
+      "title": "العناوين والموقع",
+      "summary": "احفظ عنوان خدمة واضح من غير ما تفقد مكان الدبوس الدقيق.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "addresses",
+        "location"
+      ],
+      "routes": [
+        "/addresses",
+        "/onboarding/address"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "عنوان",
+        "خريطة",
+        "دبوس",
+        "موقع",
+        "إذن",
+        "البيت",
+        "الشغل"
+      ]
+    },
+    {
+      "id": "customer-requests-quotes-jobs",
+      "audience": "customer",
+      "locale": "en",
+      "title": "Requests, quotes, and jobs",
+      "summary": "Understand what happens from posting a request to completing or cancelling a job.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "marketplace",
+        "quotes",
+        "bookings",
+        "payments",
+        "disputes"
+      ],
+      "routes": [
+        "/requests/new",
+        "/requests",
+        "/jobs"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "request",
+        "quote",
+        "worker",
+        "job",
+        "cancel",
+        "dispute"
+      ]
+    },
+    {
+      "id": "customer-requests-quotes-jobs",
+      "audience": "customer",
+      "locale": "ar",
+      "title": "الطلبات والعروض والشغل",
+      "summary": "افهم اللي بيحصل من نشر الطلب لحد اكتمال الشغل أو إلغائه.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "marketplace",
+        "quotes",
+        "bookings",
+        "payments",
+        "disputes"
+      ],
+      "routes": [
+        "/requests/new",
+        "/requests",
+        "/jobs"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "طلب",
+        "عرض",
+        "صنايعي",
+        "شغل",
+        "إلغاء",
+        "خلاف"
+      ]
+    },
+    {
+      "id": "customer-account-security",
+      "audience": "customer",
+      "locale": "en",
+      "title": "Account, security, and preferences",
+      "summary": "Sign in, recover your password, choose language and appearance, and manage privacy.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "auth",
+        "password_recovery",
+        "preferences",
+        "privacy",
+        "legal"
+      ],
+      "routes": [
+        "/sign-in",
+        "/forgot-password",
+        "/account",
+        "/privacy",
+        "/legal"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "password",
+        "email",
+        "phone",
+        "language",
+        "dark",
+        "privacy",
+        "delete"
+      ]
+    },
+    {
+      "id": "customer-account-security",
+      "audience": "customer",
+      "locale": "ar",
+      "title": "الحساب والأمان والتفضيلات",
+      "summary": "سجّل الدخول، استرجع كلمة السر، واختار اللغة والمظهر وتحكم في الخصوصية.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "auth",
+        "password_recovery",
+        "preferences",
+        "privacy",
+        "legal"
+      ],
+      "routes": [
+        "/sign-in",
+        "/forgot-password",
+        "/account",
+        "/privacy",
+        "/legal"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "كلمة السر",
+        "البريد",
+        "الموبايل",
+        "اللغة",
+        "داكن",
+        "خصوصية",
+        "حذف"
+      ]
+    },
+    {
+      "id": "customer-support-faq",
+      "audience": "customer",
+      "locale": "en",
+      "title": "Notifications, support, and common questions",
+      "summary": "Know where updates appear and how to get help safely.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "notifications",
+        "support"
+      ],
+      "routes": [
+        "/notifications",
+        "/support",
+        "/help"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "notification",
+        "support",
+        "reply",
+        "case",
+        "reset",
+        "address"
+      ]
+    },
+    {
+      "id": "customer-support-faq",
+      "audience": "customer",
+      "locale": "ar",
+      "title": "الإشعارات والدعم والأسئلة الشائعة",
+      "summary": "اعرف التحديثات بتظهر فين وإزاي تطلب مساعدة بأمان.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "notifications",
+        "support"
+      ],
+      "routes": [
+        "/notifications",
+        "/support",
+        "/help"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "إشعار",
+        "دعم",
+        "رد",
+        "حالة",
+        "كلمة السر",
+        "عنوان"
+      ]
+    },
+    {
+      "id": "worker-getting-started",
+      "audience": "worker",
+      "locale": "en",
+      "title": "Getting started as a worker",
+      "summary": "Register with phone and password, finish onboarding, and wait for governed approval.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "worker_auth",
+        "worker_onboarding",
+        "worker_vetting"
+      ],
+      "routes": [
+        "/create-account",
+        "/worker/onboarding",
+        "/worker/verification",
+        "/worker"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "worker",
+        "phone",
+        "signup",
+        "onboarding",
+        "approval"
+      ]
+    },
+    {
+      "id": "worker-getting-started",
+      "audience": "worker",
+      "locale": "ar",
+      "title": "ابدأ كصنايعي",
+      "summary": "سجّل بالموبايل وكلمة السر، كمّل التقديم، واستنى الموافقة المنظمة.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "worker_auth",
+        "worker_onboarding",
+        "worker_vetting"
+      ],
+      "routes": [
+        "/create-account",
+        "/worker/onboarding",
+        "/worker/verification",
+        "/worker"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "صنايعي",
+        "موبايل",
+        "تسجيل",
+        "تقديم",
+        "موافقة"
+      ]
+    },
+    {
+      "id": "worker-onboarding-verification",
+      "audience": "worker",
+      "locale": "en",
+      "title": "Onboarding, service areas, and verification",
+      "summary": "Understand every application stage and what customers can see.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "worker_onboarding",
+        "location",
+        "verification",
+        "legal"
+      ],
+      "routes": [
+        "/worker/onboarding",
+        "/worker/verification"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "trade",
+        "profession",
+        "service area",
+        "location",
+        "verification",
+        "rejected"
+      ]
+    },
+    {
+      "id": "worker-onboarding-verification",
+      "audience": "worker",
+      "locale": "ar",
+      "title": "التقديم ومناطق الشغل والتوثيق",
+      "summary": "افهم كل مرحلة في التقديم وإيه اللي العميل يقدر يشوفه.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "worker_onboarding",
+        "location",
+        "verification",
+        "legal"
+      ],
+      "routes": [
+        "/worker/onboarding",
+        "/worker/verification"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "مهنة",
+        "خدمة",
+        "منطقة",
+        "موقع",
+        "توثيق",
+        "رفض"
+      ]
+    },
+    {
+      "id": "worker-opportunities-jobs",
+      "audience": "worker",
+      "locale": "en",
+      "title": "Opportunities, quotes, and jobs",
+      "summary": "Review matching requests, write clear quotes, and update real job progress.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "marketplace",
+        "quotes",
+        "bookings",
+        "job_operations"
+      ],
+      "routes": [
+        "/worker/opportunities",
+        "/worker/jobs"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "request",
+        "opportunity",
+        "quote",
+        "price",
+        "job",
+        "cancel"
+      ]
+    },
+    {
+      "id": "worker-opportunities-jobs",
+      "audience": "worker",
+      "locale": "ar",
+      "title": "الفرص والعروض والشغل",
+      "summary": "راجع الطلبات المناسبة، اكتب عرض واضح، وحدّث تقدم الشغل الحقيقي.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "marketplace",
+        "quotes",
+        "bookings",
+        "job_operations"
+      ],
+      "routes": [
+        "/worker/opportunities",
+        "/worker/jobs"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "طلب",
+        "فرصة",
+        "عرض",
+        "سعر",
+        "شغل",
+        "إلغاء"
+      ]
+    },
+    {
+      "id": "worker-earnings-profile",
+      "audience": "worker",
+      "locale": "en",
+      "title": "Earnings, profile, availability, and support",
+      "summary": "Understand ledger balances, payout details, public profile information, and help.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "earnings",
+        "payments",
+        "worker_profile",
+        "support"
+      ],
+      "routes": [
+        "/worker/earnings",
+        "/worker/profile",
+        "/support"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "earnings",
+        "withdraw",
+        "wallet",
+        "bank",
+        "profile",
+        "available",
+        "support"
+      ]
+    },
+    {
+      "id": "worker-earnings-profile",
+      "audience": "worker",
+      "locale": "ar",
+      "title": "الأرباح والملف والتوفر والدعم",
+      "summary": "افهم رصيد الدفتر وبيانات السحب ومعلومات الملف العام والمساعدة.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "earnings",
+        "payments",
+        "worker_profile",
+        "support"
+      ],
+      "routes": [
+        "/worker/earnings",
+        "/worker/profile",
+        "/support"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "أرباح",
+        "سحب",
+        "محفظة",
+        "بنك",
+        "ملف",
+        "متاح",
+        "دعم"
+      ]
+    },
+    {
+      "id": "admin-getting-started",
+      "audience": "admin",
+      "locale": "en",
+      "title": "Admin portal: getting started",
+      "summary": "Understand the separate staff portal, capabilities, reauthentication, dual control, privacy, and auditability.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "admin",
+        "staff_auth",
+        "governance"
+      ],
+      "routes": [
+        "/admin",
+        "/admin/help"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "admin",
+        "staff",
+        "capability",
+        "role",
+        "fresh authentication",
+        "dual control"
+      ]
+    },
+    {
+      "id": "admin-getting-started",
+      "audience": "admin",
+      "locale": "ar",
+      "title": "ابدأ في بوابة الإدارة",
+      "summary": "افهم بوابة الموظفين المنفصلة والصلاحيات وإعادة التحقق والتحكم المزدوج والخصوصية والسجل.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "admin",
+        "staff_auth",
+        "governance"
+      ],
+      "routes": [
+        "/admin",
+        "/admin/help"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "إدارة",
+        "موظف",
+        "صلاحية",
+        "دور",
+        "تحقق حديث",
+        "تحكم مزدوج"
+      ]
+    },
+    {
+      "id": "admin-users-roles",
+      "audience": "admin",
+      "locale": "en",
+      "title": "User lookup and product roles",
+      "summary": "Find one redacted record and understand customer/worker state without treating the console as a directory.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "admin_search",
+        "product_roles",
+        "account_recovery"
+      ],
+      "routes": [
+        "/admin/users"
+      ],
+      "capabilities": [
+        "safe_search",
+        "view_safe_customer_profile",
+        "view_safe_worker_profile",
+        "view_contact_details"
+      ],
+      "keywords": [
+        "search",
+        "user",
+        "customer",
+        "worker",
+        "product role",
+        "recovery"
+      ]
+    },
+    {
+      "id": "admin-users-roles",
+      "audience": "admin",
+      "locale": "ar",
+      "title": "البحث عن المستخدم وأدوار المنتج",
+      "summary": "دور على سجل واحد مخفي البيانات وافهم حالة العميل أو الصنايعي من غير ما تحول البوابة لدليل مستخدمين.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "admin_search",
+        "product_roles",
+        "account_recovery"
+      ],
+      "routes": [
+        "/admin/users"
+      ],
+      "capabilities": [
+        "safe_search",
+        "view_safe_customer_profile",
+        "view_safe_worker_profile",
+        "view_contact_details"
+      ],
+      "keywords": [
+        "بحث",
+        "مستخدم",
+        "عميل",
+        "صنايعي",
+        "دور المنتج",
+        "استرجاع"
+      ]
+    },
+    {
+      "id": "admin-verification-enforcement",
+      "audience": "admin",
+      "locale": "en",
+      "title": "Worker verification and enforcement",
+      "summary": "Review evidence, record safe reasons, and understand approval, rejection, suspension, ban, and appeal boundaries.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "worker_vetting",
+        "trust",
+        "enforcement",
+        "appeals"
+      ],
+      "routes": [
+        "/admin/verification",
+        "/admin/users"
+      ],
+      "capabilities": [
+        "review_worker_vetting",
+        "review_identity_verification",
+        "review_criminal_records",
+        "activate_worker",
+        "reject_worker_application",
+        "issue_temporary_restriction",
+        "approve_permanent_ban",
+        "review_appeals"
+      ],
+      "keywords": [
+        "verification",
+        "approve",
+        "reject",
+        "suspend",
+        "ban",
+        "appeal",
+        "evidence"
+      ]
+    },
+    {
+      "id": "admin-verification-enforcement",
+      "audience": "admin",
+      "locale": "ar",
+      "title": "مراجعة الصنايعي وإجراءات الأمان",
+      "summary": "راجع الدليل وسجل سبب آمن وافهم حدود الموافقة والرفض والإيقاف والحظر والاعتراض.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "worker_vetting",
+        "trust",
+        "enforcement",
+        "appeals"
+      ],
+      "routes": [
+        "/admin/verification",
+        "/admin/users"
+      ],
+      "capabilities": [
+        "review_worker_vetting",
+        "review_identity_verification",
+        "review_criminal_records",
+        "activate_worker",
+        "reject_worker_application",
+        "issue_temporary_restriction",
+        "approve_permanent_ban",
+        "review_appeals"
+      ],
+      "keywords": [
+        "توثيق",
+        "موافقة",
+        "رفض",
+        "إيقاف",
+        "حظر",
+        "اعتراض",
+        "دليل"
+      ]
+    },
+    {
+      "id": "admin-staff-security",
+      "audience": "admin",
+      "locale": "en",
+      "title": "Staff roles, fresh authentication, and dual control",
+      "summary": "Grant only reviewed roles, never self-escalate, and keep immutable evidence.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "staff_roles",
+        "reauth",
+        "dual_control",
+        "audit"
+      ],
+      "routes": [
+        "/admin/staff",
+        "/admin/audit"
+      ],
+      "capabilities": [
+        "manage_staff_roles",
+        "view_audit_logs"
+      ],
+      "keywords": [
+        "grant",
+        "revoke",
+        "staff role",
+        "capability",
+        "reauthentication",
+        "dual control",
+        "audit"
+      ]
+    },
+    {
+      "id": "admin-staff-security",
+      "audience": "admin",
+      "locale": "ar",
+      "title": "أدوار الموظفين والتحقق الحديث والتحكم المزدوج",
+      "summary": "امنح دور مراجع بس، ما ترفعش صلاحيتك بنفسك، وحافظ على الدليل الدائم.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "staff_roles",
+        "reauth",
+        "dual_control",
+        "audit"
+      ],
+      "routes": [
+        "/admin/staff",
+        "/admin/audit"
+      ],
+      "capabilities": [
+        "manage_staff_roles",
+        "view_audit_logs"
+      ],
+      "keywords": [
+        "منح",
+        "سحب",
+        "دور موظف",
+        "صلاحية",
+        "تحقق حديث",
+        "تحكم مزدوج",
+        "سجل"
+      ]
+    },
+    {
+      "id": "admin-audit-analytics",
+      "audience": "admin",
+      "locale": "en",
+      "title": "Audit, analytics, and exports",
+      "summary": "Read immutable history, interpret metric definitions, and export aggregate data safely.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "audit",
+        "analytics",
+        "exports"
+      ],
+      "routes": [
+        "/admin/audit",
+        "/admin/analytics"
+      ],
+      "capabilities": [
+        "view_audit_logs",
+        "view_analytics",
+        "export_operational_report",
+        "view_financial_ledger"
+      ],
+      "keywords": [
+        "audit",
+        "analytics",
+        "metric",
+        "report",
+        "csv",
+        "export",
+        "financial"
+      ]
+    },
+    {
+      "id": "admin-audit-analytics",
+      "audience": "admin",
+      "locale": "ar",
+      "title": "السجل والتحليلات والتنزيل",
+      "summary": "اقرأ التاريخ الدائم وافهم تعريفات الأرقام ونزّل بيانات مجمعة بأمان.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "audit",
+        "analytics",
+        "exports"
+      ],
+      "routes": [
+        "/admin/audit",
+        "/admin/analytics"
+      ],
+      "capabilities": [
+        "view_audit_logs",
+        "view_analytics",
+        "export_operational_report",
+        "view_financial_ledger"
+      ],
+      "keywords": [
+        "سجل",
+        "تحليلات",
+        "رقم",
+        "تقرير",
+        "CSV",
+        "تنزيل",
+        "مالي"
+      ]
+    },
+    {
+      "id": "admin-recovery",
+      "audience": "admin",
+      "locale": "en",
+      "title": "Incidents, recovery, and actions that must stay governed",
+      "summary": "Respond safely when a provider, account, or admin authority is unavailable.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "incidents",
+        "provider_governance",
+        "account_recovery",
+        "privacy"
+      ],
+      "routes": [
+        "/admin",
+        "/admin/audit"
+      ],
+      "capabilities": [
+        "manage_incidents",
+        "manage_feature_flags",
+        "manage_kill_switches",
+        "review_privacy_incidents"
+      ],
+      "keywords": [
+        "incident",
+        "recovery",
+        "provider",
+        "feature flag",
+        "kill switch",
+        "emergency"
+      ]
+    },
+    {
+      "id": "admin-recovery",
+      "audience": "admin",
+      "locale": "ar",
+      "title": "الحوادث والاسترجاع والإجراءات المنظمة",
+      "summary": "اتصرف بأمان لما مزود أو حساب أو صلاحية إدارة ما تكونش متاحة.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "incidents",
+        "provider_governance",
+        "account_recovery",
+        "privacy"
+      ],
+      "routes": [
+        "/admin",
+        "/admin/audit"
+      ],
+      "capabilities": [
+        "manage_incidents",
+        "manage_feature_flags",
+        "manage_kill_switches",
+        "review_privacy_incidents"
+      ],
+      "keywords": [
+        "حادث",
+        "استرجاع",
+        "مزود",
+        "ميزة",
+        "إيقاف",
+        "طوارئ"
+      ]
+    },
+    {
+      "id": "warsha-glossary",
+      "audience": "all",
+      "locale": "en",
+      "title": "Warsha glossary",
+      "summary": "Plain-language meanings for the words Warsha uses.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "glossary"
+      ],
+      "routes": [
+        "/help",
+        "/admin/help"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "customer",
+        "worker",
+        "request",
+        "quote",
+        "booking",
+        "role",
+        "capability",
+        "audit"
+      ]
+    },
+    {
+      "id": "warsha-glossary",
+      "audience": "all",
+      "locale": "ar",
+      "title": "قاموس ورشة",
+      "summary": "معاني بسيطة للكلمات اللي ورشة بيستخدمها.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "glossary"
+      ],
+      "routes": [
+        "/help",
+        "/admin/help"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "عميل",
+        "صنايعي",
+        "طلب",
+        "عرض",
+        "حجز",
+        "دور",
+        "صلاحية",
+        "سجل"
+      ]
+    },
+    {
+      "id": "customer-getting-started",
+      "audience": "customer",
+      "locale": "fr",
+      "title": "Bien démarrer comme client",
+      "summary": "Créez votre compte, ajoutez une adresse, demandez un service, comparez les devis et suivez l’intervention.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "auth",
+        "onboarding",
+        "discovery",
+        "marketplace",
+        "bookings"
+      ],
+      "routes": [
+        "/create-account",
+        "/addresses",
+        "/discover",
+        "/requests",
+        "/jobs"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "démarrer",
+        "compte",
+        "inscription",
+        "service",
+        "devis"
+      ]
+    },
+    {
+      "id": "customer-addresses-location",
+      "audience": "customer",
+      "locale": "fr",
+      "title": "Adresses et localisation",
+      "summary": "Enregistrez une adresse claire tout en conservant la position exacte.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "addresses",
+        "location"
+      ],
+      "routes": [
+        "/addresses",
+        "/onboarding/address"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "adresse",
+        "carte",
+        "repère",
+        "position",
+        "autorisation",
+        "maison",
+        "travail"
+      ]
+    },
+    {
+      "id": "customer-requests-quotes-jobs",
+      "audience": "customer",
+      "locale": "fr",
+      "title": "Demandes, devis et interventions",
+      "summary": "Comprenez le parcours d’une demande jusqu’à la fin ou l’annulation de l’intervention.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "marketplace",
+        "quotes",
+        "bookings",
+        "payments",
+        "disputes"
+      ],
+      "routes": [
+        "/requests/new",
+        "/requests",
+        "/jobs"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "demande",
+        "devis",
+        "professionnel",
+        "intervention",
+        "annuler",
+        "litige"
+      ]
+    },
+    {
+      "id": "customer-account-security",
+      "audience": "customer",
+      "locale": "fr",
+      "title": "Compte, sécurité et préférences",
+      "summary": "Connectez-vous, récupérez votre mot de passe et gérez langue, apparence et confidentialité.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "auth",
+        "password_recovery",
+        "preferences",
+        "privacy",
+        "legal"
+      ],
+      "routes": [
+        "/sign-in",
+        "/forgot-password",
+        "/account",
+        "/privacy",
+        "/legal"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "mot de passe",
+        "e-mail",
+        "téléphone",
+        "langue",
+        "sombre",
+        "confidentialité",
+        "suppression"
+      ]
+    },
+    {
+      "id": "customer-support-faq",
+      "audience": "customer",
+      "locale": "fr",
+      "title": "Notifications, assistance et questions fréquentes",
+      "summary": "Retrouvez les mises à jour et demandez de l’aide en toute sécurité.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "notifications",
+        "support"
+      ],
+      "routes": [
+        "/notifications",
+        "/support",
+        "/help"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "notification",
+        "assistance",
+        "réponse",
+        "dossier",
+        "mot de passe",
+        "adresse"
+      ]
+    },
+    {
+      "id": "worker-getting-started",
+      "audience": "worker",
+      "locale": "fr",
+      "title": "Bien démarrer comme professionnel",
+      "summary": "Créez votre compte sans e-mail, terminez votre profil et préparez-vous à recevoir des opportunités.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "worker_auth",
+        "worker_onboarding",
+        "worker_vetting"
+      ],
+      "routes": [
+        "/create-account",
+        "/worker/onboarding",
+        "/worker"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "professionnel",
+        "inscription",
+        "téléphone",
+        "profil",
+        "démarrer"
+      ]
+    },
+    {
+      "id": "worker-onboarding-verification",
+      "audience": "worker",
+      "locale": "fr",
+      "title": "Profil, métiers, zone de service et vérification",
+      "summary": "Comprenez les étapes nécessaires avant de pouvoir recevoir des interventions.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "worker_onboarding",
+        "location",
+        "verification",
+        "legal"
+      ],
+      "routes": [
+        "/worker/onboarding",
+        "/worker/verification",
+        "/onboarding/address"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "onboarding",
+        "métier",
+        "zone",
+        "vérification",
+        "document",
+        "position"
+      ]
+    },
+    {
+      "id": "worker-opportunities-jobs",
+      "audience": "worker",
+      "locale": "fr",
+      "title": "Opportunités, devis et interventions",
+      "summary": "Répondez aux demandes admissibles et mettez à jour le déroulement réel du travail.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "marketplace",
+        "quotes",
+        "bookings",
+        "job_operations"
+      ],
+      "routes": [
+        "/worker/opportunities",
+        "/worker/jobs",
+        "/worker/requests"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "opportunité",
+        "demande",
+        "devis",
+        "intervention",
+        "arrivée",
+        "terminer"
+      ]
+    },
+    {
+      "id": "worker-earnings-profile",
+      "audience": "worker",
+      "locale": "fr",
+      "title": "Gains, profil et assistance",
+      "summary": "Comprenez les montants affichés, entretenez votre profil et obtenez de l’aide.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "earnings",
+        "payments",
+        "worker_profile",
+        "support"
+      ],
+      "routes": [
+        "/worker/earnings",
+        "/worker/profile",
+        "/support",
+        "/help"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "gains",
+        "paiement",
+        "retrait",
+        "profil",
+        "assistance"
+      ]
+    },
+    {
+      "id": "admin-getting-started",
+      "audience": "admin",
+      "locale": "fr",
+      "title": "Bien démarrer dans la console d’administration",
+      "summary": "Comprenez la console, ses autorisations et les règles de sécurité avant d’agir.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "admin",
+        "staff_auth",
+        "governance"
+      ],
+      "routes": [
+        "/admin",
+        "/admin/users",
+        "/admin/audit"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "admin",
+        "personnel",
+        "capacité",
+        "connexion récente",
+        "double contrôle"
+      ]
+    },
+    {
+      "id": "admin-users-roles",
+      "audience": "admin",
+      "locale": "fr",
+      "title": "Recherche d’utilisateurs et rôles produit",
+      "summary": "Trouvez le bon compte et gérez ses rôles produit sans confondre accès client et accès du personnel.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "admin_search",
+        "product_roles",
+        "account_recovery"
+      ],
+      "routes": [
+        "/admin/users"
+      ],
+      "capabilities": [
+        "safe_search",
+        "view_user_detail",
+        "manage_product_roles"
+      ],
+      "keywords": [
+        "utilisateur",
+        "recherche",
+        "client",
+        "professionnel",
+        "rôle produit"
+      ]
+    },
+    {
+      "id": "admin-verification-enforcement",
+      "audience": "admin",
+      "locale": "fr",
+      "title": "Vérification, suspension et mesures de sécurité",
+      "summary": "Examinez les preuves et appliquez une mesure proportionnée avec une raison claire.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "worker_vetting",
+        "trust",
+        "enforcement",
+        "appeals"
+      ],
+      "routes": [
+        "/admin/verification",
+        "/admin/users"
+      ],
+      "capabilities": [
+        "review_worker_vetting",
+        "manage_suspensions",
+        "manage_bans"
+      ],
+      "keywords": [
+        "vérification",
+        "approuver",
+        "refuser",
+        "suspendre",
+        "bannir",
+        "preuve"
+      ]
+    },
+    {
+      "id": "admin-staff-security",
+      "audience": "admin",
+      "locale": "fr",
+      "title": "Rôles du personnel, authentification récente et double contrôle",
+      "summary": "Accordez le minimum nécessaire tout en conservant une preuve complète.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "staff_roles",
+        "reauth",
+        "dual_control",
+        "audit"
+      ],
+      "routes": [
+        "/admin/staff",
+        "/admin/audit"
+      ],
+      "capabilities": [
+        "manage_staff_roles",
+        "view_audit_logs"
+      ],
+      "keywords": [
+        "personnel",
+        "rôle",
+        "capacité",
+        "authentification récente",
+        "double contrôle",
+        "audit"
+      ]
+    },
+    {
+      "id": "admin-audit-analytics",
+      "audience": "admin",
+      "locale": "fr",
+      "title": "Audit, analyses et exports",
+      "summary": "Lisez l’historique immuable, interprétez les métriques et exportez des agrégats en sécurité.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "audit",
+        "analytics",
+        "exports"
+      ],
+      "routes": [
+        "/admin/audit",
+        "/admin/analytics"
+      ],
+      "capabilities": [
+        "view_audit_logs",
+        "view_analytics",
+        "export_operational_report",
+        "view_financial_ledger"
+      ],
+      "keywords": [
+        "audit",
+        "analyse",
+        "métrique",
+        "rapport",
+        "CSV",
+        "export",
+        "financier"
+      ]
+    },
+    {
+      "id": "admin-recovery",
+      "audience": "admin",
+      "locale": "fr",
+      "title": "Incidents, récupération et actions gouvernées",
+      "summary": "Réagissez en sécurité lorsqu’un fournisseur, un compte ou une autorité administrative est indisponible.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "incidents",
+        "provider_governance",
+        "account_recovery",
+        "privacy"
+      ],
+      "routes": [
+        "/admin",
+        "/admin/audit"
+      ],
+      "capabilities": [
+        "manage_incidents",
+        "manage_feature_flags",
+        "manage_kill_switches",
+        "review_privacy_incidents"
+      ],
+      "keywords": [
+        "incident",
+        "récupération",
+        "fournisseur",
+        "fonctionnalité",
+        "arrêt",
+        "urgence"
+      ]
+    },
+    {
+      "id": "warsha-glossary",
+      "audience": "all",
+      "locale": "fr",
+      "title": "Glossaire Warsha",
+      "summary": "Définitions simples des mots utilisés dans Warsha.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "glossary"
+      ],
+      "routes": [
+        "/help",
+        "/admin/help"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "client",
+        "professionnel",
+        "demande",
+        "devis",
+        "intervention",
+        "rôle",
+        "capacité",
+        "audit"
+      ]
+    }
+  ]
+}

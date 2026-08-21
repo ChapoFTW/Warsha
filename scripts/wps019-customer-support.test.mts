@@ -34,6 +34,7 @@ import {
 } from '../src/support/support-types.ts';
 import { supportCopy } from '../src/support/support-copy.ts';
 import { notificationCategories } from '../src/notifications/notification-types.ts';
+import { appCopy } from '../web/lib/app-copy.ts';
 
 let checks = 0;
 function check(condition: boolean, label: string) {
@@ -454,8 +455,12 @@ const webSupport = readFileSync('web/lib/support.ts', 'utf8');
 const webSupportPage = readFileSync('web/app/app/support/page.tsx', 'utf8');
 const webCopy = readFileSync('web/lib/app-copy.ts', 'utf8');
 
-/** Present in BOTH language blocks of the web dictionary, not only English. */
-const inBothLanguages = (key: string) => webCopy.split(`${key}:`).length === 3;
+/** Present in every product-language block of the web dictionary. */
+const inBothLanguages = (key: string) =>
+  key in appCopy.en && key in appCopy.ar && key in appCopy.fr
+  && Boolean(appCopy.en[key as keyof typeof appCopy.en])
+  && Boolean(appCopy.ar[key as keyof typeof appCopy.ar])
+  && Boolean(appCopy.fr[key as keyof typeof appCopy.fr]);
 
 // The authority exists. Asserted against the migration, not against a memory.
 has(wps017, /create or replace function public\.reply_support_case\(p_case_id uuid, p_body text, p_idempotency_key text\)/,

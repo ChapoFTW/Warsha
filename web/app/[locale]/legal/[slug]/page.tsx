@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 
 import { SiteFooter, SiteHeader } from '@/components/site-chrome';
 import { copy } from '@/lib/copy';
-import { isLocale, LOCALES, otherLocale, type Locale } from '@/lib/preferences';
+import { isLocale, LOCALES, type Locale } from '@/lib/preferences';
 import { bodyFor, findDocument, hashesFor, legalCorpus } from '@/lib/warsha';
 import type { LegalSection } from '@/lib/warsha';
 
@@ -45,15 +45,16 @@ export async function generateMetadata(
   const document = findDocument(keyFromSlug(slug));
   if (!document) return { title: 'Not found' };
 
+  const legalLocale = locale === 'ar' ? 'ar' : 'en';
   return {
-    title: document[locale].title,
-    description: document[locale].summary,
+    title: document[legalLocale].title,
+    description: document[legalLocale].summary,
     alternates: {
       canonical: `/${locale}/legal/${slug}`,
-      languages: { en: `/en/legal/${slug}`, ar: `/ar/legal/${slug}` },
+      languages: { en: `/en/legal/${slug}`, ar: `/ar/legal/${slug}`, fr: `/fr/legal/${slug}` },
     },
     openGraph: {
-      title: `${document[locale].title} · ${locale === 'ar' ? 'ورشة' : 'Warsha'}`,
+      title: `${document[legalLocale].title} · ${locale === 'ar' ? 'ورشة' : 'Warsha'}`,
       url: `/${locale}/legal/${slug}`,
       type: 'article',
     },
@@ -90,9 +91,13 @@ export default async function LegalDocumentPage({ params }: { params: Promise<Pa
   if (!document) notFound();
 
   const words = copy[typed];
-  const body = bodyFor(document, typed);
+  // Legal French requires separately reviewed, versioned documents and
+  // fingerprints. Until that human/legal publication exists, the French
+  // product route presents the authoritative English text without inventing a
+  // legally operative translation.
+  const legalLocale = typed === 'ar' ? 'ar' : 'en';
+  const body = bodyFor(document, legalLocale);
   const hashes = hashesFor(document);
-  const other = otherLocale(typed);
 
   return (
     <>
@@ -108,14 +113,14 @@ export default async function LegalDocumentPage({ params }: { params: Promise<Pa
               {document.requiresAcceptance ? ` · ${words.legalAcceptanceRequired}` : ''}
             </p>
             <p className={styles.summary}>{body.summary}</p>
-            <a
-              href={`/${other}/legal/${slug}`}
-              hrefLang={other}
-              lang={other}
-              className={styles.otherLanguage}
-            >
-              {other === 'ar' ? words.languageArabic : words.languageEnglish}
-            </a>
+            <div className={styles.otherLanguage}>
+              {LOCALES.filter(option => option !== typed).map(option => <a
+                key={option}
+                href={`/${option}/legal/${slug}`}
+                hrefLang={option}
+                lang={option}
+              >{option === 'ar' ? words.languageArabic : option === 'fr' ? words.languageFrench : words.languageEnglish}</a>)}
+            </div>
           </header>
 
           <div className={styles.body}>

@@ -19,6 +19,7 @@ import { professionLabel } from "@/src/providers/profession-taxonomy";
 
 const servicePricingLabels: Record<Language, Record<Service["pricingType"], string>> = {
   en: { fixed: "Fixed price", starting: "Starting from", hourly: "Hourly", inspection: "Inspection fee", quote: "Quote required" },
+  fr: { fixed: "Prix fixe", starting: "À partir de", hourly: "Tarif horaire", inspection: "Frais de diagnostic", quote: "Devis nécessaire" },
   ar: { fixed: "سعر ثابت", starting: "يبدأ من", hourly: "بالساعة", inspection: "رسوم معاينة", quote: "تحتاج عرض سعر" },
 };
 export default function ProviderProfileScreen() {

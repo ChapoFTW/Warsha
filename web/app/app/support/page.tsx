@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { AppShell, useAccount } from '@/components/app-shell';
 import { appCopy } from '@/lib/app-copy';
 import { customerNav, workerNav } from '@/lib/nav';
+import { intlLocale, type Locale } from '@/lib/preferences';
 import {
   classifySupportError,
   newIdempotencyKey,
@@ -179,7 +180,7 @@ function CaseDetail({
 }: {
   detail: SupportCaseDetail;
   words: Record<string, string>;
-  locale: 'en' | 'ar';
+  locale: Locale;
   onClose: () => void;
   onChanged: () => Promise<void>;
 }) {
@@ -474,7 +475,7 @@ function NewCase({
   onCancel,
   onOpened,
 }: {
-  locale: 'en' | 'ar';
+  locale: Locale;
   words: Record<string, string>;
   onCancel: () => void;
   onOpened: (caseId: string) => Promise<void>;
@@ -583,10 +584,10 @@ const FAILURE_COPY: Record<SupportFailure, string> = {
   failed: 'supportGenericFailed',
 };
 
-function formatWhen(value: string, locale: 'en' | 'ar', withTime = false): string {
+function formatWhen(value: string, locale: Locale, withTime = false): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '';
-  return new Intl.DateTimeFormat(locale === 'ar' ? 'ar-EG' : 'en-GB', {
+  return new Intl.DateTimeFormat(intlLocale(locale), {
     dateStyle: 'medium',
     ...(withTime ? { timeStyle: 'short' as const } : {}),
   }).format(date);

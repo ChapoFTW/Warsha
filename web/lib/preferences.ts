@@ -31,20 +31,19 @@ export {
   type ResolvedAppearance,
 } from '../../src/appearance/appearance-types.ts';
 
-export const LOCALES = ['en', 'ar'] as const;
+export const LOCALES = ['en', 'ar', 'fr'] as const;
 export type Locale = (typeof LOCALES)[number];
 
 export function isLocale(value: unknown): value is Locale {
-  return value === 'en' || value === 'ar';
+  return value === 'en' || value === 'ar' || value === 'fr';
 }
 
 export function directionOf(locale: Locale): 'ltr' | 'rtl' {
   return locale === 'ar' ? 'rtl' : 'ltr';
 }
 
-/** The other language, for the switcher and for hreflang alternates. */
-export function otherLocale(locale: Locale): Locale {
-  return locale === 'ar' ? 'en' : 'ar';
+export function intlLocale(locale: Locale): 'en-EG' | 'ar-EG' | 'fr-EG' {
+  return locale === 'ar' ? 'ar-EG' : locale === 'fr' ? 'fr-EG' : 'en-EG';
 }
 
 /**
@@ -66,5 +65,6 @@ export function localeFromAcceptLanguage(header: string | null): Locale {
     .filter((entry) => entry.tag)
     .sort((a, b) => b.quality - a.quality)
     .map((entry) => entry.tag);
-  return tags[0]?.toLowerCase().split(/[-_]/, 1)[0] === 'ar' ? 'ar' : 'en';
+  const preferred = tags[0]?.toLowerCase().split(/[-_]/, 1)[0];
+  return isLocale(preferred) ? preferred : 'en';
 }

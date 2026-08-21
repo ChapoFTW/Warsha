@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 import { classifyAuthFailure } from '../src/auth/auth-errors.ts';
+import { translations } from '../src/i18n/translations.ts';
 import {
   isSignupBusy,
   signupAfterRoleChange,
@@ -94,14 +95,13 @@ equal(classifyAuthFailure({ status: 400, code: 'email_address_not_authorized' },
 // customer may ask before signing up, and widening that surface to answer one
 // is not a trade this failure justifies. The copy therefore carries both
 // remedies, and these assert it does.
-const localizedCopy = readFileSync('src/i18n/translations.ts', 'utf8');
-const signupFailureCopy = [...localizedCopy.matchAll(
-  /authSignupServerError: '((?:[^'\\]|\\.)*)'/g)].map(match => match[1]);
-check(signupFailureCopy.length === 2,
-  'the signup failure copy exists in both languages');
-check(signupFailureCopy.every(copy => /Update Warsha|حدّث تطبيق ورشة/.test(copy)),
+const signupFailureCopy = Object.values(translations)
+  .map(copy => copy.authSignupServerError);
+check(signupFailureCopy.length === 3,
+  'the signup failure copy exists in every supported language');
+check(signupFailureCopy.every(copy => /Update Warsha|حدّث تطبيق ورشة|Mettez Warsha à jour/.test(copy)),
   'THE SIGNUP FAILURE NAMES UPDATING THE APP, WHICH A STALE BUNDLE CANNOT REPORT');
-check(signupFailureCopy.every(copy => /check the details|راجع البيانات/i.test(copy)),
+check(signupFailureCopy.every(copy => /check the details|راجع البيانات|vérifiez vos informations/i.test(copy)),
   'the signup failure also names the other known cause, a detail already in use');
 check(signupFailureCopy.every(copy => !/\bemail\b|\baddress\b|بريد/i.test(copy)),
   'the signup failure never hints whether an email address already has an account');
@@ -130,11 +130,11 @@ check(/authNetworkError/.test(workerClient),
   'an unreadable response is reported as a connectivity failure');
 
 // --- Copy safety -----------------------------------------------------------
-const translations = readFileSync('src/i18n/translations.ts', 'utf8');
+const translationsSource = readFileSync('src/i18n/translations.ts', 'utf8');
 const authCopy = readFileSync('src/auth/auth-translations.ts', 'utf8');
-check(/authOutdatedClient/.test(translations), 'the update-required message is localized');
-check((translations.match(/authOutdatedClient/g) ?? []).length === 2,
-  'the update-required message exists in both languages');
+check(/authOutdatedClient/.test(translationsSource), 'the update-required message is localized');
+check(Object.values(translations).every(copy => copy.authOutdatedClient.length > 0),
+  'the update-required message exists in every supported language');
 const pending = /customerConfirmationPending: '([^']*)'/.exec(authCopy)?.[1] ?? '';
 check(pending.length > 0, 'the customer pending copy was found');
 check(!/\bsent\b|\bwe (?:have )?sent\b|\bdelivered\b/i.test(pending),

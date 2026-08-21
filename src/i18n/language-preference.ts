@@ -5,16 +5,27 @@
  * exercised by the Node regression suite without loading React Native.
  */
 
-export type SupportedLanguage = 'en' | 'ar';
+export const supportedLanguages = ['en', 'ar', 'fr'] as const;
+export type SupportedLanguage = (typeof supportedLanguages)[number];
+
+export const languageMetadata: Record<SupportedLanguage, {
+  label: string;
+  direction: 'ltr' | 'rtl';
+  localeTag: string;
+}> = {
+  en: { label: 'English', direction: 'ltr', localeTag: 'en-EG' },
+  ar: { label: 'العربية', direction: 'rtl', localeTag: 'ar-EG' },
+  fr: { label: 'Français', direction: 'ltr', localeTag: 'fr-EG' },
+};
 
 export const languageStorageKey = 'warsha:language:v1';
 export const languageExplicitKey = 'warsha:language-explicit:v1';
 
 export function isSupportedLanguage(value: unknown): value is SupportedLanguage {
-  return value === 'en' || value === 'ar';
+  return value === 'en' || value === 'ar' || value === 'fr';
 }
 
-/** Arabic wins only when it is the first preferred supported language. */
+/** The first preferred supported language wins; unsupported languages fall back to English. */
 export function languageFromPreferredLocales(
   locales: readonly (string | { languageCode?: string | null; languageTag?: string | null })[],
 ): SupportedLanguage {
@@ -22,7 +33,8 @@ export function languageFromPreferredLocales(
   const raw = typeof preferred === 'string'
     ? preferred
     : preferred?.languageCode ?? preferred?.languageTag ?? '';
-  return raw.toLowerCase().split(/[-_]/, 1)[0] === 'ar' ? 'ar' : 'en';
+  const language = raw.toLowerCase().split(/[-_]/, 1)[0];
+  return isSupportedLanguage(language) ? language : 'en';
 }
 
 export function resolveLanguage(input: {
@@ -37,7 +49,10 @@ export function resolveLanguage(input: {
 }
 
 export function documentMetadataFor(language: SupportedLanguage) {
-  return language === 'ar'
-    ? { language: 'ar', direction: 'rtl' as const, title: 'ورشة', manifest: '/manifest.ar.webmanifest' }
-    : { language: 'en', direction: 'ltr' as const, title: 'Warsha', manifest: '/manifest.webmanifest' };
+  return {
+    language,
+    direction: languageMetadata[language].direction,
+    title: language === 'ar' ? 'ورشة' : 'Warsha',
+    manifest: language === 'ar' ? '/manifest.ar.webmanifest' : '/manifest.webmanifest',
+  };
 }

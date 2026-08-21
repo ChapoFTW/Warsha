@@ -1,0 +1,906 @@
+{
+  "schemaVersion": 1,
+  "generatedFrom": [
+    "docs/help/articles.json",
+    "docs/help/articles.fr.json"
+  ],
+  "articles": [
+    {
+      "id": "customer-getting-started",
+      "audience": "customer",
+      "locale": "en",
+      "title": "Getting started as a customer",
+      "summary": "Create an account, add an address, request work, compare quotes, and follow the job.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "auth",
+        "onboarding",
+        "discovery",
+        "marketplace",
+        "bookings"
+      ],
+      "routes": [
+        "/create-account",
+        "/addresses",
+        "/discover",
+        "/requests",
+        "/jobs"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "start",
+        "signup",
+        "book",
+        "service",
+        "quote"
+      ],
+      "body": "## The usual journey\n\n1. Create a customer account with your name, email, Egyptian mobile number, and password.\n2. Confirm the email Warsha sends. Phone OTP is not part of registration.\n3. Add a service address and confirm its map pin.\n4. Find a service or post a request describing what you need.\n5. Review the quotes that workers submit. A quote is an offer, not a completed booking.\n6. Choose a worker and follow the job from My jobs.\n7. Use Support if something is unclear or goes wrong.\n\n## Good to know\n\nWorkers see only the address details needed for a booked job. Prices marked as estimates can change only through the product's approval flow."
+    },
+    {
+      "id": "customer-getting-started",
+      "audience": "customer",
+      "locale": "ar",
+      "title": "ابدأ كعميل",
+      "summary": "اعمل حساب، ضيف عنوان، اطلب خدمة، قارن العروض، وتابع الشغل.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "auth",
+        "onboarding",
+        "discovery",
+        "marketplace",
+        "bookings"
+      ],
+      "routes": [
+        "/create-account",
+        "/addresses",
+        "/discover",
+        "/requests",
+        "/jobs"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "ابدأ",
+        "حساب",
+        "حجز",
+        "خدمة",
+        "عرض"
+      ],
+      "body": "## خطواتك المعتادة\n\n1. اعمل حساب عميل باسمك وبريدك الإلكتروني ورقم موبايل مصري وكلمة سر.\n2. أكّد البريد من الرسالة اللي ورشة بتبعتها. مفيش كود SMS وقت التسجيل.\n3. ضيف عنوان الخدمة وأكّد مكانه على الخريطة.\n4. دور على خدمة أو انشر طلب واشرح محتاج إيه.\n5. راجع عروض الصنايعية. العرض لسه مش حجز مكتمل.\n6. اختار صنايعي وتابع الشغل من «شغلي».\n7. استخدم الدعم لو حاجة مش واضحة أو حصلت مشكلة.\n\n## مهم تعرف\n\nالصنايعي بيشوف تفاصيل العنوان اللازمة للشغل المحجوز بس. السعر التقديري ما بيتغيرش إلا من خلال خطوات الموافقة داخل ورشة."
+    },
+    {
+      "id": "customer-addresses-location",
+      "audience": "customer",
+      "locale": "en",
+      "title": "Addresses and location",
+      "summary": "Save a clear service address without losing the exact map pin.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "addresses",
+        "location"
+      ],
+      "routes": [
+        "/addresses",
+        "/onboarding/address"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "address",
+        "map",
+        "pin",
+        "location",
+        "permission",
+        "home",
+        "work"
+      ],
+      "body": "## Add an address\n\nGive the address a familiar name such as Home or Work. Search for an address or use your current location when those options are available. Warsha keeps the exact coordinates separately from the editable address text.\n\nFill in the street and governorate. Building, floor, apartment, landmark, and worker directions are optional unless the screen says otherwise. Confirm the pin before booking.\n\n## If current location fails\n\nAllow location access in your browser or device settings, make sure location services are on, and try again. If Warsha gets coordinates but cannot find an address, it says so and lets you search or edit the address manually.\n\nChanging the words in the form does not silently move the saved pin."
+    },
+    {
+      "id": "customer-addresses-location",
+      "audience": "customer",
+      "locale": "ar",
+      "title": "العناوين والموقع",
+      "summary": "احفظ عنوان خدمة واضح من غير ما تفقد مكان الدبوس الدقيق.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "addresses",
+        "location"
+      ],
+      "routes": [
+        "/addresses",
+        "/onboarding/address"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "عنوان",
+        "خريطة",
+        "دبوس",
+        "موقع",
+        "إذن",
+        "البيت",
+        "الشغل"
+      ],
+      "body": "## ضيف عنوان\n\nسمّي العنوان باسم مألوف زي «البيت» أو «الشغل». دور على عنوان أو استخدم موقعك الحالي لما الاختيارات دي تكون متاحة. ورشة بتحفظ الإحداثيات الدقيقة لوحدها بعيد عن كلام العنوان اللي تقدر تعدله.\n\nاكتب الشارع والمحافظة. المبنى والدور والشقة والعلامة المميزة وتعليمات الوصول اختيارية إلا لو الشاشة قالت غير كده. أكّد الدبوس قبل الحجز.\n\n## لو الموقع الحالي ما اشتغلش\n\nاسمح لورشة بالموقع من إعدادات المتصفح أو الجهاز، واتأكد إن خدمة الموقع شغالة، وجرّب تاني. لو ورشة جابت الإحداثيات بس ما عرفتش العنوان، هتقولك بوضوح وتقدر تدور أو تعدل العنوان بنفسك.\n\nتعديل كلام العنوان ما بيحرّكش الدبوس المحفوظ من غير ما تعرف."
+    },
+    {
+      "id": "customer-requests-quotes-jobs",
+      "audience": "customer",
+      "locale": "en",
+      "title": "Requests, quotes, and jobs",
+      "summary": "Understand what happens from posting a request to completing or cancelling a job.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "marketplace",
+        "quotes",
+        "bookings",
+        "payments",
+        "disputes"
+      ],
+      "routes": [
+        "/requests/new",
+        "/requests",
+        "/jobs"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "request",
+        "quote",
+        "worker",
+        "job",
+        "cancel",
+        "dispute"
+      ],
+      "body": "## Request and quotes\n\nDescribe the problem, choose the approximate area and timing, and send the request. Matching workers can submit one quote and revise it while the request allows changes. Compare the amount, timing, message, materials, payment methods, rating, and verification information shown.\n\n## Job\n\nAccepting a quote creates or advances the authoritative booking. Follow its status in My jobs. Schedule changes, extra work, completion, cancellation, and disputes use their own confirmation steps; a message alone does not change the booking.\n\nIf a worker cancels or does not arrive, use the actions shown on that job or contact Support. The job stays in history so both sides can understand what happened."
+    },
+    {
+      "id": "customer-requests-quotes-jobs",
+      "audience": "customer",
+      "locale": "ar",
+      "title": "الطلبات والعروض والشغل",
+      "summary": "افهم اللي بيحصل من نشر الطلب لحد اكتمال الشغل أو إلغائه.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "marketplace",
+        "quotes",
+        "bookings",
+        "payments",
+        "disputes"
+      ],
+      "routes": [
+        "/requests/new",
+        "/requests",
+        "/jobs"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "طلب",
+        "عرض",
+        "صنايعي",
+        "شغل",
+        "إلغاء",
+        "خلاف"
+      ],
+      "body": "## الطلب والعروض\n\nاشرح المشكلة، واختار المنطقة التقريبية والميعاد، وابعت الطلب. الصنايعية المطابقين يقدروا يبعتوا عرض واحد ويعدلوه طول ما الطلب بيسمح. قارن المبلغ والميعاد والرسالة والخامات وطرق الدفع والتقييم والتوثيق الظاهر.\n\n## الشغل\n\nقبول العرض بيعمل أو يحدّث الحجز الرسمي. تابع حالته من «شغلي». تغيير الميعاد والشغل الإضافي والإكمال والإلغاء والخلافات ليهم خطوات تأكيد خاصة؛ الرسالة لوحدها ما بتغيرش الحجز.\n\nلو الصنايعي لغى أو ما وصلش، استخدم الاختيارات الظاهرة في الشغل أو كلم الدعم. الشغل بيفضل في السجل عشان الطرفين يعرفوا اللي حصل."
+    },
+    {
+      "id": "customer-account-security",
+      "audience": "customer",
+      "locale": "en",
+      "title": "Account, security, and preferences",
+      "summary": "Sign in, recover your password, choose language and appearance, and manage privacy.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "auth",
+        "password_recovery",
+        "preferences",
+        "privacy",
+        "legal"
+      ],
+      "routes": [
+        "/sign-in",
+        "/forgot-password",
+        "/account",
+        "/privacy",
+        "/legal"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "password",
+        "email",
+        "phone",
+        "language",
+        "dark",
+        "privacy",
+        "delete"
+      ],
+      "body": "Customers sign in with email and password. Use Forgot password to request a recovery link; Warsha gives the same safe response whether or not an address is registered. Never share a password or recovery link.\n\nLanguage and Light, Dark, or System appearance follow your saved preference where available. Arabic uses right-to-left layout.\n\nThe Privacy Center explains deactivation, data export, and governed deletion. Deactivation is reversible and does not delete history. A deletion request can be blocked by active work, financial retention, a dispute, or a legal hold; the screen reports the real state."
+    },
+    {
+      "id": "customer-account-security",
+      "audience": "customer",
+      "locale": "ar",
+      "title": "الحساب والأمان والتفضيلات",
+      "summary": "سجّل الدخول، استرجع كلمة السر، واختار اللغة والمظهر وتحكم في الخصوصية.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "auth",
+        "password_recovery",
+        "preferences",
+        "privacy",
+        "legal"
+      ],
+      "routes": [
+        "/sign-in",
+        "/forgot-password",
+        "/account",
+        "/privacy",
+        "/legal"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "كلمة السر",
+        "البريد",
+        "الموبايل",
+        "اللغة",
+        "داكن",
+        "خصوصية",
+        "حذف"
+      ],
+      "body": "العميل بيسجل الدخول بالبريد الإلكتروني وكلمة السر. استخدم «نسيت كلمة السر» عشان تطلب رابط استرجاع؛ ورشة بتدي نفس الرد الآمن سواء البريد مسجل أو لأ. ما تشاركش كلمة السر أو رابط الاسترجاع مع حد.\n\nاختيار اللغة والمظهر فاتح أو داكن أو حسب الجهاز بيتحفظ لما يكون متاح. العربي بيظهر من اليمين للشمال.\n\nمركز الخصوصية بيشرح إيقاف الحساب مؤقتًا وتنزيل البيانات وطلب الحذف المنظم. الإيقاف قابل للرجوع ومابيحذفش التاريخ. طلب الحذف ممكن يتوقف لو فيه شغل نشط أو حفظ مالي أو خلاف أو احتفاظ قانوني، والشاشة هتقول الحالة الحقيقية."
+    },
+    {
+      "id": "customer-support-faq",
+      "audience": "customer",
+      "locale": "en",
+      "title": "Notifications, support, and common questions",
+      "summary": "Know where updates appear and how to get help safely.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "notifications",
+        "support"
+      ],
+      "routes": [
+        "/notifications",
+        "/support",
+        "/help"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "notification",
+        "support",
+        "reply",
+        "case",
+        "reset",
+        "address"
+      ],
+      "body": "## Notifications\n\nWarsha records important account, request, job, payment, and security updates in Notifications. Delivery to an external channel can fail, so the in-product record is the reliable place to check.\n\n## Support\n\nSearch Help first. If the answer is not there, open a support case with a short subject and the useful facts. Do not send passwords, full payment credentials, or identity-document contents in a support message. Replies and status changes stay with the case.\n\n## Common questions\n\n- **Can I change an address?** Yes. Edit the text and confirm the location required by the flow.\n- **When do I choose a worker?** After reviewing the quotes available for your request.\n- **How do I reset my password?** Use Forgot password on Sign in.\n- **How do I delete my account?** Start in the Privacy Center; Warsha will show any blockers."
+    },
+    {
+      "id": "customer-support-faq",
+      "audience": "customer",
+      "locale": "ar",
+      "title": "الإشعارات والدعم والأسئلة الشائعة",
+      "summary": "اعرف التحديثات بتظهر فين وإزاي تطلب مساعدة بأمان.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "notifications",
+        "support"
+      ],
+      "routes": [
+        "/notifications",
+        "/support",
+        "/help"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "إشعار",
+        "دعم",
+        "رد",
+        "حالة",
+        "كلمة السر",
+        "عنوان"
+      ],
+      "body": "## الإشعارات\n\nورشة بيسجل تحديثات الحساب والطلبات والشغل والدفع والأمان المهمة في الإشعارات. التوصيل لقناة خارجية ممكن يفشل، فالسجل جوه ورشة هو المكان الموثوق للمراجعة.\n\n## الدعم\n\nدور في المساعدة الأول. لو مالقيتش الإجابة، افتح حالة دعم بعنوان قصير واكتب التفاصيل المفيدة. ما تبعتش كلمة السر أو بيانات دفع كاملة أو محتوى مستندات الهوية في رسالة دعم. الردود وتغييرات الحالة بتفضل محفوظة مع الحالة.\n\n## أسئلة شائعة\n\n- **أقدر أغير العنوان؟** أيوه. عدل الكلام وأكّد الموقع اللي الخطوة محتاجاه.\n- **إمتى أختار الصنايعي؟** بعد ما تراجع العروض المتاحة لطلبك.\n- **أرجع كلمة السر إزاي؟** استخدم «نسيت كلمة السر» من تسجيل الدخول.\n- **أحذف حسابي إزاي؟** ابدأ من مركز الخصوصية، وورشة هيقولك لو فيه حاجة مانعة."
+    },
+    {
+      "id": "worker-getting-started",
+      "audience": "worker",
+      "locale": "en",
+      "title": "Getting started as a worker",
+      "summary": "Register with phone and password, finish onboarding, and wait for governed approval.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "worker_auth",
+        "worker_onboarding",
+        "worker_vetting"
+      ],
+      "routes": [
+        "/create-account",
+        "/worker/onboarding",
+        "/worker/verification",
+        "/worker"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "worker",
+        "phone",
+        "signup",
+        "onboarding",
+        "approval"
+      ],
+      "body": "## Register\n\nChoose Worker and enter your full name, Egyptian mobile number, and password. There is no worker email field and no email or SMS confirmation step. Warsha creates a private internal Auth identity; it is not a contact address and is never shown as your email. You sign in with phone number and password.\n\n## Prepare your profile\n\nAdd your photo and profile details, choose your trades and services, select service areas, and save a private work location. Then complete identity and criminal-record steps shown by the app.\n\nApproval is a staff decision under the current vetting policy. You cannot quote or accept work until the backend says your worker capability is active."
+    },
+    {
+      "id": "worker-getting-started",
+      "audience": "worker",
+      "locale": "ar",
+      "title": "ابدأ كصنايعي",
+      "summary": "سجّل بالموبايل وكلمة السر، كمّل التقديم، واستنى الموافقة المنظمة.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "worker_auth",
+        "worker_onboarding",
+        "worker_vetting"
+      ],
+      "routes": [
+        "/create-account",
+        "/worker/onboarding",
+        "/worker/verification",
+        "/worker"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "صنايعي",
+        "موبايل",
+        "تسجيل",
+        "تقديم",
+        "موافقة"
+      ],
+      "body": "## التسجيل\n\nاختار «صنايعي» واكتب اسمك الكامل ورقم موبايل مصري وكلمة السر. مفيش خانة بريد للصنايعي ومفيش تأكيد بريد أو SMS وقت التسجيل. ورشة بيعمل هوية دخول داخلية خاصة؛ دي مش وسيلة تواصل ومش هتظهر كبريدك. بعد كده بتدخل برقم الموبايل وكلمة السر.\n\n## جهّز ملفك\n\nضيف صورتك وبياناتك، اختار المهن والخدمات، حدد مناطق الشغل، واحفظ موقع شغلك الخاص. بعد كده كمّل خطوات الهوية والفيش اللي التطبيق بيطلبها.\n\nالموافقة قرار موظف حسب سياسة المراجعة الحالية. مش هتقدر تبعت عروض أو تقبل شغل قبل ما النظام يأكد إن صلاحية الشغل عندك نشطة."
+    },
+    {
+      "id": "worker-onboarding-verification",
+      "audience": "worker",
+      "locale": "en",
+      "title": "Onboarding, service areas, and verification",
+      "summary": "Understand every application stage and what customers can see.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "worker_onboarding",
+        "location",
+        "verification",
+        "legal"
+      ],
+      "routes": [
+        "/worker/onboarding",
+        "/worker/verification"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "trade",
+        "profession",
+        "service area",
+        "location",
+        "verification",
+        "rejected"
+      ],
+      "body": "Trades describe the work you offer. Services are the specific tasks customers can request. Service areas describe where you will travel. Your exact work/home location is private and is used for nearby matching; customers do not see it.\n\nVerification can be Not started, Draft, Submitted, Under review, Approved, More information required, Rejected, or Expired. The app shows the safe reason and next action. Identity documents and criminal-record evidence are private. A certificate upload is reviewed by a person and is not claimed to be checked with a government system.\n\nIf more information is required, correct only the requested step and submit again. If rejected, use the appeal path when the app offers it or contact Support."
+    },
+    {
+      "id": "worker-onboarding-verification",
+      "audience": "worker",
+      "locale": "ar",
+      "title": "التقديم ومناطق الشغل والتوثيق",
+      "summary": "افهم كل مرحلة في التقديم وإيه اللي العميل يقدر يشوفه.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "worker_onboarding",
+        "location",
+        "verification",
+        "legal"
+      ],
+      "routes": [
+        "/worker/onboarding",
+        "/worker/verification"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "مهنة",
+        "خدمة",
+        "منطقة",
+        "موقع",
+        "توثيق",
+        "رفض"
+      ],
+      "body": "المهن بتوضح نوع الشغل اللي بتقدمه. الخدمات هي المهام المحددة اللي العميل يطلبها. مناطق الخدمة بتوضح هتتحرك فين. موقع شغلك أو بيتك الدقيق خاص وبيستخدم للمطابقة القريبة؛ العملاء مش بيشوفوه.\n\nحالة التوثيق ممكن تكون: لسه ما بدأش، مسودة، اتبعت، تحت المراجعة، اتوافق عليه، محتاج معلومات تانية، اترفض، أو انتهت صلاحيته. التطبيق بيعرض السبب الآمن والخطوة الجاية. مستندات الهوية والفيش خاصة. المستند بيراجعه شخص، وورشة ما بيدّعيش إنه اتراجع مع جهة حكومية.\n\nلو مطلوب معلومات تانية، صحح الخطوة المطلوبة بس وابعت من جديد. لو اترفضت، استخدم الاعتراض لما التطبيق يتيحه أو كلم الدعم."
+    },
+    {
+      "id": "worker-opportunities-jobs",
+      "audience": "worker",
+      "locale": "en",
+      "title": "Opportunities, quotes, and jobs",
+      "summary": "Review matching requests, write clear quotes, and update real job progress.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "marketplace",
+        "quotes",
+        "bookings",
+        "job_operations"
+      ],
+      "routes": [
+        "/worker/opportunities",
+        "/worker/jobs"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "request",
+        "opportunity",
+        "quote",
+        "price",
+        "job",
+        "cancel"
+      ],
+      "body": "Opportunities appear only when your active worker capability, trades, service areas, availability, and the request match. Not seeing requests can be correct while onboarding or verification is incomplete.\n\nA quote should state the price, arrival estimate, expected duration, what labour/materials include, supported payment methods, and a useful message. Do not put contact details into the quote. A retry must not create a second quote.\n\nWhen selected, manage the job from Jobs. Use the provided progress actions—on the way, arrived, started, completion, reschedule, cancellation—because chat messages do not change job state. Give a truthful reason where required."
+    },
+    {
+      "id": "worker-opportunities-jobs",
+      "audience": "worker",
+      "locale": "ar",
+      "title": "الفرص والعروض والشغل",
+      "summary": "راجع الطلبات المناسبة، اكتب عرض واضح، وحدّث تقدم الشغل الحقيقي.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "marketplace",
+        "quotes",
+        "bookings",
+        "job_operations"
+      ],
+      "routes": [
+        "/worker/opportunities",
+        "/worker/jobs"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "طلب",
+        "فرصة",
+        "عرض",
+        "سعر",
+        "شغل",
+        "إلغاء"
+      ],
+      "body": "الفرص بتظهر بس لما صلاحية الشغل تكون نشطة ومهنتك ومنطقة خدمتك وتوفرك مناسبين للطلب. طبيعي ما تشوفش طلبات لو التقديم أو التوثيق لسه ناقص.\n\nالعرض الواضح فيه السعر ووقت الوصول والمدة المتوقعة والخامات أو المصنعية المشمولة وطرق الدفع ورسالة مفيدة. ما تحطش بيانات تواصل في العرض. إعادة المحاولة ما ينفعش تعمل عرض تاني لنفس الطلب.\n\nلما العميل يختارك، تابع من «الشغل». استخدم خطوات التقدم الموجودة—في الطريق، وصلت، بدأت، اكتمل، تغيير الموعد، إلغاء—لأن رسائل الشات ما بتغيرش حالة الشغل. اكتب سبب حقيقي لما يكون مطلوب."
+    },
+    {
+      "id": "worker-earnings-profile",
+      "audience": "worker",
+      "locale": "en",
+      "title": "Earnings, profile, availability, and support",
+      "summary": "Understand ledger balances, payout details, public profile information, and help.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "earnings",
+        "payments",
+        "worker_profile",
+        "support"
+      ],
+      "routes": [
+        "/worker/earnings",
+        "/worker/profile",
+        "/support"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "earnings",
+        "withdraw",
+        "wallet",
+        "bank",
+        "profile",
+        "available",
+        "support"
+      ],
+      "body": "Earnings shown by Warsha come from the job ledger. Pending, available, held, withdrawal requested, paid, and reversed are different states. A balance is not proof that an external bank or wallet transfer settled.\n\nWhen payout destinations are enabled, give the destination a clear name such as “My mobile wallet” and enter the requested phone/account reference. Warsha displays only a masked value later. Confirm only a destination you own.\n\nYour public profile can show your name, photo, introduction, experience, trades, services, portfolio, and approved certificates. Your exact work/home location and private verification documents stay private. Set availability truthfully and contact Support from the app when needed."
+    },
+    {
+      "id": "worker-earnings-profile",
+      "audience": "worker",
+      "locale": "ar",
+      "title": "الأرباح والملف والتوفر والدعم",
+      "summary": "افهم رصيد الدفتر وبيانات السحب ومعلومات الملف العام والمساعدة.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "earnings",
+        "payments",
+        "worker_profile",
+        "support"
+      ],
+      "routes": [
+        "/worker/earnings",
+        "/worker/profile",
+        "/support"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "أرباح",
+        "سحب",
+        "محفظة",
+        "بنك",
+        "ملف",
+        "متاح",
+        "دعم"
+      ],
+      "body": "الأرباح اللي ورشة بيعرضها جاية من دفتر الشغل. «معلّقة» و«متاحة» و«محجوزة» و«طلب سحب» و«اتدفعت» و«اتعكست» حالات مختلفة. ظهور رصيد مش دليل إن تحويل البنك أو المحفظة تم خارجيًا.\n\nلما وجهات السحب تكون متاحة، سمّي الوجهة باسم واضح زي «محفظتي على الموبايل» واكتب رقم الموبايل أو مرجع الحساب المطلوب. بعد كده ورشة بيعرض قيمة مخفية جزئيًا بس. أكّد وجهة إنت صاحبها.\n\nملفك العام ممكن يعرض اسمك وصورتك ونبذتك وخبرتك ومهنك وخدماتك وأعمالك وشهاداتك المقبولة. موقع البيت أو الشغل الدقيق ومستندات التوثيق الخاصة بيفضلوا سريين. حدّث توفرك بصدق وكلم الدعم من التطبيق وقت الحاجة."
+    },
+    {
+      "id": "warsha-glossary",
+      "audience": "all",
+      "locale": "en",
+      "title": "Warsha glossary",
+      "summary": "Plain-language meanings for the words Warsha uses.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "glossary"
+      ],
+      "routes": [
+        "/help",
+        "/admin/help"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "customer",
+        "worker",
+        "request",
+        "quote",
+        "booking",
+        "role",
+        "capability",
+        "audit"
+      ],
+      "body": "- **Customer:** a person using Warsha to request or book work.\n- **Worker / provider:** a person offering services after the required onboarding and approval. “Provider” is the internal data term; the product says Worker.\n- **Request:** a description of work sent to matching workers.\n- **Quote:** a worker's offer with price and terms.\n- **Job / booking:** the authoritative agreement and its progress. The product usually says Job; some stored authorities say Booking.\n- **Service area:** the approximate places a worker agrees to serve.\n- **Verification:** the governed review of required worker information.\n- **Product role:** Customer or Worker; what the account does in the product.\n- **Staff role:** a reviewed bundle of admin capabilities.\n- **Capability:** one server-checked admin permission.\n- **Fresh authentication:** proof that the operator authenticated recently; it does not add permission.\n- **Dual control:** a second, different authorized person must approve.\n- **Suspension:** an account or worker capability is stopped under a governed state.\n- **Ban:** a high-risk permanent enforcement action.\n- **Recovery:** a governed way to restore a valid state without rewriting history.\n- **Audit log:** append-only evidence of an action.\n- **Onboarding:** the required steps before the permanent experience.\n- **Address pin:** exact stored coordinates confirmed separately from editable address words.\n- **Default address:** the saved address Warsha selects first; it can be changed."
+    },
+    {
+      "id": "warsha-glossary",
+      "audience": "all",
+      "locale": "ar",
+      "title": "قاموس ورشة",
+      "summary": "معاني بسيطة للكلمات اللي ورشة بيستخدمها.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "glossary"
+      ],
+      "routes": [
+        "/help",
+        "/admin/help"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "عميل",
+        "صنايعي",
+        "طلب",
+        "عرض",
+        "حجز",
+        "دور",
+        "صلاحية",
+        "سجل"
+      ],
+      "body": "- **العميل:** شخص بيستخدم ورشة عشان يطلب أو يحجز شغل.\n- **الصنايعي / مقدم الخدمة:** شخص بيقدم خدمات بعد التقديم والموافقة المطلوبة. «Provider» اسم داخلي في البيانات، والمنتج بيقول صنايعي.\n- **الطلب:** وصف للشغل بيتبعت للصنايعية المناسبين.\n- **العرض:** اقتراح الصنايعي وفيه السعر والشروط.\n- **الشغل / الحجز:** الاتفاق الرسمي ومراحل تنفيذه. المنتج غالبًا بيقول شغل، وبعض الجداول بتقول حجز.\n- **منطقة الخدمة:** الأماكن التقريبية اللي الصنايعي موافق يشتغل فيها.\n- **التوثيق:** مراجعة منظمة لمعلومات الصنايعي المطلوبة.\n- **دور المنتج:** عميل أو صنايعي؛ الحساب بيعمل إيه في المنتج.\n- **دور الموظف:** مجموعة صلاحيات إدارة مراجعة.\n- **الصلاحية:** إذن إدارة واحد بيراجعه السيرفر.\n- **التحقق الحديث:** دليل إن الموظف سجل دخوله قريب؛ ما بيديش صلاحية جديدة.\n- **التحكم المزدوج:** شخص تاني مختلف ومصرح له لازم يوافق.\n- **الإيقاف:** وقف الحساب أو صلاحية الشغل حسب حالة منظمة.\n- **الحظر:** إجراء أمان دائم وعالي الخطورة.\n- **الاسترجاع:** طريقة منظمة ترجع الحالة الصحيحة من غير ما تمسح التاريخ.\n- **سجل المراجعة:** دليل بيتضاف عليه بس للإجراءات.\n- **التقديم:** الخطوات المطلوبة قبل التجربة الدائمة.\n- **دبوس العنوان:** الإحداثيات الدقيقة المتأكدة لوحدها عن كلام العنوان القابل للتعديل.\n- **العنوان الأساسي:** العنوان المحفوظ اللي ورشة بيختاره الأول، وتقدر تغيره."
+    },
+    {
+      "id": "customer-getting-started",
+      "audience": "customer",
+      "locale": "fr",
+      "title": "Bien démarrer comme client",
+      "summary": "Créez votre compte, ajoutez une adresse, demandez un service, comparez les devis et suivez l’intervention.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "auth",
+        "onboarding",
+        "discovery",
+        "marketplace",
+        "bookings"
+      ],
+      "routes": [
+        "/create-account",
+        "/addresses",
+        "/discover",
+        "/requests",
+        "/jobs"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "démarrer",
+        "compte",
+        "inscription",
+        "service",
+        "devis"
+      ],
+      "body": "## Le parcours habituel\n\n1. Créez un compte client avec votre nom, votre e-mail, un numéro de mobile égyptien et un mot de passe.\n2. Confirmez l’e-mail envoyé par Warsha. Aucun code SMS n’est utilisé à l’inscription.\n3. Ajoutez une adresse de service et confirmez sa position.\n4. Recherchez un service ou publiez une demande en décrivant votre besoin.\n5. Comparez les devis reçus. Un devis est une offre, pas encore une réservation.\n6. Choisissez un professionnel et suivez l’intervention dans Mes travaux.\n7. Contactez l’assistance si quelque chose reste imprécis ou se passe mal.\n\n## À savoir\n\nLe professionnel ne voit que les informations d’adresse nécessaires à une intervention confirmée. Une estimation ne peut changer que par le parcours d’approbation prévu dans Warsha."
+    },
+    {
+      "id": "customer-addresses-location",
+      "audience": "customer",
+      "locale": "fr",
+      "title": "Adresses et localisation",
+      "summary": "Enregistrez une adresse claire tout en conservant la position exacte.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "addresses",
+        "location"
+      ],
+      "routes": [
+        "/addresses",
+        "/onboarding/address"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "adresse",
+        "carte",
+        "repère",
+        "position",
+        "autorisation",
+        "maison",
+        "travail"
+      ],
+      "body": "## Ajouter une adresse\n\nDonnez-lui un nom familier, comme Maison ou Travail. Recherchez une adresse ou utilisez votre position actuelle lorsque ces options sont disponibles. Warsha conserve les coordonnées exactes séparément du texte que vous pouvez corriger.\n\nRenseignez la rue et le gouvernorat. Le bâtiment, l’étage, l’appartement, le point de repère et les indications sont facultatifs sauf mention contraire. Confirmez la position avant de réserver.\n\n## Si la position actuelle échoue\n\nAutorisez la localisation dans les réglages du navigateur ou de l’appareil, vérifiez que les services de localisation sont actifs, puis réessayez. Si Warsha obtient les coordonnées sans trouver l’adresse, l’écran le précise et vous laisse rechercher ou corriger les informations."
+    },
+    {
+      "id": "customer-requests-quotes-jobs",
+      "audience": "customer",
+      "locale": "fr",
+      "title": "Demandes, devis et interventions",
+      "summary": "Comprenez le parcours d’une demande jusqu’à la fin ou l’annulation de l’intervention.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "marketplace",
+        "quotes",
+        "bookings",
+        "payments",
+        "disputes"
+      ],
+      "routes": [
+        "/requests/new",
+        "/requests",
+        "/jobs"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "demande",
+        "devis",
+        "professionnel",
+        "intervention",
+        "annuler",
+        "litige"
+      ],
+      "body": "## Demande et devis\n\nDécrivez le problème, choisissez la zone et le moment souhaité, puis envoyez la demande. Les professionnels correspondants peuvent proposer un devis et le réviser tant que la demande l’autorise. Comparez le montant, le délai, le message, les matériaux, les moyens de paiement, la note et les informations de vérification affichées.\n\n## Intervention\n\nAccepter un devis crée ou fait avancer la réservation officielle. Suivez son état dans Mes travaux. Les changements d’horaire, travaux supplémentaires, clôtures, annulations et litiges ont leurs propres confirmations ; un message seul ne modifie pas la réservation."
+    },
+    {
+      "id": "customer-account-security",
+      "audience": "customer",
+      "locale": "fr",
+      "title": "Compte, sécurité et préférences",
+      "summary": "Connectez-vous, récupérez votre mot de passe et gérez langue, apparence et confidentialité.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "auth",
+        "password_recovery",
+        "preferences",
+        "privacy",
+        "legal"
+      ],
+      "routes": [
+        "/sign-in",
+        "/forgot-password",
+        "/account",
+        "/privacy",
+        "/legal"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "mot de passe",
+        "e-mail",
+        "téléphone",
+        "langue",
+        "sombre",
+        "confidentialité",
+        "suppression"
+      ],
+      "body": "Les clients se connectent avec leur e-mail et leur mot de passe. Utilisez Mot de passe oublié pour demander un lien ; Warsha affiche la même réponse sûre, que l’adresse soit inscrite ou non. Ne partagez jamais votre mot de passe ni un lien de récupération.\n\nLa langue et l’apparence Clair, Sombre ou Système suivent votre préférence enregistrée. L’arabe utilise une mise en page de droite à gauche.\n\nLe Centre de confidentialité explique la désactivation, l’export des données et la suppression gouvernée. Une demande de suppression peut être bloquée par une intervention active, une obligation financière, un litige ou une conservation légale."
+    },
+    {
+      "id": "customer-support-faq",
+      "audience": "customer",
+      "locale": "fr",
+      "title": "Notifications, assistance et questions fréquentes",
+      "summary": "Retrouvez les mises à jour et demandez de l’aide en toute sécurité.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "notifications",
+        "support"
+      ],
+      "routes": [
+        "/notifications",
+        "/support",
+        "/help"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "notification",
+        "assistance",
+        "réponse",
+        "dossier",
+        "mot de passe",
+        "adresse"
+      ],
+      "body": "## Notifications\n\nWarsha conserve dans Notifications les mises à jour importantes concernant le compte, les demandes, les interventions, les paiements et la sécurité. Une diffusion externe peut échouer ; l’historique dans le produit reste la référence.\n\n## Assistance\n\nCherchez d’abord dans l’aide. Si vous ne trouvez pas la réponse, ouvrez un dossier avec un objet court et les faits utiles. N’envoyez jamais de mot de passe, de données de paiement complètes ni le contenu d’une pièce d’identité.\n\n## Questions fréquentes\n\n- **Puis-je modifier une adresse ?** Oui, corrigez le texte et confirmez la position demandée.\n- **Quand choisir un professionnel ?** Après avoir comparé les devis reçus.\n- **Comment réinitialiser mon mot de passe ?** Utilisez Mot de passe oublié.\n- **Comment supprimer mon compte ?** Commencez dans le Centre de confidentialité."
+    },
+    {
+      "id": "worker-getting-started",
+      "audience": "worker",
+      "locale": "fr",
+      "title": "Bien démarrer comme professionnel",
+      "summary": "Créez votre compte sans e-mail, terminez votre profil et préparez-vous à recevoir des opportunités.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "worker_auth",
+        "worker_onboarding",
+        "worker_vetting"
+      ],
+      "routes": [
+        "/create-account",
+        "/worker/onboarding",
+        "/worker"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "professionnel",
+        "inscription",
+        "téléphone",
+        "profil",
+        "démarrer"
+      ],
+      "body": "1. Choisissez Professionnel lors de la création du compte.\n2. Saisissez votre nom complet, votre numéro de mobile égyptien et un mot de passe. Aucun e-mail ni code SMS n’est demandé.\n3. Connectez-vous ensuite avec ce numéro et ce mot de passe.\n4. Complétez votre profil, vos métiers, votre zone de service et votre position de travail privée.\n5. Envoyez les éléments de vérification demandés et attendez la décision.\n6. Une fois admissible, consultez les opportunités, envoyez des devis et gérez les interventions.\n\nUtiliser Demander un service ouvre temporairement l’expérience client. Après un redémarrage, le compte revient à l’accueil Professionnel."
+    },
+    {
+      "id": "worker-onboarding-verification",
+      "audience": "worker",
+      "locale": "fr",
+      "title": "Profil, métiers, zone de service et vérification",
+      "summary": "Comprenez les étapes nécessaires avant de pouvoir recevoir des interventions.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "worker_onboarding",
+        "location",
+        "verification",
+        "legal"
+      ],
+      "routes": [
+        "/worker/onboarding",
+        "/worker/verification",
+        "/onboarding/address"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "onboarding",
+        "métier",
+        "zone",
+        "vérification",
+        "document",
+        "position"
+      ],
+      "body": "Le profil indique aux clients qui vous êtes et les services que vous proposez. Choisissez uniquement vos métiers réels et les zones où vous acceptez de vous déplacer. La position de travail sert à trouver des interventions proches ; les clients ne voient pas votre domicile exact.\n\nLa vérification est une procédure gouvernée. Saisissez les informations demandées, téléversez des images lisibles et vérifiez les valeurs extraites avant l’envoi. Les états En attente, Approuvé, Refusé ou Informations supplémentaires ont un sens précis affiché à l’écran. Un refus ne doit pas être contourné en créant un autre compte."
+    },
+    {
+      "id": "worker-opportunities-jobs",
+      "audience": "worker",
+      "locale": "fr",
+      "title": "Opportunités, devis et interventions",
+      "summary": "Répondez aux demandes admissibles et mettez à jour le déroulement réel du travail.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "marketplace",
+        "quotes",
+        "bookings",
+        "job_operations"
+      ],
+      "routes": [
+        "/worker/opportunities",
+        "/worker/jobs",
+        "/worker/requests"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "opportunité",
+        "demande",
+        "devis",
+        "intervention",
+        "arrivée",
+        "terminer"
+      ],
+      "body": "Les opportunités sont filtrées par admissibilité, métier, zone et disponibilité. Ouvrez une demande avant de répondre. Un devis doit indiquer un prix réaliste, le délai d’arrivée, la durée estimée et ce qui est inclus.\n\nLorsqu’un devis est choisi et confirmé, l’intervention apparaît dans Mes travaux. Utilisez les actions Warsha pour signaler le départ, l’arrivée, le début et la fin. Les messages servent à coordonner mais ne remplacent pas ces étapes officielles. En cas de retard, d’absence du client ou de problème sérieux, utilisez l’action correspondante et décrivez les faits."
+    },
+    {
+      "id": "worker-earnings-profile",
+      "audience": "worker",
+      "locale": "fr",
+      "title": "Gains, profil et assistance",
+      "summary": "Comprenez les montants affichés, entretenez votre profil et obtenez de l’aide.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "earnings",
+        "payments",
+        "worker_profile",
+        "support"
+      ],
+      "routes": [
+        "/worker/earnings",
+        "/worker/profile",
+        "/support",
+        "/help"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "gains",
+        "paiement",
+        "retrait",
+        "profil",
+        "assistance"
+      ],
+      "body": "La page Gains distingue les montants en attente, disponibles, retenus et versés selon le registre Warsha. Elle ne prouve pas qu’un organisme externe a exécuté un virement tant que le produit ne l’indique pas. Les retraits réels peuvent rester indisponibles dans certains environnements.\n\nGardez votre nom, votre présentation, vos métiers, vos zones, vos disponibilités et vos documents à jour. Les modifications soumises à contrôle peuvent repasser en vérification.\n\nPour un problème de compte, d’intervention ou de paiement, consultez l’aide puis ouvrez un dossier d’assistance sans partager de mot de passe ni de document d’identité dans le message."
+    },
+    {
+      "id": "warsha-glossary",
+      "audience": "all",
+      "locale": "fr",
+      "title": "Glossaire Warsha",
+      "summary": "Définitions simples des mots utilisés dans Warsha.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "glossary"
+      ],
+      "routes": [
+        "/help",
+        "/admin/help"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "client",
+        "professionnel",
+        "demande",
+        "devis",
+        "intervention",
+        "rôle",
+        "capacité",
+        "audit"
+      ],
+      "body": "- **Client :** personne qui utilise Warsha pour demander ou réserver un service.\n- **Professionnel / prestataire :** personne qui propose des services après l’onboarding et l’approbation nécessaires. Provider est le terme interne ; le produit dit Professionnel.\n- **Demande de service :** description d’un besoin envoyée aux professionnels correspondants.\n- **Devis :** offre d’un professionnel avec prix et conditions.\n- **Intervention / réservation :** accord officiel et suivi de son déroulement.\n- **Zone de service :** lieux approximatifs où un professionnel accepte d’intervenir.\n- **Vérification :** examen gouverné des informations requises du professionnel.\n- **Rôle produit :** Client ou Professionnel, c’est-à-dire l’usage du compte.\n- **Rôle du personnel :** ensemble révisé de capacités d’administration.\n- **Capacité :** autorisation administrative vérifiée par le serveur.\n- **Authentification récente :** preuve d’une connexion récente, sans permission supplémentaire.\n- **Double contrôle :** approbation obligatoire d’une deuxième personne autorisée distincte.\n- **Suspension :** arrêt gouverné d’un compte ou d’une capacité de travail.\n- **Bannissement :** mesure permanente à haut risque.\n- **Journal d’audit :** preuve ajoutée sans modification d’une action.\n- **Analyses :** métriques agrégées issues des autorités métier.\n- **Export :** fichier gouverné destiné à une analyse autorisée.\n- **Repère d’adresse :** coordonnées exactes confirmées séparément du texte modifiable."
+    }
+  ]
+}

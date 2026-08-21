@@ -83,10 +83,10 @@ export function middleware(request: NextRequest) {
   // these through so the host redirect above can see them, so the guard has to
   // be here rather than in the matcher — without it `/en` would be rewritten
   // to `/en/en`, forever.
-  if (/^\/(en|ar)(\/|$)/.test(pathname)) return NextResponse.next();
+  if (/^\/(en|ar|fr)(\/|$)/.test(pathname)) return NextResponse.next();
 
   const explicit = request.cookies.get('warsha-locale')?.value;
-  const locale = explicit === 'ar' || explicit === 'en'
+  const locale = explicit === 'ar' || explicit === 'en' || explicit === 'fr'
     ? explicit
     : localeFromAcceptLanguage(request.headers.get('accept-language'));
 

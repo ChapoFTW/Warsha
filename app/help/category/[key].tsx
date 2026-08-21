@@ -9,6 +9,7 @@ import { ScreenHeader } from '@/components/warsha/ScreenHeader';
 import { AppText } from '@/components/warsha/Typography';
 import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
 import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
+import { useLocalization } from '@/src/i18n/localization';
 import { useSupport } from '@/src/support/support-context';
 import { supportRepository } from '@/src/support/support-repository';
 import { useSupportText } from '@/src/support/support-translations';
@@ -20,11 +21,12 @@ export default function HelpCategoryScreen() {
   const { key } = useLocalSearchParams<{ key: string }>();
   const support = useSupport();
   const copy = useSupportText();
+  const { language } = useLocalization();
   const [category, setCategory] = useState<HelpCategoryDetail | null>(null);
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
 
   const load = useCallback(async () => {
-    if (!support.accountKey || !key) return;
+    if (language === 'fr' || !support.accountKey || !key) return;
     setState('loading');
     try {
       setCategory(await supportRepository.getHelpCategory(support.accountKey, key, support.locale));
@@ -32,9 +34,12 @@ export default function HelpCategoryScreen() {
     } catch {
       setState('error');
     }
-  }, [key, support.accountKey, support.locale]);
+  }, [key, language, support.accountKey, support.locale]);
 
   useEffect(() => { void load(); }, [load]);
+  useEffect(() => { if (language === 'fr') router.replace('/help'); }, [language]);
+
+  if (language === 'fr') return <SafeAreaView style={styles.safe}><BrandLoadingState label={copy.text('loading')} /></SafeAreaView>;
 
   return <SafeAreaView style={styles.safe}>
     <ScrollView contentContainerStyle={styles.content}>

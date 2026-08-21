@@ -1,3 +1,5 @@
+import { intlLocale, type Locale } from './preferences.ts';
+
 /**
  * Browser projections of the worker authorities already consumed by mobile.
  *
@@ -351,11 +353,11 @@ export function newWorkerKey(prefix: string): string {
   return `${prefix}:${id}`;
 }
 
-export function egpFromMinor(value: string, locale: 'en' | 'ar'): string {
+export function egpFromMinor(value: string, locale: Locale): string {
   let minor = 0n;
   try { minor = BigInt(value || '0'); } catch { /* malformed server value renders zero */ }
   const major = Number(minor) / 100;
-  return new Intl.NumberFormat(locale === 'ar' ? 'ar-EG' : 'en-EG', {
+  return new Intl.NumberFormat(intlLocale(locale), {
     style: 'currency', currency: 'EGP', maximumFractionDigits: 2,
   }).format(major);
 }

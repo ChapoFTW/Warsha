@@ -104,7 +104,7 @@ function Field({ label, ...props }: { label: string } & React.ComponentProps<typ
   const colors = useThemeColors();
   const styles = useThemedStyles(makeStyles);
   const { isRTL } = useLocalization();
-  return <TextInput {...props} accessibilityLabel={label} placeholder={label} placeholderTextColor={colors.textMuted} style={[styles.input, { textAlign: isRTL ? 'right' : 'left' }]} />;
+  return <View><AppText style={styles.label}>{label}</AppText><TextInput {...props} accessibilityLabel={label} placeholder={label} placeholderTextColor={colors.textMuted} style={[styles.input, { textAlign: isRTL ? 'right' : 'left' }]} /></View>;
 }
 
 const makeStyles = (colors: ThemeColors) => StyleSheet.create({

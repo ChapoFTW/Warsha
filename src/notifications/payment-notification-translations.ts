@@ -1,6 +1,6 @@
 import { useLocalization } from '@/src/i18n/localization';
 
-const copy: Record<'en' | 'ar', Record<string, { title: string; body: string }>> = {
+const copy: Record<'en' | 'ar' | 'fr', Record<string, { title: string; body: string }>> = {
   en: {
     payment_confirmed: { title: 'Payment confirmed', body: 'Your payment has been confirmed.' },
     payment_failed: { title: 'Payment failed', body: 'Your payment was not completed. You can try again.' },
@@ -37,9 +37,28 @@ const copy: Record<'en' | 'ar', Record<string, { title: string; body: string }>>
     cash_collection_confirmed: { title: 'تم تأكيد الدفع الكاش', body: 'العميل أكد الدفع الكاش.' },
     cash_collection_disputed: { title: 'الدفع الكاش محتاج مراجعة', body: 'العميل ما أكدش الدفع الكاش المسجّل.' },
   },
+  fr: {
+    payment_confirmed: { title: 'Paiement confirmé', body: 'Votre paiement a été confirmé.' },
+    payment_failed: { title: 'Échec du paiement', body: 'Le paiement n’a pas abouti. Vous pouvez réessayer.' },
+    payment_pending: { title: 'Paiement en attente', body: 'Votre paiement est encore en cours de confirmation.' },
+    refund_initiated: { title: 'Remboursement commencé', body: 'Votre demande de remboursement est en cours.' },
+    refund_completed: { title: 'Remboursement terminé', body: 'Votre remboursement a été enregistré.' },
+    refund_failed: { title: 'Mise à jour du remboursement', body: 'Le remboursement n’a pas abouti. Contactez l’assistance.' },
+    earnings_pending: { title: 'Revenus en attente', body: 'Les revenus du travail sont enregistrés mais pas encore disponibles.' },
+    earnings_available: { title: 'Revenus disponibles', body: 'Les revenus d’un travail terminé peuvent être retirés.' },
+    earnings_held: { title: 'Revenus temporairement retenus', body: 'Un montant est retenu pendant l’examen d’un problème.' },
+    earnings_released: { title: 'Revenus de nouveau disponibles', body: 'L’examen est terminé et le montant est de nouveau disponible.' },
+    withdrawal_requested: { title: 'Retrait demandé', body: 'Votre demande de retrait est en cours d’examen.' },
+    withdrawal_paid: { title: 'Retrait terminé', body: 'Votre retrait a été effectué.' },
+    withdrawal_failed: { title: 'Mise à jour du retrait', body: 'Le retrait n’a pas abouti et le montant est de nouveau disponible.' },
+    cash_collection_reported: { title: 'Confirmer le paiement en espèces', body: 'Le professionnel a déclaré avoir reçu les espèces. Confirmez ce qui s’est passé.' },
+    cash_collection_confirmed: { title: 'Paiement en espèces confirmé', body: 'Le client a confirmé le paiement en espèces.' },
+    cash_collection_disputed: { title: 'Paiement en espèces à examiner', body: 'Le client n’a pas confirmé le paiement en espèces déclaré.' },
+  },
 };
 
 export function usePaymentNotificationCopy() {
   const { language } = useLocalization();
-  return (type: string) => copy[language][type] ?? null;
+  const localized = copy[language];
+  return (type: string) => localized[type] ?? null;
 }
