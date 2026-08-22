@@ -870,4 +870,28 @@ check(/isReauthRefusal/.test(platformPage),
 check(/platformEnvConfirmTitle/.test(platformPage) && /confirming/.test(platformPage),
   'the change requires an explicit confirmation step');
 
+// --- Release verification stays observational -------------------------------
+// PostgREST runs a `stable` function in a read-only transaction. A verification
+// that writes from inside itself cannot run through the surface built to run it.
+const verificationMigration = readFileSync(
+  'supabase/migrations/202608220003_read_only_release_verification.sql', 'utf8');
+const verifyBody = verificationMigration.slice(
+  verificationMigration.indexOf('function public.verify_platform_release'),
+  verificationMigration.indexOf('function public.staff_record_release_verification'));
+check(/stable/.test(verifyBody),
+  'release verification is declared stable');
+check(!/staff_log_access|insert\s+into/i.test(verifyBody),
+  'AND WRITES NOTHING, SO THE READ-ONLY GUARANTEE IS TRUE');
+check(/require_staff_capability\('view_audit_logs'\)/.test(verifyBody),
+  'while still refusing a caller without the capability');
+
+const telemetryBody = verificationMigration.slice(
+  verificationMigration.indexOf('function public.staff_record_release_verification'));
+check(/volatile/.test(telemetryBody),
+  'the separated telemetry is volatile, so it is honestly a write');
+check(/staff_log_access/.test(telemetryBody),
+  'and it is what records the access');
+check(/staff_record_release_verification/.test(platformPage),
+  'the console records access separately from the verification it displays');
+
 console.log(`Admin console: ${checks} checks passed.`);

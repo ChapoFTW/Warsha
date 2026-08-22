@@ -562,5 +562,29 @@ select is((select automatic_release_scheduler_enabled from private.payment_confi
 select is((select enabled from private.marketplace_configuration where singleton), false,
   'the marketplace remains disabled');
 
+-- ---------------------------------------------------------------------------
+-- Release verification must survive the transaction the Console actually uses
+-- ---------------------------------------------------------------------------
+--
+-- PostgREST executes a `stable` function inside a read-only transaction. The
+-- verification used to write an access-log row from inside itself, so through
+-- the Console it raised `cannot execute INSERT in a read-only transaction`
+-- while every read-write pgTAP run passed. This asserts the real path.
+set local role authenticated;
+select pg_temp.act_as('a1800000-0000-4000-8000-000000000001');
+set local transaction_read_only = on;
+select lives_ok(
+  $$ select public.verify_platform_release() $$,
+  'RELEASE VERIFICATION RUNS IN A READ-ONLY TRANSACTION, AS THE CONSOLE CALLS IT');
+select ok((public.verify_platform_release())->'checks' is not null,
+  'and still returns its checks with no write of its own');
+select throws_ok(
+  $$ select public.staff_record_release_verification(0) $$,
+  '25006',
+  null,
+  'while the separated telemetry is honestly a write and says so');
+-- Left read-only deliberately: Postgres refuses to return to read-write inside
+-- a read-only transaction, and nothing after this point writes.
+
 select * from finish();
 rollback;

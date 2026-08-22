@@ -102,7 +102,20 @@ export default function PlatformPage() {
       else setVerifyError(rpcError.message);
       setVerification(null);
     } else {
-      setVerification(parseVerification(data));
+      const parsed = parseVerification(data);
+      setVerification(parsed);
+      // Telemetry is deliberately a separate, volatile call made after the
+      // result is already in hand. The verification is read-only and must stay
+      // that way, so recording that it ran can fail without failing the check.
+      if (parsed) {
+        try {
+          await supabase().rpc('staff_record_release_verification', {
+            p_failures: parsed.failures,
+          });
+        } catch {
+          // Recording that the check ran is not part of the check.
+        }
+      }
     }
     setVerifyBusy(false);
   }
