@@ -119,4 +119,37 @@ check(!/localhost/.test(webAuth),
 check(!/http:\/\//.test(webAuth),
   'and never downgrades to plain http');
 
+
+// --- Hosted redirect contract ----------------------------------------------
+// Hosted development sends confirmation and recovery links to exactly four
+// explicit destinations. The Site URL is what Auth falls back to when a
+// requested redirect is not allowlisted, which is how hosted development spent
+// weeks emailing localhost while every client asked for the right URL.
+const setupDoc = readFileSync('docs/supabase-setup.md', 'utf8');
+const deliveryDoc = readFileSync('docs/operations/email-delivery-runbook.md', 'utf8');
+
+for (const destination of [
+  'https://app.usewarsha.com/auth/confirm',
+  'https://app.usewarsha.com/reset-password',
+  'warsha://auth/confirm',
+  'warsha://reset-password',
+]) {
+  check(setupDoc.includes(destination),
+    `the hosted allow list documents ${destination}`);
+}
+check(/Site URL: https:\/\/app\.usewarsha\.com/.test(setupDoc),
+  'THE HOSTED SITE URL IS DOCUMENTED AS THE APP ORIGIN, NEVER LOCALHOST');
+check(!/Keep `warsha:\/\/\*\*`/.test(setupDoc)
+  && !/must contain `warsha:\/\/\*\*`/.test(deliveryDoc),
+  'no runbook still instructs an operator to re-broaden the allow list');
+check(/falls back to the Site URL/i.test(setupDoc)
+  && /falls back to it/i.test(deliveryDoc),
+  'both runbooks explain the fallback that caused the localhost defect');
+
+// The local stack keeps its own localhost Site URL; it is a different file for
+// a different environment and pushing it at hosted development is the defect.
+const localConfig = readFileSync('supabase/config.toml', 'utf8');
+check(/site_url = "http:\/\/localhost:8081"/.test(localConfig),
+  'the LOCAL stack config still points at localhost, as it should');
+
 console.log(`Address contract: ${checks} checks passed.`);

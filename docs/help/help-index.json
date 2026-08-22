@@ -174,7 +174,7 @@
       "locale": "en",
       "title": "Getting started as a customer",
       "summary": "Create an account, add an address, request work, compare quotes, and follow the job.",
-      "version": 1,
+      "version": 2,
       "lastReviewedDate": "2026-08-21",
       "features": [
         "auth",
@@ -205,7 +205,7 @@
       "locale": "ar",
       "title": "ابدأ كعميل",
       "summary": "اعمل حساب، ضيف عنوان، اطلب خدمة، قارن العروض، وتابع الشغل.",
-      "version": 1,
+      "version": 2,
       "lastReviewedDate": "2026-08-21",
       "features": [
         "auth",
@@ -1140,7 +1140,7 @@
       "locale": "fr",
       "title": "Bien démarrer comme client",
       "summary": "Créez votre compte, ajoutez une adresse, demandez un service, comparez les devis et suivez l’intervention.",
-      "version": 1,
+      "version": 2,
       "lastReviewedDate": "2026-08-21",
       "features": [
         "auth",

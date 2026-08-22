@@ -178,14 +178,24 @@ against a provider that is no longer the constraint.
 
 ## Redirect configuration
 
-Unchanged by this work, and already correct — three confirmations were delivered
-and completed on 2026-08-09 through this configuration. Confirm rather than edit:
+Hosted development was corrected on 2026-08-22. Confirm rather than edit:
 
-- **Redirect URLs** must contain `warsha://**` and, for Expo Go only, `exp://**`.
+- **Site URL** is `https://app.usewarsha.com`.
+- **Redirect URLs** are exactly four explicit destinations, no wildcards:
+  `https://app.usewarsha.com/auth/confirm`,
+  `https://app.usewarsha.com/reset-password`,
+  `warsha://auth/confirm`, `warsha://reset-password`.
 - The app supplies `Linking.createURL('auth/confirm')` as `emailRedirectTo`, so
-  a Preview build returns through `warsha://auth/confirm`.
-- The **Site URL** is only the fallback for templates that use `{{ .SiteURL }}`.
-  Warsha's template must not.
+  a Preview build returns through `warsha://auth/confirm`. Web supplies its own
+  origin plus the same path.
+- **The Site URL is not only a template fallback.** Auth falls back to it
+  whenever a requested `emailRedirectTo` is *not* on the allow list. That is
+  exactly how hosted development spent weeks emailing `http://localhost:3000`
+  to real customers while every client was requesting the correct URL. If a
+  confirmation link points somewhere unexpected, suspect the allow list first.
+- `exp://` is deliberately absent from hosted development. An Expo Go address
+  names a developer's own machine, which is the same class of defect as
+  localhost. Point a dev client at a local stack instead.
 
 ## Template
 

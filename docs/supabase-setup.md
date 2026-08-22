@@ -90,7 +90,7 @@ warsha://**
 
 The Expo configuration already declares `"scheme": "warsha"` in `app.json`. A custom-scheme change requires a new development/native build because schemes are compiled into the native application. Expo Go continues to use its generated `exp://` address and does not require a custom Warsha build.
 
-The app always supplies the generated callback as `redirectTo` when requesting a reset. Do not rely on `http://localhost:3000`: the hosted Supabase Site URL is not changed by the mobile app, and localhost is only an unsuitable fallback when a mobile reset request omits its explicit redirect. Configure the hosted Site URL separately for any real website that may be added later.
+The app always supplies the generated callback as `redirectTo` when requesting a reset. A requested redirect that is **not on the allow list is ignored and Auth falls back to the Site URL**, so an incomplete allow list silently sends people somewhere else entirely rather than failing loudly.
 
 After changing the dashboard allow-list, restart Expo, request a new password-reset email, and use only the newest link. Previously issued or already-used recovery links can be rejected as expired.
 
@@ -100,9 +100,23 @@ Customer signup keeps **Confirm email** enabled. Warsha supplies
 `Linking.createURL('auth/confirm')` as `emailRedirectTo`, so development and
 production native builds return through `warsha://auth/confirm`; Expo Go uses
 its generated `exp://` URL; web uses the current web origin and
-`/auth/confirm`. Keep `warsha://**` and development-only `exp://**` in the
-hosted Redirect URLs list. Add each real web origin explicitly when Warsha has
-one, and make the production web origin the hosted Site URL.
+`/auth/confirm`.
+
+Hosted development is configured narrowly and explicitly, with no wildcards:
+
+```text
+Site URL: https://app.usewarsha.com
+
+https://app.usewarsha.com/auth/confirm
+https://app.usewarsha.com/reset-password
+warsha://auth/confirm
+warsha://reset-password
+```
+
+`https://usewarsha.com` is deliberately absent: the public site performs no
+signup and has no `/auth/confirm` route. `exp://` is deliberately absent too,
+because an Expo Go address names a developer machine. Use a local stack for
+local development rather than widening a hosted allow list.
 
 The confirmation template must use `{{ .ConfirmationURL }}` (or a correctly
 constructed `{{ .RedirectTo }}` link). A template hard-coded to
