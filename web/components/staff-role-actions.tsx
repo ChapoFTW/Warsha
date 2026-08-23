@@ -61,7 +61,7 @@ export function GrantRoleForm({
 }: {
   roles: StaffRole[];
   onDone: () => void;
-  onNeedsReauth: () => void;
+  onNeedsReauth: (key: string, retry: () => void) => void;
 }) {
   const locale = useAppLocale();
   const words = appCopy[locale] as AppWords;
@@ -93,7 +93,7 @@ export function GrantRoleForm({
       p_email: lookup.trim(),
     });
     if (error) {
-      if (isReauthRefusal(error)) onNeedsReauth();
+      if (isReauthRefusal(error)) onNeedsReauth('lookup', () => { void find(); });
       else setRefusal('unknown');
     } else {
       const found = parseGrantCandidate(data);
@@ -112,8 +112,7 @@ export function GrantRoleForm({
   const self = isSelfGrant(session.staffId, subject);
   const ready = isUuid(subject) && roleKey && reasonValid(reason) && !self;
 
-  const submit = async (event: React.FormEvent) => {
-    event.preventDefault();
+  const perform = async () => {
     if (!ready || busy) return;
     setBusy(true);
     setRefusal(null);
@@ -132,7 +131,9 @@ export function GrantRoleForm({
     if (error) {
       const kind = classifyRefusal(error.message);
       setRefusal(kind);
-      if (isReauthRefusal(error)) onNeedsReauth();
+      // The same idempotency key is carried into the retry, so re-sending a
+      // grant the server refused cannot produce a second one.
+      if (isReauthRefusal(error)) onNeedsReauth('grant', () => { void perform(); });
       setBusy(false);
       return;
     }
@@ -143,6 +144,11 @@ export function GrantRoleForm({
     setReason('');
     setBusy(false);
     onDone();
+  };
+
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    await perform();
   };
 
   return (
@@ -281,7 +287,7 @@ export function RevokeButton({
 }: {
   grant: StaffGrant;
   onDone: () => void;
-  onNeedsReauth: () => void;
+  onNeedsReauth: (key: string, retry: () => void) => void;
 }) {
   const locale = useAppLocale();
   const words = appCopy[locale] as AppWords;
@@ -300,7 +306,7 @@ export function RevokeButton({
     });
     if (error) {
       setRefusal(classifyRefusal(error.message));
-      if (isReauthRefusal(error)) onNeedsReauth();
+      if (isReauthRefusal(error)) onNeedsReauth('revoke', () => { void revoke(); });
       setBusy(false);
       return;
     }

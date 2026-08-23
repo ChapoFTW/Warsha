@@ -814,7 +814,7 @@
       "locale": "en",
       "title": "Worker verification and enforcement",
       "summary": "Review evidence, record safe reasons, and understand approval, rejection, suspension, ban, and appeal boundaries.",
-      "version": 1,
+      "version": 2,
       "lastReviewedDate": "2026-08-21",
       "features": [
         "worker_vetting",
@@ -852,7 +852,7 @@
       "locale": "ar",
       "title": "مراجعة الصنايعي وإجراءات الأمان",
       "summary": "راجع الدليل وسجل سبب آمن وافهم حدود الموافقة والرفض والإيقاف والحظر والاعتراض.",
-      "version": 1,
+      "version": 2,
       "lastReviewedDate": "2026-08-21",
       "features": [
         "worker_vetting",
@@ -890,7 +890,7 @@
       "locale": "en",
       "title": "Staff roles, fresh authentication, and dual control",
       "summary": "Grant only reviewed roles, never self-escalate, and keep immutable evidence.",
-      "version": 7,
+      "version": 8,
       "lastReviewedDate": "2026-08-21",
       "features": [
         "staff_roles",
@@ -922,7 +922,7 @@
       "locale": "ar",
       "title": "أدوار الموظفين والتحقق الحديث والتحكم المزدوج",
       "summary": "امنح دور مراجع بس، ما ترفعش صلاحيتك بنفسك، وحافظ على الدليل الدائم.",
-      "version": 7,
+      "version": 8,
       "lastReviewedDate": "2026-08-21",
       "features": [
         "staff_roles",
@@ -954,7 +954,7 @@
       "locale": "en",
       "title": "Audit, analytics, and exports",
       "summary": "Read immutable history, interpret metric definitions, and export aggregate data safely.",
-      "version": 2,
+      "version": 3,
       "lastReviewedDate": "2026-08-21",
       "features": [
         "audit",
@@ -987,7 +987,7 @@
       "locale": "ar",
       "title": "السجل والتحليلات والتنزيل",
       "summary": "اقرأ التاريخ الدائم وافهم تعريفات الأرقام ونزّل بيانات مجمعة بأمان.",
-      "version": 2,
+      "version": 3,
       "lastReviewedDate": "2026-08-21",
       "features": [
         "audit",
@@ -1458,7 +1458,7 @@
       "locale": "fr",
       "title": "Vérification, suspension et mesures de sécurité",
       "summary": "Examinez les preuves et appliquez une mesure proportionnée avec une raison claire.",
-      "version": 1,
+      "version": 2,
       "lastReviewedDate": "2026-08-21",
       "features": [
         "worker_vetting",
@@ -1490,7 +1490,7 @@
       "locale": "fr",
       "title": "Rôles du personnel, authentification récente et double contrôle",
       "summary": "Accordez le minimum nécessaire tout en conservant une preuve complète.",
-      "version": 7,
+      "version": 8,
       "lastReviewedDate": "2026-08-21",
       "features": [
         "staff_roles",
@@ -1521,7 +1521,7 @@
       "locale": "fr",
       "title": "Audit, analyses et exports",
       "summary": "Lisez l’historique immuable, interprétez les métriques et exportez des agrégats en sécurité.",
-      "version": 2,
+      "version": 3,
       "lastReviewedDate": "2026-08-21",
       "features": [
         "audit",

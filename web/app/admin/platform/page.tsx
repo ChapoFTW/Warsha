@@ -1,10 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 
 import { Badge, Empty, Identifier, Timestamp } from '@/components/console-bits';
 import { ConsoleShell } from '@/components/console-shell';
-import { ReauthDialog } from '@/components/reauth-dialog';
+import {
+  ReauthDialog, usePendingReauth, type ReauthRefusalReason,
+} from '@/components/reauth-dialog';
 import { useStaff } from '@/components/staff-gate';
 import { appCopy } from '@/lib/app-copy';
 import {
@@ -56,8 +58,13 @@ export default function PlatformPage() {
   const [reason, setReason] = useState('');
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [askReauth, setAskReauth] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const onReauthRefused = useCallback((refusal: ReauthRefusalReason) => {
+    setError(refusal === 'another-action-pending' ? words.reauthAnotherPending
+      : refusal === 'already-retried' ? words.reauthAlreadyRetried
+        : words.reauthPendingExpired);
+  }, [words]);
+  const reauth = usePendingReauth(onReauthRefused);
   const [bound, setBound] = useState(false);
 
   const [verification, setVerification] = useState<VerificationResult | null>(null);
@@ -81,8 +88,9 @@ export default function PlatformPage() {
       p_reason: reason.trim(),
     });
     if (rpcError) {
-      if (isReauthRefusal(rpcError)) setAskReauth(true);
-      else setError(rpcError.message);
+      if (isReauthRefusal(rpcError)) {
+        reauth.remember('bind', 'manage_feature_flags', () => { void bind(); });
+      } else setError(rpcError.message);
     } else {
       setBound(true);
       setConfirming(false);
@@ -98,8 +106,9 @@ export default function PlatformPage() {
     setVerifyError(null);
     const { data, error: rpcError } = await supabase().rpc('verify_platform_release');
     if (rpcError) {
-      if (isReauthRefusal(rpcError)) setAskReauth(true);
-      else setVerifyError(rpcError.message);
+      if (isReauthRefusal(rpcError)) {
+        reauth.remember('verify', 'view_audit_logs', () => { void verify(); });
+      } else setVerifyError(rpcError.message);
       setVerification(null);
     } else {
       const parsed = parseVerification(data);
@@ -126,11 +135,11 @@ export default function PlatformPage() {
     <ConsoleShell title={words.platformTitle}>
       <p className={table.lead}>{words.platformLead}</p>
 
-      {askReauth ? (
+      {reauth.capability ? (
         <ReauthDialog
-          capability="manage_feature_flags"
-          onClose={() => setAskReauth(false)}
-          onSuccess={() => setAskReauth(false)}
+          capability={reauth.capability}
+          onClose={reauth.discard}
+          onSuccess={reauth.resume}
         />
       ) : null}
 

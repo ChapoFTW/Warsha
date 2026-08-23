@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 
-import { ReauthDialog } from '@/components/reauth-dialog';
+import {
+  ReauthDialog, usePendingReauth, type ReauthRefusalReason,
+} from '@/components/reauth-dialog';
 import { useStaff } from '@/components/staff-gate';
 import { appCopy } from '@/lib/app-copy';
 import {
@@ -84,7 +86,7 @@ export function VettingDecisionPanel({
   onDecided: () => Promise<void>;
 }) {
   const words = appCopy[locale] as Record<string, string>;
-  const { session, refresh } = useStaff();
+  const { session } = useStaff();
 
   const [decision, setDecision] = useState<VettingDecision | null>(null);
   const [reasonCode, setReasonCode] = useState('');
@@ -93,7 +95,13 @@ export function VettingDecisionPanel({
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<DecisionRefusal | null>(null);
   const [done, setDone] = useState<string | null>(null);
-  const [reauthFor, setReauthFor] = useState<string | null>(null);
+  const [continuation, setContinuation] = useState<string | null>(null);
+  const onReauthRefused = useCallback((refusal: ReauthRefusalReason) => {
+    setContinuation(refusal === 'another-action-pending' ? words.reauthAnotherPending
+      : refusal === 'already-retried' ? words.reauthAlreadyRetried
+        : words.reauthPendingExpired);
+  }, [words]);
+  const reauth = usePendingReauth(onReauthRefused);
 
   const available = decisionsFrom(workerState);
 
@@ -123,8 +131,7 @@ export function VettingDecisionPanel({
     setFailure(null);
   };
 
-  const submit = async (event: React.FormEvent) => {
-    event.preventDefault();
+  const perform = async () => {
     if (!decision || !complete || busy) return;
     setBusy(true);
     setFailure(null);
@@ -142,7 +149,7 @@ export function VettingDecisionPanel({
       setFailure(refusal);
       // Only a freshness refusal is worth a dialog. A capability refusal means
       // the role does not hold it, and re-authenticating would loop forever.
-      if (refusal === 'reauth') setReauthFor(capability);
+      if (refusal === 'reauth') reauth.remember('vetting', capability, () => { void perform(); });
       setBusy(false);
       return;
     }
@@ -150,6 +157,11 @@ export function VettingDecisionPanel({
     reset();
     await onDecided();
     setBusy(false);
+  };
+
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    await perform();
   };
 
   return (
@@ -274,13 +286,15 @@ export function VettingDecisionPanel({
         </form>
       ) : null}
 
-      {reauthFor ? (
+      {reauth.capability ? (
         <ReauthDialog
-          capability={reauthFor}
-          onClose={() => setReauthFor(null)}
-          onSuccess={() => { setReauthFor(null); void refresh(); }}
+          capability={reauth.capability}
+          onClose={reauth.discard}
+          onSuccess={reauth.resume}
         />
       ) : null}
+
+      {continuation ? <p className={styles.error} role="alert">{continuation}</p> : null}
     </section>
   );
 }

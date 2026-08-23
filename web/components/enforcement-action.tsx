@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 
-import { ReauthDialog } from '@/components/reauth-dialog';
+import {
+  ReauthDialog, usePendingReauth, type ReauthRefusalReason,
+} from '@/components/reauth-dialog';
 import { useStaff } from '@/components/staff-gate';
 import { appCopy } from '@/lib/app-copy';
 import {
@@ -73,7 +75,7 @@ export function EnforcementPanel({
   onRecorded: () => Promise<void>;
 }) {
   const words = appCopy[locale] as Record<string, string>;
-  const { session, refresh } = useStaff();
+  const { session } = useStaff();
 
   const [action, setAction] = useState<string | null>(null);
   const [reasonCode, setReasonCode] = useState('');
@@ -84,7 +86,13 @@ export function EnforcementPanel({
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<DecisionRefusal | null>(null);
   const [done, setDone] = useState<string | null>(null);
-  const [reauthFor, setReauthFor] = useState<string | null>(null);
+  const [continuation, setContinuation] = useState<string | null>(null);
+  const onReauthRefused = useCallback((refusal: ReauthRefusalReason) => {
+    setContinuation(refusal === 'another-action-pending' ? words.reauthAnotherPending
+      : refusal === 'already-retried' ? words.reauthAlreadyRetried
+        : words.reauthPendingExpired);
+  }, [words]);
+  const reauth = usePendingReauth(onReauthRefused);
   // One key per composed action. `unique (idempotency_key)` on the table means
   // a retry after a dropped response cannot record the same action twice.
   const [idempotencyKey, setIdempotencyKey] = useState(newIdempotencyKey);
@@ -110,8 +118,7 @@ export function EnforcementPanel({
     setFailure(null);
   };
 
-  const submit = async (event: React.FormEvent) => {
-    event.preventDefault();
+  const perform = async () => {
     if (!action || !complete || busy) return;
     setBusy(true);
     setFailure(null);
@@ -129,7 +136,7 @@ export function EnforcementPanel({
     if (error) {
       const refusal = classifyDecisionError(error.message);
       setFailure(refusal);
-      if (refusal === 'reauth') setReauthFor(capability);
+      if (refusal === 'reauth') reauth.remember('enforcement', capability, () => { void perform(); });
       setBusy(false);
       return;
     }
@@ -138,6 +145,11 @@ export function EnforcementPanel({
     reset();
     await onRecorded();
     setBusy(false);
+  };
+
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    await perform();
   };
 
   return (
@@ -280,13 +292,15 @@ export function EnforcementPanel({
         </form>
       ) : null}
 
-      {reauthFor ? (
+      {reauth.capability ? (
         <ReauthDialog
-          capability={reauthFor}
-          onClose={() => setReauthFor(null)}
-          onSuccess={() => { setReauthFor(null); void refresh(); }}
+          capability={reauth.capability}
+          onClose={reauth.discard}
+          onSuccess={reauth.resume}
         />
       ) : null}
+
+      {continuation ? <p className={styles.error} role="alert">{continuation}</p> : null}
     </section>
   );
 }

@@ -4,6 +4,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { useStaff } from '@/components/staff-gate';
 import { appCopy } from '@/lib/app-copy';
+import {
+  createPendingReauthStore, type PendingRecord, type PendingStore,
+} from '@/lib/pending-reauth';
 import { isReauthRefusal, reauthNeedFor, type ReauthNeed } from '@/lib/reauth';
 import { supabase } from '@/lib/supabase';
 import { useAppLocale } from '@/lib/use-app-locale';
@@ -217,27 +220,70 @@ function Backdrop({
 }
 
 /**
- * Wraps a privileged action so the freshness question is asked once, in one
- * place, rather than remembered separately at every call site.
+ * The continuation across the dialog, in one place.
  *
- * `run` is invoked when the session is already good enough. When it is not,
- * the dialog opens first and `run` follows a successful verification.
+ * This replaces a pre-emptive gate that guessed whether an action *would* be
+ * refused. Nothing ever adopted it, because that is not how these surfaces
+ * work: they send the call, the database refuses it for freshness, and only
+ * then is there anything to prompt about. Every one of them then hand-rolled a
+ * boolean, and every one of them but the report export threw the refused
+ * action away — the dialog closed on a session that was now perfectly fresh
+ * and nothing was re-sent.
+ *
+ * So the shape here is reactive. `remember` is called *with* the refusal, and
+ * holds on to the work; `resume` re-sends it once, after the dialog has proven
+ * the session. See `lib/pending-reauth.ts` for why re-sending is safe and for
+ * the refusals this deliberately makes.
+ *
+ * The remembered call lives in the store behind a ref, not in state. It is a
+ * closure over the values the operator had on screen when they pressed the
+ * button, and re-sending exactly that is the point; a ref keeps it identical
+ * across every re-render the dialog causes, with no `setState(() => fn)` trap.
  */
-export function useReauthGate(capability: string) {
-  const { session } = useStaff();
-  const [pending, setPending] = useState<(() => void) | null>(null);
-  const need = reauthNeedFor(session, capability);
+export type ReauthRefusalReason = 'another-action-pending' | 'already-retried' | 'expired';
 
-  const guard = useCallback((run: () => void) => {
-    if (reauthNeedFor(session, capability).kind === 'ready') { run(); return; }
-    setPending(() => run);
-  }, [session, capability]);
+export function usePendingReauth(onRefused: (reason: ReauthRefusalReason) => void) {
+  // One store per mounted surface, created once. It holds the refused call
+  // itself; state below exists only so the dialog renders.
+  const storeRef = useRef<PendingStore | null>(null);
+  if (storeRef.current === null) storeRef.current = createPendingReauthStore();
+  const store = storeRef.current;
+
+  const [pending, setPending] = useState<PendingRecord | null>(null);
+  const refusedRef = useRef(onRefused);
+  refusedRef.current = onRefused;
+
+  /** Remember a call the server refused for freshness, and open the dialog. */
+  const remember = useCallback((
+    key: string,
+    capability: string,
+    action: () => void | Promise<void>,
+  ) => {
+    const decision = store.remember(key, capability, action);
+    if (!decision.remember) refusedRef.current(decision.reason);
+    setPending(store.peek());
+  }, [store]);
+
+  /** The operator cancelled, or the dialog could not help. Nothing re-runs. */
+  const discard = useCallback(() => {
+    store.discard();
+    setPending(null);
+  }, [store]);
+
+  /** The session is proven. Re-send what was refused, exactly once. */
+  const resume = useCallback(() => {
+    const decision = store.resume();
+    setPending(null);
+    if (!decision.resume && decision.reason === 'expired') refusedRef.current('expired');
+  }, [store]);
 
   return {
-    need,
-    guard,
-    dialogOpen: pending !== null,
-    closeDialog: () => setPending(null),
-    completeDialog: () => { const run = pending; setPending(null); run?.(); },
+    /** Non-null while the dialog should be on screen. */
+    capability: pending?.capability ?? null,
+    /** The action waiting on the dialog, so a surface can keep it unavailable. */
+    pendingKey: pending?.key ?? null,
+    remember,
+    discard,
+    resume,
   };
 }

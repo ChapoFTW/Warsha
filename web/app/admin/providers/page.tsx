@@ -4,7 +4,9 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { Badge, Empty, Identifier, Timestamp } from '@/components/console-bits';
 import { ConsoleShell } from '@/components/console-shell';
-import { ReauthDialog } from '@/components/reauth-dialog';
+import {
+  ReauthDialog, usePendingReauth, type ReauthRefusalReason,
+} from '@/components/reauth-dialog';
 import { useStaff } from '@/components/staff-gate';
 import { appCopy } from '@/lib/app-copy';
 import {
@@ -61,12 +63,21 @@ export default function ProvidersPage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [askReauth, setAskReauth] = useState(false);
   const [reason, setReason] = useState('');
   const [note, setNote] = useState('');
   const [showTechnical, setShowTechnical] = useState(false);
 
   const environment = session.environment ?? null;
+
+  // A refusal the dialog cannot resolve still has to be said out loud. These
+  // are the three the continuation makes deliberately.
+  const onReauthRefused = useCallback((refusal: ReauthRefusalReason) => {
+    setError(refusal === 'another-action-pending' ? words.reauthAnotherPending
+      : refusal === 'already-retried' ? words.reauthAlreadyRetried
+        : words.reauthPendingExpired);
+  }, [words.reauthAnotherPending, words.reauthAlreadyRetried, words.reauthPendingExpired]);
+  const reauth = usePendingReauth(onReauthRefused);
+  const { remember: rememberReauth } = reauth;
 
   const load = useCallback(async () => {
     if (!mayView) return;
@@ -79,8 +90,9 @@ export default function ProvidersPage() {
 
       const registry = await client.rpc('staff_provider_registry');
       if (registry.error) {
-        if (isReauthRefusal(registry.error)) setAskReauth(true);
-        else setError(registry.error.message);
+        if (isReauthRefusal(registry.error)) {
+          rememberReauth('load', 'review_legal_governance', () => { void load(); });
+        } else setError(registry.error.message);
       } else {
         const entries = parseProviderRegistry(registry.data);
         setProvider(entries.find((item) => item.providerKey === MAPS_PROVIDER_KEY) ?? null);
@@ -111,7 +123,7 @@ export default function ProvidersPage() {
     } finally {
       setRefreshing(false);
     }
-  }, [mayView, environment, words.providerLoadFailed]);
+  }, [mayView, environment, words.providerLoadFailed, rememberReauth]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -135,8 +147,13 @@ export default function ProvidersPage() {
       const result = await action();
       const failure = result && 'error' in result ? result.error : null;
       if (failure) {
-        if (isReauthRefusal(failure)) setAskReauth(true);
-        else setError((failure as { message?: string }).message ?? words.providerActionFailed);
+        // The server refused this before it read any state or consumed the
+        // approval, so the exact call is safe to hold and re-send once the
+        // operator has proven themselves. Dropping it here is what made a
+        // completed dialog look like nothing had happened.
+        if (isReauthRefusal(failure)) {
+          reauth.remember(key, ACTIVATION_CAPABILITY, () => run(key, action));
+        } else setError((failure as { message?: string }).message ?? words.providerActionFailed);
       } else {
         await load();
       }
@@ -226,11 +243,11 @@ export default function ProvidersPage() {
     <ConsoleShell title={words.providersTitle}>
       <p className={table.lead}>{words.providersLead}</p>
 
-      {askReauth ? (
+      {reauth.capability ? (
         <ReauthDialog
-          capability={ACTIVATION_CAPABILITY}
-          onClose={() => setAskReauth(false)}
-          onSuccess={() => { setAskReauth(false); void load(); }}
+          capability={reauth.capability}
+          onClose={reauth.discard}
+          onSuccess={reauth.resume}
         />
       ) : null}
 
@@ -331,7 +348,7 @@ export default function ProvidersPage() {
                 </div>
                 <div className={styles.actions}>
                   <button type="button" className={styles.submit}
-                    disabled={busy !== null || note.trim().length < 3}
+                    disabled={(busy ?? reauth.pendingKey) !== null || note.trim().length < 3}
                     onClick={() => approve(request.id)}>
                     {busy === 'approve' ? words.loading : words.providerApproveAction}
                   </button>
@@ -349,7 +366,7 @@ export default function ProvidersPage() {
             </div>
             <div className={styles.actions}>
               <button type="button" className={styles.submit}
-                disabled={busy !== null || reason.trim().length < 10}
+                disabled={(busy ?? reauth.pendingKey) !== null || reason.trim().length < 10}
                 onClick={requestApproval}>
                 {busy === 'request' ? words.loading : words.providerRequestAction}
               </button>
@@ -374,7 +391,7 @@ export default function ProvidersPage() {
           secondPerson
           irreversible
           audit="external_provider_activated"
-          availability={actionAvailability(states.activate, busy, refreshing)}
+          availability={actionAvailability(states.activate, busy ?? reauth.pendingKey, refreshing)}
           label={busy === 'activate' ? words.loading : words.providerActivateAction}
           onRun={activate}
         />
@@ -389,7 +406,7 @@ export default function ProvidersPage() {
           secondPerson={false}
           irreversible={false}
           audit="feature_flag_changed"
-          availability={actionAvailability(states.feature, busy, refreshing)}
+          availability={actionAvailability(states.feature, busy ?? reauth.pendingKey, refreshing)}
           label={busy === 'feature' ? words.loading : words.providerFeatureAction}
           onRun={enableFeature}
         />
@@ -404,7 +421,7 @@ export default function ProvidersPage() {
           secondPerson={false}
           irreversible={false}
           audit="provider_health_observed"
-          availability={actionAvailability(states.health, busy, refreshing)}
+          availability={actionAvailability(states.health, busy ?? reauth.pendingKey, refreshing)}
           label={busy === 'health' ? words.loading : words.providerHealthAction}
           onRun={runHealth}
         />

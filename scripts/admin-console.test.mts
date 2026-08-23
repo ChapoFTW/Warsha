@@ -19,6 +19,9 @@ import {
   projectRefFromSupabaseUrl, summarizeVerification,
 } from '../web/lib/platform.ts';
 import {
+  createPendingReauthStore, MAX_REAUTH_RETRIES, PENDING_REAUTH_TTL_MS,
+} from '../web/lib/pending-reauth.ts';
+import {
   actionAvailability, activationSteps, activationSubject,
 } from '../web/lib/providers.ts';
 import { environmentBinding, parseStaffSession } from '../web/lib/staff.ts';
@@ -414,8 +417,10 @@ check(/useState\(newIdempotencyKey\)/.test(actions),
   'THE IDEMPOTENCY KEY IS GENERATED ONCE PER FORM, SO A DOUBLE SUBMIT CANNOT GRANT TWICE');
 
 // A freshness refusal must reopen the dialog; a capability refusal must not.
-check(/isReauthRefusal\(error\)\) onNeedsReauth\(\)/.test(actions),
-  'a freshness refusal on a mutation reopens the re-authentication dialog');
+// It must also carry the call to re-send: this previously passed a bare
+// notification, so the dialog reopened and the mutation was lost.
+check(/isReauthRefusal\(error\)\) onNeedsReauth\('\w+', \(\) => \{ void \w+\(\); \}\)/.test(actions),
+  'A FRESHNESS REFUSAL ON A MUTATION CARRIES THE CALL TO RE-SEND, NOT JUST A SIGNAL');
 check(/classifyRefusal/.test(actions),
   'and every other refusal is named rather than shown as a Postgres message');
 for (const refusal of ['self', 'already-active', 'unknown-role', 'reason-required', 'reauth', 'capability']) {
@@ -1116,6 +1121,172 @@ check(!/enabled=\{states\.\w+ === 'ready' && busy === null\}/.test(providersSour
 check(/availability\.reason !== 'not-ready'/.test(providersSource),
   'the surface renders the reason an available step is momentarily unavailable');
 for (const key of ['providerLoadFailed', 'providerBusyRefreshing', 'providerBusyOtherAction']) {
+  check(inBoth(key), `the console explains "${key}" in both languages`);
+}
+
+// --- The continuation across re-authentication ------------------------------
+// The reported defect: Activate provider is refused for freshness, the dialog
+// opens, the operator's password is accepted — and nothing else happens. The
+// refused call was never stored, so proving the session re-sent nothing. The
+// provider sat awaiting activation with no error and no transition.
+//
+// `staff_activate_external_provider` takes its capability in the `declare`
+// block, before it reads any state or consumes the dual-control approval, so
+// the refused attempt had no effect and re-sending it is safe. These model the
+// full sequence against the real store.
+{
+  const T0 = 1_700_000_000_000;
+  const activation = () => {
+    const sent: string[] = [];
+    const store = createPendingReauthStore();
+    const activate = () => { sent.push('staff_activate_external_provider'); };
+    return { sent, store, activate };
+  };
+
+  // 1-7. Refused, dialog opens, verification succeeds, the call resumes once.
+  {
+    const { sent, store, activate } = activation();
+    const held = store.remember('activate', 'manage_subprocessors', activate, T0);
+    check(held.remember, 'a freshness refusal is held rather than discarded');
+    check(store.peek()?.capability === 'manage_subprocessors',
+      'THE DIALOG OPENS NAMING THE CAPABILITY THE SERVER ACTUALLY REFUSED');
+    const resumed = store.resume(T0 + 8_000);
+    check(resumed.resume, 'a proven session resumes the refused activation');
+    equal(sent, ['staff_activate_external_provider'],
+      'THE ACTIVATION RPC IS SENT EXACTLY ONCE AFTER RE-AUTHENTICATION');
+    check(store.peek() === null, 'and nothing is left pending afterwards');
+  }
+
+  // 5-6, 10. Exactly once, however many times success arrives.
+  {
+    const { sent, store, activate } = activation();
+    store.remember('activate', 'manage_subprocessors', activate, T0);
+    store.resume(T0 + 1_000);
+    const second = store.resume(T0 + 1_100);
+    const third = store.resume(T0 + 1_200);
+    check(!second.resume && second.reason === 'nothing-pending',
+      'A SECOND DIALOG SUCCESS FINDS NOTHING PENDING AND SENDS NOTHING');
+    check(!third.resume, 'and a third likewise');
+    equal(sent.length, 1,
+      'THE DUAL-CONTROL APPROVAL CANNOT BE CONSUMED TWICE BY A REPEATED RESUME');
+  }
+
+  // 10. Duplicate clicks behind the dialog cannot queue a second attempt.
+  {
+    const { sent, store, activate } = activation();
+    store.remember('activate', 'manage_subprocessors', activate, T0);
+    const again = store.remember('activate', 'manage_subprocessors', activate, T0 + 500);
+    check(again.remember, 'a repeat of the same refused action is still just one');
+    store.resume(T0 + 1_000);
+    equal(sent.length, 1, 'DUPLICATE CLICKS PRODUCE ONE ACTIVATION ATTEMPT, NOT TWO');
+  }
+
+  // Cancelled re-authentication runs nothing.
+  {
+    const { sent, store, activate } = activation();
+    store.remember('activate', 'manage_subprocessors', activate, T0);
+    store.discard();
+    check(store.peek() === null, 'cancelling closes the dialog');
+    const after = store.resume(T0 + 1_000);
+    check(!after.resume, 'CANCELLED RE-AUTHENTICATION DOES NOT RUN THE PENDING ACTION');
+    equal(sent.length, 0, 'and no RPC is sent');
+  }
+
+  // A rejected password never reaches resume, and cancelling afterwards leaves
+  // the operator free to try again rather than refusing them as a repeat.
+  {
+    const { sent, store, activate } = activation();
+    store.remember('activate', 'manage_subprocessors', activate, T0);
+    equal(sent.length, 0, 'A FAILED PASSWORD RUNS NOTHING — ONLY SUCCESS CALLS RESUME');
+    store.discard();
+    const retry = store.remember('activate', 'manage_subprocessors', activate, T0 + 2_000);
+    check(retry.remember, 'and a deliberate later attempt is not refused as a repeat');
+  }
+
+  // A pending action that has gone stale fails safely instead of firing a
+  // privileged call the operator has stopped expecting.
+  {
+    const { sent, store, activate } = activation();
+    store.remember('activate', 'manage_subprocessors', activate, T0);
+    const late = store.resume(T0 + PENDING_REAUTH_TTL_MS + 1);
+    check(!late.resume && late.reason === 'expired',
+      'AN EXPIRED PENDING ACTIVATION FAILS SAFELY RATHER THAN RUNNING LATE');
+    equal(sent.length, 0, 'and sends nothing');
+  }
+
+  // Another action may not quietly displace one already waiting: the operator
+  // would confirm a prompt naming one capability and set a different call off.
+  {
+    const sent: string[] = [];
+    const store = createPendingReauthStore();
+    store.remember('activate', 'manage_subprocessors', () => { sent.push('activate'); }, T0);
+    const intruder = store.remember('feature', 'manage_feature_flags',
+      () => { sent.push('feature'); }, T0 + 100);
+    check(!intruder.remember && intruder.reason === 'another-action-pending',
+      'ANOTHER ACTION CANNOT SILENTLY OVERWRITE THE PENDING ACTIVATION');
+    check(store.peek()?.key === 'activate', 'the activation is still the one waiting');
+    store.resume(T0 + 200);
+    equal(sent, ['activate'], 'and it is the activation that resumes');
+  }
+
+  // A refusal that survives a genuine re-authentication is reported, not
+  // looped: a second dialog would hide the real problem behind a prompt.
+  {
+    const sent: string[] = [];
+    const store = createPendingReauthStore();
+    const activate = () => { sent.push('activate'); };
+    store.remember('activate', 'manage_subprocessors', activate, T0);
+    store.resume(T0 + 1_000);
+    const looped = store.remember('activate', 'manage_subprocessors', activate, T0 + 2_000);
+    check(!looped.remember && looped.reason === 'already-retried',
+      'A SECOND FRESHNESS REFUSAL IS REPORTED RATHER THAN REOPENING THE DIALOG');
+    equal(MAX_REAUTH_RETRIES, 1, 'one retry, by policy');
+    equal(sent.length, 1, 'and still exactly one attempt');
+  }
+}
+
+// Every surface that opens the dialog must resume what it held. Before this
+// fix, five of the six closed the dialog and refreshed instead — which renders
+// identically, because a refused action changed nothing.
+{
+  const SURFACES = [
+    'app/admin/providers/page.tsx', 'app/admin/platform/page.tsx',
+    'app/admin/staff/page.tsx', 'app/admin/analytics/page.tsx',
+    'components/enforcement-action.tsx', 'components/vetting-decision.tsx',
+  ];
+  for (const surface of SURFACES) {
+    const source = readWeb(surface);
+    check(/onSuccess=\{reauth\.resume\}/.test(source),
+      `${surface} RESUMES THE REFUSED ACTION INSTEAD OF ONLY CLOSING THE DIALOG`);
+    check(/onClose=\{reauth\.discard\}/.test(source),
+      `${surface} drops the pending action when the operator cancels`);
+    check(/usePendingReauth\(/.test(source),
+      `${surface} uses the shared continuation, not a private boolean`);
+    check(!/askReauth|setReauthFor|setReauthOpen/.test(source),
+      `${surface} no longer keeps a hand-rolled reauth boolean`);
+  }
+  // The trap that made this possible: a gate nothing adopted, alongside six
+  // call sites that each improvised.
+  const dialog = readWeb('components/reauth-dialog.tsx');
+  check(!/useReauthGate/.test(dialog),
+    'the unused pre-emptive gate is gone, so there is one primitive, not two');
+  check(/export function usePendingReauth/.test(dialog),
+    'and the continuation is exported from one place');
+}
+
+// The refused call must travel out of a child component, not just a signal
+// that one happened — otherwise the parent has nothing to re-send.
+{
+  const roles = readWeb('components/staff-role-actions.tsx');
+  check(/onNeedsReauth: \(key: string, retry: \(\) => void\) => void;/.test(roles),
+    'A CHILD HANDS THE PARENT THE CALL TO RE-SEND, NOT MERELY A NOTIFICATION');
+  check((roles.match(/onNeedsReauth\('\w+', \(\) => \{ void \w+\(\); \}\)/g) ?? []).length === 3,
+    'every refusal in the role actions carries its own retry');
+  check(/p_idempotency_key: idempotencyKey/.test(roles),
+    'and a re-sent grant carries the same idempotency key, so it cannot double');
+}
+
+for (const key of ['reauthAnotherPending', 'reauthAlreadyRetried', 'reauthPendingExpired']) {
   check(inBoth(key), `the console explains "${key}" in both languages`);
 }
 

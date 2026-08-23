@@ -4,7 +4,9 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { Badge, Empty, Identifier, Timestamp } from '@/components/console-bits';
 import { ConsoleShell } from '@/components/console-shell';
-import { ReauthDialog } from '@/components/reauth-dialog';
+import {
+  ReauthDialog, usePendingReauth, type ReauthRefusalReason,
+} from '@/components/reauth-dialog';
 import { GrantRoleForm, RevokeButton } from '@/components/staff-role-actions';
 import { useStaff } from '@/components/staff-gate';
 import { appCopy } from '@/lib/app-copy';
@@ -44,7 +46,14 @@ export default function StaffPage() {
   const [directory, setDirectory] = useState<RoleDirectory | null>(null);
   const [busy, setBusy] = useState(false);
   const [refused, setRefused] = useState(false);
-  const [askReauth, setAskReauth] = useState(false);
+  const [continuation, setContinuation] = useState<string | null>(null);
+  const onReauthRefused = useCallback((refusal: ReauthRefusalReason) => {
+    setContinuation(refusal === 'another-action-pending' ? words.reauthAnotherPending
+      : refusal === 'already-retried' ? words.reauthAlreadyRetried
+        : words.reauthPendingExpired);
+  }, [words]);
+  const reauth = usePendingReauth(onReauthRefused);
+  const { remember: rememberReauth } = reauth;
 
   const load = useCallback(async () => {
     if (!allowed) return;
@@ -53,14 +62,14 @@ export default function StaffPage() {
     const { data, error } = await supabase().rpc('get_staff_role_directory');
     if (error) {
       // A freshness refusal is recoverable in place; anything else is not.
-      if (isReauthRefusal(error)) setAskReauth(true);
+      if (isReauthRefusal(error)) rememberReauth('directory', 'manage_staff_roles', () => { void load(); });
       else setRefused(true);
       setDirectory(null);
     } else {
       setDirectory(parseRoleDirectory(data));
     }
     setBusy(false);
-  }, [allowed]);
+  }, [allowed, rememberReauth]);
 
   useEffect(() => {
     if (need.kind === 'ready') void load();
@@ -78,20 +87,22 @@ export default function StaffPage() {
           <button
             type="button"
             className={styles.rowLink}
-            onClick={() => setAskReauth(true)}
+            onClick={() => rememberReauth('directory', 'manage_staff_roles', () => { void load(); })}
           >
             {words.reauthConfirmNow}
           </button>
         </div>
       ) : null}
 
-      {askReauth ? (
+      {reauth.capability ? (
         <ReauthDialog
-          capability="manage_staff_roles"
-          onClose={() => setAskReauth(false)}
-          onSuccess={() => { setAskReauth(false); void load(); }}
+          capability={reauth.capability}
+          onClose={reauth.discard}
+          onSuccess={reauth.resume}
         />
       ) : null}
+
+      {continuation ? <p className={styles.error} role="alert">{continuation}</p> : null}
 
       {!allowed ? (
         <div className={styles.panel}><p className={styles.error}>{words.staffRefused}</p></div>
@@ -140,7 +151,7 @@ export default function StaffPage() {
           <GrantRoleForm
             roles={directory.roles}
             onDone={() => { void load(); }}
-            onNeedsReauth={() => setAskReauth(true)}
+            onNeedsReauth={(key, retry) => rememberReauth(key, 'manage_staff_roles', retry)}
           />
 
           <section className={styles.panel}>
@@ -203,7 +214,7 @@ export default function StaffPage() {
                             <RevokeButton
                               grant={grant}
                               onDone={() => { void load(); }}
-                              onNeedsReauth={() => setAskReauth(true)}
+                              onNeedsReauth={(key, retry) => rememberReauth(key, 'manage_staff_roles', retry)}
                             />
                           </td>
                         </tr>

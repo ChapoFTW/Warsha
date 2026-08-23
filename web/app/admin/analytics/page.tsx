@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { ConsoleShell } from '@/components/console-shell';
-import { ReauthDialog } from '@/components/reauth-dialog';
+import {
+  ReauthDialog, usePendingReauth, type ReauthRefusalReason,
+} from '@/components/reauth-dialog';
 import { useStaff } from '@/components/staff-gate';
 import { appCopy } from '@/lib/app-copy';
 import {
@@ -60,7 +62,14 @@ export default function AnalyticsPage() {
   const [failure, setFailure] = useState<string | null>(null);
   const [exportReason, setExportReason] = useState('');
   const [exporting, setExporting] = useState(false);
-  const [reauthOpen, setReauthOpen] = useState(false);
+  const [continuation, setContinuation] = useState<string | null>(null);
+  const onReauthRefused = useCallback((refusal: ReauthRefusalReason) => {
+    setContinuation(refusal === 'another-action-pending' ? words.reauthAnotherPending
+      : refusal === 'already-retried' ? words.reauthAlreadyRetried
+        : words.reauthPendingExpired);
+  }, [words]);
+  const reauth = usePendingReauth(onReauthRefused);
+  const { remember: rememberReauth } = reauth;
 
   useEffect(() => {
     void supabase().from('service_categories').select('id,translation_key').eq('is_active', true)
@@ -92,7 +101,10 @@ export default function AnalyticsPage() {
 
   const exportReport = useCallback(async (reauthenticated = false) => {
     if (!report || exporting || exportReason.trim().length < 10) return;
-    if (!session.reauthValid && !reauthenticated) { setReauthOpen(true); return; }
+    if (!session.reauthValid && !reauthenticated) {
+      rememberReauth('export', 'export_operational_report', () => { void exportReport(true); });
+      return;
+    }
     setExporting(true); setFailure(null);
     const idempotencyKey = `business-export:${crypto.randomUUID()}`;
     const request = await supabase().rpc('staff_request_business_export', {
@@ -120,7 +132,8 @@ export default function AnalyticsPage() {
     link.href = href; link.download = analyticsFileName(report.period.from, report.period.to);
     link.click(); URL.revokeObjectURL(href);
     setExporting(false);
-  }, [category, exportReason, exporting, governorate, report, session.reauthValid, words.analyticsExportFailed]);
+  }, [category, exportReason, exporting, governorate, report, session.reauthValid,
+    words.analyticsExportFailed, rememberReauth]);
 
   const maxFunnel = useMemo(() => Math.max(1, report?.funnel.requests ?? 0), [report]);
 
@@ -202,7 +215,8 @@ export default function AnalyticsPage() {
       </section> : null}
     </> : null}
 
-    {reauthOpen ? <ReauthDialog capability="export_operational_report" onClose={() => setReauthOpen(false)} onSuccess={() => { setReauthOpen(false); void exportReport(true); }} /> : null}
+    {reauth.capability ? <ReauthDialog capability={reauth.capability} onClose={reauth.discard} onSuccess={reauth.resume} /> : null}
+    {continuation ? <p className={styles.failure} role="alert">{continuation}</p> : null}
   </ConsoleShell>;
 }
 
