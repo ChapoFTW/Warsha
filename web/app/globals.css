@@ -52,7 +52,10 @@
   --space-field-help: 6px;      /* control → helper or error, deliberately tighter */
   --space-field-gap: 22px;      /* one field group → the next */
   --space-section-gap: 14px;    /* heading or explanation → its content */
-  --space-action-gap: 24px;     /* last content → primary action */
+  --space-action-gap: 32px;     /* last content → primary action, clearly larger
+                                   than the gap between two fields so a call to
+                                   action reads as a new intention rather than
+                                   the next item in a list */
   --space-action-between: 12px; /* adjacent actions in a group */
   --space-panel: 24px;          /* card and panel internal padding */
 

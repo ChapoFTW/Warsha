@@ -112,9 +112,11 @@ export default async function HomePage({
               <p className={styles.eyebrow}>{words.workerEyebrow}</p>
               <h2 id="workers" className={styles.sectionTitle}>{words.workerTitle}</h2>
               <p className={styles.sectionLead}>{words.workerLead}</p>
-              <Link href={localeHref(typed, '/become-a-worker')} className={styles.primaryCta}>
-                {words.workerCta}
-              </Link>
+              <div className={styles.ctaGroup}>
+                <Link href={localeHref(typed, '/become-a-worker')} className={styles.primaryCta}>
+                  {words.workerCta}
+                </Link>
+              </div>
             </div>
             <ul className={styles.workerList}>
               {workerPoints.map((point) => (

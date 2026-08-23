@@ -136,4 +136,74 @@ check(/\.field\s*\{[^}]*margin-bottom:\s*var\(--space-field-gap\)/.test(productS
 check(/\.formGrid\s*\{[^}]*gap:\s*0 var\(--space-lg\)/.test(productSurface),
   'AND THE GRID OWNS ONLY THE COLUMN GAP, SO COLLAPSING NEVER DOUBLES THE SPACE');
 
+
+// --- Marketing calls to action ----------------------------------------------
+// The form primitives never governed this surface. "Start your application"
+// sat directly after a paragraph with no wrapper and no top margin, so it
+// touched the sentence above it. These checks fail if that returns.
+const marketingCss = read('web/app/[locale]/page.module.css');
+const marketingPage = read('web/app/[locale]/page.tsx');
+
+check(/^\.ctaGroup\s*\{/m.test(marketingCss),
+  'the marketing surface has a call-to-action group primitive');
+check(/\.ctaGroup\s*\{[^}]*margin-top:\s*var\(--space-action-gap\)/.test(marketingCss),
+  'AND IT SEPARATES THE ACTION FROM THE COPY ABOVE IT');
+check(/\.ctaGroup\s*\{[^}]*gap:\s*var\(--space-action-between\)/.test(marketingCss),
+  'with the shared gap between adjacent actions');
+check(/\.heroActions\s*\{[^}]*margin-top:\s*var\(--space-action-gap\)/.test(marketingCss),
+  'the hero actions use the same token rather than their own number');
+
+// Every marketing call to action is inside a group. A bare `.primaryCta` or
+// `.secondaryCta` is exactly the regression that shipped.
+const ctaUses = [...marketingPage.matchAll(/className=\{styles\.(primaryCta|secondaryCta)\}/g)];
+check(ctaUses.length > 0, 'the marketing page still renders calls to action');
+const groupedRegions = [...marketingPage.matchAll(
+  /className=\{styles\.(ctaGroup|heroActions)\}([\s\S]*?)<\/div>/g)]
+  .map(([, , inner]) => inner).join('\n');
+const groupedCtas = [...groupedRegions.matchAll(/className=\{styles\.(primaryCta|secondaryCta)\}/g)];
+check(groupedCtas.length === ctaUses.length,
+  `EVERY MARKETING CTA SITS IN AN ACTION GROUP (${groupedCtas.length}/${ctaUses.length})`);
+
+// --- Auth surfaces: the customer's first impression --------------------------
+for (const path of [
+  'web/components/auth-panel.module.css',
+  'web/components/staff-sign-in.module.css',
+]) {
+  const css = read(path);
+  check(/\.field\s*\{[^}]*var\(--space-field-help\)/.test(css),
+    `${path} uses the shared field rhythm`);
+  check(/\.submit\s*\{[^}]*margin-top:\s*calc\(var\(--space-action-gap\)/.test(css),
+    `${path} LIFTS ITS SUBMIT TO THE CALL-TO-ACTION SEPARATION`);
+}
+
+// --- Compact actions must not inherit CTA separation -------------------------
+// Table pagination and row actions stay tight; separation is a property of the
+// content-following group, never of the button itself.
+const consoleCss = read('web/components/console-table.module.css');
+check(!/\.pagerButtons\s*\{[^}]*var\(--space-action-gap\)/.test(consoleCss),
+  'COMPACT TABLE ACTIONS DO NOT INHERIT THE CALL-TO-ACTION GAP');
+check(!/\.rowLink\s*\{[^}]*margin-top:\s*var\(--space-action-gap\)/.test(consoleCss),
+  'nor do inline row actions');
+
+// The hierarchy must be visible, not merely ordered: a call to action is
+// separated meaningfully more than two fields are.
+check(value('action-gap') - value('field-gap') >= 8,
+  'A CALL TO ACTION IS CLEARLY, NOT MARGINALLY, MORE SEPARATED THAN A FIELD');
+
+
+// --- The native app was audited, not assumed ---------------------------------
+// Mobile already separates actions from the copy above them using its own
+// scale, so it was deliberately left unchanged. This records that, so nobody
+// "fixes" mobile to mirror a web defect it never had.
+const brandUi = read('components/warsha/BrandUI.tsx');
+check(/emptyAction:\s*\{[^}]*marginTop:\s*spacing\.\w+/.test(brandUi),
+  'THE NATIVE EMPTY-STATE ACTION IS ALREADY SEPARATED FROM ITS COPY');
+const nativeButton = brandUi.slice(brandUi.indexOf('  button: {'));
+const nativeButtonHeight = Number((nativeButton.match(/minHeight:\s*(\d+)/) ?? [])[1]);
+check(nativeButtonHeight >= 44,
+  `and the native button target is at least 44 (${nativeButtonHeight})`);
+// Dimensions may be numbers; *spacing* must come from the scale.
+check(!/(marginTop|marginBottom|gap|padding):\s*\d+/.test(brandUi),
+  'native spacing comes from the scale, not from loose numbers');
+
 console.log(`Spacing system: ${checks} checks passed.`);

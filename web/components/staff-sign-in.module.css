@@ -23,7 +23,7 @@
   max-width: 420px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: var(--space-lg);
 }
 
 .title {
@@ -45,9 +45,10 @@
   gap: 14px;
 }
 
-.field { display: grid; gap: 6px; }
+.field { display: grid; gap: var(--space-field-help); }
 
 .label {
+  margin-bottom: calc(var(--space-field-label) - var(--space-field-help));
   font-size: 12.5px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -74,6 +75,9 @@
 .input:disabled { opacity: 0.6; }
 
 .submit {
+  /* Inside the form grid, so this adds to the field gap rather than
+     replacing it, reaching the call-to-action separation in total. */
+  margin-top: calc(var(--space-action-gap) - var(--space-field-gap));
   appearance: none;
   border: 0;
   font: inherit;

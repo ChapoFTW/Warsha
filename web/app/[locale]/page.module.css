@@ -127,10 +127,10 @@
 }
 
 .heroActions {
-  margin-top: 32px;
+  margin-top: var(--space-action-gap);
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: var(--space-action-between);
 }
 
 .primaryCta {
@@ -359,4 +359,15 @@
   .heroPhoto {
     object-position: 80% center;
   }
+}
+
+/* Marketing call-to-action group.
+   Separation belongs to the group, not to the button: the same `.primaryCta`
+   appears inside compact contexts where a large top margin would be wrong. */
+.ctaGroup {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-action-between);
+  margin-top: var(--space-action-gap);
 }
