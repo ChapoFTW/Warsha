@@ -19,7 +19,7 @@ import {
   projectRefFromSupabaseUrl, summarizeVerification,
 } from '../web/lib/platform.ts';
 import {
-  activationSteps, activationSubject,
+  actionAvailability, activationSteps, activationSubject,
 } from '../web/lib/providers.ts';
 import { environmentBinding, parseStaffSession } from '../web/lib/staff.ts';
 
@@ -1070,5 +1070,53 @@ check(/Wildcard lookup is not permitted/.test(lookupMigration),
   'IT CANNOT BE TURNED INTO A SEARCH');
 check(/emailMasked/.test(lookupMigration) && !/'email',/.test(lookupMigration),
   'and it returns a masked address rather than the real one');
+
+
+// --- A governed action is never silently inert -------------------------------
+// The Providers "Activate provider" button did nothing when clicked: no request,
+// no error, no dialog. Every action was gated on one `busy` flag that `load()`
+// could strand — it set the flag, had no try/finally, and any throwing read
+// skipped the reset. The step list still said "You can do this now" because it
+// never consulted that flag, so a disabled button looked like a broken one.
+equal(actionAvailability('ready', null, false), { enabled: true },
+  'a ready step with nothing in flight is pressable');
+equal(actionAvailability('ready', null, true),
+  { enabled: false, reason: 'refreshing' },
+  'A READY STEP BLOCKED BY A REFRESH SAYS SO RATHER THAN GOING QUIET');
+equal(actionAvailability('ready', 'activate', false),
+  { enabled: false, reason: 'another-action' },
+  'and a step blocked by another action says that instead');
+equal(actionAvailability('blocked', null, false),
+  { enabled: false, reason: 'not-ready' },
+  'a step that is genuinely not ready needs no excuse');
+equal(actionAvailability('waiting', null, false),
+  { enabled: false, reason: 'not-ready' },
+  'nor does one waiting on somebody else');
+
+// Every non-obvious refusal must carry a reason the surface can render.
+for (const [step, busyKey, refresh] of [
+  ['ready', 'feature', false], ['ready', null, true],
+] as const) {
+  const availability = actionAvailability(step, busyKey, refresh);
+  check(!availability.enabled && availability.reason !== 'not-ready',
+    'a blocked-but-ready action always carries a stateable reason');
+}
+
+const providersSource = readFileSync('web/app/admin/providers/page.tsx', 'utf8');
+check(/setRefreshing\(false\);\s*\n\s*\}/.test(providersSource),
+  'THE REFRESH CLEARS ITS FLAG IN A FINALLY, SO IT CANNOT STRAND THE PAGE');
+check((providersSource.match(/\}\s*finally\s*\{/g) ?? []).length >= 3,
+  'every asynchronous handler clears its flag in a finally');
+check(/catch \(reason\)/.test(providersSource) && /providerActionFailed/.test(providersSource),
+  'A THROWN ACTION STILL REPORTS, RATHER THAN LEAVING A DEAD BUTTON');
+check(/providerLoadFailed/.test(providersSource),
+  'and a failed read is reported instead of silently disabling everything');
+check(!/enabled=\{states\.\w+ === 'ready' && busy === null\}/.test(providersSource),
+  'no action is gated on the raw global flag any more');
+check(/availability\.reason !== 'not-ready'/.test(providersSource),
+  'the surface renders the reason an available step is momentarily unavailable');
+for (const key of ['providerLoadFailed', 'providerBusyRefreshing', 'providerBusyOtherAction']) {
+  check(inBoth(key), `the console explains "${key}" in both languages`);
+}
 
 console.log(`Admin console: ${checks} checks passed.`);

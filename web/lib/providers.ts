@@ -201,3 +201,32 @@ export function activationSteps(input: ActivationInput): Record<ActivationStepKe
 export function currentStep(states: Record<ActivationStepKey, StepState>): ActivationStepKey | null {
   return ACTIVATION_STEPS.find((key) => states[key] !== 'done') ?? null;
 }
+
+/**
+ * Whether a governed action may be pressed, and if not, why.
+ *
+ * A button that is disabled for a reason nobody states is indistinguishable
+ * from a broken one. The Providers page shipped exactly that: every action was
+ * gated on a single `busy` flag that a failed background refresh could strand,
+ * so the step list kept saying "You can do this now" while the button silently
+ * refused. Clicking produced no request, no error and no dialog, because the
+ * click never reached a handler at all.
+ *
+ * The reason travels with the answer so the surface can always say something.
+ */
+export type ActionAvailability =
+  | { enabled: true }
+  | { enabled: false; reason: 'not-ready' | 'refreshing' | 'another-action' };
+
+export function actionAvailability(
+  step: StepState,
+  busy: string | null,
+  refreshing: boolean,
+): ActionAvailability {
+  if (step !== 'ready') return { enabled: false, reason: 'not-ready' };
+  // A refresh in flight is transient and worth naming; an action in flight is
+  // the operator's own doing and is named differently.
+  if (refreshing) return { enabled: false, reason: 'refreshing' };
+  if (busy !== null) return { enabled: false, reason: 'another-action' };
+  return { enabled: true };
+}

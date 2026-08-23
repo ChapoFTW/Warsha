@@ -9,9 +9,11 @@ import { useStaff } from '@/components/staff-gate';
 import { appCopy } from '@/lib/app-copy';
 import {
   ACTIVATION_ACTION_KEY, ACTIVATION_CAPABILITY, ACTIVATION_STEPS, activationRequest,
-  activationSteps, activationSubject, currentStep, MAPS_FEATURE_FLAG, MAPS_PROVIDER_KEY,
+  actionAvailability, activationSteps, activationSubject, currentStep,
+  MAPS_FEATURE_FLAG, MAPS_PROVIDER_KEY,
   parseDualControlQueue, parseProviderRegistry,
-  type ActivationStepKey, type DualControlRequest, type ProviderEntry, type StepState,
+  type ActionAvailability, type ActivationStepKey, type DualControlRequest,
+  type ProviderEntry, type StepState,
 } from '@/lib/providers';
 import { isReauthRefusal } from '@/lib/reauth';
 import { hasCapability } from '@/lib/staff';
@@ -57,6 +59,7 @@ export default function ProvidersPage() {
   const [featureEnabled, setFeatureEnabled] = useState(false);
   const [health, setHealth] = useState<Health | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [askReauth, setAskReauth] = useState(false);
   const [reason, setReason] = useState('');
@@ -67,39 +70,48 @@ export default function ProvidersPage() {
 
   const load = useCallback(async () => {
     if (!mayView) return;
-    setBusy('load');
+    // A refresh is not an action. It used to share the action flag, so a single
+    // failed read left every button disabled with nothing on screen to say so.
+    setRefreshing(true);
     setError(null);
     const client = supabase();
+    try {
 
-    const registry = await client.rpc('staff_provider_registry');
-    if (registry.error) {
-      if (isReauthRefusal(registry.error)) setAskReauth(true);
-      else setError(registry.error.message);
-    } else {
-      const entries = parseProviderRegistry(registry.data);
-      setProvider(entries.find((item) => item.providerKey === MAPS_PROVIDER_KEY) ?? null);
+      const registry = await client.rpc('staff_provider_registry');
+      if (registry.error) {
+        if (isReauthRefusal(registry.error)) setAskReauth(true);
+        else setError(registry.error.message);
+      } else {
+        const entries = parseProviderRegistry(registry.data);
+        setProvider(entries.find((item) => item.providerKey === MAPS_PROVIDER_KEY) ?? null);
+      }
+
+      const queue = await client.rpc('staff_dual_control_queue');
+      if (!queue.error) setRequests(parseDualControlQueue(queue.data));
+
+      const flags = await client.rpc('get_staff_feature_flags');
+      if (!flags.error && Array.isArray(flags.data)) {
+        const match = (flags.data as Record<string, unknown>[]).find((row) =>
+          row.flag_key === MAPS_FEATURE_FLAG && row.environment === environment);
+        setFeatureEnabled(match?.enabled === true);
+      }
+
+      // Capability metadata only. The proxy answers whether a credential is
+      // present; it has no path that could answer what it is.
+      const descriptor = await client.functions.invoke('location-proxy', {
+        body: { operation: 'render_descriptor' },
+      });
+      const value = descriptor.data as
+        { descriptor?: { serverCredentialAvailable?: boolean } } | null;
+      setCredentialConfigured(value?.descriptor?.serverCredentialAvailable === true);
+    } catch {
+      // A read that throws is reported, not swallowed into a page that looks
+      // ready and answers nothing.
+      setError(words.providerLoadFailed);
+    } finally {
+      setRefreshing(false);
     }
-
-    const queue = await client.rpc('staff_dual_control_queue');
-    if (!queue.error) setRequests(parseDualControlQueue(queue.data));
-
-    const flags = await client.rpc('get_staff_feature_flags');
-    if (!flags.error && Array.isArray(flags.data)) {
-      const match = (flags.data as Record<string, unknown>[]).find((row) =>
-        row.flag_key === MAPS_FEATURE_FLAG && row.environment === environment);
-      setFeatureEnabled(match?.enabled === true);
-    }
-
-    // Capability metadata only. The proxy answers whether a credential is
-    // present; it has no path that could answer what it is.
-    const descriptor = await client.functions.invoke('location-proxy', {
-      body: { operation: 'render_descriptor' },
-    });
-    const value = descriptor.data as { descriptor?: { serverCredentialAvailable?: boolean } } | null;
-    setCredentialConfigured(value?.descriptor?.serverCredentialAvailable === true);
-
-    setBusy(null);
-  }, [mayView, environment]);
+  }, [mayView, environment, words.providerLoadFailed]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -119,15 +131,22 @@ export default function ProvidersPage() {
   const run = async (key: string, action: () => Promise<{ error: unknown } | void>) => {
     setBusy(key);
     setError(null);
-    const result = await action();
-    const failure = result && 'error' in result ? result.error : null;
-    if (failure) {
-      if (isReauthRefusal(failure)) setAskReauth(true);
-      else setError((failure as { message?: string }).message ?? words.providerActionFailed);
-    } else {
-      await load();
+    try {
+      const result = await action();
+      const failure = result && 'error' in result ? result.error : null;
+      if (failure) {
+        if (isReauthRefusal(failure)) setAskReauth(true);
+        else setError((failure as { message?: string }).message ?? words.providerActionFailed);
+      } else {
+        await load();
+      }
+    } catch (reason) {
+      // A network or client failure is still a failure the operator must see.
+      // Silence here is what made the button look broken rather than refused.
+      setError((reason as { message?: string })?.message ?? words.providerActionFailed);
+    } finally {
+      setBusy(null);
     }
-    setBusy(null);
   };
 
   const requestApproval = () => run('request', async () =>
@@ -167,6 +186,7 @@ export default function ProvidersPage() {
     setBusy('health');
     setError(null);
     const client = supabase();
+    try {
     const token = `warsha-health-${Date.now()}`;
     const search = await client.functions.invoke('location-proxy', {
       body: { operation: 'autocomplete', input: 'Tahrir', sessionToken: token, language: 'en' },
@@ -176,12 +196,16 @@ export default function ProvidersPage() {
     });
     const searchOk = Array.isArray((search.data as { suggestions?: unknown[] } | null)?.suggestions);
     const reverseOk = (reverse.data as { available?: boolean } | null)?.available === true;
-    setHealth({
-      searched: searchOk && !search.error,
-      reverseGeocoded: reverseOk && !reverse.error,
-      note: search.error || reverse.error ? words.providerHealthFailed : null,
-    });
-    setBusy(null);
+      setHealth({
+        searched: searchOk && !search.error,
+        reverseGeocoded: reverseOk && !reverse.error,
+        note: search.error || reverse.error ? words.providerHealthFailed : null,
+      });
+    } catch {
+      setError(words.providerHealthFailed);
+    } finally {
+      setBusy(null);
+    }
   };
 
   const tone = (state: StepState) => state === 'done' ? 'plain' : 'strong';
@@ -350,7 +374,7 @@ export default function ProvidersPage() {
           secondPerson
           irreversible
           audit="external_provider_activated"
-          enabled={states.activate === 'ready' && busy === null}
+          availability={actionAvailability(states.activate, busy, refreshing)}
           label={busy === 'activate' ? words.loading : words.providerActivateAction}
           onRun={activate}
         />
@@ -365,7 +389,7 @@ export default function ProvidersPage() {
           secondPerson={false}
           irreversible={false}
           audit="feature_flag_changed"
-          enabled={states.feature === 'ready' && busy === null}
+          availability={actionAvailability(states.feature, busy, refreshing)}
           label={busy === 'feature' ? words.loading : words.providerFeatureAction}
           onRun={enableFeature}
         />
@@ -380,7 +404,7 @@ export default function ProvidersPage() {
           secondPerson={false}
           irreversible={false}
           audit="provider_health_observed"
-          enabled={states.health === 'ready' && busy === null}
+          availability={actionAvailability(states.health, busy, refreshing)}
           label={busy === 'health' ? words.loading : words.providerHealthAction}
           onRun={runHealth}
         />
@@ -429,12 +453,12 @@ export default function ProvidersPage() {
  */
 function GovernedAction({
   words, title, body, capability, mutates, freshAuth, secondPerson, irreversible,
-  audit, enabled, label, onRun,
+  audit, availability, label, onRun,
 }: {
   words: Record<string, string>;
   title: string; body: string; capability: string;
   mutates: boolean; freshAuth: boolean; secondPerson: boolean; irreversible: boolean;
-  audit: string; enabled: boolean; label: string; onRun: () => void;
+  audit: string; availability: ActionAvailability; label: string; onRun: () => void;
 }) {
   const yes = words.consoleYes;
   const no = words.consoleNo;
@@ -451,10 +475,20 @@ function GovernedAction({
         <li>{words.providerFactAudit}: <Identifier value={audit} /></li>
       </ul>
       <div className={styles.actions}>
-        <button type="button" className={styles.submit} disabled={!enabled} onClick={onRun}>
+        <button type="button" className={styles.submit}
+          disabled={!availability.enabled} onClick={onRun}>
           {label}
         </button>
       </div>
+      {/* A button disabled for a reason nobody states is indistinguishable from
+          a broken one. That is exactly how this page failed. */}
+      {!availability.enabled && availability.reason !== 'not-ready' ? (
+        <p className={styles.hint} role="status">
+          {availability.reason === 'refreshing'
+            ? words.providerBusyRefreshing
+            : words.providerBusyOtherAction}
+        </p>
+      ) : null}
     </div>
   );
 }
