@@ -32,6 +32,30 @@
   --radius-md: 12px;
   --radius-lg: 20px;
 
+  /* Spacing scale. Mobile has carried a 4px scale in `constants/theme.ts` since
+     the beginning; web had radii and a page gutter and nothing else, so every
+     module invented its own pixels — 30 distinct values across 981 declarations.
+     Same rhythm as mobile, web-appropriate values. */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 18px;
+  --space-xl: 28px;
+  --space-2xl: 40px;
+
+  /* Semantic spacing. These name the *relationship*, which is what actually has
+     to stay consistent: a label is nearer its control than the control is to the
+     next field, and a helper line belongs to the control above it rather than
+     floating between two. Use these in form and panel layout rather than the
+     raw scale, so the hierarchy cannot drift one page at a time. */
+  --space-field-label: 10px;    /* label → control */
+  --space-field-help: 6px;      /* control → helper or error, deliberately tighter */
+  --space-field-gap: 22px;      /* one field group → the next */
+  --space-section-gap: 14px;    /* heading or explanation → its content */
+  --space-action-gap: 24px;     /* last content → primary action */
+  --space-action-between: 12px; /* adjacent actions in a group */
+  --space-panel: 24px;          /* card and panel internal padding */
+
   --page-max: 1180px;
   --gutter: clamp(16px, 4vw, 40px);
 

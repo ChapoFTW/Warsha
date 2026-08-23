@@ -2,17 +2,18 @@
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  padding: 20px;
-  margin-bottom: 16px;
+  padding: var(--space-panel);
+  margin-bottom: var(--space-lg);
 }
 
-.lead { font-size: 14.5px; line-height: 1.65; color: var(--text-secondary); max-width: 78ch; margin-bottom: 18px; }
+.lead { font-size: 14.5px; line-height: 1.65; color: var(--text-secondary); max-width: 78ch; margin-bottom: var(--space-section-gap); }
 
-.form { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 18px; }
+.form { display: flex; gap: var(--space-field-gap); flex-wrap: wrap; align-items: flex-end; margin-bottom: var(--space-lg); }
 
-.field { display: grid; gap: 6px; min-width: 0; flex: 1 1 240px; }
+.field { display: grid; gap: var(--space-field-help); min-width: 0; flex: 1 1 240px; }
 
 .label {
+  margin-bottom: calc(var(--space-field-label) - var(--space-field-help));
   font-size: 12px; font-weight: 700; letter-spacing: 0.06em;
   text-transform: uppercase; color: var(--text-muted);
 }
@@ -79,7 +80,7 @@
 .waiting { font-size: 13.5px; color: var(--text-secondary); white-space: nowrap; }
 
 /* Filter rows sit above a table and wrap rather than overflowing. */
-.filters { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 16px; }
+.filters { display: flex; gap: var(--space-field-gap); flex-wrap: wrap; align-items: flex-end; margin-bottom: var(--space-lg); }
 
 .select {
   font: inherit; font-size: 14.5px; color: var(--text-primary);
@@ -134,3 +135,36 @@
   direction: ltr; unicode-bidi: isolate;
 }
 .chipStrong { background: var(--brand); color: var(--brand-ink); border-color: transparent; font-weight: 700; }
+
+/* Helper text belonging to the control above it. This file had no such class,
+   so forms either omitted explanations or borrowed a style meant for something
+   else. */
+.hint {
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+
+/* A real section heading, distinct from `.label`. A form title set in the field
+   label style reads as a field label, which is exactly how the Staff form came
+   to look cramped against its own explanatory line. */
+.sectionTitle {
+  margin: 0 0 var(--space-field-help);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--text-primary);
+}
+
+/* Form actions never sit against the content above them. */
+.formActions {
+  display: flex;
+  gap: var(--space-action-between);
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: var(--space-action-gap);
+}
+
+/* Field width modifiers, so pages stop reaching for inline flex styles. */
+.fieldNarrow { flex: 0 1 190px; }
+.fieldMedium { flex: 0 1 240px; }

@@ -2,10 +2,12 @@
 
 import { useState } from 'react';
 
+import { Identifier } from '@/components/console-bits';
 import { useStaff } from '@/components/staff-gate';
 import { appCopy, type AppWords } from '@/lib/app-copy';
-import type { StaffGrant, StaffRole } from '@/lib/console-payloads';
+import { parseSafeSearch, type SafeSearchResult, type StaffGrant, type StaffRole } from '@/lib/console-payloads';
 import { isReauthRefusal } from '@/lib/reauth';
+import { hasCapability } from '@/lib/staff';
 import {
   classifyRefusal,
   isSelfGrant,
@@ -62,6 +64,23 @@ export function GrantRoleForm({
   const [refusal, setRefusal] = useState<GrantRefusal | null>(null);
   const [done, setDone] = useState<'granted' | 'duplicate' | null>(null);
   const [idempotencyKey] = useState(newIdempotencyKey);
+  const [lookup, setLookup] = useState('');
+  const [matches, setMatches] = useState<SafeSearchResult[] | null>(null);
+  const [searching, setSearching] = useState(false);
+
+  // Reused, not reinvented: `staff_safe_search` is the governed lookup, and it
+  // deliberately returns no name or email. It answers "which account" without
+  // answering "who", which is the whole point of a safe search. The operator
+  // picks a result and Warsha carries the id; nobody transcribes a UUID.
+  const maySearch = hasCapability(session, 'safe_search');
+
+  const search = async () => {
+    if (lookup.trim().length < 6 || searching) return;
+    setSearching(true);
+    const { data } = await supabase().rpc('staff_safe_search', { p_query: lookup.trim() });
+    setMatches(parseSafeSearch(data).results);
+    setSearching(false);
+  };
 
   const self = isSelfGrant(session.staffId, subject);
   const ready = isUuid(subject) && roleKey && reasonValid(reason) && !self;
@@ -101,8 +120,50 @@ export function GrantRoleForm({
 
   return (
     <form className={styles.panel} onSubmit={submit}>
-      <h2 className={styles.label}>{words.grantTitle}</h2>
-      <p className={styles.notice}>{words.grantNotice}</p>
+      <h2 className={styles.sectionTitle}>{words.grantTitle}</h2>
+      <p className={styles.lead}>{words.grantNotice}</p>
+
+      {maySearch ? (
+        <div className={styles.filters}>
+          <label className={styles.field}>
+            <span className={styles.label}>{words.grantFindAccount}</span>
+            <input
+              className={styles.input}
+              value={lookup}
+              autoComplete="off"
+              onChange={(event) => setLookup(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') { event.preventDefault(); void search(); }
+              }}
+              disabled={busy}
+            />
+            <span className={styles.hint}>{words.grantFindAccountHelp}</span>
+          </label>
+          <div className={styles.fieldNarrow}>
+            <button type="button" className={styles.rowLink}
+              disabled={busy || searching || lookup.trim().length < 6}
+              onClick={() => { void search(); }}>
+              {searching ? words.loading : words.grantFindAction}
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {matches ? (
+        matches.length ? (
+          <ul className={styles.chips} aria-label={words.grantMatches}>
+            {matches.map((match) => (
+              <li key={match.id}>
+                <button type="button" className={styles.rowLink}
+                  aria-pressed={subject === match.id}
+                  onClick={() => setSubject(match.id)}>
+                  {match.kind} · {match.status} · <Identifier value={match.id} short />
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : <p className={styles.hint}>{words.grantNoMatches}</p>
+      ) : null}
 
       <div className={styles.filters}>
         <label className={styles.field}>
@@ -116,9 +177,12 @@ export function GrantRoleForm({
             onChange={(event) => setSubject(event.target.value)}
             disabled={busy}
           />
+          <span className={styles.hint}>
+            {maySearch ? words.grantSubjectHelp : words.grantSubjectHelpNoSearch}
+          </span>
         </label>
 
-        <label className={styles.field} style={{ flex: '0 1 240px' }}>
+        <label className={`${styles.field} ${styles.fieldMedium}`}>
           <span className={styles.label}>{words.colRole}</span>
           <select
             className={styles.select}
@@ -134,7 +198,7 @@ export function GrantRoleForm({
           </select>
         </label>
 
-        <label className={styles.field} style={{ flex: '0 1 190px' }}>
+        <label className={`${styles.field} ${styles.fieldNarrow}`}>
           <span className={styles.label}>{words.grantExpiry}</span>
           <input
             className={styles.input}
@@ -168,9 +232,11 @@ export function GrantRoleForm({
         </p>
       ) : null}
 
-      <button type="submit" className={styles.submit} disabled={!ready || busy}>
-        {busy ? words.loading : words.grantAction}
-      </button>
+      <div className={styles.formActions}>
+        <button type="submit" className={styles.submit} disabled={!ready || busy}>
+          {busy ? words.loading : words.grantAction}
+        </button>
+      </div>
     </form>
   );
 }
