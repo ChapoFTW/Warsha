@@ -994,5 +994,71 @@ select is(
    where pubname='supabase_realtime' and schemaname='private'),
   0,'no private table is broadcast over Realtime');
 
+-- ---------------------------------------------------------------------------
+-- Account lookup for staff role grants
+-- ---------------------------------------------------------------------------
+--
+-- `manage_staff_roles` could grant a role but could not identify anyone to
+-- grant it to: general account search belongs to `safe_search`, which
+-- `security_administrator` deliberately does not hold. This lookup exists only
+-- to answer "is this the right person to make staff?" and must not become a
+-- general search.
+set local role authenticated;
+select pg_temp.act_as('a1700000-0000-4000-8000-000000000001');
+
+select is(
+  (public.staff_lookup_grant_candidate('wps017-support@test.local'))->>'found', 'true',
+  'A SECURITY ADMINISTRATOR CAN IDENTIFY ANOTHER ACCOUNT BY EMAIL');
+select is(
+  (public.staff_lookup_grant_candidate('wps017-support@test.local'))->>'accountId',
+  'a1700000-0000-4000-8000-000000000002',
+  'and the canonical account id is returned for the client to carry');
+select is(
+  (public.staff_lookup_grant_candidate('wps017-support@test.local'))->>'emailMasked',
+  'w' || repeat('•', length('wps017-support') - 1) || '@test.local',
+  'the email comes back masked, confirming identity without re-disclosing it');
+select is(
+  (public.staff_lookup_grant_candidate('wps017-support@test.local'))->>'isSelf', 'false',
+  'a different account is not flagged as self');
+
+-- Self-grant is refused, and the lookup says so before the form is filled in.
+select is(
+  (public.staff_lookup_grant_candidate('wps017-secadmin@test.local'))->>'isSelf', 'true',
+  'THE OPERATORS OWN ACCOUNT IS FLAGGED BEFORE THEY COMPOSE A GRANT');
+select throws_ok(
+  $$ select public.staff_grant_role('a1700000-0000-4000-8000-000000000001','support_agent',
+       'Attempting a self grant on my own account', 'idem-self-grant') $$,
+  '42501', null, 'AND THE GRANT ITSELF STILL REFUSES A SELF GRANT');
+
+-- Least privilege: only what the grant workflow needs.
+select is(
+  (select count(*)::integer from jsonb_object_keys(
+     public.staff_lookup_grant_candidate('wps017-support@test.local')) k
+   where k not in ('found','accountId','displayName','emailMasked','accountStatus',
+                   'staffRoles','isSelf')),
+  0, 'THE LOOKUP DISCLOSES NOTHING BEYOND THE GRANT WORKFLOWS NEEDS');
+select ok(
+  not (public.staff_lookup_grant_candidate('wps017-support@test.local') ? 'phone')
+  and not (public.staff_lookup_grant_candidate('wps017-support@test.local') ? 'email')
+  and not (public.staff_lookup_grant_candidate('wps017-support@test.local') ? 'address'),
+  'no contact detail, no raw email, no address');
+
+-- It cannot be turned into a search.
+select throws_ok(
+  $$ select public.staff_lookup_grant_candidate('%@test.local') $$,
+  '22023', null, 'A WILDCARD LOOKUP IS REFUSED, SO THIS CANNOT ENUMERATE ACCOUNTS');
+select throws_ok(
+  $$ select public.staff_lookup_grant_candidate('wps017-support') $$,
+  '22023', null, 'and a partial address is refused; the operator must already know it');
+select is(
+  (public.staff_lookup_grant_candidate('nobody@test.local'))->>'found', 'false',
+  'an unknown address simply finds nothing');
+
+-- A staff member without the grant capability cannot use it at all.
+select pg_temp.act_as('a1700000-0000-4000-8000-000000000002');
+select throws_ok(
+  $$ select public.staff_lookup_grant_candidate('wps017-secadmin@test.local') $$,
+  '42501', null, 'A ROLE WITHOUT manage_staff_roles CANNOT LOOK ANYONE UP');
+
 select * from finish();
 rollback;

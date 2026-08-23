@@ -186,3 +186,37 @@ export function auditDetail(entry: AuditEntry): string {
 /** The audit range the database refuses to exceed. */
 export const AUDIT_MAX_RANGE_DAYS = 366;
 export const AUDIT_MAX_LIMIT = 200;
+
+/**
+ * A candidate for a staff role grant.
+ *
+ * Mirrors `public.staff_lookup_grant_candidate` exactly. The lookup is exact
+ * email only and returns at most one account, so this is a single value rather
+ * than a result list — it confirms which account an address belongs to, it does
+ * not search. The email arrives already masked; the raw address never leaves
+ * the database.
+ */
+export type GrantCandidate = {
+  accountId: string;
+  displayName: string;
+  emailMasked: string;
+  accountStatus: string;
+  staffRoles: string[];
+  isSelf: boolean;
+};
+
+export function parseGrantCandidate(value: unknown): GrantCandidate | null {
+  if (!value || typeof value !== 'object') return null;
+  const raw = value as Record<string, unknown>;
+  if (raw.found !== true || typeof raw.accountId !== 'string') return null;
+  return {
+    accountId: raw.accountId,
+    displayName: typeof raw.displayName === 'string' ? raw.displayName : '',
+    emailMasked: typeof raw.emailMasked === 'string' ? raw.emailMasked : '',
+    accountStatus: typeof raw.accountStatus === 'string' ? raw.accountStatus : 'unknown',
+    staffRoles: Array.isArray(raw.staffRoles)
+      ? raw.staffRoles.filter((role): role is string => typeof role === 'string')
+      : [],
+    isSelf: raw.isSelf === true,
+  };
+}

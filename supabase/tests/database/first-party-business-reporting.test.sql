@@ -116,5 +116,27 @@ select is((select count(*)::integer from pg_catalog.pg_proc p
     and not (coalesce(array_to_string(p.proconfig,','),'') like '%search_path=""%')),
   0,'every reporting security definer pins an empty search path');
 
+-- ---------------------------------------------------------------------------
+-- Every preset is actually executed
+-- ---------------------------------------------------------------------------
+--
+-- `all_time` shipped broken because no test ever selected it: it was the only
+-- branch calling `pg_catalog.least`, which is not a function, and every other
+-- preset takes a different path. Exercising the whole list is what stops a
+-- branch reaching an operator unexecuted.
+select lives_ok(
+  format($$select private.business_reporting_period(%L, null, null, 'none')$$, preset),
+  format('the %s reporting preset runs', preset))
+from unnest(array[
+  'today','yesterday','last_7_days','last_30_days','this_week','last_week',
+  'this_month','last_month','this_quarter','last_quarter','this_year',
+  'last_year','all_time'
+]) as preset;
+
+select ok(
+  (private.business_reporting_period('all_time', null, null, 'none')->>'from')::date
+    <= (private.business_reporting_period('all_time', null, null, 'none')->>'to')::date,
+  'ALL TIME PRODUCES A USABLE RANGE RATHER THAN RAISING');
+
 select * from finish();
 rollback;

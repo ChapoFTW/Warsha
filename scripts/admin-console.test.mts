@@ -13,6 +13,7 @@ import {
   needsReauth, needsSecondPerson, reauthNeedFor, REAUTH_CAPABILITIES,
 } from '../web/lib/reauth.ts';
 import { buildCapabilityHelp, capabilityLabel } from '../web/lib/capabilities.ts';
+import { parseGrantCandidate } from '../web/lib/console-payloads.ts';
 import {
   BINDABLE_ENVIRONMENTS, bindingOffer, bindingReasonValid, parseVerification,
   projectRefFromSupabaseUrl, summarizeVerification,
@@ -1016,5 +1017,58 @@ check(/r\.capability_key = any\(v_capabilities\)/.test(queueMigration),
   'THE QUEUE SHOWS ONLY REQUESTS THE VIEWER ALREADY HOLDS THE CAPABILITY FOR');
 check(/r\.requested_by <> v_actor/.test(queueMigration),
   'and never marks a requester able to approve their own request');
+
+
+// --- Staff role grants: choosing an account, never transcribing one ----------
+// `manage_staff_roles` could grant a role but not identify anyone to grant it
+// to, because general account search belongs to `safe_search`, which
+// `security_administrator` deliberately does not hold.
+equal(parseGrantCandidate({ found: false }), null,
+  'an unknown address yields no candidate rather than a blank one');
+equal(parseGrantCandidate(null), null, 'and a missing payload is not invented');
+
+const candidate = parseGrantCandidate({
+  found: true,
+  accountId: 'a1700000-0000-4000-8000-000000000002',
+  displayName: 'Support Agent',
+  emailMasked: 'w•••••@test.local',
+  accountStatus: 'good_standing',
+  staffRoles: ['support_agent'],
+  isSelf: false,
+});
+check(candidate !== null, 'a found account parses');
+equal(candidate!.accountId, 'a1700000-0000-4000-8000-000000000002',
+  'THE CANONICAL UUID IS CARRIED INTERNALLY FOR SUBMISSION');
+equal(candidate!.staffRoles, ['support_agent'],
+  'existing staff roles are shown so a grant is not duplicated blindly');
+check(!('email' in (candidate as object)) && !('phone' in (candidate as object)),
+  'and no raw contact detail is carried at all');
+
+const grantForm = readFileSync('web/components/staff-role-actions.tsx', 'utf8');
+check(/staff_lookup_grant_candidate/.test(grantForm),
+  'the grant form uses the governed lookup authority');
+check(!/staff_safe_search/.test(grantForm),
+  'AND NOT THE BROADER ACCOUNT SEARCH IT IS NOT ENTITLED TO');
+check(/type="email"/.test(grantForm),
+  'the operator identifies the account by email, not by identifier');
+check(/clearCandidate/.test(grantForm) && /grantChooseDifferent/.test(grantForm),
+  'A WRONGLY CHOSEN ACCOUNT CAN BE CLEARED BEFORE SUBMISSION');
+check(/candidate\.isSelf/.test(grantForm),
+  'the operators own account is flagged before they compose the grant');
+check(/isSelfGrant\(session\.staffId, subject\)/.test(grantForm),
+  'and the self-grant refusal remains in the submit path');
+check(!/grantSubjectHelpNoSearch/.test(grantForm),
+  'the raw account-id fallback is no longer the workflow');
+
+const lookupMigration = readFileSync(
+  'supabase/migrations/202608230002_staff_grant_candidate_lookup.sql', 'utf8');
+check(/require_staff_capability\('manage_staff_roles'\)/.test(lookupMigration),
+  'the lookup is gated on the grant capability itself');
+check(/enforce_rate_limit\('staff_grant_lookup'/.test(lookupMigration),
+  'it is rate limited so a privileged account cannot test addresses in bulk');
+check(/Wildcard lookup is not permitted/.test(lookupMigration),
+  'IT CANNOT BE TURNED INTO A SEARCH');
+check(/emailMasked/.test(lookupMigration) && !/'email',/.test(lookupMigration),
+  'and it returns a masked address rather than the real one');
 
 console.log(`Admin console: ${checks} checks passed.`);

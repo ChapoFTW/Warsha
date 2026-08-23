@@ -2,12 +2,12 @@
 
 import { useState } from 'react';
 
-import { Identifier } from '@/components/console-bits';
 import { useStaff } from '@/components/staff-gate';
 import { appCopy, type AppWords } from '@/lib/app-copy';
-import { parseSafeSearch, type SafeSearchResult, type StaffGrant, type StaffRole } from '@/lib/console-payloads';
+import {
+  parseGrantCandidate, type GrantCandidate, type StaffGrant, type StaffRole,
+} from '@/lib/console-payloads';
 import { isReauthRefusal } from '@/lib/reauth';
-import { hasCapability } from '@/lib/staff';
 import {
   classifyRefusal,
   isSelfGrant,
@@ -43,6 +43,17 @@ import styles from '@/components/console-table.module.css';
  * The idempotency key is generated once per form. A double submit returns the
  * first grant with `duplicate: true` rather than creating a second.
  */
+
+/** The status word, without widening AppWords into an index signature. */
+function statusWord(words: AppWords, status: string): string {
+  const table: Record<string, string> = {
+    good_standing: words.grantStatus_good_standing,
+    restricted: words.grantStatus_restricted,
+    closed: words.grantStatus_closed,
+  };
+  return table[status] ?? status;
+}
+
 export function GrantRoleForm({
   roles,
   onDone,
@@ -65,21 +76,37 @@ export function GrantRoleForm({
   const [done, setDone] = useState<'granted' | 'duplicate' | null>(null);
   const [idempotencyKey] = useState(newIdempotencyKey);
   const [lookup, setLookup] = useState('');
-  const [matches, setMatches] = useState<SafeSearchResult[] | null>(null);
+  const [candidate, setCandidate] = useState<GrantCandidate | null>(null);
+  const [notFound, setNotFound] = useState(false);
   const [searching, setSearching] = useState(false);
 
-  // Reused, not reinvented: `staff_safe_search` is the governed lookup, and it
-  // deliberately returns no name or email. It answers "which account" without
-  // answering "who", which is the whole point of a safe search. The operator
-  // picks a result and Warsha carries the id; nobody transcribes a UUID.
-  const maySearch = hasCapability(session, 'safe_search');
-
-  const search = async () => {
+  // `staff_lookup_grant_candidate` exists for exactly this: it answers "is this
+  // the right person to make staff?" under `manage_staff_roles`, by exact email
+  // only, and returns a display name, a masked email, account status and any
+  // roles already held. Warsha carries the id; the operator never sees a UUID.
+  const find = async () => {
     if (lookup.trim().length < 6 || searching) return;
     setSearching(true);
-    const { data } = await supabase().rpc('staff_safe_search', { p_query: lookup.trim() });
-    setMatches(parseSafeSearch(data).results);
+    setNotFound(false);
+    setCandidate(null);
+    const { data, error } = await supabase().rpc('staff_lookup_grant_candidate', {
+      p_email: lookup.trim(),
+    });
+    if (error) {
+      if (isReauthRefusal(error)) onNeedsReauth();
+      else setRefusal('unknown');
+    } else {
+      const found = parseGrantCandidate(data);
+      if (found) { setCandidate(found); setSubject(found.accountId); }
+      else setNotFound(true);
+    }
     setSearching(false);
+  };
+
+  const clearCandidate = () => {
+    setCandidate(null);
+    setSubject('');
+    setNotFound(false);
   };
 
   const self = isSelfGrant(session.staffId, subject);
@@ -123,17 +150,20 @@ export function GrantRoleForm({
       <h2 className={styles.sectionTitle}>{words.grantTitle}</h2>
       <p className={styles.lead}>{words.grantNotice}</p>
 
-      {maySearch ? (
+      {/* The account is chosen, never transcribed. Exact email only: this
+          confirms which account an address belongs to, it does not browse. */}
+      {!candidate ? (
         <div className={styles.filters}>
           <label className={styles.field}>
             <span className={styles.label}>{words.grantFindAccount}</span>
             <input
               className={styles.input}
+              type="email"
               value={lookup}
               autoComplete="off"
               onChange={(event) => setLookup(event.target.value)}
               onKeyDown={(event) => {
-                if (event.key === 'Enter') { event.preventDefault(); void search(); }
+                if (event.key === 'Enter') { event.preventDefault(); void find(); }
               }}
               disabled={busy}
             />
@@ -142,46 +172,41 @@ export function GrantRoleForm({
           <div className={styles.fieldNarrow}>
             <button type="button" className={styles.rowLink}
               disabled={busy || searching || lookup.trim().length < 6}
-              onClick={() => { void search(); }}>
+              onClick={() => { void find(); }}>
               {searching ? words.loading : words.grantFindAction}
             </button>
           </div>
         </div>
       ) : null}
 
-      {matches ? (
-        matches.length ? (
-          <ul className={styles.chips} aria-label={words.grantMatches}>
-            {matches.map((match) => (
-              <li key={match.id}>
-                <button type="button" className={styles.rowLink}
-                  aria-pressed={subject === match.id}
-                  onClick={() => setSubject(match.id)}>
-                  {match.kind} · {match.status} · <Identifier value={match.id} short />
-                </button>
-              </li>
-            ))}
-          </ul>
-        ) : <p className={styles.hint}>{words.grantNoMatches}</p>
+      {notFound ? <p className={styles.hint} role="status">{words.grantNoMatches}</p> : null}
+
+      {candidate ? (
+        <div className={styles.notice} role="status">
+          <strong>{candidate.displayName || words.grantUnnamedAccount}</strong>
+          <div className={styles.hint}>
+            {candidate.emailMasked} · {statusWord(words, candidate.accountStatus)}
+          </div>
+          <div className={styles.hint}>
+            {candidate.staffRoles.length
+              ? `${words.grantExistingRoles}: ${candidate.staffRoles
+                  .map((role) => roles.find((r) => r.roleKey === role)?.displayName || role)
+                  .join(', ')}`
+              : words.grantNoExistingRoles}
+          </div>
+          {candidate.isSelf ? (
+            <p className={styles.error} role="alert">{words.grantSelfRefused}</p>
+          ) : null}
+          <div className={styles.formActions}>
+            <button type="button" className={styles.rowLink} onClick={clearCandidate}
+              disabled={busy}>
+              {words.grantChooseDifferent}
+            </button>
+          </div>
+        </div>
       ) : null}
 
       <div className={styles.filters}>
-        <label className={styles.field}>
-          <span className={styles.label}>{words.grantSubject}</span>
-          <input
-            className={styles.input}
-            dir="ltr"
-            spellCheck={false}
-            autoComplete="off"
-            value={subject}
-            onChange={(event) => setSubject(event.target.value)}
-            disabled={busy}
-          />
-          <span className={styles.hint}>
-            {maySearch ? words.grantSubjectHelp : words.grantSubjectHelpNoSearch}
-          </span>
-        </label>
-
         <label className={`${styles.field} ${styles.fieldMedium}`}>
           <span className={styles.label}>{words.colRole}</span>
           <select

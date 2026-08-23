@@ -56,6 +56,21 @@ for (const file of files) {
   if (/pg_catalog\.extract\s*\(/i.test(body)) {
     failures.push(`${file}: pg_catalog.extract(... from ...) is invalid grammar; use pg_catalog.date_part`);
   }
+  // `least` and `greatest` are parser constructs, not pg_catalog functions.
+  // This one shipped and was only caught because a preset nobody tested used it.
+  //
+  // The single exception is the migration that introduced the defect. It is
+  // applied and therefore immutable — forward-only means the fix is a later
+  // migration, not an edit — so it is listed here rather than softening the
+  // rule for everything that follows.
+  if (/pg_catalog\.(least|greatest)\s*\(/i.test(body)
+      && file !== '202608220001_first_party_business_reporting.sql') {
+    failures.push(`${file}: pg_catalog.least/greatest are not functions; call least(...)/greatest(...) unqualified`);
+  }
+  // Same trap, different keyword: `position(x in y)` is special grammar too.
+  if (/pg_catalog\.position\s*\(/i.test(body)) {
+    failures.push(`${file}: pg_catalog.position(... in ...) is invalid grammar; use pg_catalog.strpos`);
+  }
   if (/\bservice_role\b/.test(body)) {
     warnings.push(`${file}: mentions service_role`);
   }
