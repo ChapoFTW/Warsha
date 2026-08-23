@@ -69,6 +69,8 @@ check(value('panel') >= value('field-gap'),
 const primitives = [
   'web/components/governed-actions.module.css',
   'web/components/console-table.module.css',
+  // The customer and worker product surfaces share this one.
+  'web/components/product-surface.module.css',
 ];
 for (const path of primitives) {
   const css = read(path);
@@ -125,5 +127,13 @@ for (const path of componentFiles) {
   check(!/<div[^>]*className=\{[^}]*spacer/i.test(source),
     `${path} creates spacing with layout, not spacer elements`);
 }
+
+
+// --- Responsive collapse keeps its rhythm ------------------------------------
+const productSurface = read('web/components/product-surface.module.css');
+check(/\.field\s*\{[^}]*margin-bottom:\s*var\(--space-field-gap\)/.test(productSurface),
+  'each field carries the field-to-field gap itself, so a collapsed column keeps it');
+check(/\.formGrid\s*\{[^}]*gap:\s*0 var\(--space-lg\)/.test(productSurface),
+  'AND THE GRID OWNS ONLY THE COLUMN GAP, SO COLLAPSING NEVER DOUBLES THE SPACE');
 
 console.log(`Spacing system: ${checks} checks passed.`);

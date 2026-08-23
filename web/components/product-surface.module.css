@@ -17,17 +17,17 @@
 
 .panel {
   background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius-md); padding: 20px; margin-bottom: 18px;
+  border-radius: var(--radius-md); padding: var(--space-panel); margin-bottom: var(--space-lg);
 }
 
-.subpanel { border-top: 1px solid var(--border); padding-top: 16px; margin-top: 18px; }
+.subpanel { border-top: 1px solid var(--border); padding-top: var(--space-lg); margin-top: var(--space-lg); }
 
 .timeline { margin: 0; padding-inline-start: 20px; display: grid; gap: 12px; }
 .timeline li { display: grid; gap: 3px; padding-inline-start: 4px; }
 
 .sectionTitle {
   font-size: 12px; font-weight: 700; letter-spacing: 0.08em;
-  text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px;
+  text-transform: uppercase; color: var(--text-muted); margin-bottom: var(--space-section-gap);
 }
 
 .muted { font-size: 14.5px; line-height: 1.6; color: var(--text-muted); }
@@ -108,11 +108,11 @@
 .factLabel { font-size: 12px; font-weight: 600; color: var(--text-muted); }
 .factValue { font-size: 14.5px; color: var(--text-primary); overflow-wrap: anywhere; }
 
-.field { display: grid; gap: 6px; margin-bottom: 16px; }
+.field { display: grid; gap: var(--space-field-help); margin-bottom: var(--space-field-gap); }
 
 .formGrid {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 0 14px; margin-top: 16px;
+  gap: 0 var(--space-lg); margin-top: var(--space-lg);
 }
 
 .searchRow {
@@ -140,6 +140,7 @@
 .inlineLink { color: var(--text-primary); text-underline-offset: 3px; font-weight: 600; }
 
 .label {
+  margin-bottom: calc(var(--space-field-label) - var(--space-field-help));
   font-size: 12px; font-weight: 700; letter-spacing: 0.06em;
   text-transform: uppercase; color: var(--text-muted);
 }
@@ -155,7 +156,13 @@
 
 .textarea { resize: vertical; line-height: 1.6; min-height: 96px; }
 
-.actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.actions {
+  display: flex;
+  gap: var(--space-action-between);
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: var(--space-action-gap);
+}
 
 .action {
   appearance: none; border: 0; font: inherit; font-size: 14.5px; font-weight: 700;
