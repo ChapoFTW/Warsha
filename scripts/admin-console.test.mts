@@ -17,6 +17,9 @@ import {
   BINDABLE_ENVIRONMENTS, bindingOffer, bindingReasonValid, parseVerification,
   projectRefFromSupabaseUrl, summarizeVerification,
 } from '../web/lib/platform.ts';
+import {
+  activationSteps, activationSubject,
+} from '../web/lib/providers.ts';
 import { environmentBinding, parseStaffSession } from '../web/lib/staff.ts';
 
 let checks = 0;
@@ -46,6 +49,7 @@ const CAPABILITY_OF: Record<string, string> = {
   staff: 'manage_staff_roles',
   audit: 'view_audit_logs',
   platform: 'manage_feature_flags',
+  providers: 'review_legal_governance',
 };
 for (const [key, capability] of Object.entries(CAPABILITY_OF)) {
   const area = CONSOLE_AREAS.find((candidate) => candidate.key === key);
@@ -61,6 +65,8 @@ const RPC_CAPABILITY: Record<string, string> = {
   staff_audit_search: 'view_audit_logs',
   staff_bind_platform_environment: 'manage_feature_flags',
   verify_platform_release: 'view_audit_logs',
+  staff_activate_external_provider: 'manage_subprocessors',
+  staff_set_feature_flag: 'manage_feature_flags',
 };
 for (const [rpc, capability] of Object.entries(RPC_CAPABILITY)) {
   const body = migrations.slice(migrations.indexOf(`function public.${rpc}`));
@@ -893,5 +899,122 @@ check(/staff_log_access/.test(telemetryBody),
   'and it is what records the access');
 check(/staff_record_release_verification/.test(platformPage),
   'the console records access separately from the verification it displays');
+
+
+// --- Provider activation follows the database's order, not a friendlier one --
+const ready = {
+  environment: 'development',
+  credentialConfigured: true,
+  provider: {
+    providerKey: 'google_maps_platform', displayName: 'Google Maps Platform',
+    purpose: '', status: 'implemented_awaiting_credential', enabled: false,
+    environments: ['local', 'staging', 'development'],
+    featureFlag: 'location_provider', killSwitch: 'location_provider',
+  },
+  request: null,
+  featureEnabled: false,
+  healthVerified: false,
+  mayActivate: true,
+  mayManageFlags: true,
+};
+
+const pending = activationSteps(ready);
+equal(pending.environment, 'done', 'a bound development environment satisfies step one');
+equal(pending.credential, 'done', 'a configured credential satisfies step two');
+equal(pending.prerequisites, 'done', 'a registered provider with both switches is ready');
+equal(pending.approvalRequested, 'ready', 'the operator may raise the approval request');
+equal(pending.activate, 'blocked', 'BUT ACTIVATION IS BLOCKED UNTIL SOMEBODY ELSE APPROVES');
+equal(pending.feature, 'blocked',
+  'AND THE FEATURE CANNOT BE SWITCHED ON BEFORE ACTIVATION');
+
+const raised = activationSteps({
+  ...ready,
+  request: {
+    id: 'r1', capabilityKey: 'manage_subprocessors', actionKey: 'activate_external_provider',
+    subjectRef: 'google_maps_platform:development', reason: 'x', environment: 'development',
+    requestedAt: null, requestedByName: 'Me', requestedByMe: true,
+    approvedAt: null, approvedByName: null, approvalNote: null,
+    expiresAt: null, expired: false, canApprove: false,
+  },
+});
+equal(raised.approvalRequested, 'done', 'the raised request is recorded');
+equal(raised.approvalGranted, 'waiting',
+  'A REQUESTER IS NEVER OFFERED THEIR OWN APPROVAL; IT WAITS FOR SOMEONE ELSE');
+equal(raised.activate, 'blocked', 'and activation stays blocked while it waits');
+
+// The second identity is structural: no combination of capabilities makes the
+// approval step actionable for the person who raised it.
+for (const mayActivate of [true, false]) {
+  for (const mayManageFlags of [true, false]) {
+    const states = activationSteps({ ...raised === raised ? ready : ready, mayActivate, mayManageFlags,
+      request: {
+        id: 'r1', capabilityKey: 'manage_subprocessors', actionKey: 'activate_external_provider',
+        subjectRef: 'google_maps_platform:development', reason: 'x', environment: 'development',
+        requestedAt: null, requestedByName: 'Me', requestedByMe: true,
+        approvedAt: null, approvedByName: null, approvalNote: null,
+        expiresAt: null, expired: false, canApprove: false,
+      } });
+    check(states.approvalGranted !== 'ready',
+      'NO CAPABILITY COMBINATION LETS A REQUESTER APPROVE THEIR OWN REQUEST');
+  }
+}
+
+const approved = activationSteps({
+  ...ready,
+  request: {
+    id: 'r1', capabilityKey: 'manage_subprocessors', actionKey: 'activate_external_provider',
+    subjectRef: 'google_maps_platform:development', reason: 'x', environment: 'development',
+    requestedAt: null, requestedByName: 'Colleague', requestedByMe: false,
+    approvedAt: '2026-08-23T00:00:00Z', approvedByName: 'Second', approvalNote: 'ok',
+    expiresAt: null, expired: false, canApprove: false,
+  },
+});
+equal(approved.activate, 'ready', 'once a second person approves, activation may proceed');
+
+const live = activationSteps({
+  ...ready,
+  provider: { ...ready.provider, status: 'active' },
+  featureEnabled: false,
+});
+equal(live.activated, 'done', 'an active provider reports activation complete');
+equal(live.feature, 'ready', 'and only then may the feature be switched on');
+
+const unbound = activationSteps({ ...ready, environment: 'local' });
+equal(unbound.environment, 'blocked', 'an unbound environment blocks everything');
+equal(unbound.activate, 'blocked', 'including activation');
+
+const noCredential = activationSteps({ ...ready, credentialConfigured: false });
+equal(noCredential.prerequisites, 'blocked',
+  'a missing credential blocks the prerequisites step');
+
+equal(activationSubject('google_maps_platform', 'development'),
+  'google_maps_platform:development',
+  'the dual-control subject matches what the activation RPC consumes');
+
+// --- The page shows no credential material ----------------------------------
+const providersPage = readFileSync('web/app/admin/providers/page.tsx', 'utf8');
+// Comments explain what is deliberately absent, so they are stripped before
+// asserting that the rendered surface names none of it.
+const providersRendered = strip(providersPage);
+check(!/service_role|SERVICE_ROLE/i.test(providersPage),
+  'the provider page reaches for no service role');
+check(!/GOOGLE_MAPS_SERVER_KEY|GOOGLE_MAPS_SERVER_API_KEY|digest/i.test(providersRendered),
+  'AND NAMES NO SECRET, NO ENVIRONMENT VARIABLE, AND NO DIGEST');
+check(/serverCredentialAvailable/.test(providersPage),
+  'it asks only whether a credential is configured');
+check(/staff_request_dual_control/.test(providersPage)
+  && /staff_approve_dual_control/.test(providersPage)
+  && /staff_activate_external_provider/.test(providersPage)
+  && /staff_set_feature_flag/.test(providersPage),
+  'every action reuses an existing governed authority');
+
+const queueMigration = readFileSync(
+  'supabase/migrations/202608230001_dual_control_queue.sql', 'utf8');
+check(/\bstable\b/.test(queueMigration) && !/insert\s+into|staff_log_access/i.test(queueMigration),
+  'the approval queue is read-only, so it runs in PostgREST read-only transactions');
+check(/r\.capability_key = any\(v_capabilities\)/.test(queueMigration),
+  'THE QUEUE SHOWS ONLY REQUESTS THE VIEWER ALREADY HOLDS THE CAPABILITY FOR');
+check(/r\.requested_by <> v_actor/.test(queueMigration),
+  'and never marks a requester able to approve their own request');
 
 console.log(`Admin console: ${checks} checks passed.`);

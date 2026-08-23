@@ -28,6 +28,9 @@ export const CONSOLE_AREAS: readonly ConsoleArea[] = [
   // Environment binding is the tool that needs this door; release verification
   // shares the page and is gated separately on `view_audit_logs` inside it.
   { key: 'platform', href: '/platform', capability: 'manage_feature_flags' },
+  // Viewing the provider register is the gate; each action inside the page is
+  // checked against its own capability by the RPC it calls.
+  { key: 'providers', href: '/providers', capability: 'review_legal_governance' },
   { key: 'audit', href: '/audit', capability: 'view_audit_logs' },
   { key: 'help', href: '/help', capability: '' },
 ];

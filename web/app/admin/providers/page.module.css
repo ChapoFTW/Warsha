@@ -1,0 +1,56 @@
+/* The same fact list the rest of the console uses, so provider state reads the
+   way session and platform state already do. */
+.facts { margin: 0 0 16px; display: grid; gap: 10px; }
+.facts div { display: flex; justify-content: space-between; gap: 16px; font-size: 14.5px; }
+.facts dt { color: var(--text-muted); }
+.facts dd { margin: 0; color: var(--text-primary); font-weight: 600; text-align: end; }
+
+/* The sequence is numbered because its order is the database's order, not a
+   presentation choice, and an operator needs to see where they are in it. */
+.steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.step, .stepCurrent {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+}
+
+.stepCurrent {
+  border-color: var(--border-strong);
+  background: var(--surface-raised);
+}
+
+.stepIndex {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid var(--border-strong);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.stepBody {
+  flex: 1;
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.stepBody strong {
+  font-size: 14.5px;
+  color: var(--text-primary);
+}

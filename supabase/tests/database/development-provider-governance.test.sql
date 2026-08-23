@@ -603,5 +603,22 @@ select is((select enabled::integer from private.staff_feature_flags
            where flag_key = 'location_provider' and environment = 'development'), 0,
   'the test leaves the development feature flag disabled');
 
+-- ---------------------------------------------------------------------------
+-- The approval queue: the read surface dual control was missing
+-- ---------------------------------------------------------------------------
+--
+-- Approving by id only meant the second person had to be handed a UUID out of
+-- band. The queue must be readable in the read-only transaction PostgREST opens
+-- for a stable function, and must never widen who can see what.
+select has_function('public','staff_dual_control_queue','the approval queue exists');
+
+set local transaction_read_only = on;
+select lives_ok(
+  $$ select public.staff_dual_control_queue() $$,
+  'THE APPROVAL QUEUE RUNS IN A READ-ONLY TRANSACTION, AS THE CONSOLE CALLS IT');
+select ok(
+  (public.staff_dual_control_queue())->'requests' is not null,
+  'and returns a requests collection');
+
 select * from finish();
 rollback;
