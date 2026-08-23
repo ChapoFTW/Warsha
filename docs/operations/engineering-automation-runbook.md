@@ -44,6 +44,21 @@ to. `commandSpec` in `scripts/warsha-automation/runtime.mjs` resolves `npm`,
 which is correct on every platform and needs no `.cmd` handling. Route new
 commands through `executeCommand` rather than spawning a shim by name.
 
+**Arguments reaching a script through `npm.cmd run` pass through cmd.exe.** A
+message or reason containing `;`, `&`, `|`, `^`, `<` or `>` is split there
+before the script ever sees it, and the fragment after the separator is run as
+its own command — which is how a Preview OTA whose message contained a semicolon
+failed with `'C:\Program' is not recognized` and no other output. Two remedies,
+in order of preference:
+
+1. Invoke the script directly — `node scripts/qa-release.mjs update --message
+   "…"` — which removes the cmd.exe layer entirely. This is the reliable form
+   for any command carrying free text.
+2. Otherwise keep free-text arguments free of shell metacharacters.
+
+An empty failure with a `'C:\...' is not recognized` line and no script output
+is this, not a broken toolchain. Do not hand it back to a human.
+
 ## Evidence and schema
 
 Transient reports live under ignored `artifacts/`. The handoff JSON is schema
