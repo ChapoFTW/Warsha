@@ -1,4 +1,5 @@
 import { translations, type Language } from '../i18n/translations.ts';
+import { byServiceDemand } from '../services/service-catalogue.ts';
 import type { ProviderDraft } from './provider-types.ts';
 
 export const STORED_PROFESSION_PREFIX = 'profession:';
@@ -12,6 +13,7 @@ export const professions = [
   { key: 'acRepair', categoryId: 'ac', en: 'Air-conditioning technician', ar: 'فني تكييف', fr: 'Technicien en climatisation' },
   { key: 'aluminumWorker', categoryId: 'general-maintenance', en: 'Aluminum worker', ar: 'فني ألوميتال', fr: 'Menuisier aluminium' },
   { key: 'applianceRepair', categoryId: 'appliance-repair', en: 'Appliance technician', ar: 'فني أجهزة منزلية', fr: "Technicien en électroménager" },
+  { key: 'barber', categoryId: 'barber', en: 'Barber', ar: 'حلاق', fr: 'Barbier' },
   { key: 'carpentry', categoryId: 'carpentry', en: 'Carpenter', ar: 'نجار', fr: 'Menuisier' },
   { key: 'cleaning', categoryId: 'cleaning', en: 'Cleaner', ar: 'عامل نظافة', fr: 'Agent de nettoyage' },
   { key: 'constructionWorker', categoryId: 'general-maintenance', en: 'Construction worker', ar: 'عامل بناء', fr: 'Ouvrier du bâtiment' },
@@ -23,6 +25,7 @@ export const professions = [
   { key: 'generalMaintenance', categoryId: 'general-maintenance', en: 'General home-maintenance technician', ar: 'فني صيانة منزلية عامة', fr: 'Technicien de maintenance générale' },
   { key: 'glassWorker', categoryId: 'general-maintenance', en: 'Glass worker', ar: 'فني زجاج', fr: 'Vitrier' },
   { key: 'gypsumWorker', categoryId: 'general-maintenance', en: 'Gypsum worker', ar: 'فني جبس', fr: 'Plâtrier' },
+  { key: 'hairdresser', categoryId: 'hairdressing', en: 'Hairdresser', ar: 'كوافير', fr: 'Coiffeur' },
   { key: 'handyman', categoryId: 'general-maintenance', en: 'Handyman', ar: 'فني صيانة متعدد المهارات', fr: 'Agent de maintenance polyvalent' },
   { key: 'homeElectronicsTechnician', categoryId: 'appliance-repair', en: 'Home electronics technician', ar: 'فني إلكترونيات منزلية', fr: 'Technicien en électronique domestique' },
   { key: 'interiorDecorator', categoryId: 'painting', en: 'Interior decorator', ar: 'مصمم ديكور داخلي', fr: "Décorateur d'intérieur" },
@@ -31,6 +34,7 @@ export const professions = [
   { key: 'mason', categoryId: 'general-maintenance', en: 'Mason', ar: 'بنّاء', fr: 'Maçon' },
   { key: 'movingHelp', categoryId: 'moving-help', en: 'Mover', ar: 'عامل نقل أثاث', fr: 'Déménageur' },
   { key: 'painting', categoryId: 'painting', en: 'Painter', ar: 'نقاش', fr: 'Peintre' },
+  { key: 'personalStylist', categoryId: 'personal-styling', en: 'Personal stylist', ar: 'ستايلست شخصي', fr: 'Conseiller en image' },
   { key: 'pestControlWorker', categoryId: 'cleaning', en: 'Pest-control worker', ar: 'فني مكافحة حشرات', fr: 'Technicien en désinsectisation' },
   { key: 'plumbing', categoryId: 'plumbing', en: 'Plumber', ar: 'سباك', fr: 'Plombier' },
   { key: 'poolTechnician', categoryId: 'plumbing', en: 'Pool technician', ar: 'فني حمامات سباحة', fr: 'Technicien de piscine' },
@@ -59,12 +63,27 @@ export function professionLabel(key: string, language: Language): string {
   return profession?.[language] ?? (typeof legacy === 'string' ? legacy : key);
 }
 
+/**
+ * Every profession, most-asked-for trade first.
+ *
+ * This used to sort alphabetically by localized label, which put the list in a
+ * different order in every language and led with whatever happened to begin
+ * with A. Ordering by the category's cold-start demand rank means a worker
+ * meets the trades Egyptian households actually call out for first, in the same
+ * order whichever language they read.
+ *
+ * Nothing is hidden. A less-asked-for trade is further down the list, never
+ * absent, and `query` filters on the worker's own words — this is a chooser,
+ * not a recommendation.
+ */
 export function listProfessions(language: Language, query = ''): ProfessionOption[] {
   const normalizedQuery = query.trim().toLocaleLowerCase(language);
   return [...professions]
     .filter(profession => !normalizedQuery
       || profession[language].toLocaleLowerCase(language).includes(normalizedQuery))
-    .sort((left, right) => left[language].localeCompare(right[language], language));
+    .sort(byServiceDemand(
+      profession => profession.categoryId,
+      (left, right) => left[language].localeCompare(right[language], language)));
 }
 
 export function selectedProfessionKeys(value: Pick<ProviderDraft, 'profession' | 'specialties'>): ProfessionKey[] {

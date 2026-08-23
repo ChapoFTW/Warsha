@@ -1,3 +1,4 @@
+import { serviceDemandRank } from '../src/services/service-catalogue.ts';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -198,14 +199,26 @@ check(!providerMode.includes('value={String(draft.serviceRadiusKm)}'), 'worker p
 
 const selectedProfessions = withSelectedProfessions(emptyProviderDraft, ['plumbing', 'electrical']);
 check(selectedProfessionKeys(selectedProfessions).join(',') === 'plumbing,electrical', 'profession selection stores multiple stable canonical keys');
-check(professions.length === 31, 'the canonical worker profession taxonomy contains all 31 required professions');
+check(professions.length === 34, 'the canonical worker profession taxonomy contains all 34 required professions');
 const englishProfessionLabels = professions.map(item => item.en);
 check(JSON.stringify(englishProfessionLabels) === JSON.stringify([...englishProfessionLabels].sort((a, b) => a.localeCompare(b, 'en'))),
   'the source English profession taxonomy is stable and alphabetized');
 check(professions.every(item => item.ar.trim().length > 0), 'every canonical profession has an Arabic label');
-const arabicProfessionLabels = listProfessions('ar').map(item => item.ar);
-check(JSON.stringify(arabicProfessionLabels) === JSON.stringify([...arabicProfessionLabels].sort((a, b) => a.localeCompare(b, 'ar'))),
-  'Arabic profession options are sorted by their displayed Arabic labels');
+// Trade selection is ordered by the category's cold-start demand rank, not
+// alphabetically — so a worker meets the trades Egyptian households actually
+// call out for first, in the same order whichever language they read.
+const arabicRanks = listProfessions('ar').map(item => serviceDemandRank(item.categoryId));
+check(JSON.stringify(arabicRanks) === JSON.stringify([...arabicRanks].sort((a, b) => a - b)),
+  'ARABIC PROFESSION OPTIONS ARE ORDERED BY DEMAND, NOT ALPHABETICALLY');
+// Professions inside one category tie on rank and fall back to the localized
+// label, so their order within a category is language-specific by design.
+const englishOrder = listProfessions('en').map(item => item.categoryId);
+const arabicOrder = listProfessions('ar').map(item => item.categoryId);
+check(JSON.stringify(englishOrder) === JSON.stringify(arabicOrder),
+  'and the trades appear by category in the same order in every language');
+check(listProfessions('en').length === professions.length
+  && listProfessions('ar').length === professions.length,
+  'NO TRADE IS HIDDEN BY THE ORDERING — EVERY PROFESSION REMAINS SELECTABLE');
 const professionSelector = read('components', 'warsha', 'ProfessionSelector.tsx');
 check(professionSelector.includes('searchProfessions') && professionSelector.includes('pending'), 'profession selection is searchable and multi-select');
 check(professionSelector.includes('removeProfession') && professionSelector.includes("wt.text('done')"), 'selected professions are removable and the selector has an obvious Done action');

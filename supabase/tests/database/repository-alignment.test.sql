@@ -1,16 +1,39 @@
 begin;
 
-select plan(35);
+select plan(39);
 
+-- The launch ten plus barber, hairdressing and personal styling. The launch ids
+-- are unchanged, so every stored request, quote and booking remains valid.
 select is(
   (select count(*)::integer from public.service_categories where is_active and deleted_at is null),
-  10,
-  'exactly ten launch categories are active'
+  13,
+  'the thirteen active categories are the launch ten plus three personal services'
 );
 select set_eq(
   $$select id from public.service_categories where is_active and deleted_at is null$$,
-  $$values ('plumbing'),('electrical'),('carpentry'),('ac'),('cleaning'),('painting'),('appliance-repair'),('satellite-tv-installation'),('moving-help'),('general-maintenance')$$,
-  'active category ids match the locked launch taxonomy'
+  $$values ('plumbing'),('electrical'),('carpentry'),('ac'),('cleaning'),('painting'),('appliance-repair'),('satellite-tv-installation'),('moving-help'),('general-maintenance'),('barber'),('hairdressing'),('personal-styling')$$,
+  'active category ids match the catalogue, launch identifiers unchanged'
+);
+-- Presentation order is an explicit, unique, self-describing cold-start rank.
+select set_eq(
+  $$select id from public.service_categories where is_active and deleted_at is null order by demand_rank limit 4$$,
+  $$values ('plumbing'),('electrical'),('ac'),('cleaning')$$,
+  'the highest-demand household trades are offered first'
+);
+select is(
+  (select count(distinct demand_rank)::integer from public.service_categories where is_active and deleted_at is null),
+  13,
+  'every active category has a unique demand rank'
+);
+select is(
+  (select bool_and(demand_rank_source = 'cold_start_research') from public.service_categories where is_active and deleted_at is null),
+  true,
+  'the ranking declares itself a researched prior rather than observed Warsha demand'
+);
+select is(
+  (select demand_rank from public.service_categories where id = 'personal-styling'),
+  13,
+  'personal styling is not promoted for being new'
 );
 select has_function('public', 'mark_worker_available', array['boolean'], 'binary worker availability RPC exists');
 select is(has_function_privilege('anon', 'public.mark_worker_available(boolean)', 'EXECUTE'), false, 'anonymous users cannot change worker availability');
