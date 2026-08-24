@@ -85,10 +85,17 @@ export const SERVICE_SEARCH_ALIASES: Readonly<Record<ServiceCategoryId, AliasSet
     ar: ['تشطيب', 'تشطيبات', 'ترميم', 'محارة', 'جبس', 'جبس بورد', 'بناء', 'مباني'],
     fr: ['rénovation', 'finitions', 'plâtre', 'placo', 'maçonnerie'],
   },
+  // The category is called Alumetal, which is what the trade is called in
+  // Egypt. That is a loan word, so the aliases carry the descriptive terms the
+  // name no longer does -- somebody who does not know the word still has to
+  // find it by typing "aluminium window" or "شباك".
   alumetal: {
-    en: ['aluminium', 'aluminum', 'alumetal', 'window', 'windows', 'glazing', 'glass', 'shutter'],
-    ar: ['ألوميتال', 'الوميتال', 'ألومنيوم', 'شباك', 'شبابيك', 'زجاج', 'سكريتة', 'قطاعات'],
-    fr: ['aluminium', 'fenêtre', 'vitrage', 'vitrier', 'volet'],
+    en: ['alumetal', 'aluminium', 'aluminum', 'window', 'windows', 'door', 'doors',
+      'glazing', 'glass', 'shutter'],
+    ar: ['ألوميتال', 'الوميتال', 'ألومنيوم', 'شباك', 'شبابيك', 'أبواب', 'باب ألوميتال',
+      'زجاج', 'سكريتة', 'قطاعات'],
+    fr: ['alumetal', 'aluminium', 'fenêtre', 'fenêtres', 'porte', 'portes',
+      'menuiserie aluminium', 'vitrage', 'vitrier', 'volet'],
   },
   'satellite-tv-installation': {
     en: ['satellite', 'dish', 'tv', 'television', 'receiver', 'antenna', 'signal'],

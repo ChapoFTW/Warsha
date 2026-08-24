@@ -437,13 +437,20 @@ equal(mockCategories.map((item) => item.id), [...SERVICE_DEMAND_ORDER],
 {
   const migration = readFileSync(
     'supabase/migrations/202608240001_service_catalogue_expansion.sql', 'utf8');
-  for (const [index, id] of SERVICE_DEMAND_ORDER.entries()) {
-    const rank = index + 1;
-    const inserted = new RegExp(`'${id}'[^\\n]*, ${rank}, 'cold_start_research'`).test(migration);
-    const updated = new RegExp(`demand_rank = ${rank}\\s+where id = '${id}'`).test(migration);
-    check(inserted || updated,
-      `the migration ranks ${id} at ${rank}, exactly as this module does`);
-  }
+  // The migration writes every rank as one set, so the unique constraint sees
+  // the finished arrangement rather than each intermediate step. Parsed from
+  // that block and compared as an order, not matched line by line.
+  const rankBlock = migration.slice(migration.indexOf('set demand_rank = ranked.rank'));
+  const migrationOrder = [...rankBlock.matchAll(/\('([a-z-]+)', (\d+)\)/g)]
+    .map(([, id, rank]) => ({ id, rank: Number(rank) }))
+    .sort((left, right) => left.rank - right.rank);
+  equal(migrationOrder.map((row) => row.id), [...SERVICE_DEMAND_ORDER],
+    'THE MIGRATION RANKS EVERY CATEGORY EXACTLY AS THE SHARED MODULE DOES');
+  equal(migrationOrder.map((row) => row.rank),
+    SERVICE_DEMAND_ORDER.map((_, index) => index + 1),
+    'and the ranks are dense from 1 on both sides');
+  check(/set demand_rank = null/.test(migration),
+    'the rank space is cleared first, since the constraint forbids a duplicate mid-flight');
   check(/is_active = false[\s\S]{0,120}general-maintenance/.test(migration),
     'and withdraws the catch-all rather than deleting it');
   check(!/delete from public\.service_categories/i.test(migration),
@@ -461,5 +468,39 @@ equal(mockCategories.map((item) => item.id), [...SERVICE_DEMAND_ORDER],
   check(/from '\.\.\/\.\.\/src\/services\/service-catalogue\.ts'/.test(customer),
     'reading the same module Android and iOS read, not a web copy');
 }
+
+// --- Alumetal is called Alumetal ---------------------------------------------
+// The trade's own name in Egypt, and a loan word, so it is the same in English
+// and French. That is deliberate: "Aluminium doors & windows" described the work
+// but was not what anybody calls it.
+equal(translations.en.alumetal, 'Alumetal', 'the English name is the trade name');
+equal(translations.ar.alumetal, 'ألوميتال', 'THE ARABIC NAME IS THE ARABIC SPELLING OF IT');
+equal(translations.fr.alumetal, 'Alumetal', 'and French uses the same loan word');
+// A loan word carries no meaning for somebody who has not met it, so the
+// description and the aliases have to do the work the name no longer does.
+for (const language of ['en', 'ar', 'fr'] as const) {
+  const description = translations[language].alumetalDescription as string;
+  check(description.length > 0, `the ${language} description explains the trade`);
+}
+for (const term of ['aluminium', 'aluminum', 'alumetal', 'window', 'windows', 'door', 'doors']) {
+  check(SERVICE_SEARCH_ALIASES.alumetal.en.includes(term),
+    `English search still reaches Alumetal by "${term}"`);
+}
+for (const term of ['ألوميتال', 'الوميتال', 'شباك', 'شبابيك', 'أبواب']) {
+  check(SERVICE_SEARCH_ALIASES.alumetal.ar.includes(term),
+    `Arabic search still reaches Alumetal by "${term}"`);
+}
+for (const term of ['alumetal', 'aluminium', 'fenêtre', 'porte']) {
+  check(SERVICE_SEARCH_ALIASES.alumetal.fr.includes(term),
+    `French search still reaches Alumetal by "${term}"`);
+}
+for (const query of ['aluminium', 'aluminum', 'الوميتال', 'شباك', 'fenêtre', 'alumetal']) {
+  check(matchServiceCategories(query).includes('alumetal'),
+    `searching "${query}" still finds Alumetal`);
+}
+// Renaming must not have loosened matching: a two-letter query still matches
+// words, not substrings of unrelated ones.
+equal(matchServiceCategories('ac'), ['ac'],
+  'WORD-AWARE MATCHING SURVIVES THE RENAME');
 
 console.log(`Service catalogue: ${checks} checks passed.`);

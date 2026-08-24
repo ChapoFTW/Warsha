@@ -69,7 +69,12 @@ equal(
   'French authenticated-web overrides contain only canonical copy keys',
 );
 equal(Object.keys(translations.fr).sort(), Object.keys(translations.en).sort(), 'mobile French has every canonical key');
-const acceptedMobileCognates = new Set(['serviceStep', 'notes', 'currency', 'categories', 'service']);
+// Words that are genuinely the same in both languages, not untranslated ones.
+// `alumetal` is the Egyptian trade's own name -- a loan word, approved as the
+// customer-facing label in English and French alike. Its DESCRIPTION is
+// translated, which is where the meaning lives for anyone who has not met the
+// word, and a catalogue test asserts that separately.
+const acceptedMobileCognates = new Set(['serviceStep', 'notes', 'currency', 'categories', 'service', 'alumetal']);
 equal(
   Object.keys(translations.en).filter(key =>
     translations.en[key as keyof typeof translations.en] === translations.fr[key as keyof typeof translations.fr]

@@ -1,7 +1,8 @@
 -- Concrete services instead of a catch-all, and a researched bootstrap order.
 --
--- NOT YET APPLIED. This file is written and reviewed; applying it to the hosted
--- development project is a governed backend action awaiting approval.
+-- Applied to the hosted DEVELOPMENT project (warsha-development,
+-- lrhipbcapzfxuwixfoog) with approval. Production is a separate project and is
+-- untouched by this file.
 --
 -- ## Why `general-maintenance` goes
 --
@@ -56,51 +57,80 @@ comment on column public.service_categories.is_active is
   'False withdraws a category from selection and discovery while leaving every historical request, quote and booking that references it resolvable. Withdrawal is never deletion.';
 
 -- ---------------------------------------------------------------------------
--- 2. The seven concrete categories that replace it
+-- 2. Clear the rank space before reassigning it
+-- ---------------------------------------------------------------------------
+-- `service_categories_active_demand_rank_key` makes the rank unique among
+-- active rows, which is exactly the guarantee wanted -- and it means ranks
+-- cannot be reshuffled in place. Assigning 9 to pest control while moving-help
+-- still holds 9 collides, and so does any sequence of single-row updates that
+-- passes through a duplicate on its way to the answer.
+--
+-- So the ranks are emptied first and written once, as a set. Nothing is
+-- unranked at the end of this migration, and nothing is unranked to a customer
+-- at any point either: the whole file is one transaction.
+update public.service_categories
+set demand_rank = null
+where demand_rank is not null;
+
+-- ---------------------------------------------------------------------------
+-- 3. The seven concrete categories that replace the catch-all
 -- ---------------------------------------------------------------------------
 -- `translation_key` and `description_key` resolve against
 -- `src/i18n/translations.ts`, which carries all three languages. A category
 -- whose keys do not resolve fails `service-labels.test.mts`.
+--
+-- Inserted unranked; section 4 ranks every category together.
 insert into public.service_categories
-  (id, translation_key, description_key, icon, is_active, sort_order, demand_rank, demand_rank_source)
+  (id, translation_key, description_key, icon_name, is_active, sort_order, demand_rank, demand_rank_source)
 values
-  ('pest-control', 'pestControl', 'pestControlDescription', 'pest-control', true, 90, 9, 'cold_start_research'),
-  ('water-heater-repair', 'waterHeaterRepair', 'waterHeaterRepairDescription', 'water-heater', true, 91, 10, 'cold_start_research'),
-  ('flooring-tiling', 'flooringTiling', 'flooringTilingDescription', 'flooring', true, 92, 11, 'cold_start_research'),
-  ('renovation-finishing', 'renovationFinishing', 'renovationFinishingDescription', 'renovation', true, 93, 12, 'cold_start_research'),
-  ('alumetal', 'alumetal', 'alumetalDescription', 'window', true, 94, 13, 'cold_start_research'),
-  ('locksmithing', 'locksmithing', 'locksmithingDescription', 'lock', true, 95, 15, 'cold_start_research'),
-  ('gardening', 'gardening', 'gardeningDescription', 'garden', true, 96, 16, 'cold_start_research')
+  ('pest-control', 'pestControl', 'pestControlDescription', 'pest-control', true, 90, null, 'cold_start_research'),
+  ('water-heater-repair', 'waterHeaterRepair', 'waterHeaterRepairDescription', 'water-heater', true, 91, null, 'cold_start_research'),
+  ('flooring-tiling', 'flooringTiling', 'flooringTilingDescription', 'flooring', true, 92, null, 'cold_start_research'),
+  ('renovation-finishing', 'renovationFinishing', 'renovationFinishingDescription', 'renovation', true, 93, null, 'cold_start_research'),
+  ('alumetal', 'alumetal', 'alumetalDescription', 'window', true, 94, null, 'cold_start_research'),
+  ('locksmithing', 'locksmithing', 'locksmithingDescription', 'lock', true, 95, null, 'cold_start_research'),
+  ('gardening', 'gardening', 'gardeningDescription', 'garden', true, 96, null, 'cold_start_research')
 on conflict (id) do update
 set translation_key = excluded.translation_key,
     description_key = excluded.description_key,
-    icon = excluded.icon,
+    icon_name = excluded.icon_name,
     is_active = excluded.is_active,
-    demand_rank = excluded.demand_rank,
     demand_rank_source = excluded.demand_rank_source;
 
 -- ---------------------------------------------------------------------------
--- 3. Re-rank everything that already existed
+-- 4. The bootstrap order, written as one set
 -- ---------------------------------------------------------------------------
--- Cleaning moves 4 -> 3 and air conditioning 3 -> 4 on the evidence above.
--- Satellite moves 12 -> 14, barber 10 -> 17, hairdressing 11 -> 18 to make room
--- for the household trades that outrank them. No identifier changes, so every
--- stored request, quote and booking remains valid.
-update public.service_categories set demand_rank = 1  where id = 'plumbing';
-update public.service_categories set demand_rank = 2  where id = 'electrical';
-update public.service_categories set demand_rank = 3  where id = 'cleaning';
-update public.service_categories set demand_rank = 4  where id = 'ac';
-update public.service_categories set demand_rank = 5  where id = 'appliance-repair';
-update public.service_categories set demand_rank = 6  where id = 'carpentry';
-update public.service_categories set demand_rank = 7  where id = 'painting';
-update public.service_categories set demand_rank = 8  where id = 'moving-help';
-update public.service_categories set demand_rank = 14 where id = 'satellite-tv-installation';
-update public.service_categories set demand_rank = 17 where id = 'barber';
-update public.service_categories set demand_rank = 18 where id = 'hairdressing';
-update public.service_categories set demand_rank = 19 where id = 'personal-styling';
+-- One statement, so the unique constraint sees the finished arrangement rather
+-- than each intermediate step. Mirrors `SERVICE_DEMAND_ORDER` in
+-- `src/services/service-catalogue.ts` exactly; a test compares the two.
+update public.service_categories c
+set demand_rank = ranked.rank,
+    demand_rank_source = 'cold_start_research'
+from (values
+  ('plumbing', 1),
+  ('electrical', 2),
+  ('cleaning', 3),
+  ('ac', 4),
+  ('appliance-repair', 5),
+  ('carpentry', 6),
+  ('painting', 7),
+  ('moving-help', 8),
+  ('pest-control', 9),
+  ('water-heater-repair', 10),
+  ('flooring-tiling', 11),
+  ('renovation-finishing', 12),
+  ('alumetal', 13),
+  ('satellite-tv-installation', 14),
+  ('locksmithing', 15),
+  ('gardening', 16),
+  ('barber', 17),
+  ('hairdressing', 18),
+  ('personal-styling', 19)
+) as ranked(id, rank)
+where c.id = ranked.id;
 
 -- ---------------------------------------------------------------------------
--- 4. A withdrawn category may never be chosen for new work
+-- 5. A withdrawn category may never be chosen for new work
 -- ---------------------------------------------------------------------------
 -- Enforced in the database rather than only in the clients, because three
 -- clients agreeing not to offer something is a convention, and this is a rule.
