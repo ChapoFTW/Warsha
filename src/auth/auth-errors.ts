@@ -1,7 +1,22 @@
-import type { AuthError } from '@supabase/supabase-js';
-
 import { environment, supabaseTarget } from '../config/environment.ts';
 import type { TranslationKey } from '../i18n/translations.ts';
+
+/**
+ * The shape this module actually reads off a rejected auth call.
+ *
+ * Declared structurally rather than imported from `@supabase/supabase-js`.
+ * This module is shared by the Expo app and the Next app, which install their
+ * dependencies separately: a package import here resolves from the repository
+ * root, which exists on a developer machine and does not exist in a web-only
+ * deployment build. The type contributed nothing the intersection below did not
+ * already state, and the dependency broke the deploy.
+ */
+type RejectedAuthCall = {
+  code?: string;
+  status?: number;
+  name?: string;
+  message?: string;
+};
 
 export type AuthFailure =
   | 'authInvalidCredentials'
@@ -78,7 +93,7 @@ const SAFE_MESSAGES: Record<AuthFailure, string> = {
 
 export function classifyAuthFailure(error: unknown, operation: AuthOperation = 'unknown'): AuthFailure {
   if (error instanceof SafeAuthError) return error.translationKey;
-  const candidate = error as Partial<AuthError> & { code?: string; status?: number; name?: string };
+  const candidate = error as RejectedAuthCall;
   const code = String(candidate?.code ?? '').toLowerCase();
   const status = Number(candidate?.status ?? 0);
   const message = error instanceof Error ? error.message : '';
