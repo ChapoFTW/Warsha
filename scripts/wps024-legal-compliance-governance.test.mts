@@ -31,9 +31,12 @@ import { createRequire } from 'node:module';
 import { join } from 'node:path';
 
 import { canonicalText, sha256Hex, utf8Bytes } from '../src/legal/legal-hash.ts';
+import { legalCatalogueFr } from '../src/legal/legal-catalogue-fr.ts';
 import {
   acceptanceRequiredFor,
   bodyFor,
+  bodyLanguageFor,
+  catalogueFor,
   corpusProblems,
   documentHash,
   documentsForRole,
@@ -1628,6 +1631,157 @@ check(/Renewed-acceptance scope/.test(materialChecklist),
 
 // ---------------------------------------------------------------------------
 console.log(`WPS-024 client regressions: ${passed} checks passed`);
+// ---------------------------------------------------------------------------
+// French: a localized catalogue over an untranslated corpus
+// ---------------------------------------------------------------------------
+//
+// The reported defect: the French Legal Centre rendered a correctly localized
+// heading ("À lire avant de vous inscrire") over twenty-six English card
+// titles. The page locale resolved fine; the legal metadata did not.
+//
+// The cause was one expression, repeated at six call sites:
+//
+//     document[locale === 'ar' ? 'ar' : 'en'].title
+//
+// a two-language expression used on a three-language site. French fell into
+// the `en` branch and nothing said so.
+//
+// The fix separates two things that were being conflated. A BODY is operative
+// text — hashed, versioned, named by an acceptance — and French bodies do not
+// exist; producing one is a legal act, not a localization task. A CATALOGUE
+// entry names and describes a document and binds nobody. French gets the
+// second, and the absence of the first is stated to the reader rather than
+// hidden.
+
+// --- Every document is named and described in French -----------------------
+for (const document of legalCorpus) {
+  const fr = legalCatalogueFr[document.key];
+  check(Boolean(fr), `${document.key} has a French catalogue entry`);
+  if (!fr) continue;
+  check(typeof fr.title === 'string' && fr.title.trim().length > 0,
+    `${document.key} has a French title`);
+  check(typeof fr.summary === 'string' && fr.summary.trim().length > 0,
+    `${document.key} has a French summary`);
+  // An English string copied into the French slot is the defect, not the fix.
+  check(fr.title !== document.en.title,
+    `${document.key} FRENCH TITLE IS NOT THE ENGLISH ONE LEFT IN PLACE`);
+  check(fr.summary !== document.en.summary,
+    `${document.key} French summary is not the English one left in place`);
+}
+
+// --- Registry parity across EN / AR / FR ------------------------------------
+// A newly added document must not be able to ship with English metadata and
+// silently no French or Arabic.
+const frKeys = Object.keys(legalCatalogueFr).sort();
+const corpusKeys = legalCorpus.map((document) => document.key).slice().sort();
+check(JSON.stringify(frKeys) === JSON.stringify(corpusKeys),
+  'THE FRENCH CATALOGUE COVERS EXACTLY THE CORPUS — NO GAPS, NO ORPHANS');
+for (const document of legalCorpus) {
+  check(document.en.title.trim().length > 0, `${document.key} has an English title`);
+  check(document.ar.title.trim().length > 0, `${document.key} has an Arabic title`);
+  check(/[؀-ۿ]/.test(document.ar.title),
+    `${document.key} Arabic title is genuinely Arabic`);
+}
+
+// --- The resolver returns the right language --------------------------------
+for (const document of legalCorpus) {
+  check(catalogueFor(document, 'fr').title === legalCatalogueFr[document.key].title,
+    `${document.key} resolves its French title`);
+  check(catalogueFor(document, 'en').title === document.en.title,
+    `${document.key} resolves its English title`);
+  check(catalogueFor(document, 'ar').title === document.ar.title,
+    `${document.key} resolves its Arabic title`);
+}
+
+// --- The body substitution is data, not silence -----------------------------
+check(bodyLanguageFor('en').language === 'en' && !bodyLanguageFor('en').substituted,
+  'English gets English, unsubstituted');
+check(bodyLanguageFor('ar').language === 'ar' && !bodyLanguageFor('ar').substituted,
+  'Arabic gets Arabic, unsubstituted');
+check(bodyLanguageFor('fr').language === 'en',
+  'French gets the English body, which is the deliberate product decision');
+check(bodyLanguageFor('fr').substituted === true,
+  'AND IT IS FLAGGED AS A SUBSTITUTION, SO NO SURFACE CAN SHOW IT SILENTLY');
+// French bodies genuinely do not exist. If they are ever published this check
+// is the one that should be revisited, deliberately.
+for (const document of legalCorpus) {
+  check(!('fr' in document),
+    `${document.key} HAS NO FRENCH BODY — NONE IS INVENTED TO SATISFY A TEST`);
+}
+
+// --- The hash chain is untouched by any of this -----------------------------
+// The French catalogue must not enter a hash. An acceptance names a hash; if
+// adding a title changed one, every recorded acceptance would point at text
+// nobody agreed to.
+for (const document of legalCorpus) {
+  const parts = hashableParts(document.en);
+  check(!parts.includes(legalCatalogueFr[document.key].title),
+    `${document.key} French title is not hashed into the English body`);
+  const hashes = hashesFor(document);
+  check(Object.keys(hashes).sort().join(',') === 'ar,en',
+    `${document.key} IS STILL HASHED IN EXACTLY TWO LANGUAGES`);
+}
+
+// --- The surfaces --------------------------------------------------------
+const legalIndexSource = read('web', 'app', '[locale]', 'legal', 'page.tsx');
+const legalArticleSource = read('web', 'app', '[locale]', 'legal', '[slug]', 'page.tsx');
+const publicHomeSource = read('web', 'app', '[locale]', 'page.tsx');
+const publicSignupSource = read('web', 'app', '[locale]', 'create-account', 'page.tsx');
+const appSignupSource = read('web', 'app', 'app', 'create-account', 'page.tsx');
+
+const LEGAL_SURFACES: [string, string][] = [
+  ['legal index', legalIndexSource],
+  ['legal article', legalArticleSource],
+  ['public home', publicHomeSource],
+  ['public signup explainer', publicSignupSource],
+  ['signup consent', appSignupSource],
+];
+
+// The two-language expression must not survive anywhere that renders a title.
+for (const [name, source] of LEGAL_SURFACES) {
+  check(!/document\[legalLocale\]/.test(source),
+    `${name.toUpperCase()} NO LONGER INDEXES A DOCUMENT WITH A TWO-LANGUAGE EXPRESSION`);
+  check(!/const legalLocale = \w+ === 'ar' \? 'ar' : 'en'/.test(source),
+    `${name} does not rebuild the two-language collapse`);
+  check(/catalogueFor\(/.test(source),
+    `${name} names each document through the localized catalogue`);
+}
+
+// --- Consent surfaces show French names but record an honest language -------
+// These are different questions and were sharing one variable. What is this
+// policy called on screen? French. Which text did this person accept? The
+// English one, because that is what a French route shows them.
+check(/catalogueFor\(document, locale\)\.title/.test(appSignupSource),
+  'THE SIGNUP CONSENT LIST NAMES EACH POLICY IN THE READER’S LANGUAGE');
+check(/bodyLanguageFor\(locale\)/.test(appSignupSource),
+  'and derives the accepted language from the same authority');
+check(/signupLegalManifest\('customer', acceptedLanguage\)/.test(appSignupSource),
+  'THE ACCEPTANCE RECORDS THE LANGUAGE ACTUALLY READ, NEVER A FRENCH TEXT THAT DOES NOT EXIST');
+check(!/signupLegalManifest\([^)]*'fr'/.test(appSignupSource),
+  'no acceptance can claim a French document was agreed to');
+
+// --- The article route states the substitution ------------------------------
+check(/bodyLanguageFor\(typed\)/.test(legalArticleSource),
+  'the article route asks which body language it is actually rendering');
+check(/substituted \?/.test(legalArticleSource),
+  'AND RENDERS A NOTICE WHEN THE ANSWER IS NOT THE LANGUAGE ASKED FOR');
+check(/legalUntranslatedHeading/.test(legalArticleSource)
+  && /legalUntranslatedNote/.test(legalArticleSource),
+  'the notice is localized copy, not a hardcoded English sentence');
+check(legalArticleSource.indexOf('substituted ?') < legalArticleSource.indexOf('styles.body'),
+  'the notice comes before the text it describes, not after it');
+check(/lang=\{bodyLanguage\}/.test(legalArticleSource),
+  'AND THE SUBSTITUTED BODY IS MARKED UP IN THE LANGUAGE IT IS ACTUALLY IN');
+check(/catalogueFor\(document, typed\)/.test(legalArticleSource),
+  'while the title and summary above it are the reader’s own language');
+
+// --- The notice exists in all three dictionaries ----------------------------
+const webCopySource = read('web', 'lib', 'copy.ts');
+check((webCopySource.match(/legalUntranslatedHeading:/g) ?? []).length === 3,
+  'the untranslated notice is written in English, Arabic and French');
+check((webCopySource.match(/legalUntranslatedNote:/g) ?? []).length === 3,
+  'including the explanatory sentence');
+
 if (failures.length > 0) {
   console.error(`\n${failures.length} failed:`);
   for (const failure of failures) console.error(`  - ${failure}`);

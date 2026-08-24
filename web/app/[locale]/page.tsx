@@ -8,7 +8,7 @@ import { SiteFooter, SiteHeader } from '@/components/site-chrome';
 import { copy } from '@/lib/copy';
 import { isLocale, type Locale } from '@/lib/preferences';
 import { localeHref } from '@/lib/routes';
-import { documentsForRole } from '@/lib/warsha';
+import { catalogueFor, documentsForRole } from '@/lib/warsha';
 
 import styles from './page.module.css';
 
@@ -30,7 +30,6 @@ export default async function HomePage({
   if (!isLocale(locale)) notFound();
   const typed: Locale = locale;
   const words = copy[typed];
-  const legalLocale = typed === 'ar' ? 'ar' : 'en';
   const publicLegal = documentsForRole(null);
 
   const steps = [
@@ -139,7 +138,7 @@ export default async function HomePage({
                 href={localeHref(typed, `/legal/${document.key.replace(/_/g, '-')}`)}
                 className={styles.legalCard}
               >
-                <span className={styles.legalTitle}>{document[legalLocale].title}</span>
+                <span className={styles.legalTitle}>{catalogueFor(document, typed).title}</span>
                 <span className={styles.legalMeta}>
                   {words.legalVersion} {document.version}
                 </span>

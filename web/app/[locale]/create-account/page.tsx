@@ -6,7 +6,7 @@ import { SiteFooter, SiteHeader } from '@/components/site-chrome';
 import { copy } from '@/lib/copy';
 import { isLocale, type Locale } from '@/lib/preferences';
 import { localeHref } from '@/lib/routes';
-import { signupLegalDocuments } from '@/lib/warsha';
+import { catalogueFor, signupLegalDocuments } from '@/lib/warsha';
 
 import styles from './page.module.css';
 
@@ -43,7 +43,6 @@ export default async function CreateAccountPage({
   if (!isLocale(locale)) notFound();
   const typed: Locale = locale;
   const words = copy[typed];
-  const legalLocale = typed === 'ar' ? 'ar' : 'en';
 
   const required = (documents: ReturnType<typeof signupLegalDocuments>) => (
     <ul className={styles.required}>
@@ -53,7 +52,7 @@ export default async function CreateAccountPage({
             href={localeHref(typed, `/legal/${document.key.replace(/_/g, '-')}`)}
             className={styles.requiredLink}
           >
-            {document[legalLocale].title}
+            {catalogueFor(document, typed).title}
           </Link>
         </li>
       ))}

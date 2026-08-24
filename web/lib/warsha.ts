@@ -21,12 +21,16 @@ export {
   legalDocumentKeys,
   findDocument,
   bodyFor,
+  catalogueFor,
+  bodyLanguageFor,
   hashesFor,
   documentsForRole,
   acceptanceRequiredFor,
 } from '../../src/legal/legal-corpus.ts';
 
 export type {
+  LegalCatalogue,
+  LegalDisplayLanguage,
   LegalDocument,
   LegalDocumentKey,
   LegalLanguage,

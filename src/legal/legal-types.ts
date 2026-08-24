@@ -98,7 +98,35 @@ export function mayRestrictOnDecline(changeClass: LegalChangeClass): boolean {
   return changeClass === 'material' || changeClass === 'urgent';
 }
 
+/**
+ * A language a legal *body* is published in.
+ *
+ * Deliberately not the same set as the product's languages. A body is operative
+ * text: hashed, versioned, and named by an acceptance. Adding a member here is
+ * a legal publication, not a localization task.
+ */
 export type LegalLanguage = 'en' | 'ar';
+
+/**
+ * A language the legal catalogue can be *displayed* in.
+ *
+ * Wider than `LegalLanguage`, because naming and describing a document is not
+ * the same act as publishing one. French belongs here and not there.
+ */
+export type LegalDisplayLanguage = LegalLanguage | 'fr';
+
+/**
+ * How a document is named and described, without being published.
+ *
+ * Catalogue metadata binds nobody: it lets a reader find a document and decide
+ * whether to open it. Separate from `LegalBody` so a language can be listed
+ * properly without anything implying its operative text exists.
+ */
+export type LegalCatalogue = {
+  title: string;
+  /** One sentence a reader can act on before opening the document. */
+  summary: string;
+};
 
 /** A rendered section of a document. Headings are data, not markup. */
 export type LegalSection = {

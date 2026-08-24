@@ -85,6 +85,8 @@ const baseCopy = {
     legalHomeLead:
       'Every agreement Warsha asks you to accept is readable in full, in English and '
       + 'Arabic, before you create an account.',
+    legalUntranslatedHeading: 'Not yet published in French',
+    legalUntranslatedNote: 'The title and summary of this document are translated. The full text below is the English version, which is the text that governs. Warsha does not publish a machine translation of a document you can be held to.',
     legalVersion: 'Version',
 
     footerBlurb:
@@ -226,6 +228,8 @@ const baseCopy = {
     legalHomeLead:
       'كل اتفاقية ورشة بتطلب منك توافق عليها تقدر تقراها كاملة، بالعربي والإنجليزي، '
       + 'قبل ما تعمل حساب.',
+    legalUntranslatedHeading: 'لسه ماتنشرش بالفرنساوي',
+    legalUntranslatedNote: 'عنوان المستند ده وملخصه مترجمين. النص الكامل تحت هو النسخة الإنجليزية، وهي النص الملزم. ورشة ما بتنشرش ترجمة آلية لمستند ممكن تتحاسب عليه.',
     legalVersion: 'نسخة',
 
     footerBlurb: 'تصليح وصيانة المنازل في مصر، بسعر متفق عليه قبل ما الشغل يبدأ.',
@@ -308,6 +312,7 @@ export const copy = {
     heroImageAlt: 'Un électricien installe une prise murale dans un logement.', heroEyebrow: 'Services à domicile en Égypte', heroTitle: "Faites réparer, au prix convenu d'abord.", heroBody: 'Warsha met en relation les personnes qui ont besoin de réparations ou d’entretien avec des professionnels qualifiés. Vous décrivez le travail, ils proposent un devis et vous décidez avant le début.', heroPostJob: 'Publier une demande', heroWork: 'Travailler avec Warsha', heroNote: 'Warsha est en phase de test fermé. Les comptes créés maintenant sont de vrais comptes sur le service actif.',
     howTitle: 'Comment ça marche', howLead: 'Quatre étapes, avec votre accord avant le début des travaux.', step1Title: 'Décrivez le travail', step1Body: 'Indiquez ce qui doit être fait et où. Les photos sont utiles, mais facultatives.', step2Title: 'Recevez des devis', step2Body: 'Les professionnels du métier qui couvrent votre zone vous proposent un prix.', step3Title: 'Acceptez avant le début', step3Body: 'Vous acceptez un devis avant la réservation du professionnel. Le prix convenu est enregistré.', step4Title: "Suivez jusqu'à la fin", step4Body: 'Suivez le travail jusqu’à son achèvement, avec toute la conversation au même endroit.',
     workerEyebrow: 'Pour les professionnels', workerTitle: 'Proposez votre prix pour les travaux qui vous intéressent.', workerLead: 'Warsha vous envoie les demandes qui correspondent à votre métier et aux zones que vous couvrez. Vous choisissez celles auxquelles répondre.', workerCta: 'Commencer ma demande', worker1Title: 'Des travaux adaptés à votre métier', worker1Body: 'Vous voyez les demandes correspondant aux métiers et aux zones enregistrés.', worker2Title: 'Vous fixez le prix', worker2Body: 'Vous établissez chaque devis. Aucun travail ne vous est attribué à un prix que vous n’avez pas choisi.', worker3Title: 'Une vérification à effectuer une fois', worker3Body: 'Les contrôles d’identité et de métier sont effectués une fois, puis examinés par une personne.',
+    legalUntranslatedHeading: 'Pas encore publié en français', legalUntranslatedNote: 'Le titre et le résumé de ce document sont traduits. Le texte intégral ci-dessous est la version anglaise, qui est le texte qui fait foi. Warsha ne publie pas de traduction automatique d’un document qui vous engage.',
     legalHomeTitle: 'À lire avant de vous inscrire', legalHomeLead: 'Chaque accord demandé par Warsha est consultable en entier avant la création du compte.', legalVersion: 'Version',
     footerBlurb: 'Réparations et entretien à domicile en Égypte, avec un prix convenu avant le début.', footerWarsha: 'Warsha', footerServices: 'Services', footerLegal: 'Mentions légales', footerPreferences: 'Préférences', footerAbout: 'À propos', footerHowItWorks: 'Comment ça marche', footerContact: 'Contact', footerAllServices: 'Tous les services', footerCategories: 'Catégories', footerBecomeWorker: 'Devenir professionnel', footerLegalCentre: 'Centre juridique', footerPrivacy: 'Politique de confidentialité', footerTerms: "Conditions d'utilisation", footerLocation: 'Politique relative aux données de localisation',
     legalCentreTitle: 'Centre juridique', legalCentreLead: 'Tous les accords et politiques sont consultables en entier, sans connexion.', legalMandatoryHeading: 'Accords à accepter', legalMandatoryNote: 'Warsha enregistre la version exacte et l’empreinte du texte affiché lors de votre acceptation. Les preuves d’acceptation sont immuables.', legalReferenceHeading: 'Politiques et registres', legalReferenceNote: 'Ces documents expliquent le fonctionnement de Warsha. Ils ne nécessitent pas votre acceptation.', legalAudienceEveryone: 'tout le monde', legalEffective: 'en vigueur', legalAcceptanceRequired: 'acceptation requise', fingerprintHeading: 'Empreinte du document', fingerprintNote: 'Warsha enregistre la version exacte et l’empreinte du texte affiché lors de l’acceptation. Empreintes de la version',

@@ -8,6 +8,7 @@ import { appCopy } from '@/lib/app-copy';
 import { signUpCustomer } from '@/lib/auth-actions';
 import { signupLegalDocuments, signupLegalManifest, type SignUpFailure } from '@/lib/signup';
 import { useAppLocale } from '@/lib/use-app-locale';
+import { bodyLanguageFor, catalogueFor } from '@/lib/warsha';
 
 import styles from './create-account.module.css';
 
@@ -60,7 +61,9 @@ export default function CreateAccountPage() {
   const [done, setDone] = useState<'confirm' | 'ready' | null>(null);
 
   const documents = signupLegalDocuments('customer');
-  const legalLocale = locale === 'ar' ? 'ar' : 'en';
+  // The language of the text being accepted — never `fr`, because no French
+  // operative text exists to accept. See `bodyLanguageFor`.
+  const { language: acceptedLanguage } = bodyLanguageFor(locale);
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -74,7 +77,7 @@ export default function CreateAccountPage() {
     const result = await signUpCustomer({
       name, email, phone, password,
       language: locale,
-      acceptances: signupLegalManifest('customer', legalLocale),
+      acceptances: signupLegalManifest('customer', acceptedLanguage),
     });
     if (!result.ok) {
       setFailure(result.failure);
@@ -187,7 +190,7 @@ export default function CreateAccountPage() {
                     target="_blank"
                     rel="noreferrer"
                   >
-                    {document[legalLocale].title}
+                    {catalogueFor(document, locale).title}
                   </a>
                   <span className={styles.version}> ({document.version})</span>
                 </span>

@@ -135,3 +135,36 @@
 .otherLanguage:hover {
   border-color: var(--border-strong);
 }
+
+/*
+ * Said before the text it describes.
+ *
+ * The French route shows the English body on purpose — operative text needs
+ * review, versioning and a fingerprint, and a machine translation of a document
+ * somebody can be held to would be worse than the English. What was wrong is
+ * that it happened silently: a reader could not tell a translated document from
+ * an untranslated one. This is the marking.
+ */
+.untranslated {
+  border-inline-start: 3px solid var(--brand);
+  background: var(--surface);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  margin-block: var(--space-lg);
+}
+
+.untranslatedHeading {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text-primary);
+  margin: 0 0 6px;
+}
+
+.untranslatedNote {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  margin: 0;
+  max-width: 72ch;
+}

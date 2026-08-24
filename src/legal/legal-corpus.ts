@@ -19,6 +19,7 @@
  * migration. Text belongs in the repository; the binding is the hash.
  */
 
+import { legalCatalogueFr } from './legal-catalogue-fr.ts';
 import { canonicalText, sha256Hex } from './legal-hash.ts';
 import {
   customerTerms,
@@ -57,6 +58,8 @@ import {
 import {
   appliesToRole,
   type LegalBody,
+  type LegalCatalogue,
+  type LegalDisplayLanguage,
   type LegalDocument,
   type LegalDocumentKey,
   type LegalLanguage,
@@ -128,6 +131,49 @@ export function findDocument(key: string): LegalDocument | null {
 
 export function bodyFor(document: LegalDocument, language: LegalLanguage): LegalBody {
   return language === 'ar' ? document.ar : document.en;
+}
+
+/**
+ * How a document is named and described in a display language.
+ *
+ * French takes its title and summary from the French catalogue; English and
+ * Arabic take theirs from the body they already have. This is what the Legal
+ * Centre lists, and what any surface naming a policy should call it.
+ *
+ * The French Legal Centre rendered a correctly localized heading over
+ * twenty-six English card titles, because every caller reached for
+ * `document[locale === 'ar' ? 'ar' : 'en'].title` — a two-language expression
+ * used on a three-language site. Callers ask this instead.
+ */
+export function catalogueFor(
+  document: LegalDocument,
+  language: LegalDisplayLanguage,
+): LegalCatalogue {
+  if (language === 'fr') return legalCatalogueFr[document.key];
+  const body = bodyFor(document, language);
+  return { title: body.title, summary: body.summary };
+}
+
+/**
+ * Which language's operative text a reader actually gets, and whether that is
+ * the language they asked for.
+ *
+ * The English body on a French route is a deliberate product decision — French
+ * operative text requires separately reviewed, versioned and fingerprinted
+ * documents, and inventing one would be worse than showing the English. What
+ * was wrong is that it happened *silently*. A reader could not tell a
+ * translated document from an untranslated one.
+ *
+ * So the substitution is returned as data rather than performed quietly, and
+ * the surfaces render it. `substituted` is the flag a page must not ignore.
+ */
+export function bodyLanguageFor(language: LegalDisplayLanguage): {
+  language: LegalLanguage;
+  substituted: boolean;
+} {
+  if (language === 'ar') return { language: 'ar', substituted: false };
+  if (language === 'fr') return { language: 'en', substituted: true };
+  return { language: 'en', substituted: false };
 }
 
 /** Documents an account with this role is addressed by, in display order. */

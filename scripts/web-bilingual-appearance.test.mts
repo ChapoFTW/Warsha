@@ -381,7 +381,10 @@ for (const locale of ['en', 'ar', 'fr'] as const) {
   const value = copy[locale].footerPreferences;
   check(typeof value === 'string' && value.length > 0, `${locale}.footerPreferences exists`);
 }
-check(copy.fr.footerPreferences !== copy.en.footerPreferences,
+// Widened deliberately: `copy` is `as const`, so comparing the two literal
+// types directly is a type error rather than a test. The value comparison is
+// what this asserts.
+check((copy.fr.footerPreferences as string) !== (copy.en.footerPreferences as string),
   'fr.footerPreferences is genuinely French');
 check(/[؀-ۿ]/.test(copy.ar.footerPreferences),
   'ar.footerPreferences is genuinely Arabic');

@@ -4,7 +4,9 @@ import { notFound } from 'next/navigation';
 import { SiteFooter, SiteHeader } from '@/components/site-chrome';
 import { copy } from '@/lib/copy';
 import { isLocale, LOCALES, type Locale } from '@/lib/preferences';
-import { bodyFor, findDocument, hashesFor, legalCorpus } from '@/lib/warsha';
+import {
+  bodyFor, bodyLanguageFor, catalogueFor, findDocument, hashesFor, legalCorpus,
+} from '@/lib/warsha';
 import type { LegalSection } from '@/lib/warsha';
 
 import styles from './page.module.css';
@@ -45,16 +47,16 @@ export async function generateMetadata(
   const document = findDocument(keyFromSlug(slug));
   if (!document) return { title: 'Not found' };
 
-  const legalLocale = locale === 'ar' ? 'ar' : 'en';
+  const catalogue = catalogueFor(document, locale);
   return {
-    title: document[legalLocale].title,
-    description: document[legalLocale].summary,
+    title: catalogue.title,
+    description: catalogue.summary,
     alternates: {
       canonical: `/${locale}/legal/${slug}`,
       languages: { en: `/en/legal/${slug}`, ar: `/ar/legal/${slug}`, fr: `/fr/legal/${slug}` },
     },
     openGraph: {
-      title: `${document[legalLocale].title} · ${locale === 'ar' ? 'ورشة' : 'Warsha'}`,
+      title: `${catalogue.title} · ${locale === 'ar' ? 'ورشة' : 'Warsha'}`,
       url: `/${locale}/legal/${slug}`,
       type: 'article',
     },
@@ -92,11 +94,17 @@ export default async function LegalDocumentPage({ params }: { params: Promise<Pa
 
   const words = copy[typed];
   // Legal French requires separately reviewed, versioned documents and
-  // fingerprints. Until that human/legal publication exists, the French
-  // product route presents the authoritative English text without inventing a
-  // legally operative translation.
-  const legalLocale = typed === 'ar' ? 'ar' : 'en';
-  const body = bodyFor(document, legalLocale);
+  // fingerprints. Until that human/legal publication exists, the French route
+  // presents the authoritative English text rather than inventing a legally
+  // operative translation.
+  //
+  // That decision has not changed. What changed is that it is no longer
+  // silent: the substitution is returned as data and stated on the page, so a
+  // reader can tell a translated document from an untranslated one. The title
+  // and summary above it ARE French — naming a document binds nobody.
+  const { language: bodyLanguage, substituted } = bodyLanguageFor(typed);
+  const catalogue = catalogueFor(document, typed);
+  const body = bodyFor(document, bodyLanguage);
   const hashes = hashesFor(document);
 
   return (
@@ -106,13 +114,13 @@ export default async function LegalDocumentPage({ params }: { params: Promise<Pa
       <main id="main" className={styles.page}>
         <article className={styles.document}>
           <header className={styles.documentHeader}>
-            <h1 className={styles.title}>{body.title}</h1>
+            <h1 className={styles.title}>{catalogue.title}</h1>
             <p className={styles.meta}>
               {words.legalVersion} {document.version}
               {document.effectiveAt ? ` · ${words.legalEffective} ${document.effectiveAt}` : ''}
               {document.requiresAcceptance ? ` · ${words.legalAcceptanceRequired}` : ''}
             </p>
-            <p className={styles.summary}>{body.summary}</p>
+            <p className={styles.summary}>{catalogue.summary}</p>
             <div className={styles.otherLanguage}>
               {LOCALES.filter(option => option !== typed).map(option => <a
                 key={option}
@@ -123,7 +131,17 @@ export default async function LegalDocumentPage({ params }: { params: Promise<Pa
             </div>
           </header>
 
-          <div className={styles.body}>
+          {/* Stated before the text it describes, not after it. Somebody who
+              stops reading at the first paragraph has still been told which
+              language binds them. */}
+          {substituted ? (
+            <aside className={styles.untranslated} lang={typed}>
+              <h2 className={styles.untranslatedHeading}>{words.legalUntranslatedHeading}</h2>
+              <p className={styles.untranslatedNote}>{words.legalUntranslatedNote}</p>
+            </aside>
+          ) : null}
+
+          <div className={styles.body} lang={bodyLanguage} dir={bodyLanguage === 'ar' ? 'rtl' : 'ltr'}>
             <Sections sections={body.sections} />
           </div>
 

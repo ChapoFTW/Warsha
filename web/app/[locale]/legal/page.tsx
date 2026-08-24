@@ -6,7 +6,7 @@ import { SiteFooter, SiteHeader } from '@/components/site-chrome';
 import { copy } from '@/lib/copy';
 import { isLocale, type Locale } from '@/lib/preferences';
 import { localeHref } from '@/lib/routes';
-import { legalCorpus } from '@/lib/warsha';
+import { catalogueFor, legalCorpus } from '@/lib/warsha';
 
 import styles from './page.module.css';
 
@@ -41,7 +41,6 @@ export default async function LegalIndexPage({
   if (!isLocale(locale)) notFound();
   const typed: Locale = locale;
   const words = copy[typed];
-  const legalLocale = typed === 'ar' ? 'ar' : 'en';
 
   const mandatory = legalCorpus.filter((document) => document.requiresAcceptance);
   const reference = legalCorpus.filter((document) => !document.requiresAcceptance);
@@ -54,8 +53,10 @@ export default async function LegalIndexPage({
             href={localeHref(typed, `/legal/${document.key.replace(/_/g, '-')}`)}
             className={styles.item}
           >
-            <span className={styles.itemTitle}>{document[legalLocale].title}</span>
-            <span className={styles.itemSummary}>{document[legalLocale].summary}</span>
+            <span className={styles.itemTitle}>{catalogueFor(document, typed).title}</span>
+            <span className={styles.itemSummary}>
+              {catalogueFor(document, typed).summary}
+            </span>
             <span className={styles.itemMeta}>
               {words.legalVersion} {document.version} ·{' '}
               {document.audience === 'all' ? words.legalAudienceEveryone : document.audience}
