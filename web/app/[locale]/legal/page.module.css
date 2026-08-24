@@ -25,6 +25,8 @@
 
 .item {
   display: grid;
+  /* So a long title cannot force the column wider than its track. */
+  min-width: 0;
   gap: 6px;
   padding: 18px 20px;
   background: var(--surface);
@@ -40,6 +42,13 @@
 .itemTitle {
   font-size: 16px;
   font-weight: 700;
+  /* French policy names are substantially longer than their English
+     equivalents -- "Politique de droit d'auteur et de propriete
+     intellectuelle" against "Copyright and Intellectual Property Policy" --
+     and a grid item's default `min-width: auto` will not shrink below its
+     longest unbreakable run. Wrapping is already the behaviour; this is what
+     stops a single long token from pushing a card past the viewport at 380px. */
+  overflow-wrap: break-word;
 }
 
 .itemSummary {
