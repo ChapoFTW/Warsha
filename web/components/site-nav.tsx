@@ -4,7 +4,6 @@ import Link from 'next/link';
 import type { Route } from 'next';
 import { useEffect, useRef, useState } from 'react';
 
-import { SettingsMenu } from '@/components/preference-controls';
 import { copy } from '@/lib/copy';
 import type { Locale } from '@/lib/preferences';
 
@@ -112,12 +111,6 @@ export function SiteNav({
               {item.label}
             </Link>
           ))}
-          {/* Below the width where the header row can hold it, Settings lives
-              here rather than in a second header row. Only one copy is ever
-              displayed, so only one is in the accessibility tree. */}
-          <div className={styles.panelPreferences}>
-            <SettingsMenu locale={locale} mode="path" variant="labelled" />
-          </div>
         </div>
       ) : null}
     </>

@@ -1,7 +1,7 @@
 'use client';
 
 import { BrandLockup } from '@/components/brand-mark';
-import { SettingsMenu } from '@/components/preference-controls';
+import { PreferenceFooter } from '@/components/preference-controls';
 import type { Locale } from '@/lib/preferences';
 
 import styles from './auth-panel.module.css';
@@ -34,13 +34,16 @@ export function AuthScreen({
 }) {
   return (
     <div className={styles.page}>
-      <div className={styles.controls}>
-        <SettingsMenu locale={locale} />
-      </div>
       <main id="main" className={centred ? `${styles.panel} ${styles.state}` : styles.panel}>
         <BrandLockup locale={locale} size={30} />
         {children}
       </main>
+      {/* Below the form. Somebody arriving from an Arabic email onto an English
+          page still needs to fix that, but the first thing on the screen should
+          be what they came to do, not the controls for how it is displayed. */}
+      <div className={styles.controls}>
+        <PreferenceFooter locale={locale} />
+      </div>
     </div>
   );
 }

@@ -5,7 +5,7 @@ import type { Route } from 'next';
 import { usePathname, useRouter } from 'next/navigation';
 
 import { BrandLockup } from '@/components/brand-mark';
-import { SettingsMenu } from '@/components/preference-controls';
+import { PreferenceFooter } from '@/components/preference-controls';
 import { useSession } from '@/components/session-provider';
 import { appCopy } from '@/lib/app-copy';
 import { signOut } from '@/lib/auth-actions';
@@ -64,9 +64,6 @@ export function AppShell({
 
           <div className={styles.actions}>
             {mode ? <span className={styles.modeBadge}>{mode}</span> : null}
-            {/* One control, so the actions row keeps its width for the mode
-                badge and Sign out in every language. */}
-            <SettingsMenu locale={locale} />
             <button
               type="button"
               className={styles.signOut}
@@ -81,6 +78,14 @@ export function AppShell({
       </header>
 
       <main id="main" className={styles.main}>{children}</main>
+
+      {/* The application has no marketing footer, so this is it: the one strip
+          at the bottom of every customer and worker page that carries the
+          preferences the header used to. Reachable from every route, rather
+          than only from Account. */}
+      <footer className={styles.footer}>
+        <PreferenceFooter locale={locale} />
+      </footer>
     </div>
   );
 }

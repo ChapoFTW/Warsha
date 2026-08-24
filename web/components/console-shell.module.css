@@ -84,3 +84,15 @@
   .navLink { padding: 9px 12px; }
   .sidebarFoot { margin-top: auto; flex-wrap: wrap; }
 }
+
+/*
+ * Below navigation and below sign-out, at the very bottom of the sidebar.
+ * Preferences are not navigation and must not compete with it for the
+ * narrowest surface Warsha has.
+ */
+.sidebarPreferences {
+  flex-shrink: 0;
+  margin-block-start: var(--space-md);
+  padding-block-start: var(--space-md);
+  border-block-start: 1px solid var(--border);
+}

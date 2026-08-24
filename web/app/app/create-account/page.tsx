@@ -3,7 +3,7 @@
 import { useState } from 'react';
 
 import { BrandLockup } from '@/components/brand-mark';
-import { SettingsMenu } from '@/components/preference-controls';
+import { PreferenceFooter } from '@/components/preference-controls';
 import { appCopy } from '@/lib/app-copy';
 import { signUpCustomer } from '@/lib/auth-actions';
 import { signupLegalDocuments, signupLegalManifest, type SignUpFailure } from '@/lib/signup';
@@ -104,9 +104,6 @@ export default function CreateAccountPage() {
 
   return (
     <div className={styles.page}>
-      <div className={styles.controls}>
-        <SettingsMenu locale={locale} />
-      </div>
 
       <main id="main" className={styles.panel}>
         <BrandLockup locale={locale} size={30} />
@@ -213,6 +210,11 @@ export default function CreateAccountPage() {
         </p>
         <p className={styles.workerNote}>{words.signUpWorkerNote}</p>
       </main>
+      {/* Below the panel, never above it. The first thing on the screen should
+          be what somebody came here to do; how it is displayed comes after. */}
+      <div className={styles.controls}>
+        <PreferenceFooter locale={locale} />
+      </div>
     </div>
   );
 }

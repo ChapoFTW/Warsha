@@ -1,7 +1,9 @@
 .shell {
   min-height: 100dvh;
   display: grid;
-  grid-template-rows: auto 1fr;
+  /* header, content, footer — the footer is a third row now, so the content
+     row keeps the free space and the footer stays at the bottom. */
+  grid-template-rows: auto 1fr auto;
   background: var(--canvas);
 }
 
@@ -145,4 +147,18 @@
   }
 
   .nav::-webkit-scrollbar { display: none; }
+}
+
+/*
+ * The one strip at the bottom of every customer and worker page.
+ *
+ * The application has no marketing footer, so this is the "bottom" the
+ * preferences moved to when they left the header. It is deliberately quiet:
+ * a rule, some breathing room, and the two controls.
+ */
+.footer {
+  border-top: 1px solid var(--border);
+  padding: var(--space-lg) var(--gutter);
+  display: flex;
+  justify-content: flex-start;
 }

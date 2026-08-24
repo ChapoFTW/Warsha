@@ -5,20 +5,26 @@
 
 .page {
   min-height: 100dvh;
-  display: grid;
-  place-items: center;
+  /* A column rather than a centring grid: there are two children now, and the
+     panel keeps the centred position while the controls sit under it. */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   padding: clamp(16px, 4vw, 40px);
   background: var(--canvas);
   position: relative;
 }
 
+/* Below the panel, in normal flow. This was an absolutely positioned widget
+   in the top-inline-end corner; preferences now live at the bottom of every
+   Warsha web surface, and a floating corner control is the opposite of that. */
 .controls {
-  position: absolute;
-  top: clamp(12px, 3vw, 24px);
-  inset-inline-end: clamp(12px, 3vw, 24px);
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
+  padding-block-start: var(--space-lg);
 }
 
 .panel {

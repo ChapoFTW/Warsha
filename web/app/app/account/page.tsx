@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
+import { PreferenceFooter } from '@/components/preference-controls';
 import { AppShell } from '@/components/app-shell';
 import { useSession } from '@/components/session-provider';
 import { appCopy } from '@/lib/app-copy';
@@ -95,6 +96,7 @@ export default function AccountPage() {
       <section className={styles.panel}>
         <h2 className={styles.sectionTitle}>{words.accountPreferences}</h2>
         <p className={styles.muted}>{words.accountPreferencesBody}</p>
+        <PreferenceFooter locale={locale} className={styles.accountPreferences} />
       </section>
 
       <section className={styles.panel}>

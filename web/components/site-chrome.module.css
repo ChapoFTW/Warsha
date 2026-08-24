@@ -157,34 +157,12 @@
   }
 }
 
-/* The narrowest phones cannot hold brand, menu, Settings and both calls to
-   action on one 60px line. Rather than wrapping to a second row — the defect
-   this file exists to fix — Settings moves into the navigation menu.
-
-   It used to be two controls here, each as wide as the localized value inside
-   it. `Système` and `حسب الجهاز` are both longer than `System`, so the header
-   gave up the most width in the two languages whose navigation labels were
-   already the longest. One square gear costs the same in every language. */
-.headerSettings {
-  display: none;
-}
-
-.panelPreferences {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 6px;
-  padding: 10px 14px 4px;
-  border-top: 1px solid var(--border);
-}
-
+/* The header carries brand, navigation and auth actions. Nothing else.
+   Language and appearance were here twice — as two dropdowns, then behind one
+   gear — and both spent width in the row that already had the least to give in
+   Arabic and French. They live in the footer now, and the navigation panel does
+   not carry them either: one place, at the bottom. */
 @media (min-width: 720px) {
-  .headerSettings {
-    display: inline-flex;
-  }
-  .panelPreferences {
-    display: none;
-  }
   .signIn {
     display: inline-flex;
   }
@@ -266,24 +244,7 @@
  * inline rather than behind another gear because the footer competes with
  * nothing for width.
  */
-.footerPreferences {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-}
 
-.footerPreferencesHeading {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  margin: 0;
-  /* The end padding separates the heading from the first control without a
-     margin that would flip incorrectly in Arabic. */
-  padding-inline-end: 2px;
-}
 
 @media (min-width: 760px) {
   .footerInner {

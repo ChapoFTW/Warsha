@@ -219,7 +219,7 @@
         "privacy",
         "delete"
       ],
-      "body": "Customers sign in with email and password. Use Forgot password to request a recovery link; Warsha gives the same safe response whether or not an address is registered. Never share a password or recovery link.\n\nLanguage and Light, Dark, or System appearance follow your saved preference where available. Both are reached from the header on every Warsha surface. On the web they are grouped under Settings — inside the navigation menu on a narrow screen — and on the public site the same controls are also at the foot of every page. Arabic uses right-to-left layout.\n\nThe Privacy Center explains deactivation, data export, and governed deletion. Deactivation is reversible and does not delete history. A deletion request can be blocked by active work, financial retention, a dispute, or a legal hold; the screen reports the real state."
+      "body": "Customers sign in with email and password. Use Forgot password to request a recovery link; Warsha gives the same safe response whether or not an address is registered. Never share a password or recovery link.\n\nLanguage and Light, Dark, or System appearance follow your saved preference where available. On the web both sit at the foot of the page, under Preferences; in the admin console they are at the bottom of the sidebar, and on an account entry screen below the form. In the app they are in the header. Arabic uses right-to-left layout.\n\nThe Privacy Center explains deactivation, data export, and governed deletion. Deactivation is reversible and does not delete history. A deletion request can be blocked by active work, financial retention, a dispute, or a legal hold; the screen reports the real state."
     },
     {
       "id": "customer-account-security",
@@ -253,7 +253,7 @@
         "خصوصية",
         "حذف"
       ],
-      "body": "العميل بيسجل الدخول بالبريد الإلكتروني وكلمة السر. استخدم «نسيت كلمة السر» عشان تطلب رابط استرجاع؛ ورشة بتدي نفس الرد الآمن سواء البريد مسجل أو لأ. ما تشاركش كلمة السر أو رابط الاسترجاع مع حد.\n\nاختيار اللغة والمظهر فاتح أو داكن أو حسب الجهاز بيتحفظ لما يكون متاح. الاتنين بتوصلهم من أعلى الشاشة في كل واجهات ورشة. على الويب بيبقوا مجمّعين تحت «الإعدادات» — وجوه قائمة التنقل في الشاشات الضيقة — وفي الموقع العام نفس الاختيارات موجودة كمان في آخر كل صفحة. العربي بيظهر من اليمين للشمال.\n\nمركز الخصوصية بيشرح إيقاف الحساب مؤقتًا وتنزيل البيانات وطلب الحذف المنظم. الإيقاف قابل للرجوع ومابيحذفش التاريخ. طلب الحذف ممكن يتوقف لو فيه شغل نشط أو حفظ مالي أو خلاف أو احتفاظ قانوني، والشاشة هتقول الحالة الحقيقية."
+      "body": "العميل بيسجل الدخول بالبريد الإلكتروني وكلمة السر. استخدم «نسيت كلمة السر» عشان تطلب رابط استرجاع؛ ورشة بتدي نفس الرد الآمن سواء البريد مسجل أو لأ. ما تشاركش كلمة السر أو رابط الاسترجاع مع حد.\n\nاختيار اللغة والمظهر فاتح أو داكن أو حسب الجهاز بيتحفظ لما يكون متاح. على الويب الاتنين في آخر الصفحة تحت «التفضيلات»؛ وفي لوحة الإدارة في آخر القائمة الجانبية، وفي شاشات الدخول تحت النموذج. وفي التطبيق موجودين في أعلى الشاشة. العربي بيظهر من اليمين للشمال.\n\nمركز الخصوصية بيشرح إيقاف الحساب مؤقتًا وتنزيل البيانات وطلب الحذف المنظم. الإيقاف قابل للرجوع ومابيحذفش التاريخ. طلب الحذف ممكن يتوقف لو فيه شغل نشط أو حفظ مالي أو خلاف أو احتفاظ قانوني، والشاشة هتقول الحالة الحقيقية."
     },
     {
       "id": "customer-support-faq",
@@ -726,7 +726,7 @@
         "confidentialité",
         "suppression"
       ],
-      "body": "Les clients se connectent avec leur e-mail et leur mot de passe. Utilisez Mot de passe oublié pour demander un lien ; Warsha affiche la même réponse sûre, que l’adresse soit inscrite ou non. Ne partagez jamais votre mot de passe ni un lien de récupération.\n\nLa langue et l’apparence Clair, Sombre ou Système suivent votre préférence enregistrée. Les deux s’atteignent depuis l’en-tête sur toutes les surfaces Warsha. Sur le web, elles sont regroupées sous Paramètres — dans le menu de navigation sur écran étroit — et sur le site public les mêmes réglages sont aussi en bas de chaque page. L’arabe utilise une mise en page de droite à gauche.\n\nLe Centre de confidentialité explique la désactivation, l’export des données et la suppression gouvernée. Une demande de suppression peut être bloquée par une intervention active, une obligation financière, un litige ou une conservation légale."
+      "body": "Les clients se connectent avec leur e-mail et leur mot de passe. Utilisez Mot de passe oublié pour demander un lien ; Warsha affiche la même réponse sûre, que l’adresse soit inscrite ou non. Ne partagez jamais votre mot de passe ni un lien de récupération.\n\nLa langue et l’apparence Clair, Sombre ou Système suivent votre préférence enregistrée. Sur le web, les deux se trouvent en bas de page, sous Préférences ; dans la console d’administration, en bas de la barre latérale, et sur un écran de connexion, sous le formulaire. Dans l’application, elles sont dans l’en-tête. L’arabe utilise une mise en page de droite à gauche.\n\nLe Centre de confidentialité explique la désactivation, l’export des données et la suppression gouvernée. Une demande de suppression peut être bloquée par une intervention active, une obligation financière, un litige ou une conservation légale."
     },
     {
       "id": "customer-support-faq",
