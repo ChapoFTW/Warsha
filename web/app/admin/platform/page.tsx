@@ -78,55 +78,72 @@ export default function PlatformPage() {
         : key === 'production' ? words.platformEnvProduction
           : words.platformEnvUnconfigured;
 
+  // Parity with the Providers page, where this exact shape produced three dead
+  // controls in a row: a governed action whose busy flag is cleared on the
+  // happy path only leaves the button stuck loading the moment anything after
+  // the RPC throws — and `refresh()` is a network read that can. The flag is
+  // cleared in a finally, and a throw is reported rather than swallowed.
   async function bind() {
+    if (busy) return;
     setBusy(true);
     setError(null);
-    const { error: rpcError } = await supabase().rpc('staff_bind_platform_environment', {
-      p_expected_current_environment: 'local',
-      p_target_environment: target,
-      p_expected_project_ref: projectRef,
-      p_reason: reason.trim(),
-    });
-    if (rpcError) {
-      if (isReauthRefusal(rpcError)) {
-        reauth.remember('bind', 'manage_feature_flags', () => { void bind(); });
-      } else setError(rpcError.message);
-    } else {
-      setBound(true);
-      setConfirming(false);
-      // The session carries the environment, so it must be re-read before the
-      // banner and this page can stop describing the old state.
-      await refresh();
+    try {
+      const { error: rpcError } = await supabase().rpc('staff_bind_platform_environment', {
+        p_expected_current_environment: 'local',
+        p_target_environment: target,
+        p_expected_project_ref: projectRef,
+        p_reason: reason.trim(),
+      });
+      if (rpcError) {
+        if (isReauthRefusal(rpcError)) {
+          reauth.remember('bind', 'manage_feature_flags', () => { void bind(); });
+        } else setError(rpcError.message);
+      } else {
+        setBound(true);
+        setConfirming(false);
+        // The session carries the environment, so it must be re-read before the
+        // banner and this page can stop describing the old state.
+        await refresh();
+      }
+    } catch (failure) {
+      setError((failure as { message?: string })?.message ?? words.platformBindFailed);
+    } finally {
+      setBusy(false);
     }
-    setBusy(false);
   }
 
   async function verify() {
+    if (verifyBusy) return;
     setVerifyBusy(true);
     setVerifyError(null);
-    const { data, error: rpcError } = await supabase().rpc('verify_platform_release');
-    if (rpcError) {
-      if (isReauthRefusal(rpcError)) {
-        reauth.remember('verify', 'view_audit_logs', () => { void verify(); });
-      } else setVerifyError(rpcError.message);
-      setVerification(null);
-    } else {
-      const parsed = parseVerification(data);
-      setVerification(parsed);
-      // Telemetry is deliberately a separate, volatile call made after the
-      // result is already in hand. The verification is read-only and must stay
-      // that way, so recording that it ran can fail without failing the check.
-      if (parsed) {
-        try {
-          await supabase().rpc('staff_record_release_verification', {
-            p_failures: parsed.failures,
-          });
-        } catch {
-          // Recording that the check ran is not part of the check.
+    try {
+      const { data, error: rpcError } = await supabase().rpc('verify_platform_release');
+      if (rpcError) {
+        if (isReauthRefusal(rpcError)) {
+          reauth.remember('verify', 'view_audit_logs', () => { void verify(); });
+        } else setVerifyError(rpcError.message);
+        setVerification(null);
+      } else {
+        const parsed = parseVerification(data);
+        setVerification(parsed);
+        // Telemetry is deliberately a separate, volatile call made after the
+        // result is already in hand. The verification is read-only and must stay
+        // that way, so recording that it ran can fail without failing the check.
+        if (parsed) {
+          try {
+            await supabase().rpc('staff_record_release_verification', {
+              p_failures: parsed.failures,
+            });
+          } catch {
+            // Recording that the check ran is not part of the check.
+          }
         }
       }
+    } catch (failure) {
+      setVerifyError((failure as { message?: string })?.message ?? words.platformVerifyFailed);
+    } finally {
+      setVerifyBusy(false);
     }
-    setVerifyBusy(false);
   }
 
   const summary = verification ? summarizeVerification(verification) : null;

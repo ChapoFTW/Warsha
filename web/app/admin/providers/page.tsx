@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { Badge, Empty, Identifier, Timestamp } from '@/components/console-bits';
 import { ConsoleShell } from '@/components/console-shell';
@@ -9,9 +9,11 @@ import {
 } from '@/components/reauth-dialog';
 import { useStaff } from '@/components/staff-gate';
 import { appCopy } from '@/lib/app-copy';
+import { runGovernedAction } from '@/lib/governed-action';
 import {
   ACTIVATION_ACTION_KEY, ACTIVATION_CAPABILITY, ACTIVATION_STEPS, activationRequest,
   actionAvailability, activationSteps, activationSubject, currentStep,
+  featureFlagEnabled,
   MAPS_FEATURE_FLAG, MAPS_PROVIDER_KEY,
   parseDualControlQueue, parseProviderRegistry,
   type ActionAvailability, type ActivationStepKey, type DualControlRequest,
@@ -63,11 +65,15 @@ export default function ProvidersPage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState<string | null>(null);
   const [reason, setReason] = useState('');
   const [note, setNote] = useState('');
   const [showTechnical, setShowTechnical] = useState(false);
 
   const environment = session.environment ?? null;
+
+  // One governed call at a time, latched synchronously. See `runGovernedAction`.
+  const inFlight = useRef(false);
 
   // A refusal the dialog cannot resolve still has to be said out loud. These
   // are the three the continuation makes deliberately.
@@ -101,11 +107,14 @@ export default function ProvidersPage() {
       const queue = await client.rpc('staff_dual_control_queue');
       if (!queue.error) setRequests(parseDualControlQueue(queue.data));
 
+      // The flag is what tells the page whether the last action landed. A read
+      // that fails or is not understood must not be reported as "off" — that is
+      // how a completed switch-on came to look like nothing had happened.
       const flags = await client.rpc('get_staff_feature_flags');
-      if (!flags.error && Array.isArray(flags.data)) {
-        const match = (flags.data as Record<string, unknown>[]).find((row) =>
-          row.flag_key === MAPS_FEATURE_FLAG && row.environment === environment);
-        setFeatureEnabled(match?.enabled === true);
+      if (flags.error) {
+        if (!isReauthRefusal(flags.error)) setError(flags.error.message);
+      } else {
+        setFeatureEnabled(featureFlagEnabled(flags.data, MAPS_FEATURE_FLAG, environment));
       }
 
       // Capability metadata only. The proxy answers whether a credential is
@@ -140,33 +149,25 @@ export default function ProvidersPage() {
   });
   const next = currentStep(states);
 
-  const run = async (key: string, action: () => Promise<{ error: unknown } | void>) => {
-    setBusy(key);
-    setError(null);
-    try {
-      const result = await action();
-      const failure = result && 'error' in result ? result.error : null;
-      if (failure) {
-        // The server refused this before it read any state or consumed the
-        // approval, so the exact call is safe to hold and re-send once the
-        // operator has proven themselves. Dropping it here is what made a
-        // completed dialog look like nothing had happened.
-        if (isReauthRefusal(failure)) {
-          reauth.remember(key, ACTIVATION_CAPABILITY, () => run(key, action));
-        } else setError((failure as { message?: string }).message ?? words.providerActionFailed);
-      } else {
-        await load();
-      }
-    } catch (reason) {
-      // A network or client failure is still a failure the operator must see.
-      // Silence here is what made the button look broken rather than refused.
-      setError((reason as { message?: string })?.message ?? words.providerActionFailed);
-    } finally {
-      setBusy(null);
-    }
-  };
+  // The capability travels with the action. The re-auth dialog displays it and
+  // resolves what the operator must prove against it, so an action that names
+  // the wrong one asks for the wrong proof.
+  const run = (
+    key: string,
+    capability: string,
+    action: () => Promise<{ error: unknown } | void>,
+  ) =>
+    runGovernedAction(inFlight, key, action, {
+      setBusy, setError, setDone,
+      refresh: load,
+      isReauthRefusal,
+      rememberReauth: (pending) =>
+        reauth.remember(pending, capability, () => { void run(pending, capability, action); }),
+      failedMessage: words.providerActionFailed,
+      doneMessage: words.providerActionDone,
+    });
 
-  const requestApproval = () => run('request', async () =>
+  const requestApproval = () => run('request', ACTIVATION_CAPABILITY, async () =>
     supabase().rpc('staff_request_dual_control', {
       p_capability_key: ACTIVATION_CAPABILITY,
       p_action_key: ACTIVATION_ACTION_KEY,
@@ -174,20 +175,20 @@ export default function ProvidersPage() {
       p_reason: reason.trim(),
     }));
 
-  const approve = (id: string) => run('approve', async () =>
+  const approve = (id: string) => run('approve', ACTIVATION_CAPABILITY, async () =>
     supabase().rpc('staff_approve_dual_control', {
       p_request_id: id,
       p_approval_note: note.trim(),
     }));
 
-  const activate = () => run('activate', async () =>
+  const activate = () => run('activate', ACTIVATION_CAPABILITY, async () =>
     supabase().rpc('staff_activate_external_provider', {
       p_provider_key: MAPS_PROVIDER_KEY,
       p_expected_environment: environment,
       p_reason: reason.trim() || words.providerActivateDefaultReason,
     }));
 
-  const enableFeature = () => run('feature', async () =>
+  const enableFeature = () => run('feature', 'manage_feature_flags', async () =>
     supabase().rpc('staff_set_feature_flag', {
       p_flag_key: MAPS_FEATURE_FLAG,
       p_environment: environment,
@@ -200,8 +201,11 @@ export default function ProvidersPage() {
   // Two calls, both harmless reads at the provider, both billed once. Nothing
   // is written and no destructive operation exists on this path.
   const runHealth = async () => {
+    if (inFlight.current) return;
+    inFlight.current = true;
     setBusy('health');
     setError(null);
+    setDone(null);
     const client = supabase();
     try {
     const token = `warsha-health-${Date.now()}`;
@@ -221,6 +225,7 @@ export default function ProvidersPage() {
     } catch {
       setError(words.providerHealthFailed);
     } finally {
+      inFlight.current = false;
       setBusy(null);
     }
   };
@@ -252,6 +257,7 @@ export default function ProvidersPage() {
       ) : null}
 
       {error ? <p className={table.error} role="alert">{error}</p> : null}
+      {done ? <p className={styles.done} role="status">{done}</p> : null}
 
       {/* --- What this provider is ----------------------------------------- */}
       <section className={styles.block} aria-labelledby="provider">
@@ -498,12 +504,18 @@ function GovernedAction({
         </button>
       </div>
       {/* A button disabled for a reason nobody states is indistinguishable from
-          a broken one. That is exactly how this page failed. */}
-      {!availability.enabled && availability.reason !== 'not-ready' ? (
+          a broken one. That is exactly how this page failed — twice. Every
+          refusal is spoken, including the structural ones that used to be
+          silent because they were judged self-evident. They were not: an
+          operator looking at a greyed button cannot tell "an earlier step is
+          unfinished" from "you lack the permission" from "this is broken". */}
+      {!availability.enabled ? (
         <p className={styles.hint} role="status">
-          {availability.reason === 'refreshing'
-            ? words.providerBusyRefreshing
-            : words.providerBusyOtherAction}
+          {availability.reason === 'refreshing' ? words.providerBusyRefreshing
+            : availability.reason === 'another-action' ? words.providerBusyOtherAction
+              : availability.reason === 'waiting' ? words.providerBusyWaiting
+                : availability.reason === 'done' ? words.providerBusyDone
+                  : words.providerBusyBlocked}
         </p>
       ) : null}
     </div>

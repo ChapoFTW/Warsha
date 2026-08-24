@@ -212,21 +212,67 @@ export function currentStep(states: Record<ActivationStepKey, StepState>): Activ
  * refused. Clicking produced no request, no error and no dialog, because the
  * click never reached a handler at all.
  *
- * The reason travels with the answer so the surface can always say something.
+ * That was fixed by naming the transient refusals. It was not enough: the two
+ * *structural* refusals were still folded together into one `not-ready` the
+ * surface deliberately said nothing about, so a step blocked behind an earlier
+ * one and a step the operator has no permission for both rendered as a plain
+ * disabled button with no sentence beside it — the same dead control, refused
+ * for a different reason. Every refusal now carries a reason, and the surface
+ * renders all of them.
  */
 export type ActionAvailability =
   | { enabled: true }
-  | { enabled: false; reason: 'not-ready' | 'refreshing' | 'another-action' };
+  | {
+      enabled: false;
+      reason: 'done' | 'blocked' | 'waiting' | 'refreshing' | 'another-action';
+    };
 
 export function actionAvailability(
   step: StepState,
   busy: string | null,
   refreshing: boolean,
 ): ActionAvailability {
-  if (step !== 'ready') return { enabled: false, reason: 'not-ready' };
+  // Structural refusals, told apart because they are different sentences: this
+  // is finished, an earlier step is not, or somebody with another permission
+  // has to do it.
+  if (step === 'done') return { enabled: false, reason: 'done' };
+  if (step === 'blocked') return { enabled: false, reason: 'blocked' };
+  if (step === 'waiting') return { enabled: false, reason: 'waiting' };
   // A refresh in flight is transient and worth naming; an action in flight is
   // the operator's own doing and is named differently.
   if (refreshing) return { enabled: false, reason: 'refreshing' };
   if (busy !== null) return { enabled: false, reason: 'another-action' };
   return { enabled: true };
+}
+
+/**
+ * Whether a feature flag is on, read from `get_staff_feature_flags`.
+ *
+ * The RPC emits `flagKey`, the same camelCase every other staff payload in the
+ * console uses. The Providers page matched on `flag_key`, so the row was never
+ * found and the flag was reported off however many times it had been switched
+ * on. That is what made "Turn on address search" look dead: the RPC ran, the
+ * hosted state changed, the audit row was written — and then the page re-read
+ * the state, failed to recognise its own flag, and redrew every fact exactly as
+ * it had been. A working action and a broken button are indistinguishable when
+ * the page cannot see the result.
+ *
+ * Both spellings are accepted so a drifting payload degrades to reading the
+ * flag rather than to silently reporting it off. The shape is asserted against
+ * the migration in the tests rather than trusted.
+ */
+export function featureFlagEnabled(
+  payload: unknown,
+  flagKey: string,
+  environment: string | null,
+): boolean {
+  if (!environment) return false;
+  const list = Array.isArray(payload) ? payload
+    : Array.isArray(record(payload).flags) ? record(payload).flags as unknown[] : [];
+  return list.some((entry) => {
+    const row = record(entry);
+    return (str(row.flagKey) ?? str(row.flag_key)) === flagKey
+      && str(row.environment) === environment
+      && row.enabled === true;
+  });
 }

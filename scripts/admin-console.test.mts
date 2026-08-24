@@ -21,8 +21,10 @@ import {
 import {
   createPendingReauthStore, MAX_REAUTH_RETRIES, PENDING_REAUTH_TTL_MS,
 } from '../web/lib/pending-reauth.ts';
+import { runGovernedAction, type InFlightLatch } from '../web/lib/governed-action.ts';
 import {
-  actionAvailability, activationSteps, activationSubject,
+  actionAvailability, activationSteps, activationSubject, featureFlagEnabled,
+  MAPS_FEATURE_FLAG,
 } from '../web/lib/providers.ts';
 import { environmentBinding, parseStaffSession } from '../web/lib/staff.ts';
 
@@ -1091,38 +1093,241 @@ equal(actionAvailability('ready', null, true),
 equal(actionAvailability('ready', 'activate', false),
   { enabled: false, reason: 'another-action' },
   'and a step blocked by another action says that instead');
+// The two structural refusals used to be folded into one silent `not-ready`
+// the surface said nothing about, on the grounds that they were self-evident.
+// They are not: a greyed button with no sentence beside it reads as broken
+// whether it is blocked, unpermitted, or genuinely dead.
 equal(actionAvailability('blocked', null, false),
-  { enabled: false, reason: 'not-ready' },
-  'a step that is genuinely not ready needs no excuse');
+  { enabled: false, reason: 'blocked' },
+  'A STEP BLOCKED BEHIND AN EARLIER ONE SAYS THAT, RATHER THAN GOING QUIET');
 equal(actionAvailability('waiting', null, false),
-  { enabled: false, reason: 'not-ready' },
-  'nor does one waiting on somebody else');
+  { enabled: false, reason: 'waiting' },
+  'AND ONE WAITING ON A PERMISSION THE OPERATOR LACKS SAYS THAT INSTEAD');
+equal(actionAvailability('done', null, false),
+  { enabled: false, reason: 'done' },
+  'and a finished step says it is finished');
 
-// Every non-obvious refusal must carry a reason the surface can render.
-for (const [step, busyKey, refresh] of [
-  ['ready', 'feature', false], ['ready', null, true],
-] as const) {
-  const availability = actionAvailability(step, busyKey, refresh);
-  check(!availability.enabled && availability.reason !== 'not-ready',
-    'a blocked-but-ready action always carries a stateable reason');
+// EVERY refusal carries a reason the surface can render. No exceptions: this
+// is the invariant that stops a dead control from ever being shippable again.
+for (const step of ['done', 'blocked', 'waiting', 'ready'] as const) {
+  for (const busyKey of [null, 'feature'] as const) {
+    for (const refresh of [false, true] as const) {
+      const availability = actionAvailability(step, busyKey, refresh);
+      check(availability.enabled || typeof availability.reason === 'string',
+        'EVERY UNAVAILABLE ACTION CARRIES A STATEABLE REASON');
+    }
+  }
 }
 
 const providersSource = readFileSync('web/app/admin/providers/page.tsx', 'utf8');
 check(/setRefreshing\(false\);\s*\n\s*\}/.test(providersSource),
   'THE REFRESH CLEARS ITS FLAG IN A FINALLY, SO IT CANNOT STRAND THE PAGE');
-check((providersSource.match(/\}\s*finally\s*\{/g) ?? []).length >= 3,
-  'every asynchronous handler clears its flag in a finally');
-check(/catch \(reason\)/.test(providersSource) && /providerActionFailed/.test(providersSource),
+// The action path's finally now lives in the shared runner, which is where the
+// guarantee belongs: every governed button on every page inherits it instead of
+// each page having to remember. What stays here are the page's own handlers.
+check((providersSource.match(/\}\s*finally\s*\{/g) ?? []).length >= 2,
+  'the page handlers it still owns clear their flags in a finally');
+const runnerSource = readWeb('lib', 'governed-action.ts');
+check(/\}\s*finally\s*\{/.test(runnerSource)
+  && /latch\.current = false;/.test(runnerSource)
+  && /ports\.setBusy\(null\);/.test(runnerSource),
+  'THE SHARED RUNNER RELEASES THE LATCH AND THE LOADING FLAG IN A FINALLY');
+check(/catch \(reason\)/.test(runnerSource) && /failedMessage/.test(runnerSource),
   'A THROWN ACTION STILL REPORTS, RATHER THAN LEAVING A DEAD BUTTON');
+check(/providerActionFailed/.test(providersSource),
+  'and the page supplies the words that failure is reported in');
 check(/providerLoadFailed/.test(providersSource),
   'and a failed read is reported instead of silently disabling everything');
 check(!/enabled=\{states\.\w+ === 'ready' && busy === null\}/.test(providersSource),
   'no action is gated on the raw global flag any more');
-check(/availability\.reason !== 'not-ready'/.test(providersSource),
-  'the surface renders the reason an available step is momentarily unavailable');
-for (const key of ['providerLoadFailed', 'providerBusyRefreshing', 'providerBusyOtherAction']) {
+check(!/availability\.reason !== 'not-ready'/.test(providersSource),
+  'the surface no longer suppresses any refusal as self-evident');
+check(/\{!availability\.enabled \? \(/.test(providersSource),
+  'EVERY DISABLED GOVERNED BUTTON RENDERS THE REASON IT IS DISABLED');
+for (const key of [
+  'providerLoadFailed', 'providerBusyRefreshing', 'providerBusyOtherAction',
+  'providerBusyBlocked', 'providerBusyWaiting', 'providerBusyDone',
+  'providerActionDone',
+]) {
   check(inBoth(key), `the console explains "${key}" in both languages`);
 }
+
+// --- The page must be able to see the change it just made -------------------
+// "Turn on address search" was the third dead control on this page, and the
+// only one where the authority had actually run. `staff_set_feature_flag`
+// succeeded, wrote its audit row and its history entry — and then the page
+// re-read the flags, matched on `flag_key`, found nothing (the RPC emits
+// `flagKey`, like every other staff payload), and redrew "Off" and "You can do
+// this now". Every visible fact was identical before and after. A working
+// action the surface cannot perceive is a dead button.
+const flagsFn = migrations.slice(
+  migrations.indexOf('function public.get_staff_feature_flags'));
+const flagsBody = flagsFn.slice(0, flagsFn.indexOf('$$;'));
+check(/'flagKey'/.test(flagsBody),
+  'get_staff_feature_flags emits flagKey, the console-wide camelCase');
+check(!/'flag_key'/.test(flagsBody),
+  'AND NEVER flag_key — THE SPELLING THE PAGE USED TO MATCH ON');
+
+// Built from the key names the migration itself emits, so the reader cannot
+// drift away from the payload again without this failing.
+const emittedFlagFields = [...flagsBody.matchAll(/'([A-Za-z_]+)',\s*f\./g)].map((m) => m[1]);
+check(emittedFlagFields.includes('flagKey') && emittedFlagFields.includes('environment')
+  && emittedFlagFields.includes('enabled'),
+  'the payload carries the three fields the console matches on');
+const livePayload = [
+  { flagKey: MAPS_FEATURE_FLAG, environment: 'development', enabled: true },
+  { flagKey: MAPS_FEATURE_FLAG, environment: 'production', enabled: false },
+  { flagKey: 'other_flag', environment: 'development', enabled: true },
+];
+check(featureFlagEnabled(livePayload, MAPS_FEATURE_FLAG, 'development'),
+  'THE CONSOLE READS THE FLAG THE RPC ACTUALLY RETURNS');
+check(!featureFlagEnabled(livePayload, MAPS_FEATURE_FLAG, 'production'),
+  'and an enabled development flag never reports production as on');
+check(!featureFlagEnabled(livePayload, MAPS_FEATURE_FLAG, null),
+  'an unbound environment resolves no flag at all');
+check(!featureFlagEnabled([], MAPS_FEATURE_FLAG, 'development'),
+  'an empty payload is off, not a crash');
+// The regression itself, stated as a fact: the old reader against the real shape.
+check(livePayload.every((row) => (row as Record<string, unknown>).flag_key === undefined),
+  'THE PAYLOAD HAS NO flag_key, WHICH IS WHY THE OLD MATCH ALWAYS MISSED');
+
+// Once the page can see the flag, the sequence advances instead of looping.
+const switchedOn = activationSteps({
+  ...ready,
+  provider: { ...ready.provider, status: 'active' },
+  featureEnabled: featureFlagEnabled(livePayload, MAPS_FEATURE_FLAG, 'development'),
+});
+equal(switchedOn.feature, 'done',
+  'A SUCCESSFUL SWITCH-ON IS REPORTED AS DONE, NOT OFFERED AGAIN');
+equal(switchedOn.health, 'ready',
+  'and only a visible switch-on unblocks the health check that follows it');
+equal(activationSteps({
+  ...ready, provider: { ...ready.provider, status: 'active' }, featureEnabled: false,
+}).health, 'blocked',
+  'while an unseen switch-on strands the rest of the sequence — the reported symptom');
+
+
+// --- One governed action, and what it says happened -------------------------
+// Driven for real: the runner is free of React precisely so this can call it.
+type Trace = {
+  busy: (string | null)[]; errors: (string | null)[]; done: (string | null)[];
+  refreshes: number; remembered: string[]; calls: number;
+};
+function harness(result: () => Promise<{ error: unknown } | void>) {
+  const trace: Trace = {
+    busy: [], errors: [], done: [], refreshes: 0, remembered: [], calls: 0,
+  };
+  const latch: InFlightLatch = { current: false };
+  const action = async () => { trace.calls += 1; return result(); };
+  const ports = {
+    setBusy: (key: string | null) => { trace.busy.push(key); },
+    setError: (message: string | null) => { trace.errors.push(message); },
+    setDone: (message: string | null) => { trace.done.push(message); },
+    refresh: async () => { trace.refreshes += 1; },
+    isReauthRefusal: (failure: unknown) => (failure as { code?: string })?.code === 'reauth',
+    rememberReauth: (key: string) => { trace.remembered.push(key); },
+    failedMessage: 'refused',
+    doneMessage: 'done',
+  };
+  return { trace, latch, action, ports };
+}
+
+// An actionable toggle invokes its authority, shows a loading state, refreshes,
+// and says it succeeded.
+{
+  const { trace, latch, action, ports } = harness(async () => undefined);
+  const outcome = await runGovernedAction(latch, 'feature', action, ports);
+  equal(outcome, 'done', 'an actionable feature toggle completes');
+  equal(trace.calls, 1, 'AND INVOKES ITS AUTHORITY EXACTLY ONCE');
+  equal(trace.busy, ['feature', null], 'THE LOADING STATE APPEARS AND IS CLEARED');
+  equal(trace.refreshes, 1, 'SUCCESS RE-READS THE HOSTED STATE');
+  equal(trace.done.at(-1), 'done',
+    'AND SAYS SO OUT LOUD RATHER THAN LEAVING THE OPERATOR TO INFER IT');
+  equal(trace.errors, [null], 'no failure is reported for a success');
+  equal(latch.current, false, 'and the latch is released');
+}
+
+// A refusal is visible. It is never swallowed into a silent no-op.
+{
+  const refusal = 'Feature flags must target the current platform environment';
+  const { trace, latch, action, ports } = harness(async () => ({ error: { message: refusal } }));
+  const outcome = await runGovernedAction(latch, 'feature', action, ports);
+  equal(outcome, 'failed', 'a refused toggle reports failure');
+  equal(trace.errors.at(-1), refusal,
+    'THE SERVER OWN REFUSAL IS WHAT THE OPERATOR READS');
+  equal(trace.refreshes, 0, 'a refusal does not claim to have re-read anything');
+  equal(trace.done.at(-1), null, 'and nothing announces success');
+  equal(latch.current, false, 'the latch is released after a refusal');
+}
+
+// A throw is a failure too. Silence here is what made a button look broken.
+{
+  const { trace, latch, action, ports } = harness(async () => {
+    throw new Error('network unreachable');
+  });
+  const outcome = await runGovernedAction(latch, 'feature', action, ports);
+  equal(outcome, 'failed', 'a thrown action reports failure');
+  equal(trace.errors.at(-1), 'network unreachable', 'AND SAYS WHAT WENT WRONG');
+  equal(trace.busy.at(-1), null, 'a throw still clears the loading state');
+  equal(latch.current, false, 'and still releases the latch');
+}
+
+// A freshness refusal is held for retry, not shown as a dead end.
+{
+  const { trace, latch, action, ports } = harness(async () => ({ error: { code: 'reauth' } }));
+  const outcome = await runGovernedAction(latch, 'feature', action, ports);
+  equal(outcome, 'reauth', 'a freshness refusal is recognised as resolvable');
+  equal(trace.remembered, ['feature'], 'and the exact call is held for re-sending');
+  equal(trace.errors.at(-1), null, 'it is not reported as a plain failure');
+}
+
+// Duplicate clicks cannot produce duplicate state changes.
+{
+  let release: (() => void) | null = null;
+  const gate = new Promise<void>((resolve) => { release = resolve; });
+  const { trace, latch, action, ports } = harness(async () => { await gate; });
+  // Both clicks are dispatched before the first has settled — the case React
+  // state cannot cover, because `disabled` only updates on the next render.
+  const first = runGovernedAction(latch, 'feature', action, ports);
+  const second = await runGovernedAction(latch, 'feature', action, ports);
+  equal(second, 'duplicate', 'A SECOND CLICK IS REFUSED WHILE THE FIRST IS IN FLIGHT');
+  equal(trace.calls, 1, 'AND NEVER REACHES THE AUTHORITY, SO NO SECOND AUDIT ROW EXISTS');
+  release!();
+  equal(await first, 'done', 'the first click still completes normally');
+  equal(trace.calls, 1, 'still exactly one call to the authority');
+  equal(trace.refreshes, 1, 'and exactly one re-read');
+  // Only once it has settled is the action offered again.
+  equal(await runGovernedAction(latch, 'feature', action, ports), 'done',
+    'a later, deliberate second change is allowed');
+  equal(trace.calls, 2, 'because the latch gates concurrency, not intent');
+}
+
+// The runner releases its latch on every terminal path, so no outcome can
+// strand the page in the state that started this whole class of defect.
+const terminalPaths: (() => Promise<{ error: unknown } | void>)[] = [
+  async () => undefined,
+  async () => ({ error: { message: 'no' } }),
+  async () => ({ error: { code: 'reauth' } }),
+  async () => { throw new Error('x'); },
+];
+for (const path of terminalPaths) {
+  const { trace, latch, action, ports } = harness(path);
+  await runGovernedAction(latch, 'feature', action, ports);
+  check(latch.current === false && trace.busy.at(-1) === null,
+    'NO OUTCOME LEAVES A GOVERNED ACTION LATCHED OR A BUTTON STUCK LOADING');
+}
+
+// The page routes its actions through that runner rather than a local copy.
+check(/runGovernedAction\(inFlight,/.test(providersSource),
+  'the providers page uses the shared governed-action runner');
+check(/const inFlight = useRef\(false\)/.test(providersSource),
+  'AND LATCHES IN A REF, WHICH IS TRUE FOR THE NEXT CLICK NOT THE NEXT PAINT');
+check(/featureFlagEnabled\(flags\.data/.test(providersSource),
+  'and reads the flag through the tested reader');
+check(!/row\.flag_key/.test(providersSource),
+  'THE snake_case MATCH THAT CAUSED THIS IS GONE');
+check(/setDone\(/.test(providersSource) && /role="status">\{done\}/.test(providersSource),
+  'a completed governed action is announced on screen');
 
 // --- The continuation across re-authentication ------------------------------
 // The reported defect: Activate provider is refused for freshness, the dialog
