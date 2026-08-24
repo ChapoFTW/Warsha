@@ -370,74 +370,176 @@ check(/\{field\('floor'[^)]*'span3'\)\}/.test(addressPage)
 }
 
 // ---------------------------------------------------------------------------
-// Edit and Delete are a pair, and must look like one
+// A control's size follows its function
 // ---------------------------------------------------------------------------
 //
-// Edit is `.secondary` and Delete is `.danger`. Those two carried different
-// geometry -- 14.5px against 14px, 12px/20px padding against 10px/16px -- so
-// side by side they read as two unrelated controls rather than one choice with
-// two answers. `.danger` is used on three other pages where nothing sits beside
-// it, which is why it went unnoticed and why the shared rule was NOT edited to
-// fix this.
+// The web had 66 button-like rules using 41 combinations of type size, padding
+// and height -- 11 font sizes, 28 paddings -- because every surface picked its
+// own numbers. That is how a card's Edit button ended up the size of a landing
+// page call to action, and how a role badge ended up the same shape as the Sign
+// out button beside it. These assert the hierarchy, not pixel snapshots.
+const globalsCss = readFileSync('web/app/globals.css', 'utf8');
+for (const token of [
+  '--control-h-lg', '--control-h-md', '--control-h-sm',
+  '--control-font-lg', '--control-font-md', '--control-font-sm',
+  '--control-pad-lg', '--control-pad-md', '--control-pad-sm',
+  '--badge-font', '--badge-pad', '--badge-radius',
+]) {
+  check(new RegExp(`${token}:`).test(globalsCss), `${token} is defined once, centrally`);
+}
+
+// No button-like control may declare a raw height any more; that is the number
+// that made them disagree. Checked per control class rather than per file: a
+// page shell's 100dvh and a textarea's 96px are not controls.
 {
-  const peer = /\.peerAction \{[\s\S]*?\n\}/.exec(surfaceCss)?.[0] ?? '';
-  check(peer.length > 0, 'the peer-action geometry is defined');
-  for (const [property, value] of [
-    ['font-size', '14.5px'],
-    ['padding', '12px 20px'],
-    ['min-height', '44px'],
-    ['border-radius', 'var(--radius-sm)'],
-    ['min-width', '7.5rem'],
-  ] as [string, string][]) {
-    check(new RegExp(`${property}:\\s*${value.replace(/[().-]/g, '\\$&')};`).test(peer),
-      `the pair shares one ${property}`);
+  const CONTROLS: [string, string][] = [
+    ['web/components/product-surface.module.css', 'action'],
+    ['web/components/product-surface.module.css', 'secondary'],
+    ['web/components/product-surface.module.css', 'danger'],
+    ['web/components/product-surface.module.css', 'compactAction'],
+    ['web/components/console-table.module.css', 'submit'],
+    ['web/components/console-table.module.css', 'pagerButton'],
+    ['web/components/governed-actions.module.css', 'submit'],
+    ['web/components/governed-actions.module.css', 'cancel'],
+    ['web/components/governed-actions.module.css', 'choice'],
+    ['web/components/reauth-dialog.module.css', 'primary'],
+    ['web/components/reauth-dialog.module.css', 'secondary'],
+    ['web/components/staff-gate.module.css', 'refusalLink'],
+    ['web/components/app-shell.module.css', 'signOut'],
+    ['web/components/console-shell.module.css', 'signOut'],
+    ['web/components/site-chrome.module.css', 'signIn'],
+    ['web/components/site-chrome.module.css', 'cta'],
+    ['web/components/auth-panel.module.css', 'submit'],
+    ['web/components/staff-sign-in.module.css', 'submit'],
+  ];
+  for (const [sheet, name] of CONTROLS) {
+    const css = readFileSync(sheet, 'utf8');
+    const rule = new RegExp('\\.' + name + ' \\{[\\s\\S]*?\\n\\}').exec(css)?.[0] ?? '';
+    check(rule.length > 0, `${name} is defined in ${sheet.split('/').pop()}`);
+    check(/min-height: var\(--control-h-(lg|md|sm)\)/.test(rule),
+      `${sheet.split('/').pop()} .${name} takes its height from the scale`);
+    check(!/min-height:\s*\d+px/.test(rule),
+      `and declares no hand-picked height`);
   }
-  check(/align-items: center/.test(peer) && /justify-content: center/.test(peer),
-    'BOTH LABELS SIT IDENTICALLY IN BOTH AXES');
+}
 
-  // Declared after both role classes, or the tie between equal specificities
-  // goes the other way and none of the above applies.
-  check(surfaceCss.indexOf('.peerAction {') > surfaceCss.indexOf('.secondary {')
-    && surfaceCss.indexOf('.peerAction {') > surfaceCss.indexOf('.danger {'),
-    'AND IS DECLARED AFTER THE CLASSES IT NORMALISES, SO IT ACTUALLY WINS');
+// --- The standard action tier: one shape, three emphases -------------------
+// Destructive was its own size -- 14px and 10px/16px against the secondary's
+// 14.5px and 12px/20px -- which is why Edit and Delete never matched. Emphasis
+// is colour and weight; the shape is shared.
+{
+  const rule = (name: string) =>
+    new RegExp(`\\.${name} \\{[\\s\\S]*?\\n\\}`).exec(surfaceCss)?.[0] ?? '';
+  const action = rule('action');
+  const secondary = rule('secondary');
+  const danger = rule('danger');
+  for (const [name, css] of [['action', action], ['secondary', secondary],
+    ['danger', danger]] as [string, string][]) {
+    check(/font-size: var\(--control-font-md\)/.test(css),
+      `${name} uses the standard action type size`);
+    check(/padding: var\(--control-pad-md\)/.test(css),
+      `${name} uses the standard action padding`);
+    check(/min-height: var\(--control-h-md\)/.test(css),
+      `${name} uses the standard action height`);
+  }
+  check(/background: var\(--brand\)/.test(action),
+    'the primary action is the only one that fills');
+  check(/color: var\(--text-secondary\)/.test(secondary)
+    && /color: var\(--text-primary\)/.test(danger),
+    'AND DESTRUCTIVE STILL READS DIFFERENTLY FROM SECONDARY, BY COLOUR NOT SIZE');
+}
 
-  // The role classes keep their own identity: this is geometry, not a redesign.
-  check(/\.secondary \{[\s\S]*?color:[^;]*text-secondary/.test(surfaceCss),
-    'Edit keeps its secondary emphasis');
-  check(/\.danger \{[\s\S]*?color:[^;]*text-primary/.test(surfaceCss),
-    'and Delete keeps its own, so the hierarchy is unchanged');
-  check(!/\.peerAction \{[^}]*(background|border-color|\bcolor)\s*:/.test(surfaceCss),
-    'the shared rule sets no colour, so it cannot flatten that hierarchy');
-
-  // The other three pages that use .danger must not have been altered.
-  const dangerRule = /\.danger \{[\s\S]*?\n\}/.exec(surfaceCss)?.[0] ?? '';
-  check(/font-size: 14px/.test(dangerRule) && /padding: 10px 16px/.test(dangerRule),
-    'THE SHARED DANGER RULE IS UNTOUCHED, SO JOBS AND OPPORTUNITIES ARE UNAFFECTED');
-
-  // Narrow screens: a fixed floor would push the pair off the row.
-  const narrowPeer = surfaceCss.slice(surfaceCss.indexOf('@media (max-width: 420px)'));
-  check(/flex: 1 1 0/.test(narrowPeer) && /min-width: 0/.test(narrowPeer),
-    'on a narrow row they share the width equally rather than overflowing');
+// --- Compact: an action inside a card is not a call to action --------------
+{
+  const compact = /\.compactAction \{[\s\S]*?\n\}/.exec(surfaceCss)?.[0] ?? '';
+  check(compact.length > 0, 'the compact tier exists');
+  check(/font-size: var\(--control-font-sm\)/.test(compact)
+    && /padding: var\(--control-pad-sm\)/.test(compact)
+    && /min-height: var\(--control-h-sm\)/.test(compact),
+    'A CARD ACTION IS THE COMPACT SIZE, NOT THE STANDARD ONE');
+  // Forcing two labels to a shared width pads them to fit each other rather
+  // than their own text. They match because they share a size.
+  check(!/min-width/.test(compact),
+    'AND CARRIES NO ARBITRARY WIDTH FLOOR');
+  check(!/(background|border-color)\s*:/.test(compact),
+    'the compact tier sets no colour, so emphasis survives it');
+  check(/@media \(max-width: 420px\)[\s\S]{0,120}\.compactAction \{[^}]*flex: 1 1 auto/
+    .test(surfaceCss),
+    'on a narrow row compact actions may grow rather than sit tiny');
 }
 {
   const cardActions = addressPage.slice(addressPage.indexOf('styles.rowMeta'));
-  const edit = /className=\{`\$\{styles\.secondary\} \$\{styles\.peerAction\}`\}/.test(cardActions);
-  const remove = /className=\{`\$\{styles\.danger\} \$\{styles\.peerAction\}`\}/.test(cardActions);
-  check(edit && remove, 'BOTH BUTTONS CARRY THE SHARED GEOMETRY');
-  check(/\.rowMeta \{[^}]*flex-wrap: wrap/.test(surfaceCss),
-    'and their row still wraps rather than overflowing');
+  check(/\$\{styles\.secondary\} \$\{styles\.compactAction\}/.test(cardActions)
+    && /\$\{styles\.danger\} \$\{styles\.compactAction\}/.test(cardActions),
+    'Edit and Delete are compact card actions');
+  check((cardActions.match(/styles\.compactAction/g) ?? []).length >= 3,
+    'and Make default, in the same row, is the same kind of thing');
+  check(!/peerAction/.test(addressPage) && !/peerAction/.test(surfaceCss),
+    'the oversized peer treatment is gone, not merely unused');
 }
-// Every label the pair shows must fit the shared width in all three languages.
-for (const locale of ['en', 'ar', 'fr'] as const) {
-  for (const key of ['editAction', 'deleteAction'] as const) {
-    const label = (appCopyForAddresses[locale] as Record<string, string>)[key];
-    check(typeof label === 'string' && label.length > 0,
-      `${locale}.${key} exists`);
-    // 7.5rem is 120px; at 14.5px with 40px of padding that leaves ~78px, and no
-    // label in any of the three languages is close to it.
-    check(label.length <= 12,
-      `${locale}.${key} fits the shared button width without truncating`);
-  }
+
+// --- A badge is not a size of button ---------------------------------------
+// The role marker carried the same square radius and bordered box as the Sign
+// out beside it, so CUSTOMER read as a second control rather than a statement.
+{
+  const shell = readFileSync('web/components/app-shell.module.css', 'utf8');
+  const badge = /\.modeBadge \{[\s\S]*?\n\}/.exec(shell)?.[0] ?? '';
+  check(/border-radius: var\(--badge-radius\)/.test(badge),
+    'THE ROLE BADGE IS A PILL, SO IT CANNOT BE MISTAKEN FOR A BUTTON');
+  check(/font-size: var\(--badge-font\)/.test(badge) && /padding: var\(--badge-pad\)/.test(badge),
+    'at the badge size every other status marker uses');
+  check(!/min-height/.test(badge),
+    'and claims no control height, because it is not a control');
+  const signOut = /\.signOut \{[\s\S]*?\n\}/.exec(shell)?.[0] ?? '';
+  check(/min-height: var\(--control-h-sm\)/.test(signOut),
+    'while Sign out beside it is a header action with a declared height');
+}
+// Status markers everywhere are pills, not squares.
+for (const [sheet, name] of [
+  ['web/components/product-surface.module.css', 'badge'],
+  ['web/app/admin/page.module.css', 'chip'],
+  ['web/app/admin/page.module.css', 'chipQuiet'],
+  ['web/components/console-table.module.css', 'chip'],
+] as [string, string][]) {
+  const css = readFileSync(sheet, 'utf8');
+  const rule = new RegExp(`\\.${name} \\{[\\s\\S]*?\\n\\}`).exec(css)?.[0] ?? '';
+  check(rule.length > 0, `${name} is defined in ${sheet.split('/').pop()}`);
+  check(/border-radius: (var\(--badge-radius\)|999px)/.test(rule),
+    `${name} is a pill, not a square that looks pressable`);
+}
+
+// --- Unrelated controls were not swept up ----------------------------------
+// The landing page's calls to action are deliberately the largest thing on the
+// page and are consistent with each other; they are not the standard tier.
+{
+  const landing = readFileSync('web/app/[locale]/page.module.css', 'utf8');
+  const primary = /\.primaryCta \{[\s\S]*?\n\}/.exec(landing)?.[0] ?? '';
+  const secondary = /\.secondaryCta \{[\s\S]*?\n\}/.exec(landing)?.[0] ?? '';
+  check(/font-size: 16px/.test(primary) && /font-size: 16px/.test(secondary),
+    'THE LANDING CALLS TO ACTION WERE LEFT AS THEIR OWN DELIBERATE TIER');
+  check(/padding: 14px 28px/.test(primary) && /padding: 14px 28px/.test(secondary),
+    'and still agree with each other');
+}
+// A form field is not a button. Fields and buttons share a HEIGHT on purpose --
+// a select beside a button should align -- and a sweep keyed on that height
+// once pulled input typography into the control scale with it. They keep their
+// own type size.
+{
+  const consoleCss = readFileSync('web/components/console-table.module.css', 'utf8');
+  check(/\.input \{[\s\S]*?font-size: 15px/.test(consoleCss),
+    'FORM FIELDS KEEP THEIR OWN TYPE SIZE, NOT THE BUTTON SCALE (console input)');
+  check(/\.select \{[\s\S]*?font-size: 14\.5px/.test(consoleCss),
+    'and a select keeps the size it had (console select)');
+  check(/\.input, \.select, \.textarea \{[\s\S]*?font-size: 15px/.test(surfaceCss),
+    'and so do the product surfaces');
+}
+
+// Navigation is text, not a control, and keeps its own type.
+{
+  const chrome = readFileSync('web/components/site-chrome.module.css', 'utf8');
+  const navLink = /\.navLink \{[\s\S]*?\n\}/.exec(chrome)?.[0] ?? '';
+  check(/font-size: 14px/.test(navLink) && !/min-height/.test(navLink),
+    'primary navigation was not turned into a row of buttons');
 }
 
 console.log(`Address/location regressions: ${checks} checks passed.`);

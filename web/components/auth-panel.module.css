@@ -117,13 +117,13 @@
   appearance: none;
   border: 0;
   font: inherit;
-  font-size: 16px;
+  font-size: var(--control-font-lg);
   font-weight: 700;
   color: var(--brand-ink);
   background: var(--brand);
   border-radius: var(--radius-sm);
-  padding: 14px 20px;
-  min-height: 50px;
+  padding: var(--control-pad-lg);
+  min-height: var(--control-h-lg);
   cursor: pointer;
   text-align: center;
   text-decoration: none;

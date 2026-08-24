@@ -224,75 +224,72 @@
 }
 
 .action {
-  appearance: none; border: 0; font: inherit; font-size: 14.5px; font-weight: 700;
+  appearance: none; border: 0; font: inherit;
+  font-size: var(--control-font-md); font-weight: var(--control-weight-strong);
   color: var(--brand-ink); background: var(--brand); border-radius: var(--radius-sm);
-  padding: 12px 20px; min-height: 44px; cursor: pointer; white-space: nowrap;
-  text-decoration: none; display: inline-block; text-align: center;
+  padding: var(--control-pad-md); min-height: var(--control-h-md);
+  cursor: pointer; white-space: nowrap; text-decoration: none;
+  display: inline-flex; align-items: center; justify-content: center;
 }
 
 .action:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .secondary {
-  appearance: none; font: inherit; font-size: 14.5px; font-weight: 600;
+  appearance: none; font: inherit;
+  font-size: var(--control-font-md); font-weight: var(--control-weight-quiet);
   color: var(--text-secondary); background: transparent;
   border: 1px solid var(--border); border-radius: var(--radius-sm);
-  padding: 12px 20px; min-height: 44px; cursor: pointer;
-  text-decoration: none; display: inline-block; text-align: center;
+  padding: var(--control-pad-md); min-height: var(--control-h-md); cursor: pointer;
+  text-decoration: none; display: inline-flex; align-items: center;
+  justify-content: center;
 }
 
 .secondary:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .danger {
-  appearance: none; font: inherit; font-size: 14px; font-weight: 600;
+  appearance: none; font: inherit;
+  font-size: var(--control-font-md); font-weight: var(--control-weight-quiet);
   color: var(--text-primary); background: transparent;
   border: 1px solid var(--border); border-radius: var(--radius-sm);
-  padding: 10px 16px; min-height: 44px; cursor: pointer;
+  padding: var(--control-pad-md); min-height: var(--control-h-md); cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
 }
 .danger:disabled { opacity: 0.45; cursor: not-allowed; }
 
 /*
- * Two peer actions that should look like a pair.
+ * A compact action, for inside a card or a row.
  *
- * Edit is `.secondary` and Delete is `.danger`, and those two carried different
- * geometry -- 14.5px against 14px, 12px/20px padding against 10px/16px -- so
- * side by side they read as two unrelated controls rather than one choice with
- * two answers. The difference was never deliberate; `.danger` is used on three
- * other pages where nothing sits beside it, which is why it went unnoticed.
+ * Edit and Delete on an address card are not calls to action. They were being
+ * given the standard action size -- and briefly a 7.5rem width floor, to force
+ * two labels to match -- which made a pair of minor controls the largest thing
+ * on the card.
  *
- * This normalises the geometry only. Each button keeps its own class for colour
- * and emphasis, so the hierarchy between them is untouched -- and the three
- * other pages using `.danger` are untouched too, which they would not be if the
- * shared rule had been edited instead.
+ * So they get the compact size instead, and no width floor at all: forcing two
+ * labels to the same width is how "Modifier" and "Supprimer" end up padded to
+ * fit each other rather than their own text. They match because they share a
+ * size, which is the honest reason for two controls to look alike.
  *
- * Declared after both, so it wins the tie between equal specificities.
+ * Declared after the role classes so it wins the tie between equal
+ * specificities, and it sets no colour, so primary/secondary/destructive
+ * emphasis is untouched.
  */
-.peerAction {
-  font-size: 14.5px;
-  padding: 12px 20px;
-  min-height: 44px;
+.compactAction {
+  font-size: var(--control-font-sm);
+  padding: var(--control-pad-sm);
+  min-height: var(--control-h-sm);
   border-radius: var(--radius-sm);
-  /* Centred in both axes, so a short label and a long one sit identically. */
   display: inline-flex;
   align-items: center;
   justify-content: center;
   line-height: 1;
-  /*
-   * Wide enough for the longest label the pair has in any language --
-   * "Supprimer" -- so every language renders the two at the same width rather
-   * than sizing each to its own text.
-   */
-  min-width: 7.5rem;
 }
 
 /*
- * On a narrow screen a fixed floor would push the pair off the row. Sharing the
- * width equally keeps them symmetrical by construction instead.
+ * On a narrow row the compact pair may grow to share the width, which is a
+ * better use of a phone than two small controls beside a lot of nothing.
  */
 @media (max-width: 420px) {
-  .peerAction {
-    flex: 1 1 0;
-    min-width: 0;
-  }
+  .compactAction { flex: 1 1 auto; }
 }
 
 .filters { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 16px; }

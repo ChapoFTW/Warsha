@@ -32,6 +32,44 @@
   --radius-md: 12px;
   --radius-lg: 20px;
 
+  /* Control sizing.
+
+     A control's size follows its FUNCTION, not the page it happens to sit on.
+     Before these existed the web had 66 button-like rules using 41 different
+     combinations of type size, padding and height -- 11 font sizes and 28
+     paddings -- because every surface picked its own. That is how a card's Edit
+     button ended up the size of a landing-page call to action, and how a role
+     badge ended up the same shape as the Sign out beside it.
+
+     Three sizes, and a fourth thing that is not a button at all:
+
+       lg   the single submit that completes a form. One per screen.
+       md   a standard action: primary, secondary or destructive.
+       sm   compact -- an action inside a card or row, and header actions.
+       badge  status and role markers. NOT a size of button: a pill, so it
+              cannot be mistaken for something pressable. */
+  --control-h-lg: 50px;
+  --control-h-md: 44px;
+  --control-h-sm: 36px;
+
+  --control-font-lg: 16px;
+  --control-font-md: 14.5px;
+  --control-font-sm: 13.5px;
+
+  --control-pad-lg: 14px 20px;
+  --control-pad-md: 12px 20px;
+  --control-pad-sm: 8px 14px;
+
+  /* Emphasis is weight, not size: a destructive action is the same shape as the
+     secondary it sits beside, and only its colour says what it does. */
+  --control-weight-strong: 700;
+  --control-weight-quiet: 600;
+
+  /* A badge is deliberately smaller than every control, and always a pill. */
+  --badge-font: 12px;
+  --badge-pad: 4px 9px;
+  --badge-radius: 999px;
+
   /* Spacing scale. Mobile has carried a 4px scale in `constants/theme.ts` since
      the beginning; web had radii and a page gutter and nothing else, so every
      module invented its own pixels — 30 distinct values across 981 declarations.

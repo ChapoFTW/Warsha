@@ -27,11 +27,12 @@
 .refusalLink {
   width: fit-content;
   margin-top: 4px;
-  font-size: 14.5px;
-  font-weight: 700;
+  font-size: var(--control-font-md);
+  font-weight: var(--control-weight-strong);
   color: var(--brand-ink);
   background: var(--brand);
-  padding: 11px 18px;
+  padding: var(--control-pad-md);
+  min-height: var(--control-h-md);
   border-radius: var(--radius-sm);
 }
 

@@ -33,14 +33,14 @@
 .choice {
   appearance: none;
   font: inherit;
-  font-size: 13.5px;
+  font-size: var(--control-font-sm);
   font-weight: 650;
   color: var(--text-primary);
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  padding: 10px 14px;
-  min-height: 42px;
+  padding: var(--control-pad-sm);
+  min-height: var(--control-h-sm);
   cursor: pointer;
   text-align: start;
 }
@@ -79,7 +79,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   padding: 10px 12px;
-  min-height: 44px;
+  min-height: var(--control-h-md);
   width: 100%;
 }
 
@@ -111,13 +111,13 @@
   appearance: none;
   border: 0;
   font: inherit;
-  font-size: 14.5px;
+  font-size: var(--control-font-md);
   font-weight: 700;
   color: var(--brand-ink);
   background: var(--brand);
   border-radius: var(--radius-sm);
-  padding: 12px 20px;
-  min-height: 44px;
+  padding: var(--control-pad-md);
+  min-height: var(--control-h-md);
   cursor: pointer;
 }
 
@@ -126,14 +126,14 @@
 .cancel {
   appearance: none;
   font: inherit;
-  font-size: 14.5px;
+  font-size: var(--control-font-md);
   font-weight: 600;
   color: var(--text-secondary);
   background: transparent;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  padding: 12px 20px;
-  min-height: 44px;
+  padding: var(--control-pad-md);
+  min-height: var(--control-h-md);
   cursor: pointer;
 }
 

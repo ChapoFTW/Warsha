@@ -37,13 +37,13 @@
 
 .actions button,
 .actions a {
-  min-height: 44px;
+  min-height: var(--control-h-md);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 10px 18px;
+  padding: var(--control-pad-md);
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   background: var(--surface);
   color: var(--text-primary);
   font: inherit;

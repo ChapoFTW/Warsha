@@ -56,15 +56,25 @@
   flex-shrink: 0;
 }
 
+/*
+ * The role marker, beside Sign out.
+ *
+ * It carried the same square radius and the same bordered box as the button
+ * next to it, so CUSTOMER read as a second control competing with Sign out
+ * rather than as a statement about the account. It is a pill now, at the badge
+ * size every other status marker in the product already uses -- deliberately
+ * smaller than any button, and shaped so it cannot be mistaken for one.
+ */
 .modeBadge {
-  font-size: 12px;
-  font-weight: 700;
+  font-size: var(--badge-font);
+  font-weight: var(--control-weight-strong);
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--text-muted);
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 5px 9px;
+  border-radius: var(--badge-radius);
+  padding: var(--badge-pad);
+  line-height: 1.2;
   white-space: nowrap;
 }
 
@@ -74,12 +84,15 @@
   background: var(--surface);
   color: var(--text-primary);
   font: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  padding: 8px 12px;
+  font-size: var(--control-font-sm);
+  font-weight: var(--control-weight-quiet);
+  padding: var(--control-pad-sm);
+  min-height: var(--control-h-sm);
   border-radius: var(--radius-sm);
   cursor: pointer;
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
 }
 
 .signOut:hover { border-color: var(--border-strong); }

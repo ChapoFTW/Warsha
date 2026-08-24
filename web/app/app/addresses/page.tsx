@@ -370,15 +370,16 @@ export default function AddressesPage() {
                   {address.isDefault ? (
                     <span className={`${styles.badge} ${styles.badgeStrong}`}>{words.addressDefault}</span>
                   ) : (
-                    <button type="button" className={styles.secondary}
+                    <button type="button" className={`${styles.secondary} ${styles.compactAction}`}
                       onClick={() => void makeDefault(address.id)} disabled={busyId !== null}>
                       {busyId === address.id ? words.loading : words.addressMakeDefault}
                     </button>
                   )}
-                  {/* Peer actions: same geometry, each keeping its own emphasis. */}
-                  <button type="button" className={`${styles.secondary} ${styles.peerAction}`}
+                  {/* Compact card actions, not calls to action. Same size,
+                      each keeping its own emphasis. */}
+                  <button type="button" className={`${styles.secondary} ${styles.compactAction}`}
                     onClick={() => openEdit(address)} disabled={busyId !== null}>{words.editAction}</button>
-                  <button type="button" className={`${styles.danger} ${styles.peerAction}`}
+                  <button type="button" className={`${styles.danger} ${styles.compactAction}`}
                     onClick={() => void remove(address)} disabled={busyId !== null}>{words.deleteAction}</button>
                 </div>
               </li>

@@ -17,7 +17,7 @@
 .select {
   font: inherit; font-size: 15px; color: var(--text-primary);
   background: var(--canvas); border: 1px solid var(--border);
-  border-radius: var(--radius-sm); padding: 10px 12px; min-height: 44px; width: 100%;
+  border-radius: var(--radius-sm); padding: 10px 12px; min-height: var(--control-h-md); width: 100%;
 }
 
 .list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
@@ -53,15 +53,15 @@
 
 .textAction {
   appearance: none; border: 0; background: transparent; font: inherit;
-  font-size: 14px; font-weight: 600; color: var(--text-secondary);
-  cursor: pointer; padding: 6px 0; min-height: 44px;
+  font-size: var(--control-font-md); font-weight: 600; color: var(--text-secondary);
+  cursor: pointer; padding: 6px 0; min-height: var(--control-h-md);
   text-decoration: underline; text-underline-offset: 3px;
 }
 
 .action {
-  appearance: none; border: 0; font: inherit; font-size: 14.5px; font-weight: 700;
+  appearance: none; border: 0; font: inherit; font-size: var(--control-font-md); font-weight: 700;
   color: var(--brand-ink); background: var(--brand); border-radius: var(--radius-sm);
-  padding: 12px 20px; min-height: 44px; cursor: pointer; margin-top: 16px;
+  padding: var(--control-pad-md); min-height: var(--control-h-md); cursor: pointer; margin-top: 16px;
 }
 
 .action:disabled { opacity: 0.45; cursor: not-allowed; }

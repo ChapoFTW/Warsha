@@ -46,9 +46,10 @@
   background: var(--canvas);
   color: var(--text-primary);
   font: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  padding: 8px 12px;
+  font-size: var(--control-font-sm);
+  font-weight: var(--control-weight-quiet);
+  padding: var(--control-pad-sm);
+  min-height: var(--control-h-sm);
   border-radius: var(--radius-sm);
   cursor: pointer;
   white-space: nowrap;

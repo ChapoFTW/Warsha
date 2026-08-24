@@ -47,7 +47,7 @@
 .input {
   font: inherit; font-size: 15px; color: var(--text-primary);
   background: var(--canvas); border: 1px solid var(--border);
-  border-radius: var(--radius-sm); padding: 10px 12px; min-height: 44px; width: 100%;
+  border-radius: var(--radius-sm); padding: 10px 12px; min-height: var(--control-h-md); width: 100%;
 }
 
 .failure {
@@ -60,16 +60,16 @@
 .actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
 
 .primary {
-  appearance: none; border: 0; font: inherit; font-size: 14.5px; font-weight: 700;
+  appearance: none; border: 0; font: inherit; font-size: var(--control-font-md); font-weight: 700;
   color: var(--brand-ink); background: var(--brand); border-radius: var(--radius-sm);
-  padding: 11px 18px; min-height: 44px; cursor: pointer;
+  padding: var(--control-pad-md); min-height: var(--control-h-md); cursor: pointer;
 }
 
 .primary:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .secondary {
-  appearance: none; font: inherit; font-size: 14.5px; font-weight: 600;
+  appearance: none; font: inherit; font-size: var(--control-font-md); font-weight: 600;
   color: var(--text-secondary); background: transparent;
   border: 1px solid var(--border); border-radius: var(--radius-sm);
-  padding: 11px 18px; min-height: 44px; cursor: pointer;
+  padding: var(--control-pad-md); min-height: var(--control-h-md); cursor: pointer;
 }

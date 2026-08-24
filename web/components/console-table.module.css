@@ -21,13 +21,13 @@
 .input {
   font: inherit; font-size: 15px; color: var(--text-primary);
   background: var(--canvas); border: 1px solid var(--border);
-  border-radius: var(--radius-sm); padding: 10px 12px; min-height: 44px; width: 100%;
+  border-radius: var(--radius-sm); padding: 10px 12px; min-height: var(--control-h-md); width: 100%;
 }
 
 .submit {
-  appearance: none; border: 0; font: inherit; font-size: 14.5px; font-weight: 700;
+  appearance: none; border: 0; font: inherit; font-size: var(--control-font-md); font-weight: 700;
   color: var(--brand-ink); background: var(--brand); border-radius: var(--radius-sm);
-  padding: 11px 18px; min-height: 44px; cursor: pointer; white-space: nowrap;
+  padding: var(--control-pad-md); min-height: var(--control-h-md); cursor: pointer; white-space: nowrap;
 }
 
 .submit:disabled { opacity: 0.45; cursor: not-allowed; }
@@ -85,7 +85,7 @@
 .select {
   font: inherit; font-size: 14.5px; color: var(--text-primary);
   background: var(--canvas); border: 1px solid var(--border);
-  border-radius: var(--radius-sm); padding: 10px 12px; min-height: 44px;
+  border-radius: var(--radius-sm); padding: 10px 12px; min-height: var(--control-h-md);
 }
 
 /* Pagination sits under the table and states position, not just direction. */
@@ -98,10 +98,10 @@
 .pagerButtons { display: flex; gap: 8px; }
 
 .pagerButton {
-  appearance: none; font: inherit; font-size: 14px; font-weight: 600;
+  appearance: none; font: inherit; font-size: var(--control-font-md); font-weight: var(--control-weight-quiet);
   color: var(--text-secondary); background: transparent;
   border: 1px solid var(--border); border-radius: var(--radius-sm);
-  padding: 9px 14px; min-height: 44px; cursor: pointer;
+  padding: var(--control-pad-md); min-height: var(--control-h-md); cursor: pointer;
 }
 .pagerButton:disabled { opacity: 0.4; cursor: not-allowed; }
 
@@ -130,7 +130,7 @@
 .chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
 .chip {
   font-size: 12px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  padding: 4px 8px; border-radius: var(--radius-sm);
+  padding: var(--badge-pad); border-radius: var(--badge-radius);
   border: 1px solid var(--border); color: var(--text-secondary);
   direction: ltr; unicode-bidi: isolate;
 }

@@ -118,12 +118,14 @@
 
 .signIn {
   display: none;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: var(--control-font-sm);
+  font-weight: var(--control-weight-quiet);
   color: var(--text-secondary);
-  padding: 9px 12px;
+  padding: var(--control-pad-sm);
+  min-height: var(--control-h-sm);
   border-radius: var(--radius-sm);
   white-space: nowrap;
+  align-items: center;
 }
 
 .signIn:hover {
@@ -132,13 +134,16 @@
 }
 
 .cta {
-  font-size: 14px;
-  font-weight: 700;
+  font-size: var(--control-font-sm);
+  font-weight: var(--control-weight-strong);
   color: var(--brand-ink);
   background: var(--brand);
-  padding: 10px 16px;
+  padding: var(--control-pad-sm);
+  min-height: var(--control-h-sm);
   border-radius: var(--radius-sm);
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
 }
 
 .cta:hover {
