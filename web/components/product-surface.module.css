@@ -250,6 +250,51 @@
 }
 .danger:disabled { opacity: 0.45; cursor: not-allowed; }
 
+/*
+ * Two peer actions that should look like a pair.
+ *
+ * Edit is `.secondary` and Delete is `.danger`, and those two carried different
+ * geometry -- 14.5px against 14px, 12px/20px padding against 10px/16px -- so
+ * side by side they read as two unrelated controls rather than one choice with
+ * two answers. The difference was never deliberate; `.danger` is used on three
+ * other pages where nothing sits beside it, which is why it went unnoticed.
+ *
+ * This normalises the geometry only. Each button keeps its own class for colour
+ * and emphasis, so the hierarchy between them is untouched -- and the three
+ * other pages using `.danger` are untouched too, which they would not be if the
+ * shared rule had been edited instead.
+ *
+ * Declared after both, so it wins the tie between equal specificities.
+ */
+.peerAction {
+  font-size: 14.5px;
+  padding: 12px 20px;
+  min-height: 44px;
+  border-radius: var(--radius-sm);
+  /* Centred in both axes, so a short label and a long one sit identically. */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  /*
+   * Wide enough for the longest label the pair has in any language --
+   * "Supprimer" -- so every language renders the two at the same width rather
+   * than sizing each to its own text.
+   */
+  min-width: 7.5rem;
+}
+
+/*
+ * On a narrow screen a fixed floor would push the pair off the row. Sharing the
+ * width equally keeps them symmetrical by construction instead.
+ */
+@media (max-width: 420px) {
+  .peerAction {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+}
+
 .filters { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 16px; }
 
 /* A quote. The price leads, because it is what the decision turns on. */

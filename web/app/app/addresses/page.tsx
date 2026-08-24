@@ -375,9 +375,10 @@ export default function AddressesPage() {
                       {busyId === address.id ? words.loading : words.addressMakeDefault}
                     </button>
                   )}
-                  <button type="button" className={styles.secondary}
+                  {/* Peer actions: same geometry, each keeping its own emphasis. */}
+                  <button type="button" className={`${styles.secondary} ${styles.peerAction}`}
                     onClick={() => openEdit(address)} disabled={busyId !== null}>{words.editAction}</button>
-                  <button type="button" className={styles.danger}
+                  <button type="button" className={`${styles.danger} ${styles.peerAction}`}
                     onClick={() => void remove(address)} disabled={busyId !== null}>{words.deleteAction}</button>
                 </div>
               </li>

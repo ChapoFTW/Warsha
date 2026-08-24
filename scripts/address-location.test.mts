@@ -16,6 +16,7 @@ import {
   resolveEgyptLocation,
 } from '../src/locations/egypt-location-matching.ts';
 import { resolveLocationExperienceAvailability } from '../src/providers/location-experience-policy.ts';
+import { appCopy as appCopyForAddresses } from '../web/lib/app-copy.ts';
 import {
   googleMapsProvider,
   structuredAddressComponents,
@@ -366,6 +367,77 @@ check(/\{field\('floor'[^)]*'span3'\)\}/.test(addressPage)
     'the fields render in the intended order');
   check(positions[order.indexOf('label')] > positions[order.indexOf('addressLine')],
     'ADDRESS NAME COMES AFTER THE ADDRESS IT NAMES, NOT BEFORE IT');
+}
+
+// ---------------------------------------------------------------------------
+// Edit and Delete are a pair, and must look like one
+// ---------------------------------------------------------------------------
+//
+// Edit is `.secondary` and Delete is `.danger`. Those two carried different
+// geometry -- 14.5px against 14px, 12px/20px padding against 10px/16px -- so
+// side by side they read as two unrelated controls rather than one choice with
+// two answers. `.danger` is used on three other pages where nothing sits beside
+// it, which is why it went unnoticed and why the shared rule was NOT edited to
+// fix this.
+{
+  const peer = /\.peerAction \{[\s\S]*?\n\}/.exec(surfaceCss)?.[0] ?? '';
+  check(peer.length > 0, 'the peer-action geometry is defined');
+  for (const [property, value] of [
+    ['font-size', '14.5px'],
+    ['padding', '12px 20px'],
+    ['min-height', '44px'],
+    ['border-radius', 'var(--radius-sm)'],
+    ['min-width', '7.5rem'],
+  ] as [string, string][]) {
+    check(new RegExp(`${property}:\\s*${value.replace(/[().-]/g, '\\$&')};`).test(peer),
+      `the pair shares one ${property}`);
+  }
+  check(/align-items: center/.test(peer) && /justify-content: center/.test(peer),
+    'BOTH LABELS SIT IDENTICALLY IN BOTH AXES');
+
+  // Declared after both role classes, or the tie between equal specificities
+  // goes the other way and none of the above applies.
+  check(surfaceCss.indexOf('.peerAction {') > surfaceCss.indexOf('.secondary {')
+    && surfaceCss.indexOf('.peerAction {') > surfaceCss.indexOf('.danger {'),
+    'AND IS DECLARED AFTER THE CLASSES IT NORMALISES, SO IT ACTUALLY WINS');
+
+  // The role classes keep their own identity: this is geometry, not a redesign.
+  check(/\.secondary \{[\s\S]*?color:[^;]*text-secondary/.test(surfaceCss),
+    'Edit keeps its secondary emphasis');
+  check(/\.danger \{[\s\S]*?color:[^;]*text-primary/.test(surfaceCss),
+    'and Delete keeps its own, so the hierarchy is unchanged');
+  check(!/\.peerAction \{[^}]*(background|border-color|\bcolor)\s*:/.test(surfaceCss),
+    'the shared rule sets no colour, so it cannot flatten that hierarchy');
+
+  // The other three pages that use .danger must not have been altered.
+  const dangerRule = /\.danger \{[\s\S]*?\n\}/.exec(surfaceCss)?.[0] ?? '';
+  check(/font-size: 14px/.test(dangerRule) && /padding: 10px 16px/.test(dangerRule),
+    'THE SHARED DANGER RULE IS UNTOUCHED, SO JOBS AND OPPORTUNITIES ARE UNAFFECTED');
+
+  // Narrow screens: a fixed floor would push the pair off the row.
+  const narrowPeer = surfaceCss.slice(surfaceCss.indexOf('@media (max-width: 420px)'));
+  check(/flex: 1 1 0/.test(narrowPeer) && /min-width: 0/.test(narrowPeer),
+    'on a narrow row they share the width equally rather than overflowing');
+}
+{
+  const cardActions = addressPage.slice(addressPage.indexOf('styles.rowMeta'));
+  const edit = /className=\{`\$\{styles\.secondary\} \$\{styles\.peerAction\}`\}/.test(cardActions);
+  const remove = /className=\{`\$\{styles\.danger\} \$\{styles\.peerAction\}`\}/.test(cardActions);
+  check(edit && remove, 'BOTH BUTTONS CARRY THE SHARED GEOMETRY');
+  check(/\.rowMeta \{[^}]*flex-wrap: wrap/.test(surfaceCss),
+    'and their row still wraps rather than overflowing');
+}
+// Every label the pair shows must fit the shared width in all three languages.
+for (const locale of ['en', 'ar', 'fr'] as const) {
+  for (const key of ['editAction', 'deleteAction'] as const) {
+    const label = (appCopyForAddresses[locale] as Record<string, string>)[key];
+    check(typeof label === 'string' && label.length > 0,
+      `${locale}.${key} exists`);
+    // 7.5rem is 120px; at 14.5px with 40px of padding that leaves ~78px, and no
+    // label in any of the three languages is close to it.
+    check(label.length <= 12,
+      `${locale}.${key} fits the shared button width without truncating`);
+  }
 }
 
 console.log(`Address/location regressions: ${checks} checks passed.`);
