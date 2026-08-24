@@ -503,4 +503,19 @@ for (const query of ['aluminium', 'aluminum', 'الوميتال', 'شباك', 'f
 equal(matchServiceCategories('ac'), ['ac'],
   'WORD-AWARE MATCHING SURVIVES THE RENAME');
 
+// --- The aliases are actually consulted --------------------------------------
+// A vocabulary nothing reads is worse than none: it passes its own tests and
+// changes nothing a customer experiences. Discovery filtered on the localized
+// label and the English id, so a category was reachable in one language and
+// invisible in the other two.
+{
+  const discover = readFileSync('web/app/app/discover/page.tsx', 'utf8');
+  check(/matchServiceCategories\(query\)/.test(discover),
+    'CUSTOMER DISCOVERY SEARCHES THE SHARED ALIAS VOCABULARY');
+  check(/service-search-aliases/.test(discover),
+    'reading the same module Android and iOS can, not a web copy');
+  check(/byAlias\.has\(category\.id\)/.test(discover),
+    'and an alias hit is enough on its own, whatever the interface language');
+}
+
 console.log(`Service catalogue: ${checks} checks passed.`);

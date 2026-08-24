@@ -15,6 +15,7 @@ import {
 } from '@/lib/customer';
 import { supabase } from '@/lib/supabase';
 import { useAppLocale } from '@/lib/use-app-locale';
+import { matchServiceCategories } from '@/src/services/service-search-aliases';
 import { serviceCategoryDescription, serviceCategoryLabel } from '@/src/i18n/service-labels';
 
 import type { Route } from 'next';
@@ -94,9 +95,19 @@ export default function DiscoverPage() {
     if (!categories) return null;
     const needle = query.trim().toLowerCase();
     if (!needle) return categories;
+    // The label is localized and the id is English, so matching only those two
+    // meant a category was reachable in one language and invisible in the
+    // others: `قفل` and `serrurier` both found nothing in an English session,
+    // and nobody types "locksmithing".
+    //
+    // The alias matcher searches every language's vocabulary at once, so a
+    // category is reachable from any of the three regardless of the interface.
+    const byAlias = new Set<string>(matchServiceCategories(query));
     return categories.filter((category) => {
       const label = serviceCategoryLabel(category.translationKey, locale, category.id);
-      return label.toLowerCase().includes(needle) || category.id.includes(needle);
+      return label.toLowerCase().includes(needle)
+        || category.id.includes(needle)
+        || byAlias.has(category.id);
     });
   }, [categories, query, words]);
 
