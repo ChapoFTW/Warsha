@@ -402,8 +402,10 @@ function AddressFields({
   language: Locale;
   disabled: boolean;
 }) {
-  const field = (key: keyof Draft, label: string, helper: string, required = false) => (
-    <label className={styles.field}>
+  const field = (
+    key: keyof Draft, label: string, helper: string, required = false, span = 'span4',
+  ) => (
+    <label className={`${styles.field} ${styles[span]}`}>
       <span className={styles.label}>
         {label} <span className={styles.fieldRequirement}>
           ({required ? words.formRequired : words.formOptional})
@@ -450,8 +452,9 @@ function AddressFields({
     required: boolean,
     disabledSelect: boolean,
     placeholder: string,
+    span = 'span4',
   ) => (
-    <label className={styles.field}>
+    <label className={`${styles.field} ${styles[span]}`}>
       <span className={styles.label}>
         {label} <span className={styles.fieldRequirement}>
           ({required ? words.formRequired : words.formOptional})
@@ -477,7 +480,7 @@ function AddressFields({
   const governorateField = selectRow(
     'governorate', words.addressGovernorate, words.addressGovernorateHelp,
     governorateId, governorates, chooseGovernorate, true, false,
-    words.addressGovernorateChoose,
+    words.addressGovernorateChoose, 'span4',
   );
 
   const areaField = selectRow(
@@ -489,20 +492,33 @@ function AddressFields({
       setDraft((current) => ({ ...current, district: picked ? picked.en : '' }));
     },
     false, !governorateId,
-    words.addressDistrictChoose,
+    words.addressDistrictChoose, 'span4',
   );
 
   return (
     <div className={styles.formGrid}>
-      {field('label', words.addressLabel, words.addressLabelHelp, true)}
-      {field('addressLine', words.addressLine, words.addressLineHelp, true)}
+      {/*
+        Order follows what the person is doing, not the old four-column shape.
+
+        Address Name used to come first, which asked somebody to name a place
+        before the form had established which place it was -- and after a search
+        or a current-location lookup, the three fields below fill themselves in.
+        Naming it is the last decision, not the first, so it now sits with the
+        other thing only a human can supply: what the worker needs to know on
+        arrival.
+
+        Widest first: the address line is the longest value on the form and the
+        one that was being truncated.
+      */}
+      {field('addressLine', words.addressLine, words.addressLineHelp, true, 'span12')}
       {governorateField}
       {areaField}
-      {field('building', words.addressBuilding, words.addressBuildingHelp)}
-      {field('floor', words.addressFloor, words.addressFloorHelp)}
-      {field('apartment', words.addressApartment, words.addressApartmentHelp)}
-      {field('landmark', words.addressLandmark, words.addressLandmarkHelp)}
-      {field('serviceNotes', words.addressServiceNotes, words.addressServiceNotesHelp)}
+      {field('building', words.addressBuilding, words.addressBuildingHelp, false, 'span4')}
+      {field('floor', words.addressFloor, words.addressFloorHelp, false, 'span3')}
+      {field('apartment', words.addressApartment, words.addressApartmentHelp, false, 'span3')}
+      {field('landmark', words.addressLandmark, words.addressLandmarkHelp, false, 'span6')}
+      {field('label', words.addressLabel, words.addressLabelHelp, true, 'span6')}
+      {field('serviceNotes', words.addressServiceNotes, words.addressServiceNotesHelp, false, 'span6')}
     </div>
   );
 }

@@ -110,9 +110,68 @@
 
 .field { display: grid; gap: var(--space-field-help); margin-bottom: var(--space-field-gap); }
 
+/*
+ * The address form.
+ *
+ * `repeat(auto-fit, minmax(220px, 1fr))` gave every field an identical track,
+ * so "15 Khaled Ibn Al Walid, Al Bitash Sharq, Dekheila, Alexandria
+ * Governorate" was allotted exactly as much room as a two-character floor
+ * number: the address was truncated while Floor and Apartment sat in wasted
+ * width. Equal tracks are the right default for fields with equal content and
+ * these do not have it.
+ *
+ * So the fields claim space instead. Twelve columns is the usual choice
+ * because it divides by two, three and four, which is what a form of mixed
+ * field widths actually needs.
+ *
+ * `minmax(0, 1fr)` rather than `1fr`: a grid track's automatic minimum is its
+ * content, so a long unbroken value would otherwise push the track — and the
+ * page — wider than the viewport.
+ *
+ * Nothing here is physical. Grid follows the writing mode, so a span that puts
+ * Governorate on the reading edge in English puts it there in Arabic too,
+ * without a mirrored rule.
+ */
 .formGrid {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 0 var(--space-lg); margin-top: var(--space-lg);
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  /* Fields differ in help-text length; top alignment keeps a tall neighbour
+     from stretching the controls beside it. */
+  align-items: start;
+  gap: 0 var(--space-lg);
+  margin-top: var(--space-lg);
+}
+
+/* Every field is a grid item and must be allowed to be narrower than its
+   content, or a long placeholder becomes a horizontal scrollbar. */
+.formGrid > * { min-width: 0; }
+
+.span12 { grid-column: span 12; }
+.span6 { grid-column: span 6; }
+.span5 { grid-column: span 5; }
+.span4 { grid-column: span 4; }
+.span3 { grid-column: span 3; }
+
+/*
+ * Medium widths: halve the grid rather than reflowing field by field. Six
+ * columns keeps the same relationships -- address full width, the taxonomy
+ * pair side by side, the small numbers together -- without inventing a second
+ * layout to maintain.
+ */
+@media (max-width: 1080px) {
+  .formGrid { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .span12 { grid-column: span 6; }
+  .span6 { grid-column: span 6; }
+  .span5 { grid-column: span 3; }
+  .span4 { grid-column: span 3; }
+  .span3 { grid-column: span 2; }
+}
+
+/* One column, full width. A three-character-wide input on a phone is a target
+   nobody can hit. */
+@media (max-width: 680px) {
+  .formGrid { grid-template-columns: minmax(0, 1fr); }
+  .span12, .span6, .span5, .span4, .span3 { grid-column: span 1; }
 }
 
 .searchRow {

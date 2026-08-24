@@ -7,7 +7,14 @@ import {
   parsePlaceSuggestions,
   parseResolvedPlace,
   resolvedAddressFields,
+  shouldRequestSuggestions,
+  ADDRESS_QUERY_MINIMUM,
 } from '../src/providers/location-address.ts';
+import {
+  matchEgyptArea,
+  matchEgyptGovernorate,
+  resolveEgyptLocation,
+} from '../src/locations/egypt-location-matching.ts';
 import { resolveLocationExperienceAvailability } from '../src/providers/location-experience-policy.ts';
 import {
   googleMapsProvider,
@@ -35,9 +42,13 @@ const full = parseResolvedPlace({
 });
 check(full !== null, 'a complete provider result is accepted');
 equal(addressResolutionState(full), 'resolved', 'a complete address is resolved');
+// The provider says "Abdeen"; the CAPMAS/OCHA dataset says "Abdin". Governorate
+// and area are a controlled taxonomy on every surface, so what lands in them is
+// the dataset's name -- the provider's spelling would match no option and leave
+// the field looking answered while it was not.
 equal(resolvedAddressFields(full!), {
-  addressLine: '10 Tahrir Street', governorate: 'Cairo', district: 'Abdeen',
-}, 'structured provider fields map to the existing address representation');
+  addressLine: '10 Tahrir Street', governorate: 'Cairo', district: 'Abdin',
+}, 'structured provider fields map onto the canonical taxonomy, not through it');
 
 const partial = parseResolvedPlace({
   placeId: '', formattedAddress: 'Unnamed road, Cairo', governorate: 'Cairo',
@@ -178,5 +189,183 @@ check(/latitude = p_latitude[\s\S]*longitude = p_longitude[\s\S]*pin_confirmed_a
 const addressRls = read('supabase/migrations/202607200003_security_storage.sql');
 check(/addresses_own_all[\s\S]*customer_id=\(select auth\.uid\(\)\)/.test(addressRls),
   'cross-account address access remains blocked by RLS');
+
+// ---------------------------------------------------------------------------
+// Selecting a suggestion must not search for what was just selected
+// ---------------------------------------------------------------------------
+//
+// Picking a prediction fills the box with the chosen address. Searching keyed
+// off the text alone, so that fill was indistinguishable from typing: the box
+// re-searched the selected address and offered the same suggestion back. A
+// debounce cannot fix it -- the request is not early, it is unwanted -- so the
+// text carries where it came from and the origin decides.
+const CTX = { available: true, disabled: false };
+const CHOSEN = '15 Khaled Ibn Al Walid, Al Bitash Sharq, Dekheila, Alexandria Governorate';
+
+check(shouldRequestSuggestions({ text: 'Khaled', origin: 'typed' }, CTX),
+  'typing enough characters searches');
+check(!shouldRequestSuggestions({ text: CHOSEN, origin: 'selected' }, CTX),
+  'SELECTING A SUGGESTION DOES NOT SEARCH FOR THE ADDRESS IT JUST SELECTED');
+check(shouldRequestSuggestions({ text: `${CHOSEN}, flat 4`, origin: 'typed' }, CTX),
+  'AND EDITING IT AFTERWARDS RESUMES SEARCHING NORMALLY');
+// The gate is the origin, not the length: the selected text is long, and a
+// length rule would have let it straight through.
+check(CHOSEN.trim().length > ADDRESS_QUERY_MINIMUM,
+  'the selected address is long enough that only the origin can stop it');
+check(!shouldRequestSuggestions({ text: 'Kh', origin: 'typed' }, CTX),
+  'a query below the minimum does not spend a request');
+check(!shouldRequestSuggestions({ text: 'Khaled', origin: 'typed' },
+  { available: false, disabled: false }),
+  'a disabled provider is never called');
+check(!shouldRequestSuggestions({ text: 'Khaled', origin: 'typed' },
+  { available: true, disabled: true }),
+  'nor is a disabled form');
+
+const searchSource = readFileSync('web/components/address-search.tsx', 'utf8');
+check(/origin: 'selected'/.test(searchSource) && /origin: 'typed'/.test(searchSource),
+  'the component stores the origin rather than inferring it');
+check(/shouldRequestSuggestions\(query, \{ available, disabled \}\)/.test(searchSource),
+  'and gates the request through the shared predicate, not a local copy');
+check(/setQuery\(\{ text: place\.formattedAddress, origin: 'selected' \}\)/.test(searchSource),
+  'CHOOSING A SUGGESTION MARKS THE TEXT AS SELECTED');
+check(/onChange=\{\(event\) => setQuery\(\{ text: event\.target\.value, origin: 'typed' \}\)\}/
+  .test(searchSource),
+  'and the next keystroke marks it typed again');
+check(/setSuggestions\(\[\]\)/.test(searchSource),
+  'selection closes the suggestion list');
+// The race the origin alone would not close.
+check(/generation !== requestGeneration\.current/.test(searchSource),
+  'a superseded response is discarded rather than applied late');
+check(!/setTimeout\([^)]*\b(800|1000|1500|2000)\b/.test(searchSource),
+  'NO TIMEOUT HACK STANDS IN FOR THE STATE MODEL');
+
+// ---------------------------------------------------------------------------
+// Google's administrative names mapped onto Warsha's canonical taxonomy
+// ---------------------------------------------------------------------------
+//
+// The provider and the CAPMAS/OCHA dataset name the same places differently.
+// Exact equality was the only matcher, so Governorate stayed on "Choose a
+// governorate" and Area stayed disabled while the street line filled in
+// perfectly -- which is what made it look arbitrary rather than broken.
+
+// The address the defect was reported against.
+{
+  const resolved = resolveEgyptLocation({
+    governorate: 'Alexandria Governorate', district: 'Dekheila',
+  });
+  equal(resolved.governorate?.option.id, 'EG02',
+    'ALEXANDRIA GOVERNORATE RESOLVES TO THE CANONICAL ALEXANDRIA');
+  equal(resolved.governorate?.option.en, 'Alexandria',
+    'and stores the dataset name, not the provider one');
+  equal(resolved.area?.option.en, 'Al Dikhila',
+    'AND DEKHEILA RESOLVES TO AL DIKHILA DESPITE THE TRANSLITERATION');
+}
+
+// Representative Cairo and Giza.
+equal(resolveEgyptLocation({ governorate: 'Cairo Governorate', district: 'Nasr City' })
+  .area?.option.en, 'Nasr City', 'a Cairo address resolves both levels');
+equal(resolveEgyptLocation({ governorate: 'Giza Governorate', district: 'Dokki' })
+  .governorate?.option.id, 'EG21', 'a Giza address resolves its governorate');
+equal(matchEgyptGovernorate('Giza Governorate')?.option.en, 'Giza',
+  'and Giza is matched by name, suffix removed');
+
+// Arabic, which the provider returns when the interface is Arabic.
+equal(matchEgyptGovernorate('محافظة الإسكندرية')?.option.id, 'EG02',
+  'THE ARABIC ADMINISTRATIVE NAME RESOLVES TOO');
+equal(matchEgyptArea('EG02', 'الدخيلة')?.option.en, 'Al Dikhila',
+  'including an Arabic area name against a dataset entry written "قسم الدخيلة"');
+
+// Refusing to guess is the point.
+equal(resolveEgyptLocation({ governorate: 'Atlantis Governorate', district: 'Nowhere' })
+  .governorate, null, 'AN UNRECOGNISED GOVERNORATE IS NOT GUESSED AT');
+equal(matchEgyptArea('EG02', 'Al Bitash'), null,
+  'a neighbourhood that is not a dataset area is left for manual selection');
+// "Agouza" and "Giza" reduce to the same consonants. Two candidates means the
+// heuristic cannot tell them apart, and filing an address under the wrong
+// district silently is worse than asking.
+equal(matchEgyptArea('EG21', 'Agouza'), null,
+  'AN AMBIGUOUS TRANSLITERATION RESOLVES TO NOTHING RATHER THAN A COIN FLIP');
+equal(matchEgyptArea('EG02', ''), null, 'an empty value resolves to nothing');
+equal(matchEgyptGovernorate(null), null, 'and so does a missing one');
+equal(matchEgyptArea('EG99', 'Dekheila'), null,
+  'an area is never matched against a governorate that does not exist');
+
+// One pipeline, so the two entry points cannot diverge.
+{
+  const place = {
+    placeId: 'x', formattedAddress: CHOSEN,
+    governorate: 'Alexandria Governorate', district: 'Dekheila',
+    latitude: 31.13, longitude: 29.77,
+  };
+  const fields = resolvedAddressFields(place);
+  equal(fields.governorate, 'Alexandria',
+    'the shared field resolver returns the canonical governorate');
+  equal(fields.district, 'Al Dikhila', 'and the canonical area');
+  equal(fields.addressLine, CHOSEN, 'and the formatted address unchanged');
+  const unmappable = resolvedAddressFields({ ...place, governorate: 'Nowhere', district: 'Nowhere' });
+  equal(unmappable.governorate, undefined,
+    'AN UNMAPPABLE VALUE IS OMITTED, NEVER PASSED THROUGH RAW');
+  equal(unmappable.district, undefined, 'and neither is its area');
+  equal(unmappable.addressLine, CHOSEN, 'while the street line still populates');
+}
+const addressPage = readFileSync('web/app/app/addresses/page.tsx', 'utf8');
+check((addressPage.match(/resolvedAddressFields\(/g) ?? []).length >= 2,
+  'BOTH SELECTION AND CURRENT LOCATION GO THROUGH THE SAME RESOLVER');
+const sharedResolver = readFileSync('src/providers/location-address.ts', 'utf8');
+check(/resolveEgyptLocation\(/.test(sharedResolver),
+  'and that resolver is where the canonical mapping happens, once');
+
+// ---------------------------------------------------------------------------
+// The form claims space by content, not in equal tracks
+// ---------------------------------------------------------------------------
+const surfaceCss = readFileSync('web/components/product-surface.module.css', 'utf8');
+const formGrid = /\.formGrid \{[\s\S]*?\n\}/.exec(surfaceCss)?.[0] ?? '';
+check(formGrid.length > 0, 'the address form grid is defined');
+check(!/repeat\(auto-fit, minmax\(220px, 1fr\)\)/.test(formGrid),
+  'EVERY FIELD NO LONGER GETS AN IDENTICAL TRACK');
+check(/repeat\(12, minmax\(0, 1fr\)\)/.test(formGrid),
+  'the grid has twelve columns for fields to claim space in');
+check(/minmax\(0, 1fr\)/.test(formGrid),
+  'tracks may shrink below their content, so a long value cannot widen the page');
+check(/align-items: start/.test(formGrid),
+  'a long help text does not stretch the controls beside it');
+check(/\.formGrid > \* \{ min-width: 0; \}/.test(surfaceCss),
+  'and no grid item can overflow horizontally');
+for (const span of ['span12', 'span6', 'span5', 'span4', 'span3']) {
+  check(new RegExp(`\\.${span} \\{ grid-column: span \\d+; \\}`).test(surfaceCss),
+    `the ${span} width exists`);
+}
+check(/@media \(max-width: 1080px\)/.test(surfaceCss),
+  'medium widths reduce the grid rather than reflowing field by field');
+check(/@media \(max-width: 680px\)/.test(surfaceCss),
+  'and narrow widths collapse to a single column');
+{
+  const narrow = surfaceCss.slice(surfaceCss.indexOf('@media (max-width: 680px)'));
+  check(/grid-template-columns: minmax\(0, 1fr\)/.test(narrow),
+    'MOBILE IS ONE FULL-WIDTH COLUMN');
+  check(/\.span12, \.span6, \.span5, \.span4, \.span3 \{ grid-column: span 1; \}/.test(narrow),
+    'and every field spans it');
+}
+// Physical directions would need a mirrored rule; grid follows the writing mode.
+check(!/(^|[^-])\b(margin-left|margin-right|padding-left|padding-right|left|right):/
+  .test(formGrid),
+  'the grid is free of physical directions, so Arabic mirrors without a second rule');
+
+// The address line is the longest value on the form and was the one truncated.
+check(/\{field\('addressLine'[^)]*'span12'\)\}/.test(addressPage),
+  'THE ADDRESS LINE TAKES THE FULL WIDTH');
+check(/\{field\('floor'[^)]*'span3'\)\}/.test(addressPage)
+  && /\{field\('apartment'[^)]*'span3'\)\}/.test(addressPage),
+  'while floor and apartment take the narrow widths their content needs');
+{
+  const order = ['addressLine', 'governorateField', 'areaField', 'building',
+    'floor', 'apartment', 'landmark', 'label', 'serviceNotes'];
+  const positions = order.map((name) => addressPage.indexOf(name,
+    addressPage.indexOf('className={styles.formGrid}')));
+  check(positions.every((at, index) => index === 0 || at > positions[index - 1]),
+    'the fields render in the intended order');
+  check(positions[order.indexOf('label')] > positions[order.indexOf('addressLine')],
+    'ADDRESS NAME COMES AFTER THE ADDRESS IT NAMES, NOT BEFORE IT');
+}
 
 console.log(`Address/location regressions: ${checks} checks passed.`);

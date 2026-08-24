@@ -9,6 +9,7 @@ import {
   type PlaceSuggestion,
   type ResolvedPlace,
 } from '@/lib/location';
+import { shouldRequestSuggestions } from '@/src/providers/location-address';
 import type { LocationLanguage } from '@/src/providers/location-address';
 
 import styles from './product-surface.module.css';
@@ -38,20 +39,39 @@ export function AddressSearch({
 }) {
   const listId = useId();
   const requestGeneration = useRef(0);
-  const [query, setQuery] = useState('');
+  /**
+   * The text in the box, and why it is there.
+   *
+   * Searching was driven by the text alone, so filling the box with the address
+   * somebody had just picked was indistinguishable from them typing it: the
+   * effect ran, searched for the selected address, and offered the same
+   * suggestion again. The loop was not a timing problem and a longer debounce
+   * would only have made it slower, so the origin is part of the state rather
+   * than something inferred from when the value changed.
+   *
+   * `typed` is the only origin that searches. `selected` is set once, by
+   * choosing a suggestion, and the next keystroke returns it to `typed`.
+   */
+  const [query, setQuery] = useState<{ text: string; origin: 'typed' | 'selected' }>(
+    { text: '', origin: 'typed' });
   const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
   const [highlighted, setHighlighted] = useState(-1);
   const [sessionToken, setSessionToken] = useState(newPlaceSessionToken);
   const [status, setStatus] = useState<'idle' | 'searching' | 'no_results' | 'failed'>('idle');
 
   useEffect(() => {
-    const trimmed = query.trim();
-    if (!available || disabled || trimmed.length < 3) {
+    const trimmed = query.text.trim();
+    if (!shouldRequestSuggestions(query, { available, disabled })) {
+      // Retire whatever is in flight, so a superseded keystroke's answer cannot
+      // arrive after a selection and reopen the list it just closed.
       requestGeneration.current += 1;
+      // A selection already cleared the list and left the chosen address in the
+      // box. Clearing again here would wipe what was just chosen.
+      if (query.origin === 'selected') return undefined;
       setSuggestions([]);
       setHighlighted(-1);
       setStatus('idle');
-      return;
+      return undefined;
     }
     const generation = ++requestGeneration.current;
     const timer = setTimeout(() => {
@@ -82,9 +102,13 @@ export function AddressSearch({
       return;
     }
     onSelect(place);
-    setQuery(place.formattedAddress);
+    // Marked as `selected`, so the effect below leaves it alone. Editing it
+    // afterwards sets the origin back to `typed` and searching resumes.
+    setQuery({ text: place.formattedAddress, origin: 'selected' });
     setSuggestions([]);
     setHighlighted(-1);
+    // A Places session ends with the details call it paid for; the next search
+    // starts a new one.
     setSessionToken(newPlaceSessionToken());
     setStatus('idle');
   };
@@ -116,7 +140,7 @@ export function AddressSearch({
         <input
           type="search"
           className={styles.input}
-          value={query}
+          value={query.text}
           placeholder={copy.placeholder}
           disabled={disabled}
           role="combobox"
@@ -125,7 +149,7 @@ export function AddressSearch({
           aria-controls={listId}
           aria-activedescendant={highlighted >= 0 ? `${listId}-${highlighted}` : undefined}
           aria-busy={status === 'searching'}
-          onChange={(event) => setQuery(event.target.value)}
+          onChange={(event) => setQuery({ text: event.target.value, origin: 'typed' })}
           onKeyDown={onKeyDown}
         />
       </label>

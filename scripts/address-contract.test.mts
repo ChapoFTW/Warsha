@@ -51,9 +51,11 @@ check(/manual_pin/.test(wps023),
 // --- The form agrees with the contract --------------------------------------
 const page = readFileSync('web/app/app/addresses/page.tsx', 'utf8');
 
-check(/\{field\('label', words\.addressLabel, words\.addressLabelHelp, true\)\}/.test(page),
+// Matched on the required flag rather than the whole argument list, which now
+// also carries the field's grid width.
+check(/\{field\('label', words\.addressLabel, words\.addressLabelHelp, true[,)]/.test(page),
   'Address name is marked required, matching the database');
-check(/\{field\('addressLine', words\.addressLine, words\.addressLineHelp, true\)\}/.test(page),
+check(/\{field\('addressLine', words\.addressLine, words\.addressLineHelp, true[,)]/.test(page),
   'the street address is marked required, matching the database');
 for (const optional of ['building', 'floor', 'apartment', 'landmark', 'serviceNotes']) {
   check(new RegExp(`field\\('${optional}', [^)]*\\)\\}`).test(page)
