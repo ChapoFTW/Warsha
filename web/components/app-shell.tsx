@@ -5,7 +5,7 @@ import type { Route } from 'next';
 import { usePathname, useRouter } from 'next/navigation';
 
 import { BrandLockup } from '@/components/brand-mark';
-import { AppearanceSwitch, LanguageSwitch } from '@/components/preference-controls';
+import { SettingsMenu } from '@/components/preference-controls';
 import { useSession } from '@/components/session-provider';
 import { appCopy } from '@/lib/app-copy';
 import { signOut } from '@/lib/auth-actions';
@@ -64,8 +64,9 @@ export function AppShell({
 
           <div className={styles.actions}>
             {mode ? <span className={styles.modeBadge}>{mode}</span> : null}
-            <LanguageSwitch locale={locale} />
-            <AppearanceSwitch locale={locale} />
+            {/* One control, so the actions row keeps its width for the mode
+                badge and Sign out in every language. */}
+            <SettingsMenu locale={locale} />
             <button
               type="button"
               className={styles.signOut}

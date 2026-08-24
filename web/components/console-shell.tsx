@@ -5,7 +5,7 @@ import type { Route } from 'next';
 import { usePathname } from 'next/navigation';
 
 import { BrandLockup } from '@/components/brand-mark';
-import { AppearanceSwitch, LanguageSwitch } from '@/components/preference-controls';
+import { SettingsMenu } from '@/components/preference-controls';
 import { useStaff } from '@/components/staff-gate';
 import { appCopy } from '@/lib/app-copy';
 import { visibleAreas } from '@/lib/console-areas';
@@ -62,8 +62,11 @@ export function ConsoleShell({
         </nav>
 
         <div className={styles.sidebarFoot}>
-          <LanguageSwitch locale={locale} />
-          <AppearanceSwitch locale={locale} />
+          {/* The sidebar is the narrowest surface Warsha has, and two stacked
+              value dropdowns spent permanent vertical space on preferences an
+              operator changes once. Named rather than icon-only: there is room
+              for the word here, and the sidebar is a list of named things. */}
+          <SettingsMenu locale={locale} variant="labelled" placement="above" />
           <button
             type="button"
             className={styles.signOut}

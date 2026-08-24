@@ -190,7 +190,7 @@ check(/case 'Escape'/.test(controls) && /close\(true\)/.test(controls),
   'Escape closes the menu and returns focus to the trigger');
 check(/pointerdown/.test(controls),
   'a pointer press outside the menu closes it');
-check(/selected=\{mounted \? preference : null\}/.test(controls),
+check(/selected: mounted \? preference : null/.test(controls),
   'no appearance is claimed as chosen until the stored value is known');
 
 // --- Mobile is deliberately untouched ---------------------------------------
@@ -219,7 +219,15 @@ check(!/(^|[^-])\b(left|right):\s*\d/.test(controlStyles),
 // Wrapping was the defect, not the safeguard: five navigation labels breaking
 // onto second lines is what made the header 122px tall at 1440px. The header
 // now reorganises at explicit breakpoints and never reflows.
-check(!/flex-wrap:\s*wrap/.test(chromeStyles),
+//
+// Scoped to the header half of the stylesheet. The footer carries the
+// always-available language and appearance controls and is *meant* to fold
+// them onto a second line when there is not room; a whole-file check would
+// forbid the correct behaviour in one place to police the incorrect one in
+// another.
+const chromeHeaderStyles = chromeStyles.slice(0, chromeStyles.indexOf('--- Footer'));
+check(chromeHeaderStyles.length > 0, 'the header half of the stylesheet is identifiable');
+check(!/flex-wrap:\s*wrap/.test(chromeHeaderStyles),
   'THE HEADER NEVER WRAPS ONTO A SECOND ROW; IT COLLAPSES INSTEAD');
 check(/@media \(min-width: 720px\)/.test(chromeStyles)
   && /@media \(min-width: 1140px\)/.test(chromeStyles),
@@ -228,6 +236,186 @@ check(/panelPreferences/.test(chromeStyles),
   'on the narrowest screens the preference controls move into the menu rather than overflowing');
 check(!/z-index:\s*(9{2,}|\d{4,})/.test(controlStyles),
   'no switcher escapes stacking context to sit on top of the page');
+
+// --- Settings: language and appearance behind one control -------------------
+//
+// The French public site is what proved this. `Comment fonctionne Warsha` and
+// `Travailler avec Warsha` are roughly twice the width of `How it works` and
+// `Work with Warsha`, and the header was also spending permanent width on two
+// value-bearing dropdowns whose triggers grow with the localized word inside
+// them — `Système`, `Apparence`, `حسب الجهاز`. The header gave up the most room
+// in exactly the two languages whose labels needed the most.
+const chromeSource = readFileSync('web/components/site-chrome.tsx', 'utf8');
+const navSource = readFileSync('web/components/site-nav.tsx', 'utf8');
+const appShell = readFileSync('web/components/app-shell.tsx', 'utf8');
+const consoleShell = readFileSync('web/components/console-shell.tsx', 'utf8');
+
+const headerMarkup = chromeSource.slice(
+  chromeSource.indexOf('export function SiteHeader'),
+  chromeSource.indexOf('export function SiteFooter'));
+const footerMarkup = chromeSource.slice(chromeSource.indexOf('export function SiteFooter'));
+
+check(/<SettingsMenu/.test(headerMarkup),
+  'the public header offers one Settings control');
+check(!/<LanguageSwitch|<AppearanceSwitch/.test(headerMarkup),
+  'LANGUAGE AND THEME NO LONGER SIT INLINE IN THE PRIMARY HEADER ROW');
+
+// The width the header spends on Settings must not depend on the language,
+// which is the whole point. The icon variant renders the gear and no value
+// label; only the `labelled` variant renders text.
+const settingsSource = controls.slice(controls.indexOf('export function SettingsMenu'));
+check(/<GearIcon \/>/.test(settingsSource),
+  'the Settings trigger is an icon');
+check(/variant === 'labelled' \?/.test(settingsSource),
+  'AND RENDERS A LOCALIZED TEXT LABEL ONLY IN THE VARIANT THAT ASKS FOR ONE');
+check(!/variant="labelled"/.test(headerMarkup),
+  'SO THE PUBLIC HEADER COSTS THE SAME WIDTH IN ENGLISH, ARABIC AND FRENCH');
+// Not silent, though: an icon-only control still has to say what it is.
+check(/aria-label=\{controlLabel\}/.test(controls),
+  'the icon trigger is named for a screen reader in the reader’s language');
+check(/controlLabel=\{label\}/.test(settingsSource)
+  && /copy\[locale\]\.settingsLabel/.test(settingsSource),
+  'and that name is the localized word for Settings');
+
+// --- Every language has the words this change introduced --------------------
+for (const key of ['settingsLabel', 'footerPreferences'] as const) {
+  for (const locale of ['en', 'ar', 'fr'] as const) {
+    const value = copy[locale][key];
+    check(typeof value === 'string' && value.length > 0,
+      `${locale}.${key} exists`);
+  }
+  check(copy.fr[key] !== copy.en[key], `fr.${key} is genuinely French`);
+  check(/[؀-ۿ]/.test(copy.ar[key]), `ar.${key} is genuinely Arabic`);
+}
+
+// --- Responsive placement ---------------------------------------------------
+// One Settings entry per surface, never two competing ones, and never a second
+// header row.
+check(/<SettingsMenu[^>]*variant="labelled"/.test(navSource),
+  'below the header breakpoint Settings lives inside the existing navigation panel');
+check(!/<LanguageSwitch|<AppearanceSwitch/.test(navSource),
+  'the narrow panel offers Settings rather than two separate controls');
+const headerSettingsRule = /\.headerSettings \{[\s\S]*?\n\}/.exec(chromeStyles)?.[0] ?? '';
+check(/display:\s*none/.test(headerSettingsRule),
+  'the header control is absent on the narrowest screens');
+check(/\.headerSettings \{\s*display:\s*inline-flex/.test(
+  chromeStyles.slice(chromeStyles.indexOf('@media (min-width: 720px)'))),
+  'AND APPEARS ONLY WHERE THE HEADER ROW CAN HOLD IT');
+check(/\.panelPreferences \{\s*display:\s*none/.test(
+  chromeStyles.slice(chromeStyles.indexOf('@media (min-width: 720px)'))),
+  'so exactly one of the two is ever displayed — never both, never neither');
+
+// --- Customer, worker and admin ---------------------------------------------
+check(/<SettingsMenu locale=\{locale\} \/>/.test(appShell)
+  && !/<LanguageSwitch|<AppearanceSwitch/.test(appShell),
+  'the customer and worker header carries one Settings control');
+check(/<SettingsMenu[^>]*variant="labelled"/.test(consoleShell)
+  && !/<LanguageSwitch|<AppearanceSwitch/.test(consoleShell),
+  'THE ADMIN SIDEBAR NO LONGER SPENDS PERMANENT SPACE ON EN/AR/FR AND LIGHT/DARK');
+check(/placement="above"/.test(consoleShell),
+  'and its menu opens upward, since it sits at the foot of the sidebar');
+
+// --- The public footer keeps a way out --------------------------------------
+check(/<LanguageSwitch/.test(footerMarkup) && /<AppearanceSwitch/.test(footerMarkup),
+  'THE FOOTER EXPOSES LANGUAGE AND APPEARANCE FOR ANYONE WHO MISSES THE MENU');
+check((footerMarkup.match(/<LanguageSwitch/g) ?? []).length === 1,
+  'and does so exactly once, rather than repeating the control down the page');
+check(/placement="above"/.test(footerMarkup),
+  'the footer menus open upward rather than growing the page every time');
+check(/footerPreferences/.test(chromeStyles),
+  'the footer preference block is laid out rather than left to inline defaults');
+
+// --- Language selection, in every language ----------------------------------
+// The options are built from the shared locale list, so a fourth language is a
+// data change rather than a fourth branch in a component.
+check(/LOCALES\.map/.test(controls),
+  'the language options come from the shared locale list');
+for (const locale of ['en', 'ar', 'fr'] as const) {
+  check(copy[locale].languageEnglish === 'English'
+    && copy[locale].languageArabic === 'العربية'
+    && copy[locale].languageFrench === 'Français',
+    `the ${locale} menu names each language in that language's own script`);
+}
+check(/mode === 'path' \? `\/\$\{option\}\$\{rest\}` : undefined/.test(controls),
+  'the locale-prefixed public site still offers real URLs, and the apps do not');
+check(/mode="path"/.test(headerMarkup) && /mode="path"/.test(footerMarkup)
+  && /mode="path"/.test(navSource),
+  'every public-site entry point uses path mode, so localized routing is preserved');
+check(!/mode="path"/.test(appShell) && !/mode="path"/.test(consoleShell),
+  'AND THE UNPREFIXED APPLICATIONS STILL RECORD A PREFERENCE RATHER THAN 404ING');
+
+// --- Theme selection and persistence ----------------------------------------
+check(/appearancePreferences\.map/.test(controls),
+  'the appearance options come from the shared preference list');
+check(/root\.removeAttribute\('data-theme'\)/.test(controls),
+  'CHOOSING SYSTEM REMOVES THE OVERRIDE, SO THE OS PREFERENCE APPLIES AGAIN');
+check(/root\.setAttribute\('data-theme', next\)/.test(controls),
+  'and an explicit choice sets the attribute the stylesheet reads');
+// Persistence is unchanged by the move: the same keys, written in the same
+// place, still separating "chosen" from "current".
+check((controls.match(/window\.localStorage\.setItem/g) ?? []).length >= 4,
+  'both preferences persist their value and their explicitness');
+check(/warsha-locale=\$\{locale\}/.test(controls),
+  'the language cookie the middleware reads is still written');
+check(/dispatchEvent\(new Event\(languageChangeEvent\)\)/.test(controls),
+  'and the unprefixed surfaces are still told to re-render in place');
+
+// --- One implementation, not two --------------------------------------------
+// Settings and the standalone switches must not drift apart, so they share the
+// group definitions rather than each building their own.
+check(/function useLanguageGroup/.test(controls) && /function useAppearanceGroup/.test(controls),
+  'the language and appearance groups are defined once');
+check((controls.match(/function rememberLanguage/g) ?? []).length === 1,
+  'THERE IS ONE IMPLEMENTATION OF REMEMBERING A LANGUAGE, NOT ONE PER CONTROL');
+check((controls.match(/role="menu"/g) ?? []).length === 1,
+  'and one menu implementation, not a second framework for Settings');
+check(/useLanguageGroup\(locale, mode\)/.test(settingsSource)
+  && /useAppearanceGroup\(locale\)/.test(settingsSource),
+  'Settings reuses those definitions rather than restating them');
+
+// --- Keyboard and screen-reader behaviour -----------------------------------
+check(/role: 'menuitemradio'/.test(controls) && /'aria-checked': checked/.test(controls),
+  'each option announces itself as a choice, and which one is in effect');
+check(/role="group"/.test(controls) && /aria-label=\{group\.label\}/.test(controls),
+  'LANGUAGE AND APPEARANCE ARE NAMED GROUPS INSIDE THE ONE MENU');
+check(/aria-hidden="true">\{group\.label\}/.test(controls),
+  'and the visible group heading is not announced a second time');
+check(/const flat = groups\.flatMap/.test(controls),
+  'ARROW KEYS WALK EVERY OPTION IN THE MENU, ACROSS BOTH GROUPS');
+for (const key of ['ArrowDown', 'ArrowUp', 'Home', 'End', 'Escape', 'Tab']) {
+  check(new RegExp(`case '${key}'`).test(controls), `${key} is handled inside the menu`);
+}
+check(/case 'Escape': event\.preventDefault\(\); close\(true\); break;/.test(controls),
+  'ESCAPE CLOSES AND RETURNS FOCUS TO THE TRIGGER');
+check(/if \(returnFocus\) triggerRef\.current\?\.focus\(\)/.test(controls),
+  'focus returns to the control that opened the menu');
+check(/pointerdown/.test(controls) && /rootRef\.current\?\.contains/.test(controls),
+  'a pointer press outside the menu closes it');
+check(/aria-haspopup="menu"/.test(controls) && /aria-expanded=\{open\}/.test(controls)
+  && /aria-controls=\{menuId\}/.test(controls),
+  'the trigger announces that it opens a menu, its state, and which menu');
+
+// --- RTL --------------------------------------------------------------------
+// Everything added for Settings is written in logical properties, so Arabic
+// mirrors without a second stylesheet.
+const settingsCss = controlStyles.slice(controlStyles.indexOf('--- Settings'));
+check(settingsCss.length > 0, 'the Settings rules are identifiable');
+check(!/(^|[^-])\b(left|right|margin-left|margin-right|padding-left|padding-right):/
+  .test(settingsCss),
+  'NO PHYSICAL DIRECTION APPEARS IN THE SETTINGS RULES; ARABIC MIRRORS FOR FREE');
+check(/inset-block-end/.test(controlStyles),
+  'the upward-opening menu is placed with a logical property too');
+check(/padding-inline-end/.test(chromeStyles),
+  'and the footer heading spaces itself on the reading edge, not the left');
+// The gear is symmetrical, so unlike a chevron it must NOT be mirrored.
+check(/Symmetrical/.test(controls) || /needs no mirroring/.test(controls),
+  'the icon choice records why it is not mirrored in Arabic');
+
+// --- No hydration flash regression ------------------------------------------
+check(/selected: mounted \? preference : null/.test(controls),
+  'the appearance control still claims nothing before the stored value is known');
+check(/setMounted\(true\)/.test(controls) && /useEffect/.test(controls),
+  'the stored appearance is still read after mount, never during render');
 
 // --- Built output: the promise actually shipped -----------------------------
 if (hasBuild) {

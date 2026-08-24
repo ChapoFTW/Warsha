@@ -3,7 +3,7 @@
 import { useState } from 'react';
 
 import { BrandLockup } from '@/components/brand-mark';
-import { AppearanceSwitch, LanguageSwitch } from '@/components/preference-controls';
+import { SettingsMenu } from '@/components/preference-controls';
 import { appCopy } from '@/lib/app-copy';
 import { signIn, type SignInFailure } from '@/lib/auth-actions';
 import { useAppLocale } from '@/lib/use-app-locale';
@@ -69,8 +69,7 @@ export function StaffSignIn({ onSignedIn }: { onSignedIn?: () => void }) {
   return (
     <div className={styles.page}>
       <div className={styles.controls}>
-        <LanguageSwitch locale={locale} />
-        <AppearanceSwitch locale={locale} />
+        <SettingsMenu locale={locale} />
       </div>
 
       <main id="main" className={styles.panel}>

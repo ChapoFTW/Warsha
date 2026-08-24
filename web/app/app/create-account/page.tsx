@@ -3,7 +3,7 @@
 import { useState } from 'react';
 
 import { BrandLockup } from '@/components/brand-mark';
-import { AppearanceSwitch, LanguageSwitch } from '@/components/preference-controls';
+import { SettingsMenu } from '@/components/preference-controls';
 import { appCopy } from '@/lib/app-copy';
 import { signUpCustomer } from '@/lib/auth-actions';
 import { signupLegalDocuments, signupLegalManifest, type SignUpFailure } from '@/lib/signup';
@@ -105,8 +105,7 @@ export default function CreateAccountPage() {
   return (
     <div className={styles.page}>
       <div className={styles.controls}>
-        <LanguageSwitch locale={locale} />
-        <AppearanceSwitch locale={locale} />
+        <SettingsMenu locale={locale} />
       </div>
 
       <main id="main" className={styles.panel}>

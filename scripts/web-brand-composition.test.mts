@@ -64,7 +64,13 @@ check(/@media \(min-width: 1140px\)/.test(chromeCss),
   'inline navigation appears only where the labels genuinely fit');
 check(/menuButton/.test(chromeCss) && /navPanel/.test(chromeCss),
   'below that width the navigation collapses rather than growing the header');
-check(!/flex-wrap:\s*wrap/.test(chromeCss),
+// Scoped to the header. The footer is *supposed* to wrap — it lays copyright
+// and the preference controls on one base line and folds them onto two when
+// there is not room — and a whole-file check could not tell the difference
+// between that and the header defect this rule exists to prevent.
+const headerCss = chromeCss.slice(0, chromeCss.indexOf('--- Footer'));
+check(headerCss.length > 0, 'the header section of the stylesheet is identifiable');
+check(!/flex-wrap:\s*wrap/.test(headerCss),
   'nothing in the header wraps onto a second row at any width');
 
 // --- The disclosure is usable by keyboard ----------------------------------

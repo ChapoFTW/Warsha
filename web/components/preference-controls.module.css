@@ -112,3 +112,61 @@
   background: var(--brand);
   color: var(--brand-ink);
 }
+
+/* --- Settings: one trigger, two groups ------------------------------------ */
+
+/*
+ * The compact form for a header actions row. Square, so it costs the same
+ * width in every language — which is the entire point of the change: the old
+ * pair of value-bearing triggers grew with the localized word inside them, so
+ * the header lost the most room in French and Arabic, where it had least to
+ * spare.
+ */
+.iconTrigger .menuTrigger {
+  min-width: 36px;
+  padding: 0 8px;
+  justify-content: center;
+}
+
+/* Named, for places with vertical room and no competition for it. */
+.labelledTrigger .menuTrigger {
+  gap: 8px;
+}
+
+.menuGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+/* A rule between groups rather than around them: the menu is one surface, and
+   two boxed panels inside a popover reads as two menus. */
+.menuGroup + .menuGroup {
+  margin-block-start: 4px;
+  padding-block-start: 5px;
+  border-block-start: 1px solid var(--border);
+}
+
+.menuGroupLabel {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 5px 10px 3px;
+}
+
+/* Settings holds two groups, so it needs more room than a single switch and
+   should not be clipped to the trigger's width the way one does. */
+.iconTrigger .menuList,
+.labelledTrigger .menuList {
+  min-width: 190px;
+}
+
+/* Opened upward, for the one control that has nothing beneath it. Anchoring to
+   the block-start edge rather than translating keeps it correct when the list
+   scrolls. */
+.menuListAbove {
+  inset-block-start: auto;
+  inset-block-end: calc(100% + 4px);
+}

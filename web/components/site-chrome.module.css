@@ -157,13 +157,16 @@
   }
 }
 
-/* The narrowest phones cannot hold brand, menu, both preference controls and
-   both calls to action on one 60px line. Rather than wrapping to a second row
-   — the defect this file exists to fix — the controls move into the menu. */
-.headerPreferences {
+/* The narrowest phones cannot hold brand, menu, Settings and both calls to
+   action on one 60px line. Rather than wrapping to a second row — the defect
+   this file exists to fix — Settings moves into the navigation menu.
+
+   It used to be two controls here, each as wide as the localized value inside
+   it. `Système` and `حسب الجهاز` are both longer than `System`, so the header
+   gave up the most width in the two languages whose navigation labels were
+   already the longest. One square gear costs the same in every language. */
+.headerSettings {
   display: none;
-  align-items: center;
-  gap: 8px;
 }
 
 .panelPreferences {
@@ -176,7 +179,7 @@
 }
 
 @media (min-width: 720px) {
-  .headerPreferences {
+  .headerSettings {
     display: inline-flex;
   }
   .panelPreferences {
@@ -245,6 +248,41 @@
   border-top: 1px solid var(--border);
   font-size: 13px;
   color: var(--text-muted);
+  /* Copyright and preferences share the base line, and wrap rather than
+     collide when there is not room for both. */
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 20px;
+}
+
+/*
+ * The second, deliberate place to change language and appearance.
+ *
+ * Somebody who never notices the header gear still has to be able to read the
+ * site in their own language, and the foot of the page is where a reader who
+ * has run out of other ideas looks. This is the only repetition, and it is
+ * inline rather than behind another gear because the footer competes with
+ * nothing for width.
+ */
+.footerPreferences {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.footerPreferencesHeading {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 0;
+  /* The end padding separates the heading from the first control without a
+     margin that would flip incorrectly in Arabic. */
+  padding-inline-end: 2px;
 }
 
 @media (min-width: 760px) {

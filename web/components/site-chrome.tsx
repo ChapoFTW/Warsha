@@ -1,7 +1,9 @@
 import Link from 'next/link';
 
 import { BrandLockup } from '@/components/brand-mark';
-import { AppearanceSwitch, LanguageSwitch } from '@/components/preference-controls';
+import {
+  AppearanceSwitch, LanguageSwitch, SettingsMenu,
+} from '@/components/preference-controls';
 import { SiteNav } from '@/components/site-nav';
 import { copy } from '@/lib/copy';
 import type { Locale } from '@/lib/preferences';
@@ -43,10 +45,11 @@ export function SiteHeader({ locale }: Props) {
         <SiteNav locale={locale} links={primary} />
 
         <div className={styles.actions}>
-          <span className={styles.headerPreferences}>
-            <LanguageSwitch locale={locale} mode="path" />
-            <AppearanceSwitch locale={locale} />
-          </span>
+          {/* One gear, not two value-bearing dropdowns. Their triggers grew
+              with the localized word inside them, so the header lost the most
+              width in French and Arabic — the two languages with the longest
+              navigation labels and therefore the least room to give. */}
+          <SettingsMenu locale={locale} mode="path" className={styles.headerSettings} />
           {/* Straight into the real application. The marketing site explains
               sign-in at /sign-in but must never implement it: there is one
               identity-driven form, it lives at the application origin, and a
@@ -118,6 +121,16 @@ export function SiteFooter({ locale }: Props) {
 
       <div className={styles.footerBase}>
         <p>© {new Date().getFullYear()} {words.brand}</p>
+        {/* Repeated here on purpose, and only here. Somebody who never opens
+            the header's Settings menu still needs a way to change language,
+            and the foot of the page is where a reader who has run out of other
+            ideas looks. Inline rather than behind a second gear: the footer is
+            not competing for width with anything. */}
+        <div className={styles.footerPreferences}>
+          <h2 className={styles.footerPreferencesHeading}>{words.footerPreferences}</h2>
+          <LanguageSwitch locale={locale} mode="path" placement="above" />
+          <AppearanceSwitch locale={locale} placement="above" />
+        </div>
       </div>
     </footer>
   );

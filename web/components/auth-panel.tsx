@@ -1,7 +1,7 @@
 'use client';
 
 import { BrandLockup } from '@/components/brand-mark';
-import { AppearanceSwitch, LanguageSwitch } from '@/components/preference-controls';
+import { SettingsMenu } from '@/components/preference-controls';
 import type { Locale } from '@/lib/preferences';
 
 import styles from './auth-panel.module.css';
@@ -35,8 +35,7 @@ export function AuthScreen({
   return (
     <div className={styles.page}>
       <div className={styles.controls}>
-        <LanguageSwitch locale={locale} />
-        <AppearanceSwitch locale={locale} />
+        <SettingsMenu locale={locale} />
       </div>
       <main id="main" className={centred ? `${styles.panel} ${styles.state}` : styles.panel}>
         <BrandLockup locale={locale} size={30} />

@@ -351,7 +351,7 @@
       "title": "Account, security, and preferences",
       "summary": "Sign in, recover your password, choose language and appearance, and manage privacy.",
       "version": 1,
-      "lastReviewedDate": "2026-08-21",
+      "lastReviewedDate": "2026-08-24",
       "features": [
         "auth",
         "password_recovery",
@@ -384,7 +384,7 @@
       "title": "الحساب والأمان والتفضيلات",
       "summary": "سجّل الدخول، استرجع كلمة السر، واختار اللغة والمظهر وتحكم في الخصوصية.",
       "version": 1,
-      "lastReviewedDate": "2026-08-21",
+      "lastReviewedDate": "2026-08-24",
       "features": [
         "auth",
         "password_recovery",
@@ -1229,7 +1229,7 @@
       "title": "Compte, sécurité et préférences",
       "summary": "Connectez-vous, récupérez votre mot de passe et gérez langue, apparence et confidentialité.",
       "version": 1,
-      "lastReviewedDate": "2026-08-21",
+      "lastReviewedDate": "2026-08-24",
       "features": [
         "auth",
         "password_recovery",
