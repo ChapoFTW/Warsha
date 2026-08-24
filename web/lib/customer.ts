@@ -109,6 +109,10 @@ const num = (value: unknown): number | null => (typeof value === 'number' ? valu
 const int = (value: unknown): number => (typeof value === 'number' ? value : 0);
 const bool = (value: unknown): boolean => value === true;
 
+import {
+  byServiceDemand, isLegacyCategory,
+} from '../../src/services/service-catalogue.ts';
+
 export function parseCategories(value: unknown): ServiceCategory[] {
   const raw = record(value);
   const list = Array.isArray(raw.categories) ? raw.categories : [];
@@ -123,7 +127,17 @@ export function parseCategories(value: unknown): ServiceCategory[] {
       iconName: str(row.icon_name),
       descriptionKey: str(row.description_key),
     }];
-  });
+  })
+    // Withdrawn categories never reach a chooser, and what remains is in the
+    // shared demand order rather than whatever order the server sent.
+    //
+    // The server is the authority and this is not a second one: it filters the
+    // same withdrawn set the migration deactivates, from the same module
+    // Android and iOS read. It matters because the two can be out of step --
+    // a client that shipped before the migration ran would otherwise keep
+    // offering the catch-all.
+    .filter((category) => !isLegacyCategory(category.id))
+    .sort(byServiceDemand((category) => category.id));
 }
 
 export function parseServices(value: unknown): Service[] {

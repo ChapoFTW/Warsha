@@ -199,7 +199,10 @@ check(!providerMode.includes('value={String(draft.serviceRadiusKm)}'), 'worker p
 
 const selectedProfessions = withSelectedProfessions(emptyProviderDraft, ['plumbing', 'electrical']);
 check(selectedProfessionKeys(selectedProfessions).join(',') === 'plumbing,electrical', 'profession selection stores multiple stable canonical keys');
-check(professions.length === 34, 'the canonical worker profession taxonomy contains all 34 required professions');
+// 34 -> 33: `handyman` and `generalMaintenance` were withdrawn with the
+// catch-all category that hid them. Neither is a trade a customer searches for;
+// they were the same drawer expressed at worker level.
+check(professions.length === 33, 'the canonical worker profession taxonomy contains all 33 required professions');
 const englishProfessionLabels = professions.map(item => item.en);
 check(JSON.stringify(englishProfessionLabels) === JSON.stringify([...englishProfessionLabels].sort((a, b) => a.localeCompare(b, 'en'))),
   'the source English profession taxonomy is stable and alphabetized');

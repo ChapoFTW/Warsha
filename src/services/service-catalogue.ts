@@ -1,66 +1,89 @@
 /**
- * The order Warsha offers services in, and why it is that order.
+ * The services Warsha offers, the order it offers them in, and why.
  *
- * Until now every surface rendered `service_categories` in `sort_order`, which
- * was curation order from the launch seed — effectively the order somebody
- * typed them in. That is fine for an admin table and wrong for a customer who
- * is choosing what to ask for. Two places were worse: `get_search_suggestions`
- * selected the top categories by `sort_order` and then re-aggregated them
- * alphabetically, throwing its own ordering away, and `listProfessions` sorted
- * worker trades A-Z by localized label, so the list differed between English
- * and Arabic for no reason a worker could see.
+ * ## No catch-all
+ *
+ * `general-maintenance` used to sit eighth. It was the largest category by
+ * profession count — fourteen trades, including a locksmith and an aluminium
+ * worker — which is the tell: it was not a service customers asked for, it was
+ * the drawer everything specific got put in. A customer with a broken lock does
+ * not search "general maintenance", and a locksmith listed under it is
+ * invisible to the person who needs one.
+ *
+ * So it is gone from selection and discovery, and every trade it was hiding has
+ * a concrete home. The id survives in `LEGACY_CATEGORY_IDS` because requests,
+ * quotes and bookings already reference it and history must still render.
  *
  * ## This is a researched prior, not Warsha demand
  *
- * Warsha has no meaningful request traffic yet, so there is nothing internal to
+ * Warsha has no meaningful request traffic, so there is nothing internal to
  * rank by, and inventing a popularity signal would be worse than admitting
- * that. `get_search_suggestions` already says so in as many words, and this
- * module keeps that promise: the ranks below come from Egyptian market
- * evidence, and `DEMAND_RANK_SOURCE` says which. Nothing here should ever be
- * described to a user as "most popular on Warsha".
+ * that. `DEMAND_RANK_SOURCE` says where the order came from. Nothing here may
+ * ever be described to a customer as "most popular on Warsha".
  *
- * Evidence, August 2026:
+ * ## Evidence, August 2026 — Egyptian operators, not global rankings
  *
- *   - FilKhedma, Egypt's largest home-services platform, leads with A/C, then
- *     cleaning, plumbing, carpentry, electricity.
- *   - YalaFix leads with plumbing, electrical, then cleaning, AC & appliances,
- *     painting, carpentry, general repairs.
+ *   - FilKhedma (Egypt's largest home-services platform) publishes: plumbing,
+ *     air conditioning, carpentry, electricity, ALUMETAL, satellite dish,
+ *     painting, home appliances, and cleaning in six varieties. Alumetal and
+ *     satellite dish are Egyptian categories a global taxonomy would not
+ *     produce, and both are here because of it.
+ *   - Taskty (~20,000 customers, greater Cairo) leads with house cleaning, then
+ *     furniture cleaning, PEST CONTROL, plumbing, electricity, carpentry and
+ *     furniture moving. Pest control is a named top-level category there.
+ *   - HomeRun spans 100+ categories including cleaning, moving and painting.
+ *   - YalaFix leads with plumbing and electrical, then cleaning, AC and
+ *     appliances, painting, carpentry.
  *   - Egypt's air-conditioner market runs USD 1.12B (2024) to a projected USD
  *     1.65B (2030) at 6.72% CAGR, against Cairo summers now exceeding 40°C.
- *   - At-home barbering is an established Egyptian product (Cut Egypt delivers
- *     haircuts to homes and offices); at-home women's hairdressing exists but
- *     is thinner than the salon trade; personal styling is real but niche and
- *     event-driven.
+ *   - At-home barbering is an established Egyptian product (Cut Egypt);
+ *     at-home women's hairdressing exists but is thinner than the salon trade;
+ *     personal styling is real but niche and event-driven.
  *
- * Plumbing leads rather than air conditioning because it is urgent and
- * year-round on both operators, where air conditioning is seasonal — a static
- * annual rank should not encode August. Seasonal adjustment is a later
- * refinement, not a cold-start decision.
+ * ## Why this order
  *
- * The grooming services sit below every household trade deliberately. They are
- * a legitimate hyperlocal category and they are new; neither is a reason to put
- * them above the work Egyptian households actually call somebody out for.
+ * Cleaning is third rather than fourth because it is the one recurring service
+ * here — a household books it weekly or monthly, where plumbing is booked when
+ * something breaks — and it leads Taskty and sits second on FilKhedma.
+ *
+ * Plumbing and electrical lead it anyway because they are urgent and
+ * year-round on every operator: a customer with no water is not comparison
+ * shopping.
+ *
+ * Air conditioning is fourth despite leading FilKhedma and despite the market
+ * size, because a static annual rank must not encode August. Seasonal
+ * adjustment is a later refinement, not a cold-start decision.
+ *
+ * Locksmithing sits below the household trades on evidence — it appears on no
+ * Egyptian marketplace's front page — but it is present and searchable, because
+ * the moment somebody needs one it is the only thing they want.
+ *
+ * Personal styling is last. It is legitimate and it is niche; being new is not
+ * a reason to promote it above the work Egyptian households actually call
+ * somebody out for.
  *
  * ## When Warsha has real traffic
  *
- * `public.marketplace_requests.category_id` already records the category of
- * every request, and the first-party reporting authority already aggregates
- * counts per category per window without exposing any customer. That is the
- * source to use — but it is staff-gated and must never be called on a customer
- * page load. See `docs/product/service-demand-ranking.md` for the threshold and
- * the mechanism. Until then this order is deterministic and unchanging.
+ * `public.marketplace_requests.category_id` records the category of every
+ * request, and the first-party reporting authority aggregates counts per
+ * category per window without exposing any customer. That is the source — it is
+ * staff-gated and must never be called on a customer page load. The threshold
+ * and mechanism are in `docs/product/service-demand-ranking.md`. Until then
+ * this order is deterministic and unchanging.
  */
 
 /** What produced the current ranking. Mirrors `service_categories.demand_rank_source`. */
 export const DEMAND_RANK_SOURCE = 'cold_start_research' as const;
 
 export type ServiceCategoryId =
-  | 'plumbing' | 'electrical' | 'ac' | 'cleaning' | 'appliance-repair'
-  | 'carpentry' | 'painting' | 'general-maintenance' | 'moving-help'
-  | 'barber' | 'hairdressing' | 'satellite-tv-installation' | 'personal-styling';
+  | 'plumbing' | 'electrical' | 'cleaning' | 'ac' | 'appliance-repair'
+  | 'carpentry' | 'painting' | 'moving-help' | 'pest-control'
+  | 'water-heater-repair' | 'flooring-tiling' | 'renovation-finishing'
+  | 'alumetal' | 'satellite-tv-installation' | 'locksmithing' | 'gardening'
+  | 'barber' | 'hairdressing' | 'personal-styling';
 
 /**
- * Every active customer-requestable category, in cold-start demand order.
+ * Every category a customer may request, in cold-start demand order.
  *
  * Ranks are unique and dense from 1. `service-catalogue.test.mts` asserts this
  * list and the migration agree, so the two cannot drift.
@@ -68,22 +91,55 @@ export type ServiceCategoryId =
 export const SERVICE_DEMAND_ORDER: readonly ServiceCategoryId[] = [
   'plumbing',
   'electrical',
-  'ac',
   'cleaning',
+  'ac',
   'appliance-repair',
   'carpentry',
   'painting',
-  'general-maintenance',
   'moving-help',
+  'pest-control',
+  'water-heater-repair',
+  'flooring-tiling',
+  'renovation-finishing',
+  'alumetal',
+  'satellite-tv-installation',
+  'locksmithing',
+  'gardening',
   'barber',
   'hairdressing',
-  'satellite-tv-installation',
   'personal-styling',
 ] as const;
 
+/**
+ * Categories that exist only so old records still read as words.
+ *
+ * `general-maintenance` was a catch-all and is withdrawn from selection and
+ * discovery. It is NOT deleted: requests, quotes and bookings reference it, and
+ * a customer opening a two-year-old job must not be shown a bare slug or an
+ * error. Nothing may offer these for new work.
+ */
+export const LEGACY_CATEGORY_IDS: readonly string[] = ['general-maintenance'] as const;
+
+const legacy = new Set<string>(LEGACY_CATEGORY_IDS);
 const rankById = new Map<string, number>(
   SERVICE_DEMAND_ORDER.map((id, index) => [id, index + 1]),
 );
+
+/** Whether a customer may choose this category for new work. */
+export function isSelectableCategory(categoryId: string): boolean {
+  return rankById.has(categoryId);
+}
+
+/**
+ * Whether this category only exists to render history.
+ *
+ * Separate from "unknown": an id this build has never heard of is a category
+ * seeded after it shipped and must still be offered, where a legacy id is one
+ * deliberately withdrawn.
+ */
+export function isLegacyCategory(categoryId: string): boolean {
+  return legacy.has(categoryId);
+}
 
 /**
  * The rank of a category, or a value that sorts after every known one.
@@ -110,4 +166,22 @@ export function byServiceDemand<T>(
     const delta = serviceDemandRank(categoryIdOf(left)) - serviceDemandRank(categoryIdOf(right));
     return delta !== 0 ? delta : tieBreak(left, right);
   };
+}
+
+/**
+ * What a customer may be offered, in order.
+ *
+ * One function so no surface has to remember that withdrawn categories exist:
+ * discovery, request creation and worker trade selection all filter through
+ * this rather than each keeping its own exclusion list.
+ */
+export function selectableCategories<T>(
+  items: readonly T[],
+  categoryIdOf: (item: T) => string,
+  tieBreak: (left: T, right: T) => number = () => 0,
+): T[] {
+  return items
+    .filter((item) => !isLegacyCategory(categoryIdOf(item)))
+    .slice()
+    .sort(byServiceDemand(categoryIdOf, tieBreak));
 }

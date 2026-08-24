@@ -13,11 +13,16 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 import { serviceCategoryDescription, serviceCategoryLabel } from '../src/i18n/service-labels.ts';
+import { translations } from '../src/i18n/translations.ts';
 import { categories as mockCategories } from '../src/data/mock-data.ts';
 import { listProfessions, professions } from '../src/providers/profession-taxonomy.ts';
 import {
-  byServiceDemand, DEMAND_RANK_SOURCE, SERVICE_DEMAND_ORDER, serviceDemandRank,
+  byServiceDemand, DEMAND_RANK_SOURCE, isLegacyCategory, isSelectableCategory,
+  selectableCategories, SERVICE_DEMAND_ORDER, serviceDemandRank,
 } from '../src/services/service-catalogue.ts';
+import {
+  matchServiceCategories, SERVICE_SEARCH_ALIASES, searchTermsFor,
+} from '../src/services/service-search-aliases.ts';
 
 let checks = 0;
 function check(condition: unknown, message: string) {
@@ -77,11 +82,12 @@ equal(mockCategories.map((c) => c.id), [...SERVICE_DEMAND_ORDER],
 check(!/c\.id in \(/.test(migration),
   'the catalogue RPC no longer filters to a hardcoded launch allowlist');
 
-const migrationRanks = [...migration.matchAll(/\('([a-z-]+)', (\d+)\)/g)]
-  .map(([, id, rank]) => ({ id, rank: Number(rank) }))
-  .sort((left, right) => left.rank - right.rank);
-equal(migrationRanks.map((row) => row.id), [...SERVICE_DEMAND_ORDER],
-  'THE DATABASE RANKS AND THE SHARED CLIENT MODULE AGREE EXACTLY');
+// The ranks this migration set have since been superseded: the catalogue
+// expansion withdrew `general-maintenance`, added seven categories and re-ranked
+// the rest. The authoritative comparison is against that later migration, and it
+// lives further down in "One ordering authority for web, Android and iOS".
+check(/'plumbing', 1/.test(migration),
+  'this migration established the first explicit demand ranks');
 
 // --- Every requestable service is ranked, uniquely and deterministically ----
 
@@ -106,8 +112,13 @@ check(/NOT observed Warsha/.test(migrationText),
 
 // --- Household trades come first --------------------------------------------
 
+// `general-maintenance` has left this list because it has left the catalogue.
+// Every trade it was hiding is now a household category in its own right, so
+// the list is longer than it was, not shorter.
 const HOUSEHOLD = ['plumbing', 'electrical', 'ac', 'cleaning', 'appliance-repair',
-  'carpentry', 'painting', 'general-maintenance', 'moving-help'] as const;
+  'carpentry', 'painting', 'moving-help', 'pest-control', 'water-heater-repair',
+  'flooring-tiling', 'renovation-finishing', 'alumetal', 'locksmithing',
+  'gardening'] as const;
 for (const trade of HOUSEHOLD) {
   for (const entry of NEW) {
     check(serviceDemandRank(trade) < serviceDemandRank(entry.id),
@@ -134,9 +145,14 @@ check(hairdressing !== undefined
   'and the hairdressing labels state no gender restriction');
 
 // --- Existing identifiers survive --------------------------------------------
+// `general-maintenance` was a launch identifier and is no longer selectable, so
+// it is asserted separately: withdrawn from new work, still resolvable, so the
+// requests, quotes and bookings that reference it remain valid.
+check(!isSelectableCategory('general-maintenance') && isLegacyCategory('general-maintenance'),
+  'THE WITHDRAWN LAUNCH IDENTIFIER STILL RESOLVES FOR THE RECORDS THAT USE IT');
 
 const LAUNCH = ['plumbing', 'electrical', 'carpentry', 'ac', 'cleaning', 'painting',
-  'appliance-repair', 'satellite-tv-installation', 'moving-help', 'general-maintenance'];
+  'appliance-repair', 'satellite-tv-installation', 'moving-help'];
 for (const id of LAUNCH) {
   check(SERVICE_DEMAND_ORDER.includes(id as never),
     `the stored identifier "${id}" is still active, so existing requests remain valid`);
@@ -224,5 +240,226 @@ equal([...tied].sort(byServiceDemand((item) => item.id,
   (left, right) => left.id.localeCompare(right.id))).map((item) => item.id),
   ['unknown-a', 'unknown-b'],
   'and equal ranks fall through to the caller\'s explicit tie-break');
+
+// ---------------------------------------------------------------------------
+// The catch-all is gone, and nothing it hid was lost
+// ---------------------------------------------------------------------------
+//
+// `general-maintenance` was the largest category by profession count -- fourteen
+// trades, including a locksmith and an aluminium worker. That is the tell: not a
+// service customers asked for, but the drawer everything specific got put in.
+check(!SERVICE_DEMAND_ORDER.includes('general-maintenance' as never),
+  'GENERAL MAINTENANCE CANNOT BE SELECTED FOR NEW WORK');
+check(!isSelectableCategory('general-maintenance'),
+  'and the selection guard refuses it by name');
+check(isLegacyCategory('general-maintenance'),
+  'BUT IT IS WITHDRAWN, NOT DELETED, SO OLD RECORDS STILL RENDER');
+// Withdrawn is not the same as unknown: an id this build has never seen is a
+// category seeded after it shipped and must still be offered.
+check(!isLegacyCategory('some-future-category'),
+  'a category from a later build is not mistaken for a withdrawn one');
+equal(serviceDemandRank('general-maintenance'), Number.MAX_SAFE_INTEGER,
+  'a withdrawn category sorts last rather than first if it appears at all');
+// It still has to read as words, in every language.
+for (const language of ['en', 'ar', 'fr'] as const) {
+  const label = serviceCategoryLabel('generalMaintenance', language, 'general-maintenance');
+  check(label.length > 0 && label !== 'general-maintenance',
+    `a historical record renders in ${language}, not as a slug`);
+}
+// The filter every surface is meant to use.
+{
+  const rows = [
+    { id: 'general-maintenance' }, { id: 'locksmithing' }, { id: 'plumbing' },
+  ];
+  const offered = selectableCategories(rows, (row) => row.id).map((row) => row.id);
+  equal(offered, ['plumbing', 'locksmithing'],
+    'SELECTABLE CATEGORIES DROPS THE WITHDRAWN ONE AND ORDERS THE REST BY DEMAND');
+}
+
+// Every trade the catch-all was hiding has a concrete home. If any of these had
+// nowhere to go, the category was load-bearing and removing it just moved the
+// problem somewhere else.
+// Widened deliberately: the taxonomy is `as const`, so TypeScript already
+// proves no profession names the withdrawn category -- comparing the narrowed
+// union to it is a type error, not a test. This keeps the runtime guarantee
+// stated for a reader, and for any future entry typed more loosely.
+check(professions.every((item) => (item.categoryId as string) !== 'general-maintenance'),
+  'NO PROFESSION IS STILL FILED UNDER THE CATCH-ALL');
+for (const [key, category] of [
+  ['locksmith', 'locksmithing'],
+  ['aluminumWorker', 'alumetal'],
+  ['glassWorker', 'alumetal'],
+  ['tiler', 'flooring-tiling'],
+  ['mason', 'renovation-finishing'],
+  ['gypsumWorker', 'renovation-finishing'],
+  ['gardener', 'gardening'],
+  ['pestControlWorker', 'pest-control'],
+  ['waterHeaterTechnician', 'water-heater-repair'],
+] as [string, string][]) {
+  const profession = professions.find((item) => item.key === key);
+  check(profession !== undefined, `${key} still exists as a trade`);
+  equal(profession?.categoryId, category, `${key} is filed under ${category}`);
+}
+// The two genuinely vague trades went with the category that hid them.
+for (const key of ['handyman', 'generalMaintenance']) {
+  check(!professions.some((item) => item.key === key),
+    `${key} is withdrawn -- it is the same drawer at worker level`);
+}
+
+// ---------------------------------------------------------------------------
+// The expanded catalogue
+// ---------------------------------------------------------------------------
+for (const id of [
+  'plumbing', 'electrical', 'ac', 'cleaning', 'appliance-repair', 'carpentry',
+  'painting', 'moving-help', 'pest-control', 'locksmithing', 'alumetal',
+  'water-heater-repair', 'satellite-tv-installation', 'barber', 'hairdressing',
+  'personal-styling',
+] as const) {
+  check(SERVICE_DEMAND_ORDER.includes(id),
+    `${id} is offered`);
+}
+check(SERVICE_DEMAND_ORDER.includes('locksmithing'),
+  'LOCKSMITHING IS PRESENT EVEN THOUGH IT FRONTS NO EGYPTIAN MARKETPLACE');
+
+// Ranks are dense and unique from 1, or the migration and this module cannot
+// be compared.
+{
+  const ranks = SERVICE_DEMAND_ORDER.map((id) => serviceDemandRank(id));
+  equal(ranks, ranks.map((_, index) => index + 1),
+    'ranks are dense and unique from 1');
+  equal(new Set(SERVICE_DEMAND_ORDER).size, SERVICE_DEMAND_ORDER.length,
+    'and no category appears twice');
+}
+
+// Ordering is a researched prior, and says so.
+equal(DEMAND_RANK_SOURCE, 'cold_start_research',
+  'THE ORDER IS LABELLED AS RESEARCH, NOT AS OBSERVED WARSHA DEMAND');
+
+// Urgent and recurring household work outranks everything else.
+{
+  const rank = (id: string) => serviceDemandRank(id);
+  check(rank('plumbing') < rank('barber') && rank('electrical') < rank('barber'),
+    'urgent household trades outrank grooming');
+  check(rank('cleaning') < rank('ac'),
+    'CLEANING OUTRANKS AIR CONDITIONING: IT RECURS, AND AC IS SEASONAL');
+  check(rank('personal-styling') === SERVICE_DEMAND_ORDER.length,
+    'PERSONAL STYLING IS LAST AND IS NOT ARTIFICIALLY PROMOTED');
+  check(rank('personal-styling') > rank('locksmithing'),
+    'and stays below even the trades that front no marketplace');
+  check(rank('barber') !== rank('hairdressing'),
+    'barber and hairdressing stay distinct, as the profession model requires');
+}
+
+// ---------------------------------------------------------------------------
+// Every category is a real word in all three languages
+// ---------------------------------------------------------------------------
+for (const id of SERVICE_DEMAND_ORDER) {
+  const mock = mockCategories.find((item) => item.id === id);
+  check(mock !== undefined, `${id} is in the shared mock catalogue`);
+  for (const language of ['en', 'ar', 'fr'] as const) {
+    // The real question is whether the key RESOLVES, not whether the result
+    // looks like a slug: the English for `plumbing` is legitimately "Plumbing",
+    // so no string comparison can tell a translation from a fallback.
+    const dictionary = translations[language] as unknown as Record<string, unknown>;
+    check(typeof dictionary[mock!.label] === 'string'
+      && (dictionary[mock!.label] as string).length > 0,
+      `${id} resolves a real ${language} name rather than falling back`);
+    const label = serviceCategoryLabel(mock!.label, language, id);
+    check(label.length > 0, `${id} has a ${language} name`);
+    const descriptions = translations[language] as unknown as Record<string, unknown>;
+    check(typeof descriptions[mock!.description] === 'string',
+      `${id} resolves a real ${language} description rather than falling back`);
+    const description = serviceCategoryDescription(mock!.description, language);
+    check(typeof description === 'string' && description.length > 0,
+      `${id} has a ${language} description`);
+  }
+}
+// Arabic and French must not silently be the English string.
+for (const id of SERVICE_DEMAND_ORDER) {
+  const mock = mockCategories.find((item) => item.id === id)!;
+  const en = serviceCategoryLabel(mock.label, 'en', id);
+  const ar = serviceCategoryLabel(mock.label, 'ar', id);
+  check(ar !== en, `${id} IS NOT SILENTLY ENGLISH ON AN ARABIC CARD`);
+  check(/[؀-ۿ]/.test(ar), `${id} has a genuinely Arabic name`);
+}
+
+// ---------------------------------------------------------------------------
+// Search finds a category by what people actually type
+// ---------------------------------------------------------------------------
+// Matching the displayed title is why a locksmith was unreachable: nobody
+// searches "locksmithing", and the title is localized so a query in the wrong
+// language missed everything.
+for (const id of SERVICE_DEMAND_ORDER) {
+  const aliases = SERVICE_SEARCH_ALIASES[id];
+  check(aliases !== undefined, `${id} carries search vocabulary`);
+  for (const language of ['en', 'ar', 'fr'] as const) {
+    check(aliases[language].length >= 3,
+      `${id} has ${language} search terms, not just a translated title`);
+  }
+  check(/[؀-ۿ]/.test(aliases.ar.join('')), `${id} Arabic terms are Arabic`);
+  check(searchTermsFor(id).length >= 9, `${id} is findable by several words`);
+}
+
+for (const [query, expected] of [
+  ['lock', 'locksmithing'], ['key', 'locksmithing'], ['locksmith', 'locksmithing'],
+  ['قفل', 'locksmithing'], ['مفاتيح', 'locksmithing'], ['كالون', 'locksmithing'],
+  ['serrurier', 'locksmithing'], ['clé', 'locksmithing'],
+  ['alumetal', 'alumetal'], ['الوميتال', 'alumetal'], ['aluminium', 'alumetal'],
+  ['سخان', 'water-heater-repair'], ['water heater', 'water-heater-repair'],
+  ['chauffe-eau', 'water-heater-repair'],
+  ['صراصير', 'pest-control'], ['cockroach', 'pest-control'],
+  ['desinsectisation', 'pest-control'],
+  ['بلاط', 'flooring-tiling'], ['carrelage', 'flooring-tiling'],
+  ['جبس', 'renovation-finishing'], ['plâtre', 'renovation-finishing'],
+  ['جنينة', 'gardening'], ['jardinage', 'gardening'],
+  ['دش', 'satellite-tv-installation'],
+  ['تكييف', 'ac'], ['clim', 'ac'],
+] as [string, string][]) {
+  check(matchServiceCategories(query).includes(expected as never),
+    `searching "${query}" finds ${expected}`);
+}
+// A two-letter query must not drag in every word that happens to contain it.
+equal(matchServiceCategories('ac'), ['ac'],
+  'A SHORT QUERY MATCHES WORDS, NOT SUBSTRINGS OF UNRELATED ONES');
+// Language-agnostic: the query is matched against every language's vocabulary.
+check(matchServiceCategories('تكييف').includes('ac')
+  && matchServiceCategories('ac').includes('ac'),
+  'a category is reachable from any of the three languages');
+// Withdrawn categories are not discoverable.
+check(!matchServiceCategories('general maintenance').includes('general-maintenance' as never),
+  'THE WITHDRAWN CATEGORY IS NOT SEARCHABLE');
+
+// ---------------------------------------------------------------------------
+// One ordering authority for web, Android and iOS
+// ---------------------------------------------------------------------------
+equal(mockCategories.map((item) => item.id), [...SERVICE_DEMAND_ORDER],
+  'THE SHARED MOCK CATALOGUE IS THE SHARED ORDER, NOT A SECOND COPY');
+{
+  const migration = readFileSync(
+    'supabase/migrations/202608240001_service_catalogue_expansion.sql', 'utf8');
+  for (const [index, id] of SERVICE_DEMAND_ORDER.entries()) {
+    const rank = index + 1;
+    const inserted = new RegExp(`'${id}'[^\\n]*, ${rank}, 'cold_start_research'`).test(migration);
+    const updated = new RegExp(`demand_rank = ${rank}\\s+where id = '${id}'`).test(migration);
+    check(inserted || updated,
+      `the migration ranks ${id} at ${rank}, exactly as this module does`);
+  }
+  check(/is_active = false[\s\S]{0,120}general-maintenance/.test(migration),
+    'and withdraws the catch-all rather than deleting it');
+  check(!/delete from public\.service_categories/i.test(migration),
+    'NO HISTORICAL CATEGORY ROW IS DESTROYED');
+}
+
+// The web parses the catalogue through the shared authority, so a client that
+// shipped before the migration ran still refuses to offer the catch-all.
+{
+  const customer = readFileSync('web/lib/customer.ts', 'utf8');
+  check(/isLegacyCategory\(category\.id\)/.test(customer),
+    'WEB FILTERS WITHDRAWN CATEGORIES THROUGH THE SHARED MODULE');
+  check(/byServiceDemand\(\(category\) => category\.id\)/.test(customer),
+    'and orders what remains by the shared demand rank, not by server order');
+  check(/from '\.\.\/\.\.\/src\/services\/service-catalogue\.ts'/.test(customer),
+    'reading the same module Android and iOS read, not a web copy');
+}
 
 console.log(`Service catalogue: ${checks} checks passed.`);
