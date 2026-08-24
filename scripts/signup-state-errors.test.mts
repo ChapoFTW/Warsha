@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-import { classifyAuthFailure } from '../src/auth/auth-errors.ts';
+import { classifyAuthFailure, safeAuthDiagnostic } from '../src/auth/auth-errors.ts';
+import {
+  classifySignUpError, diagnoseSignUpError, signUpRetryable,
+  type SignUpFailure,
+} from '../web/lib/signup.ts';
 import { translations } from '../src/i18n/translations.ts';
 import {
   isSignupBusy,
@@ -157,5 +161,174 @@ check(/choice === 'worker' \? null : email\.trim\(\)/.test(screen),
 check(/setCommonLegalAccepted\(false\)/.test(screen)
   && /setWorkerVerificationAccepted\(false\)/.test(screen),
   'legal acceptance never carries across a change of audience');
+
+// --- Customer signup: the failure a customer actually hit -------------------
+//
+// Reproduced against the deployed development environment: the form was
+// complete and valid, and Auth answered
+//
+//     500 unexpected_failure  "Error sending confirmation email"
+//
+// The web classifier was a five-line regex ladder over `error.message` that
+// recognised rate limits, passwords, fetch failures and "already registered",
+// and called everything else `server`. That message matched nothing, so a
+// project that could not send mail at all reported the same sentence as a
+// five-second blip: "Something went wrong on our side. Please try again
+// shortly."
+//
+// Meanwhile the mobile client already classified this correctly. Two
+// implementations of "what went wrong signing up", and the web had the weaker
+// one. There is now one, and these are the cases it must tell apart.
+
+const authError = (message: string, code?: string, status?: number, name?: string) =>
+  Object.assign(new Error(message), { code, status, name });
+
+const SIGNUP_CASES: [string, Error, SignUpFailure][] = [
+  // The two failures observed live.
+  ['confirmation email could not be sent',
+    authError('Error sending confirmation email', 'unexpected_failure', 500), 'email_delivery'],
+  ['the signup trigger rejected the account',
+    authError('Database error saving new user', 'unexpected_failure', 500), 'account_setup'],
+  // Everything else the form must distinguish.
+  ['duplicate address',
+    authError('User already registered', 'user_already_exists', 422), 'already_registered_or_refused'],
+  ['invalid address',
+    authError('Unable to validate email address', 'email_address_invalid', 400), 'invalid_email'],
+  ['password policy',
+    authError('Password should be at least 8 characters', 'weak_password', 422), 'weak_password'],
+  ['rate limit',
+    authError('email rate limit exceeded', 'over_email_send_rate_limit', 429), 'rate_limited'],
+  ['provider refuses this address',
+    authError('Email address not authorized', 'email_address_not_authorized', 403), 'email_not_authorized'],
+  ['transport failure',
+    authError('Failed to fetch', undefined, 0, 'AuthRetryableFetchError'), 'network'],
+  ['an unrecognised server refusal',
+    authError('boom', 'unexpected_failure', 500), 'server'],
+];
+
+for (const [label, error, expected] of SIGNUP_CASES) {
+  equal(classifySignUpError(error), expected, `signup classifies ${label}`);
+}
+
+// The regression itself, stated as a fact.
+check(classifySignUpError(authError('Error sending confirmation email', 'unexpected_failure', 500)) !== 'server',
+  'AN UNDELIVERABLE CONFIRMATION EMAIL IS NEVER REPORTED AS A GENERIC SERVER ERROR');
+check(classifySignUpError(authError('Database error saving new user', 'unexpected_failure', 500)) !== 'server',
+  'AND NEITHER IS A REJECTED ACCOUNT BOOTSTRAP');
+
+// Every distinct failure the brief asked for has its own class.
+const distinct = new Set(SIGNUP_CASES.map(([, , expected]) => expected));
+check(distinct.size === SIGNUP_CASES.length - 0 || distinct.size >= 9,
+  'the classes are distinct rather than collapsed onto one another');
+
+// --- Retry advice matches what actually happened ---------------------------
+check(signUpRetryable('email_delivery'), 'a delivery failure is worth retrying');
+check(signUpRetryable('account_setup'), 'so is a rejected bootstrap');
+check(!signUpRetryable('already_registered_or_refused'),
+  'RETRYING A DUPLICATE ADDRESS IS NOT ADVICE, IT IS A LOOP');
+check(!signUpRetryable('email_not_authorized'),
+  'nor is retrying an address the provider will not send to');
+check(!signUpRetryable('weak_password') && !signUpRetryable('invalid_email'),
+  'and a rejected input needs correcting, not repeating');
+
+// --- Diagnostics keep what the customer must not see -----------------------
+{
+  const diagnostic = diagnoseSignUpError(
+    authError('Error sending confirmation email', 'unexpected_failure', 500));
+  equal(diagnostic.failure, 'authEmailDeliveryFailed',
+    'ENGINEERING KEEPS THE EXACT CLASSIFICATION');
+  equal(diagnostic.code, 'unexpected_failure', 'and the provider code');
+  equal(diagnostic.status, 500, 'and the HTTP status');
+  equal(diagnostic.operation, 'sign-up', 'and which operation failed');
+  check(typeof diagnostic.retryable === 'boolean', 'and whether it is worth retrying');
+  // The safe message comes from a fixed table, never the provider's prose.
+  check(!/confirmation email/i.test(diagnostic.message),
+    'THE DIAGNOSTIC CARRIES A SAFE MESSAGE, NOT THE PROVIDER’S OWN TEXT');
+  const serialized = JSON.stringify(diagnostic);
+  for (const secret of ['@', 'password', 'token', 'apikey', 'Bearer']) {
+    check(!serialized.toLowerCase().includes(secret.toLowerCase()),
+      `the diagnostic contains no ${secret}`);
+  }
+}
+
+// --- The customer sees a safe sentence, never the raw error ----------------
+const signupScreen = readFileSync('web/app/app/create-account/page.tsx', 'utf8');
+const webCopy = readFileSync('web/lib/app-copy.ts', 'utf8');
+for (const failure of ['email_delivery', 'email_not_authorized', 'account_setup'] as const) {
+  check(new RegExp(`${failure}: '`).test(signupScreen),
+    `the form renders a message for ${failure}`);
+}
+for (const key of [
+  'signUpEmailUndeliverable', 'signUpEmailNotAuthorized', 'signUpAccountSetupFailed',
+]) {
+  equal((webCopy.match(new RegExp(`${key}:`, 'g')) ?? []).length, 3,
+    `${key} is written in English, Arabic and French`);
+}
+check(!/error\.message/.test(signupScreen),
+  'THE FORM NEVER RENDERS A PROVIDER MESSAGE DIRECTLY');
+const authActions = readFileSync('web/lib/auth-actions.ts', 'utf8');
+check(/classifySignUpError\(error\)/.test(authActions)
+  && !/classifySignUpError\(error\.message\)/.test(authActions),
+  'the whole error is classified, not just its prose');
+// Counted, not merely present: the definition alone satisfied a bare presence
+// check while both call sites were gone. One declaration plus both branches --
+// the refusal and the throw -- is three.
+equal((authActions.match(/reportSignUpDiagnostic\(/g) ?? []).length, 3,
+  'BOTH THE REFUSAL AND THE THROW REPORT A DIAGNOSTIC, NOT JUST THE HELPER EXISTING');
+check(/reportSignUpDiagnostic\(error\);/.test(authActions),
+  'the refused signup is reported');
+check(/reportSignUpDiagnostic\(thrown\);/.test(authActions),
+  'and so is the thrown one');
+
+// --- One classifier, shared with mobile ------------------------------------
+const webSignup = readFileSync('web/lib/signup.ts', 'utf8');
+check(/from '\.\.\/\.\.\/src\/auth\/auth-errors\.ts'/.test(webSignup),
+  'WEB USES THE SHARED AUTH TAXONOMY RATHER THAN A SECOND IMPLEMENTATION');
+check(!/if \(\/rate limit\|too many\/i\.test/.test(webSignup),
+  'the old regex ladder is gone');
+const sharedErrors = readFileSync('src/auth/auth-errors.ts', 'utf8');
+check(!/\bif \(__DEV__\)/.test(sharedErrors),
+  'the shared module reads __DEV__ portably, so the web can import it at all');
+check(/authSignupDatabaseError/.test(sharedErrors),
+  'a rejected account bootstrap is its own class in the shared taxonomy');
+for (const locale of ['en', 'ar', 'fr'] as const) {
+  const value = translations[locale].authSignupDatabaseError;
+  check(typeof value === 'string' && value.length > 0,
+    `authSignupDatabaseError is translated into ${locale}`);
+}
+// Mobile classifies the same live error the same way; the taxonomy is shared,
+// so this cannot drift from the web behaviour above.
+equal(classifyAuthFailure(
+  authError('Error sending confirmation email', 'unexpected_failure', 500), 'sign-up'),
+  'authEmailDeliveryFailed',
+  'ANDROID AND iOS CLASSIFY THE SAME FAILURE IDENTICALLY');
+equal(classifyAuthFailure(
+  authError('Database error saving new user', 'unexpected_failure', 500), 'sign-up'),
+  'authSignupDatabaseError',
+  'and so do they for a rejected bootstrap');
+equal(safeAuthDiagnostic('sign-up', authError('Error sending confirmation email', 'unexpected_failure', 500)).failure,
+  diagnoseSignUpError(authError('Error sending confirmation email', 'unexpected_failure', 500)).failure,
+  'web and mobile diagnostics agree because they are the same function');
+
+// --- Atomicity: the contract the recovery story depends on -----------------
+// Both bootstrap triggers are AFTER INSERT ON auth.users FOR EACH ROW, so they
+// run inside the transaction that inserts the user. A raise anywhere in them
+// aborts that insert. That is what makes "no partial account" a property of
+// the schema rather than a hope, and it is why the customer-facing copy is
+// allowed to say no account was created.
+const legalTrigger = readFileSync(
+  'supabase/migrations/202608200001_signup_legal_acceptance.sql', 'utf8');
+const languageTrigger = readFileSync(
+  'supabase/migrations/202608220002_french_preferred_language.sql', 'utf8');
+for (const [name, sql] of [
+  ['legal acceptance', legalTrigger], ['language sync', languageTrigger],
+] as const) {
+  check(/after insert on auth\.users/i.test(sql),
+    `the ${name} bootstrap runs on the auth insert`);
+  check(/for each row/i.test(sql),
+    `the ${name} bootstrap runs per row, inside that transaction`);
+}
+check(/raise exception/i.test(legalTrigger),
+  'AND IT REFUSES BY RAISING, WHICH ABORTS THE INSERT RATHER THAN LEAVING HALF AN ACCOUNT');
 
 console.log(`Signup state machine + auth error classification: ${checks} checks passed.`);

@@ -1,4 +1,7 @@
 import {
+  classifyAuthFailure, safeAuthDiagnostic, type AuthFailure,
+} from '../../src/auth/auth-errors.ts';
+import {
   isCurrentSignupLegalManifest,
   signupLegalDocuments,
   signupLegalManifest,
@@ -48,6 +51,24 @@ export type SignUpFailure =
    */
   | 'already_registered_or_refused'
   | 'rate_limited'
+  /**
+   * The account was NOT created: Auth could not send the confirmation email,
+   * and it rolls the signup back when the mailer fails.
+   *
+   * This used to land in `server` — "Something went wrong on our side" — which
+   * is what a customer saw on the deployed development environment while the
+   * real cause was that the project could not deliver mail at all. Same
+   * sentence for a five-second blip and a completely unusable signup.
+   */
+  | 'email_delivery'
+  /**
+   * The provider refused to send to this specific address. Distinct from a
+   * delivery failure because retrying will not help: it is the address, not
+   * the moment.
+   */
+  | 'email_not_authorized'
+  /** Account setup was rejected while the account was being created. */
+  | 'account_setup'
   | 'network'
   | 'server';
 
@@ -96,13 +117,57 @@ export function emailAcceptable(input: string): boolean {
  * Everything that could distinguish "registered" from "not registered"
  * collapses into one outcome.
  */
-export function classifySignUpError(message: string | undefined): SignUpFailure {
-  const text = message ?? '';
-  if (/rate limit|too many/i.test(text)) return 'rate_limited';
-  if (/password/i.test(text)) return 'weak_password';
-  if (/fetch|network/i.test(text)) return 'network';
-  if (/already|registered|exists|duplicate|unique/i.test(text)) {
-    return 'already_registered_or_refused';
-  }
-  return 'server';
+/**
+ * Web's signup failures, derived from the shared auth taxonomy.
+ *
+ * This used to be a five-line regex ladder over `error.message`, and it was
+ * weaker than the classifier the mobile client already had: it read only the
+ * message, never the provider's `code` or HTTP status, and anything it did not
+ * recognise became `server`. "Error sending confirmation email" matched none of
+ * its patterns, so a project that could not send mail at all reported the same
+ * "Something went wrong on our side" as a transient blip.
+ *
+ * Two implementations of "what went wrong signing up" is one too many, so this
+ * one is gone. `classifyAuthFailure` is the authority for every Warsha surface;
+ * this only projects its result onto the smaller vocabulary the signup form
+ * renders.
+ */
+const FAILURE_OF_AUTH: Partial<Record<AuthFailure, SignUpFailure>> = {
+  authInvalidEmail: 'invalid_email',
+  authWeakPassword: 'weak_password',
+  authInvalidPhone: 'invalid_phone',
+  authRateLimited: 'rate_limited',
+  authEmailDeliveryFailed: 'email_delivery',
+  authEmailDeliveryRestricted: 'email_not_authorized',
+  authSignupDatabaseError: 'account_setup',
+  authNetworkError: 'network',
+  // Every server refusal a signup form must not tell apart for the caller:
+  // "this address already has an account", signup disabled, captcha refused.
+  // Answering which one would make the form an account-enumeration oracle.
+  authSignupUnavailable: 'already_registered_or_refused',
+};
+
+export function classifySignUpError(error: unknown): SignUpFailure {
+  const failure = classifyAuthFailure(
+    typeof error === 'string' ? new Error(error) : error,
+    'sign-up',
+  );
+  return FAILURE_OF_AUTH[failure] ?? 'server';
+}
+
+/**
+ * What engineering gets to see, and the customer never does.
+ *
+ * The safe message is drawn from a fixed table rather than the provider's
+ * text, and no address, password or token is included.
+ */
+export function diagnoseSignUpError(error: unknown) {
+  return safeAuthDiagnostic('sign-up', error);
+}
+
+/** Whether trying the same details again could plausibly succeed. */
+export function signUpRetryable(failure: SignUpFailure): boolean {
+  return failure === 'network' || failure === 'server'
+    || failure === 'email_delivery' || failure === 'account_setup'
+    || failure === 'rate_limited';
 }

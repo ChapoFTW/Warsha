@@ -43,6 +43,13 @@ const FAILURE_COPY: Record<SignUpFailure, string> = {
   legal_out_of_date: 'signUpLegalOutOfDate',
   already_registered_or_refused: 'signUpTrySigningIn',
   rate_limited: 'errRateLimited',
+  // Distinct sentences, because they are distinct situations and the customer
+  // can act differently on each. All three say plainly that no account was
+  // created, which is true: Auth rolls the signup back when its own follow-up
+  // work fails.
+  email_delivery: 'signUpEmailUndeliverable',
+  email_not_authorized: 'signUpEmailNotAuthorized',
+  account_setup: 'signUpAccountSetupFailed',
   network: 'errNetwork',
   server: 'errServer',
 };

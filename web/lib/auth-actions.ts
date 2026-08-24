@@ -6,6 +6,7 @@ import type { SupportedLanguage } from '@/src/i18n/language-preference';
 
 import {
   classifySignUpError,
+  diagnoseSignUpError,
   emailAcceptable,
   isCurrentSignupLegalManifest,
   nameAcceptable,
@@ -260,11 +261,36 @@ export async function signUpCustomer(input: {
         },
       },
     });
-    if (error) return { ok: false, failure: classifySignUpError(error.message) };
+    if (error) {
+      // The whole error, not just its message: the provider's `code` and HTTP
+      // status classify far more reliably than prose, and reading only the
+      // message is what turned "Error sending confirmation email" into a
+      // generic "something went wrong on our side".
+      reportSignUpDiagnostic(error);
+      return { ok: false, failure: classifySignUpError(error) };
+    }
     // A session means confirmation is disabled; otherwise the address must be
     // confirmed before the account can be used.
     return { ok: true, needsEmailConfirmation: !data.session };
+  } catch (thrown) {
+    // A throw here is usually a transport failure, but not always -- classify
+    // it the same way rather than asserting it was the network.
+    reportSignUpDiagnostic(thrown);
+    return { ok: false, failure: classifySignUpError(thrown) };
+  }
+}
+
+/**
+ * What engineering sees when a signup fails. The customer never sees any of it.
+ *
+ * The payload is built from a fixed message table plus the provider's own code
+ * and HTTP status -- never its prose, and never anything the person typed. No
+ * address, no password, no token, so it is safe wherever browser logs end up.
+ */
+function reportSignUpDiagnostic(error: unknown): void {
+  try {
+    console.warn('[Warsha signup]', diagnoseSignUpError(error));
   } catch {
-    return { ok: false, failure: 'network' };
+    // Diagnostics must never be the reason a signup failure goes unreported.
   }
 }

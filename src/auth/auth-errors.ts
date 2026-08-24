@@ -1,7 +1,7 @@
 import type { AuthError } from '@supabase/supabase-js';
 
 import { environment, supabaseTarget } from '../config/environment.ts';
-import type { TranslationKey } from '@/src/i18n/translations';
+import type { TranslationKey } from '../i18n/translations.ts';
 
 export type AuthFailure =
   | 'authInvalidCredentials'
@@ -17,6 +17,7 @@ export type AuthFailure =
   | 'authNetworkError'
   | 'authServerError'
   | 'authSignupServerError'
+  | 'authSignupDatabaseError'
   | 'authEmailUnconfirmed'
   | 'authEmailDeliveryRestricted'
   | 'authEmailDeliveryFailed'
@@ -64,6 +65,7 @@ const SAFE_MESSAGES: Record<AuthFailure, string> = {
   authNetworkError: 'The authentication network request failed.',
   authServerError: 'The authentication server failed.',
   authSignupServerError: 'The account creation service failed.',
+  authSignupDatabaseError: 'Account setup was rejected while the account was being created.',
   authEmailUnconfirmed: 'The email is not confirmed.',
   authEmailDeliveryRestricted: 'The email delivery service rejected the recipient.',
   authEmailDeliveryFailed: 'The confirmation request could not be sent.',
@@ -122,6 +124,10 @@ export function classifyAuthFailure(error: unknown, operation: AuthOperation = '
   ) return 'authSignupUnavailable';
   if (status === 401 || code === 'session_not_found' || code === 'refresh_token_not_found') return 'authSessionExpired';
   if (code === 'configuration_error' || /supabase mode requires/i.test(message)) return 'authConfigurationError';
+  if (
+    (operation === 'sign-up' || operation === 'worker-sign-up')
+    && /database error (?:saving|granting)|error (?:saving|creating) new user/i.test(message)
+  ) return 'authSignupDatabaseError';
   if (status >= 500 || code === 'unexpected_failure') {
     return operation === 'sign-up' || operation === 'worker-sign-up'
       ? 'authSignupServerError' : 'authServerError';
@@ -146,13 +152,24 @@ export function safeAuthDiagnostic(operation: AuthOperation, error: unknown) {
     status: statusValue >= 100 && statusValue <= 599 ? statusValue : undefined,
     message: SAFE_MESSAGES[failure],
     retryable: failure === 'authNetworkError' || failure === 'authServerError'
-      || failure === 'authSignupServerError' || failure === 'authRateLimited',
+      || failure === 'authSignupServerError' || failure === 'authRateLimited'
+      || failure === 'authSignupDatabaseError',
   };
+}
+
+/**
+ * `__DEV__` is a React Native global. This module is now shared with the web,
+ * where it does not exist, so it is read off `globalThis` rather than
+ * referenced bare — an undeclared identifier would be a build error in the
+ * bundler that does not define it.
+ */
+function developmentBuild(): boolean {
+  return (globalThis as { __DEV__?: boolean }).__DEV__ === true;
 }
 
 export function sanitizeAuthError(error: unknown, operation: AuthOperation = 'unknown'): SafeAuthError {
   const safe = error instanceof SafeAuthError ? error : new SafeAuthError(classifyAuthFailure(error, operation));
-  if (__DEV__) console.warn('[Warsha auth]', safeAuthDiagnostic(operation, error));
+  if (developmentBuild()) console.warn('[Warsha auth]', safeAuthDiagnostic(operation, error));
   return safe;
 }
 

@@ -13,6 +13,7 @@ const baseTranslations = {
   en: {
     ...featureTranslations.en,
     authSignupServerError: 'We couldn\'t create your account. Update Warsha to the latest version, check the details you entered, then try again.',
+    authSignupDatabaseError: 'We couldn\'t finish setting up your account, so no account was created. Please try again in a moment.',
     authOutdatedClient: 'Update Warsha to the latest version, then create your account.',
     authEmailDeliveryRestricted: 'This email address cannot receive confirmation messages from the current development email service.',
     authEmailDeliveryFailed: 'The confirmation request could not be sent. Try again later or contact support.',
@@ -36,6 +37,7 @@ const baseTranslations = {
   ar: {
     ...featureTranslations.ar,
     authSignupServerError: 'تعذر إنشاء حسابك. حدّث تطبيق ورشة لآخر إصدار، وراجع البيانات اللي كتبتها، وبعدين حاول تاني.',
+    authSignupDatabaseError: 'ما قدرناش نكمّل تجهيز حسابك، وعشان كده مفيش حساب اتعمل. جرّب تاني بعد شوية.',
     authOutdatedClient: 'حدّث تطبيق ورشة لآخر إصدار وبعدين أنشئ حسابك.',
     authEmailDeliveryRestricted: 'عنوان البريد ده مش مسموح له يستقبل رسائل تأكيد من خدمة بريد التطوير الحالية.',
     authEmailDeliveryFailed: 'تعذر إرسال طلب التأكيد. حاول لاحقًا أو تواصل مع الدعم.',
@@ -69,6 +71,7 @@ export const translations = {
   fr: {
     ...baseTranslations.en,
     authSignupServerError: "Nous n'avons pas pu créer votre compte. Mettez Warsha à jour, vérifiez vos informations, puis réessayez.",
+    authSignupDatabaseError: "Nous n'avons pas pu terminer la configuration de votre compte ; aucun compte n'a été créé. Réessayez dans un instant.",
     authOutdatedClient: 'Mettez Warsha à jour avant de créer votre compte.',
     authEmailDeliveryRestricted: "Cette adresse ne peut pas recevoir les messages de confirmation du service d'e-mail de développement actuel.",
     authEmailDeliveryFailed: "Le message de confirmation n'a pas pu être envoyé. Réessayez plus tard ou contactez l'assistance.",
