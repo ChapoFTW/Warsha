@@ -33,6 +33,7 @@ export type AuthFailure =
   | 'authServerError'
   | 'authSignupServerError'
   | 'authSignupDatabaseError'
+  | 'authSignupPhoneUnavailable'
   | 'authEmailUnconfirmed'
   | 'authEmailDeliveryRestricted'
   | 'authEmailDeliveryFailed'
@@ -81,6 +82,7 @@ const SAFE_MESSAGES: Record<AuthFailure, string> = {
   authServerError: 'The authentication server failed.',
   authSignupServerError: 'The account creation service failed.',
   authSignupDatabaseError: 'Account setup was rejected while the account was being created.',
+  authSignupPhoneUnavailable: 'The contact number cannot be used for this account.',
   authEmailUnconfirmed: 'The email is not confirmed.',
   authEmailDeliveryRestricted: 'The email delivery service rejected the recipient.',
   authEmailDeliveryFailed: 'The confirmation request could not be sent.',
@@ -139,9 +141,25 @@ export function classifyAuthFailure(error: unknown, operation: AuthOperation = '
   ) return 'authSignupUnavailable';
   if (status === 401 || code === 'session_not_found' || code === 'refresh_token_not_found') return 'authSessionExpired';
   if (code === 'configuration_error' || /supabase mode requires/i.test(message)) return 'authConfigurationError';
+  // Auth masks a trigger's `raise exception` behind "Database error saving new
+  // user", but passes a CONSTRAINT violation through verbatim -- constraint
+  // name included. That asymmetry is what makes this one distinguishable at
+  // all, and it is why the rule matches the index rather than a message Warsha
+  // controls.
   if (
     (operation === 'sign-up' || operation === 'worker-sign-up')
-    && /database error (?:saving|granting)|error (?:saving|creating) new user/i.test(message)
+    && /profiles_phone_unique_idx/i.test(message)
+  ) return 'authSignupPhoneUnavailable';
+  if (
+    (operation === 'sign-up' || operation === 'worker-sign-up')
+    && (
+      /database error (?:saving|granting)|error (?:saving|creating) new user/i.test(message)
+      // A raw constraint violation passed straight through by Auth. Any of
+      // these is the account bootstrap refusing, not the auth service failing,
+      // and none of them may reach a customer as a constraint name.
+      || /^23\d{3}$/.test(code)
+      || /violates (?:unique|check|foreign key|not-null) constraint/i.test(message)
+    )
   ) return 'authSignupDatabaseError';
   if (status >= 500 || code === 'unexpected_failure') {
     return operation === 'sign-up' || operation === 'worker-sign-up'

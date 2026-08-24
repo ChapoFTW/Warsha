@@ -69,6 +69,15 @@ export type SignUpFailure =
   | 'email_not_authorized'
   /** Account setup was rejected while the account was being created. */
   | 'account_setup'
+  /**
+   * The contact number cannot be used for this account.
+   *
+   * Deliberately worded as "cannot be used" rather than "belongs to somebody
+   * else". A signup form that confirms which numbers are registered is an
+   * enumeration oracle for phone numbers, the same way one that confirms
+   * addresses is for email.
+   */
+  | 'phone_unavailable'
   | 'network'
   | 'server';
 
@@ -140,6 +149,7 @@ const FAILURE_OF_AUTH: Partial<Record<AuthFailure, SignUpFailure>> = {
   authEmailDeliveryFailed: 'email_delivery',
   authEmailDeliveryRestricted: 'email_not_authorized',
   authSignupDatabaseError: 'account_setup',
+  authSignupPhoneUnavailable: 'phone_unavailable',
   authNetworkError: 'network',
   // Every server refusal a signup form must not tell apart for the caller:
   // "this address already has an account", signup disabled, captcha refused.

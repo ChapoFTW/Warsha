@@ -310,6 +310,99 @@ equal(safeAuthDiagnostic('sign-up', authError('Error sending confirmation email'
   diagnoseSignUpError(authError('Error sending confirmation email', 'unexpected_failure', 500)).failure,
   'web and mobile diagnostics agree because they are the same function');
 
+// --- A number already on another profile is its own failure ----------------
+//
+// `profiles_phone_unique_idx` is a partial unique index on `profiles(phone)`.
+// When the signup trigger inserts a number another profile already holds, the
+// customer used to get the generic bootstrap failure -- true, but useless, and
+// it made the real problem hard to diagnose.
+//
+// It is distinguishable at all only because of an asymmetry in Auth, confirmed
+// by probing the deployed development environment:
+//
+//   a trigger's `raise exception`  -> masked as "Database error saving new user"
+//   a CONSTRAINT violation         -> passed through verbatim, constraint name
+//                                     and all
+//
+// So the rule matches the index name. That is a real coupling to the schema,
+// and it is deliberate: the alternative is a message Warsha would have to raise
+// itself, which Auth would then hide.
+const PHONE_CONFLICT = authError(
+  'duplicate key value violates unique constraint "profiles_phone_unique_idx"',
+  '23505', 500);
+
+equal(classifySignUpError(PHONE_CONFLICT), 'phone_unavailable',
+  'A NUMBER ALREADY ON ANOTHER PROFILE IS ITS OWN FAILURE, NOT A GENERIC ONE');
+equal(classifyAuthFailure(PHONE_CONFLICT, 'sign-up'), 'authSignupPhoneUnavailable',
+  'and mobile classifies it identically, from the same shared rule');
+equal(classifyAuthFailure(PHONE_CONFLICT, 'worker-sign-up'), 'authSignupPhoneUnavailable',
+  'including on the worker signup path');
+
+// The four classes this task exists to keep apart.
+for (const [label, error, expected] of [
+  ['the phone index', PHONE_CONFLICT, 'phone_unavailable'],
+  ['a different unique index',
+    authError('duplicate key value violates unique constraint "addresses_customer_local_source_unique"', '23505', 500),
+    'account_setup'],
+  ['a check constraint',
+    authError('new row for relation "profiles" violates check constraint "profiles_display_name_check"', '23514', 500),
+    'account_setup'],
+  ['a masked trigger refusal',
+    authError('Database error saving new user', 'unexpected_failure', 500), 'account_setup'],
+  ['an undeliverable confirmation',
+    authError('Error sending confirmation email', 'unexpected_failure', 500), 'email_delivery'],
+  ['a duplicate address',
+    authError('User already registered', 'user_already_exists', 422), 'already_registered_or_refused'],
+] as [string, Error, SignUpFailure][]) {
+  equal(classifySignUpError(error), expected, `signup still distinguishes ${label}`);
+}
+
+// Retrying the same number is not advice.
+check(!signUpRetryable('phone_unavailable'),
+  'CHANGING THE NUMBER IS THE ACTION, NOT REPEATING IT');
+
+// --- It must not become an enumeration oracle ------------------------------
+// The copy may not confirm that the number is registered to somebody. It says
+// the number cannot be used here, and offers signing in as the alternative.
+const PHONE_COPY = {
+  en: 'signUpPhoneUnavailable', ar: 'signUpPhoneUnavailable', fr: 'signUpPhoneUnavailable',
+};
+equal((webCopy.match(/signUpPhoneUnavailable:/g) ?? []).length, 3,
+  'the phone message is written in English, Arabic and French');
+check(Object.keys(PHONE_COPY).length === 3, 'all three languages are accounted for');
+{
+  const english = /signUpPhoneUnavailable: '([^']*)'/.exec(webCopy)?.[1] ?? '';
+  check(english.length > 0, 'the English phone message is readable');
+  check(!/belongs to|another account|already registered|in use by/i.test(english),
+    'THE MESSAGE NEVER CONFIRMS THE NUMBER BELONGS TO AN EXISTING ACCOUNT');
+  check(/sign in/i.test(english),
+    'but it does offer signing in, which is useful whether or not it is registered');
+}
+check(/phone_unavailable: 'signUpPhoneUnavailable'/.test(signupScreen),
+  'the form renders the phone message for that failure');
+
+// --- No constraint name may reach a customer or a log ----------------------
+{
+  const diagnostic = diagnoseSignUpError(PHONE_CONFLICT);
+  equal(diagnostic.failure, 'authSignupPhoneUnavailable',
+    'engineering keeps the exact classification');
+  const serialized = JSON.stringify(diagnostic);
+  check(!/profiles_phone_unique_idx/.test(serialized),
+    'THE DIAGNOSTIC CARRIES NO CONSTRAINT NAME');
+  check(!/duplicate key|violates/i.test(serialized),
+    'and no raw database prose');
+  check(!/\+20|@/.test(serialized),
+    'and no phone number or address');
+}
+// The index the rule depends on has to exist, or the classification is dead
+// code that silently stops working.
+const phoneIndexMigration = readFileSync(
+  'supabase/migrations/202608120001_wps024_registration_authentication_correction.sql', 'utf8');
+check(/create unique index if not exists profiles_phone_unique_idx/.test(phoneIndexMigration),
+  'the index the classifier keys on is the one the schema declares');
+check(/on public\.profiles \(phone\)/.test(phoneIndexMigration),
+  'and it is the profiles phone index, not something else with a similar name');
+
 // --- Atomicity: the contract the recovery story depends on -----------------
 // Both bootstrap triggers are AFTER INSERT ON auth.users FOR EACH ROW, so they
 // run inside the transaction that inserts the user. A raise anywhere in them

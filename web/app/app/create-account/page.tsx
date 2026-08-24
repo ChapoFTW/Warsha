@@ -50,6 +50,7 @@ const FAILURE_COPY: Record<SignUpFailure, string> = {
   email_delivery: 'signUpEmailUndeliverable',
   email_not_authorized: 'signUpEmailNotAuthorized',
   account_setup: 'signUpAccountSetupFailed',
+  phone_unavailable: 'signUpPhoneUnavailable',
   network: 'errNetwork',
   server: 'errServer',
 };
