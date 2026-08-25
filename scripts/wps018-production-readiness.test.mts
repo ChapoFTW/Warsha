@@ -49,6 +49,7 @@ const appJson = read('app.json');
 const easJson = read('eas.json');
 const envExample = read('.env.example');
 const packageJson = read('package.json');
+const webPackageJson = read('web/package.json');
 const index = read('docs/wps/WPS-INDEX.md');
 
 // ---------------------------------------------------------------------------
@@ -297,6 +298,8 @@ for (const [name, workflow] of [['validation', validateWorkflow], ['database dep
     `${name} never depends on rate-limited latest-release resolution`);
 }
 match(validateWorkflow, /audit:bundle/, 'exported bundles are scanned for credential values');
+match(webPackageJson, /"typecheck": "next typegen && tsc --noEmit"/,
+  'web typechecking generates Next.js declarations on clean CI runners');
 // The scan must match credential VALUES; a bare prefix appears in supabase-js's
 // own client-side guard and must remain a separate Hermes string literal.
 const bundleAudit = read('scripts/audit-bundle.mjs');
