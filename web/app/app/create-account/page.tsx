@@ -9,6 +9,7 @@ import { signUpCustomer } from '@/lib/auth-actions';
 import { signupLegalDocuments, signupLegalManifest, type SignUpFailure } from '@/lib/signup';
 import { useAppLocale } from '@/lib/use-app-locale';
 import { bodyLanguageFor, catalogueFor } from '@/lib/warsha';
+import { authOutcomeCopy } from '@/src/auth/auth-outcome-copy';
 
 import styles from './create-account.module.css';
 
@@ -58,6 +59,7 @@ const FAILURE_COPY: Record<SignUpFailure, string> = {
 export default function CreateAccountPage() {
   const locale = useAppLocale();
   const words = appCopy[locale] as Record<string, string>;
+  const authWords = authOutcomeCopy[locale];
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -102,12 +104,20 @@ export default function CreateAccountPage() {
         <main id="main" className={styles.panel}>
           <BrandLockup locale={locale} size={30} />
           <h1 className={styles.title}>
-            {done === 'confirm' ? words.signUpCheckEmailTitle : words.signUpReadyTitle}
+            {done === 'confirm' ? authWords.confirmationPendingTitle : words.signUpReadyTitle}
           </h1>
           <p className={styles.lead}>
-            {done === 'confirm' ? words.signUpCheckEmailBody : words.signUpReadyBody}
+            {done === 'confirm' ? authWords.confirmationPendingBody : words.signUpReadyBody}
           </p>
-          <a className={styles.submit} href="/">{words.signUpContinue}</a>
+          {done === 'confirm' ? (
+            <>
+              <a className={styles.submit} href="/sign-in">{authWords.signInAction}</a>
+              <a className={styles.link} href="/forgot-password">{authWords.forgotPasswordAction}</a>
+              <a className={styles.link} href="/resend-confirmation">{authWords.resendConfirmationAction}</a>
+            </>
+          ) : (
+            <a className={styles.submit} href="/">{words.signUpContinue}</a>
+          )}
         </main>
       </div>
     );

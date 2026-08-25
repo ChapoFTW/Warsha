@@ -11,11 +11,16 @@ import {
   type SignupLegalAcceptance,
 } from '@/src/legal/signup-legal';
 
-import { SafeAuthError, sanitizeAuthError } from './auth-errors';
-import { classifySignInIdentity, visibleContactEmail } from './auth-identifier';
+import { SafeAuthError, safeAuthDiagnostic, sanitizeAuthError } from './auth-errors';
+import { classifySignInIdentity, isValidCustomerEmail, visibleContactEmail } from './auth-identifier';
 import {
+  callbackFailureFromParameters,
+  classifyAuthCallbackFailure,
+  confirmationResendErrorIsNeutral,
   customerSignUpResult,
   readAuthCallbackParameters,
+  safeAuthCallbackDiagnostic,
+  type AuthCallbackOutcome,
   type CustomerSignUpResult,
 } from './email-confirmation';
 import { assertPhoneAuthAvailable } from './phone-auth-capability';
@@ -25,7 +30,6 @@ import { runAuthSingleFlight } from './auth-request-guard';
 import { registerWorker, signInWorker } from './worker-auth-client';
 
 export type AccountRole = 'customer' | 'provider';
-type CallbackStatus = 'checking' | 'idle' | 'processing' | 'ready' | 'invalid';
 type Value = {
   mode: 'mock' | 'supabase';
   session: Session | null;
@@ -33,8 +37,8 @@ type Value = {
   /** A communication email. Null for trusted synthetic worker identities. */
   visibleEmail: string | null;
   loading: boolean;
-  recoveryStatus: CallbackStatus;
-  emailConfirmationStatus: CallbackStatus;
+  recoveryOutcome: AuthCallbackOutcome;
+  emailConfirmationOutcome: AuthCallbackOutcome;
   /**
    * Whether the account has PROVEN it holds its number.
    *
@@ -57,6 +61,7 @@ type Value = {
   requestWorkerPhoneChange: (phone: string) => Promise<'code_sent' | 'already_verified'>;
   verifyWorkerPhoneChange: (phone: string, token: string) => Promise<void>;
   requestPasswordReset: (email: string) => Promise<void>;
+  requestEmailConfirmation: (email: string) => Promise<void>;
   finishPasswordRecovery: () => Promise<void>;
   signOut: () => Promise<void>;
 };
@@ -73,17 +78,18 @@ async function requireCurrentUser(operation: 'phone-change-request' | 'phone-cha
 export function AuthProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(environment.dataMode === 'supabase');
-  const [recoveryStatus, setRecoveryStatus] = useState<CallbackStatus>(environment.dataMode === 'supabase' ? 'checking' : 'idle');
-  const [emailConfirmationStatus, setEmailConfirmationStatus] = useState<CallbackStatus>(
-    environment.dataMode === 'supabase' ? 'checking' : 'idle');
+  const [recoveryOutcome, setRecoveryOutcome] = useState<AuthCallbackOutcome>(
+    { status: environment.dataMode === 'supabase' ? 'checking' : 'idle' });
+  const [emailConfirmationOutcome, setEmailConfirmationOutcome] = useState<AuthCallbackOutcome>(
+    { status: environment.dataMode === 'supabase' ? 'checking' : 'idle' });
   const callbackHandled = useRef(false);
 
   useEffect(() => {
     let active = true;
     if (environment.dataMode === 'mock') {
       setLoading(false);
-      setRecoveryStatus('idle');
-      setEmailConfirmationStatus('idle');
+      setRecoveryOutcome({ status: 'idle' });
+      setEmailConfirmationOutcome({ status: 'idle' });
       return () => { active = false; };
     }
 
@@ -99,21 +105,26 @@ export function AuthProvider({ children }: PropsWithChildren) {
       const parameters = readAuthCallbackParameters(url);
       if (!parameters.kind || callbackHandled.current) return;
       callbackHandled.current = true;
-      const setStatus = parameters.kind === 'recovery'
-        ? setRecoveryStatus
-        : setEmailConfirmationStatus;
+      const setOutcome = parameters.kind === 'recovery'
+        ? setRecoveryOutcome
+        : setEmailConfirmationOutcome;
       const openScreen = parameters.kind === 'recovery'
         ? openResetScreen
         : openEmailConfirmationScreen;
-      if (
-        parameters.error
-        || (!parameters.code && (!parameters.accessToken || !parameters.refreshToken))
-      ) {
-        setStatus('invalid');
+      const urlFailure = callbackFailureFromParameters(parameters);
+      if (urlFailure) {
+        const outcome: AuthCallbackOutcome = { status: 'failed', failure: urlFailure };
+        setOutcome(outcome);
+        if (__DEV__) {
+          console.warn(
+            '[Warsha auth callback]',
+            safeAuthCallbackDiagnostic(parameters.kind, outcome, parameters),
+          );
+        }
         openScreen();
         return;
       }
-      setStatus('processing');
+      setOutcome({ status: 'processing' });
       try {
         const { error } = parameters.code
           ? await client.auth.exchangeCodeForSession(parameters.code)
@@ -123,13 +134,29 @@ export function AuthProvider({ children }: PropsWithChildren) {
             });
         if (error) throw error;
         if (active) {
-          setStatus('ready');
+          setOutcome({ status: 'ready' });
           openScreen();
         }
       } catch (error) {
         sanitizeAuthError(error, 'session');
         if (active) {
-          setStatus('invalid');
+          const outcome: AuthCallbackOutcome = {
+            status: 'failed',
+            failure: classifyAuthCallbackFailure(
+              error as { code?: unknown; status?: unknown; name?: unknown; message?: unknown },
+            ),
+          };
+          setOutcome(outcome);
+          if (__DEV__) {
+            console.warn(
+              '[Warsha auth callback]',
+              safeAuthCallbackDiagnostic(
+                parameters.kind,
+                outcome,
+                error as { code?: unknown; status?: unknown },
+              ),
+            );
+          }
           openScreen();
         }
       }
@@ -178,15 +205,15 @@ export function AuthProvider({ children }: PropsWithChildren) {
       setSession(next);
       if (event === 'PASSWORD_RECOVERY') {
         callbackHandled.current = true;
-        setRecoveryStatus('ready');
+        setRecoveryOutcome({ status: 'ready' });
         openResetScreen();
       }
     });
     const linkSubscription = Linking.addEventListener('url', ({ url }) => { void handleAuthUrl(url); });
     void Linking.getInitialURL().then((url) => handleAuthUrl(url)).finally(() => {
       if (active) {
-        setRecoveryStatus((current) => current === 'checking' ? 'idle' : current);
-        setEmailConfirmationStatus((current) => current === 'checking' ? 'idle' : current);
+        setRecoveryOutcome((current) => current.status === 'checking' ? { status: 'idle' } : current);
+        setEmailConfirmationOutcome((current) => current.status === 'checking' ? { status: 'idle' } : current);
       }
     });
 
@@ -203,8 +230,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
     user: session?.user ?? null,
     visibleEmail: visibleContactEmail(session?.user),
     loading,
-    recoveryStatus,
-    emailConfirmationStatus,
+    recoveryOutcome,
+    emailConfirmationOutcome,
     hasVerifiedPhone: Boolean(session?.user.phone && session.user.phone_confirmed_at),
     signIn: async (identifier, password) => {
       const identity = classifySignInIdentity(identifier);
@@ -364,13 +391,36 @@ export function AuthProvider({ children }: PropsWithChildren) {
         if (error) throw error;
       } catch (error) { throw sanitizeAuthError(error, 'password-reset'); }
     },
+    requestEmailConfirmation: async (email) => {
+      if (environment.dataMode === 'mock') return;
+      if (!isValidCustomerEmail(email)) throw new SafeAuthError('authInvalidEmail');
+      try {
+        const { error } = await getSupabaseClient().auth.resend({
+          type: 'signup',
+          email: email.trim(),
+          options: { emailRedirectTo: Linking.createURL('auth/confirm') },
+        });
+        if (error && confirmationResendErrorIsNeutral(error)) {
+          if (__DEV__) {
+            console.warn(
+              '[Warsha confirmation resend]',
+              safeAuthDiagnostic('confirmation-resend', error),
+            );
+          }
+          return;
+        }
+        if (error) throw error;
+      } catch (error) {
+        throw sanitizeAuthError(error, 'confirmation-resend');
+      }
+    },
     finishPasswordRecovery: async () => {
       if (environment.dataMode === 'mock') return;
       try {
         const { error } = await getSupabaseClient().auth.signOut({ scope: 'global' });
         if (error) throw error;
         callbackHandled.current = false;
-        setRecoveryStatus('idle');
+        setRecoveryOutcome({ status: 'idle' });
       } catch (error) { throw sanitizeAuthError(error, 'sign-out'); }
     },
     signOut: async () => {
@@ -380,7 +430,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         if (error) throw error;
       } catch (error) { throw sanitizeAuthError(error, 'sign-out'); }
     },
-  }), [emailConfirmationStatus, loading, recoveryStatus, session]);
+  }), [emailConfirmationOutcome, loading, recoveryOutcome, session]);
 
   return <Context.Provider value={value}>{children}</Context.Provider>;
 }

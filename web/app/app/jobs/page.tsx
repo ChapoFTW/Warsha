@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { AppShell } from '@/components/app-shell';
+import { LifecycleBadge } from '@/components/lifecycle-badge';
 import { appCopy } from '@/lib/app-copy';
 import { isFinished, parseBookings, type Booking } from '@/lib/customer';
 import { customerNav } from '@/lib/nav';
@@ -10,6 +11,7 @@ import { intlLocale, type Locale } from '@/lib/preferences';
 import { supabase } from '@/lib/supabase';
 import { useAppLocale } from '@/lib/use-app-locale';
 import { cataloguedServiceReferenceLabel } from '@/src/services/specific-services';
+import { bookingLifecycleSemantic } from '@/src/lifecycle/lifecycle-presentation';
 
 import styles from '@/components/product-surface.module.css';
 
@@ -131,7 +133,8 @@ function JobDetail({
         <button type="button" className={styles.secondary} onClick={onClose}>{words.close}</button>
       </div>
       <div className={styles.rowMeta}>
-        <span className={styles.badge}>{words[`bookingStatus_${booking.status}`] ?? booking.status}</span>
+        <LifecycleBadge label={words[`bookingStatus_${booking.status}`] ?? booking.status}
+          semantic={bookingLifecycleSemantic(booking.status)} />
         <time className={styles.when}>{formatDay(booking.scheduledDate, locale)} · {booking.scheduledTime.slice(0, 5)}</time>
       </div>
       <p className={styles.factValue}>{booking.issueDescription}</p>
@@ -244,7 +247,8 @@ function JobList({
                 </button>
                 <span className={styles.cardMeta}>{booking.issueDescription.slice(0, 140)}</span>
                 <div className={styles.rowMeta}>
-                  <span className={styles.badge}>{words[`bookingStatus_${booking.status}`] ?? booking.status}</span>
+                  <LifecycleBadge label={words[`bookingStatus_${booking.status}`] ?? booking.status}
+                    semantic={bookingLifecycleSemantic(booking.status)} />
                   <time className={styles.when}>{formatDay(booking.scheduledDate, locale)} · {booking.scheduledTime.slice(0, 5)}</time>
                 </div>
               </li>

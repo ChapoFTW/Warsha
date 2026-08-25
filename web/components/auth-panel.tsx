@@ -61,6 +61,7 @@ export function AuthStateCard({
   body,
   action,
   href,
+  actions,
   busy = false,
 }: {
   locale: Locale;
@@ -68,15 +69,18 @@ export function AuthStateCard({
   body?: string;
   action?: string;
   href?: string;
+  actions?: readonly { label: string; href: string }[];
   busy?: boolean;
 }) {
   return (
     <AuthScreen locale={locale} centred>
       <h1 className={styles.title}>{title}</h1>
       {body ? <p className={styles.lead}>{body}</p> : null}
-      {action && href && !busy ? (
-        <a className={styles.submit} href={href}>{action}</a>
-      ) : null}
+      {!busy ? (actions ?? (action && href ? [{ label: action, href }] : [])).map((item, index) => (
+        <a key={`${item.href}:${item.label}`} className={index === 0 ? styles.submit : styles.link} href={item.href}>
+          {item.label}
+        </a>
+      )) : null}
     </AuthScreen>
   );
 }

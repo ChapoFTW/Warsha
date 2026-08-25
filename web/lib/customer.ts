@@ -232,6 +232,7 @@ export type MarketplaceRequestSummary = {
   flowKind: string;
   status: string;
   categoryId: string;
+  serviceId: string | null;
   issueDescription: string;
   scheduleKind: string;
   createdAt: string;
@@ -263,6 +264,7 @@ export function parseRequestDetail(value: unknown): MarketplaceRequestDetail | n
     flowKind: str(raw.flowKind) ?? 'get_quotes',
     status: str(raw.status) ?? '',
     categoryId: str(raw.categoryId) ?? '',
+    serviceId: str(raw.serviceId),
     issueDescription: str(raw.issueDescription) ?? '',
     notes: str(raw.notes) ?? '',
     scheduleKind: str(raw.scheduleKind) ?? 'asap',

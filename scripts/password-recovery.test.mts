@@ -123,9 +123,9 @@ check(/if \(!callbackHandled\.current\) \{\s*\n\s*await client\.auth\.signOut\(\
 
 // The screen's refusal condition is the other half of the bug: `ready` with no
 // session rendered as invalid. Both halves are asserted so neither drifts.
-check(/recoveryStatus !== 'ready' \|\| !auth\.session/.test(resetScreen),
+check(/outcome\.status !== 'ready' \|\| !auth\.session/.test(resetScreen),
   'the reset screen still requires both a ready status and a session');
-check(/recoveryStatus === 'checking' \|\| auth\.recoveryStatus === 'processing'/.test(resetScreen),
+check(/outcome\.status === 'checking' \|\| outcome\.status === 'processing'/.test(resetScreen),
   'and shows a loader while the callback is still resolving, never the invalid card');
 
 // The callback marks ownership before it awaits anything, so hydration
@@ -224,7 +224,7 @@ check(!/localStorage|sessionStorage|document\.cookie/.test(callback),
 
 // Arriving without a callback is not a grant. This is the mobile screen's
 // `recoveryStatus !== 'ready'` rule, expressed in what a browser can observe.
-check(/arrived\.kind !== 'recovery' \|\| arrived\.refused/.test(webReset),
+check(/arrived\.kind !== 'recovery' \|\| arrived\.failure/.test(webReset),
   'A VISITOR WHO SIMPLY TYPES /reset-password SEES THE INVALID CARD, NOT THE FORM');
 check(/getSession\(\)/.test(webReset),
   'and readiness is decided by awaiting the session, which awaits URL exchange');

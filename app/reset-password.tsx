@@ -10,6 +10,8 @@ import { radii, spacing, typography, type ThemeColors } from '@/constants/theme'
 import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
 import { useAuth } from '@/src/auth/auth-context';
 import { authMessageKey, sanitizeAuthError } from '@/src/auth/auth-errors';
+import { authOutcomeText } from '@/src/auth/auth-outcome-copy';
+import { recoveryFailurePresentation } from '@/src/auth/email-confirmation';
 import { passwordRequirements } from '@/src/auth/password-policy';
 import { useLocalization } from '@/src/i18n/localization';
 import { getSupabaseClient } from '@/src/lib/supabase';
@@ -17,7 +19,7 @@ import { getSupabaseClient } from '@/src/lib/supabase';
 export default function ResetPasswordScreen() {
   const colors = useThemeColors();
   const styles = useThemedStyles(makeStyles);
-  const { t, isRTL } = useLocalization();
+  const { t, isRTL, language } = useLocalization();
   const auth = useAuth();
   const [password, setPassword] = useState('');
   const [confirmation, setConfirmation] = useState('');
@@ -55,14 +57,29 @@ export default function ResetPasswordScreen() {
     }
   };
 
-  const returnToSignIn = () => router.replace('/(tabs)/profile');
+  const returnToSignIn = () => router.replace('/sign-in');
+  const requestNewReset = () => router.replace('/forgot-password');
+  const outcome = auth.recoveryOutcome;
+  const recoveryFailure = recoveryFailurePresentation(
+    outcome.status === 'failed' ? outcome.failure : 'invalid',
+  );
 
   if (success) return <StateCard icon="check" title={t('passwordUpdated')} body={t('passwordUpdatedBody')} action={t('returnToSignIn')} onPress={returnToSignIn} />;
-  if (auth.recoveryStatus === 'checking' || auth.recoveryStatus === 'processing') {
+  if (outcome.status === 'checking' || outcome.status === 'processing') {
     return <SafeAreaView style={styles.safe}><View style={styles.center}><BrandLockup size={54}/><ActivityIndicator color={colors.white}/></View></SafeAreaView>;
   }
-  if (auth.mode !== 'supabase' || auth.recoveryStatus !== 'ready' || !auth.session) {
-    return <StateCard icon="link-off" title={t('resetPasswordTitle')} body={`${t('resetLinkInvalid')} ${t('requestNewReset')}`} action={t('returnToSignIn')} onPress={returnToSignIn} />;
+  if (auth.mode !== 'supabase' || outcome.status !== 'ready' || !auth.session) {
+    return (
+      <StateCard
+        icon="link-off"
+        title={authOutcomeText(language, recoveryFailure.titleKey)}
+        body={authOutcomeText(language, recoveryFailure.bodyKey)}
+        action={authOutcomeText(language, 'forgotPasswordAction')}
+        onPress={requestNewReset}
+        secondaryAction={authOutcomeText(language, 'signInAction')}
+        onSecondaryPress={returnToSignIn}
+      />
+    );
   }
 
   return (
@@ -101,10 +118,10 @@ function PasswordField({ label, value, onChangeText, visible, onToggle, rtl, sho
   return <View style={styles.field}><AppText style={styles.label}>{label}</AppText><View style={[styles.inputShell, rtl && styles.reverse]}><TextInput accessibilityLabel={label} autoCapitalize="none" autoCorrect={false} secureTextEntry={!visible} value={value} onChangeText={onChangeText} placeholder={label} placeholderTextColor={colors.textMuted} style={[styles.input, { textAlign: rtl ? 'right' : 'left' }]}/><Pressable accessibilityRole="button" accessibilityLabel={visible ? hideLabel : showLabel} hitSlop={10} onPress={onToggle} style={styles.eye}><MaterialIcons name={visible ? 'visibility-off' : 'visibility'} size={21} color={colors.textSecondary}/></Pressable></View></View>;
 }
 
-function StateCard({ icon, title, body, action, onPress }: { icon: React.ComponentProps<typeof MaterialIcons>['name']; title: string; body: string; action: string; onPress: () => void }) {
+function StateCard({ icon, title, body, action, onPress, secondaryAction, onSecondaryPress }: { icon: React.ComponentProps<typeof MaterialIcons>['name']; title: string; body: string; action: string; onPress: () => void; secondaryAction?: string; onSecondaryPress?: () => void }) {
   const colors = useThemeColors();
   const styles = useThemedStyles(makeStyles);
-  return <SafeAreaView style={styles.safe}><View style={styles.center}><BrandLockup size={54}/><View style={styles.stateIcon}><MaterialIcons name={icon} size={26} color={colors.white}/></View><AppText accessibilityRole="header" style={styles.title}>{title}</AppText><AppText style={styles.stateBody}>{body}</AppText><Pressable accessibilityRole="button" accessibilityLabel={action} onPress={onPress} style={styles.primary}><AppText style={styles.primaryText}>{action}</AppText></Pressable></View></SafeAreaView>;
+  return <SafeAreaView style={styles.safe}><View style={styles.center}><BrandLockup size={54}/><View style={styles.stateIcon}><MaterialIcons name={icon} size={26} color={colors.white}/></View><AppText accessibilityRole="header" style={styles.title}>{title}</AppText><AppText style={styles.stateBody}>{body}</AppText><Pressable accessibilityRole="button" accessibilityLabel={action} onPress={onPress} style={styles.primary}><AppText style={styles.primaryText}>{action}</AppText></Pressable>{secondaryAction && onSecondaryPress ? <Pressable accessibilityRole="button" accessibilityLabel={secondaryAction} onPress={onSecondaryPress} style={styles.secondary}><AppText style={styles.secondaryText}>{secondaryAction}</AppText></Pressable> : null}</View></SafeAreaView>;
 }
 
 const makeStyles = (colors: ThemeColors) => StyleSheet.create({
@@ -117,6 +134,7 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   input: { flex: 1, minHeight: 52, color: colors.white, fontSize: 16, paddingHorizontal: spacing.sm }, eye: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center' },
   requirements: { gap: spacing.sm }, requirementRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm }, requirement: { color: colors.textMuted, fontSize: 13 }, met: { color: colors.success },
   error: { color: colors.error, fontSize: 13 }, primary: { minHeight: 54, minWidth: 220, borderRadius: radii.lg, backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.xl }, primaryText: { color: colors.background, fontWeight: typography.bold, textAlign: 'center' },
+  secondary: { minHeight: 48, minWidth: 220, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.xl }, secondaryText: { color: colors.textPrimary, fontWeight: typography.semibold, textAlign: 'center' },
   disabled: { opacity: 0.42 }, pressed: { opacity: 0.78 }, reverse: { flexDirection: 'row-reverse' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl, gap: spacing.lg }, stateIcon: { width: 52, height: 52, borderRadius: radii.pill, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }, stateBody: { maxWidth: 440, color: colors.textSecondary, lineHeight: 22, textAlign: 'center' },
 });

@@ -124,6 +124,8 @@ function ThemedRoot() {
           <Stack.Screen name="welcome" />
           <Stack.Screen name="sign-in" />
           <Stack.Screen name="create-account" />
+          <Stack.Screen name="forgot-password" />
+          <Stack.Screen name="resend-confirmation" />
           <Stack.Screen name="legal/[topic]" />
           <Stack.Screen name="legal/index" />
           <Stack.Screen name="legal/consent" />

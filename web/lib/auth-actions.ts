@@ -1,6 +1,8 @@
 'use client';
 
 import { classifySignInIdentity } from '@/src/auth/auth-identifier';
+import { safeAuthDiagnostic } from '@/src/auth/auth-errors';
+import { confirmationResendErrorIsNeutral } from '@/src/auth/email-confirmation';
 import { passwordMeetsPolicy } from '@/src/auth/password-policy';
 import type { SupportedLanguage } from '@/src/i18n/language-preference';
 
@@ -155,6 +157,35 @@ export async function requestPasswordReset(email: string): Promise<ResetRequestR
     if (status === 0) return { ok: false, failure: 'network' };
     // Anything else is ours, not theirs. In particular a 4xx about the address
     // is not surfaced as "no such account" — see above.
+    return { ok: false, failure: 'server' };
+  } catch {
+    return { ok: false, failure: 'network' };
+  }
+}
+
+/**
+ * Request a new signup confirmation without revealing account state.
+ *
+ * Confirmed, unknown, and otherwise ineligible addresses receive the same
+ * neutral accepted result. Only request-level failures (validation, rate
+ * limit, transport, service) are visible to the caller.
+ */
+export async function requestEmailConfirmation(email: string): Promise<ResetRequestResult> {
+  if (!emailAcceptable(email)) return { ok: false, failure: 'invalid_email' };
+  try {
+    const { error } = await supabase().auth.resend({
+      type: 'signup',
+      email: email.trim(),
+      options: { emailRedirectTo: `${window.location.origin}/auth/confirm` },
+    });
+    if (!error) return { ok: true };
+    if (confirmationResendErrorIsNeutral(error)) {
+      console.warn('[Warsha confirmation resend]', safeAuthDiagnostic('confirmation-resend', error));
+      return { ok: true };
+    }
+    const status = (error as { status?: number }).status ?? 0;
+    if (status === 429) return { ok: false, failure: 'rate_limited' };
+    if (status === 0) return { ok: false, failure: 'network' };
     return { ok: false, failure: 'server' };
   } catch {
     return { ok: false, failure: 'network' };

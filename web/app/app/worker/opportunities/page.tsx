@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { AppShell } from '@/components/app-shell';
+import { LifecycleBadge } from '@/components/lifecycle-badge';
 import { appCopy } from '@/lib/app-copy';
 import { parseServices, type Service } from '@/lib/customer';
 import { workerNav } from '@/lib/nav';
@@ -19,6 +20,11 @@ import {
 } from '@/lib/worker';
 import { workerCopy, type WorkerWords } from '@/lib/worker-copy';
 import { requestWorkLabel } from '@/src/marketplace-intelligence/request-work-label';
+import {
+  invitationLifecycleSemantic,
+  partitionInvitationLifecycle,
+  quoteLifecycleSemantic,
+} from '@/src/lifecycle/lifecycle-presentation';
 
 import styles from '@/components/product-surface.module.css';
 
@@ -66,6 +72,7 @@ export default function WorkerOpportunitiesPage() {
   useEffect(() => { void load(); }, [load]);
 
   const selected = invitations?.find((item) => item.id === openId) ?? null;
+  const { active: activeInvitations, history: historicalInvitations } = partitionInvitationLifecycle(invitations ?? []);
 
   return (
     <AppShell nav={workerNav(appWords)} mode={appWords.modeWorker}>
@@ -81,26 +88,49 @@ export default function WorkerOpportunitiesPage() {
             <button type="button" className={styles.secondary} onClick={() => void load()}>{appWords.retry}</button></>
         ) : invitations === null ? <p className={styles.muted}>{appWords.loading}</p>
           : invitations.length === 0 ? <p className={styles.muted}>{words.opportunitiesNone}</p>
-            : (
-              <ul className={styles.list}>
-                {invitations.map((item) => (
-                  <li key={item.id} className={styles.row}>
-                    <button type="button" className={styles.rowTitle} onClick={() => setOpenId(item.id)}>
-                      {item.issueDescription.slice(0, 140)}
-                    </button>
-                    <div className={styles.rowMeta}>
-                      <span className={styles.badge}>{words[`invitationStatus_${item.status}` as keyof typeof words] ?? item.status}</span>
-                      <span className={`${styles.badge} ${styles.workLabel}`}>{requestWorkLabel(item, services, locale)}</span>
-                      <span className={styles.cardMeta}>{[item.area.governorate, item.area.district].filter(Boolean).join(' · ')}</span>
-                      <time className={styles.when}>{formatMoment(item.expiresAt, locale)}</time>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
+            : <>
+              <InvitationList title={words.opportunitiesActive} invitations={activeInvitations} services={services}
+                locale={locale} words={words} onOpen={setOpenId} empty={words.opportunitiesNone} />
+              {historicalInvitations.length > 0 ? (
+                <InvitationList title={words.opportunitiesHistory} invitations={historicalInvitations} services={services}
+                  locale={locale} words={words} onOpen={setOpenId} />
+              ) : null}
+            </>}
       </section>
     </AppShell>
   );
+}
+
+function InvitationList({ title, invitations, services, locale, words, onOpen, empty }: {
+  title: string;
+  invitations: QuoteInvitation[];
+  services: Service[];
+  locale: Locale;
+  words: WorkerWords;
+  onOpen: (id: string) => void;
+  empty?: string;
+}) {
+  return <section aria-label={title}>
+    <h2 className={styles.sectionTitle}>{title}</h2>
+    {invitations.length === 0 ? <p className={styles.muted}>{empty}</p> : (
+      <ul className={styles.list}>
+        {invitations.map((item) => (
+          <li key={item.id} className={styles.row}>
+            <button type="button" className={styles.rowTitle} onClick={() => onOpen(item.id)}>
+              {item.issueDescription.slice(0, 140)}
+            </button>
+            <div className={styles.rowMeta}>
+              <LifecycleBadge label={words[`invitationStatus_${item.status}` as keyof typeof words] ?? item.status}
+                semantic={invitationLifecycleSemantic(item.status)} />
+              <span className={`${styles.badge} ${styles.workLabel}`}>{requestWorkLabel(item, services, locale)}</span>
+              <span className={styles.cardMeta}>{[item.area.governorate, item.area.district].filter(Boolean).join(' · ')}</span>
+              <time className={styles.when}>{formatMoment(item.expiresAt, locale)}</time>
+            </div>
+          </li>
+        ))}
+      </ul>
+    )}
+  </section>;
 }
 
 function OpportunityDetail({
@@ -219,7 +249,8 @@ function OpportunityDetail({
       {quote ? (
         <div className={styles.subpanel}>
           <div className={styles.quoteHead}>
-            <span className={styles.badge}>{words[`quoteStatus_${quote.status}` as keyof typeof words] ?? quote.status}</span>
+            <LifecycleBadge label={words[`quoteStatus_${quote.status}` as keyof typeof words] ?? quote.status}
+              semantic={quoteLifecycleSemantic(quote.status)} />
             <span className={styles.price}>{egpFromMinor(quote.priceMinor, locale)}</span>
           </div>
           {quote.revisions.length > 0 ? (

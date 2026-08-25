@@ -290,7 +290,7 @@
       "locale": "en",
       "title": "Requests, quotes, and jobs",
       "summary": "Understand what happens from posting a request to completing or cancelling a job.",
-      "version": 4,
+      "version": 5,
       "lastReviewedDate": "2026-08-25",
       "features": [
         "marketplace",
@@ -320,7 +320,7 @@
       "locale": "ar",
       "title": "الطلبات والعروض والشغل",
       "summary": "افهم اللي بيحصل من نشر الطلب لحد اكتمال الشغل أو إلغائه.",
-      "version": 4,
+      "version": 5,
       "lastReviewedDate": "2026-08-25",
       "features": [
         "marketplace",
@@ -350,8 +350,8 @@
       "locale": "en",
       "title": "Account, security, and preferences",
       "summary": "Sign in, recover your password, choose language and appearance, and manage privacy.",
-      "version": 1,
-      "lastReviewedDate": "2026-08-24",
+      "version": 2,
+      "lastReviewedDate": "2026-08-25",
       "features": [
         "auth",
         "password_recovery",
@@ -383,8 +383,8 @@
       "locale": "ar",
       "title": "الحساب والأمان والتفضيلات",
       "summary": "سجّل الدخول، استرجع كلمة السر، واختار اللغة والمظهر وتحكم في الخصوصية.",
-      "version": 1,
-      "lastReviewedDate": "2026-08-24",
+      "version": 2,
+      "lastReviewedDate": "2026-08-25",
       "features": [
         "auth",
         "password_recovery",
@@ -470,8 +470,8 @@
       "locale": "en",
       "title": "Getting started as a worker",
       "summary": "Register with phone and password, finish onboarding, and wait for governed approval.",
-      "version": 1,
-      "lastReviewedDate": "2026-08-21",
+      "version": 2,
+      "lastReviewedDate": "2026-08-25",
       "features": [
         "worker_auth",
         "worker_onboarding",
@@ -498,8 +498,8 @@
       "locale": "ar",
       "title": "ابدأ كصنايعي",
       "summary": "سجّل بالموبايل وكلمة السر، كمّل التقديم، واستنى الموافقة المنظمة.",
-      "version": 1,
-      "lastReviewedDate": "2026-08-21",
+      "version": 2,
+      "lastReviewedDate": "2026-08-25",
       "features": [
         "worker_auth",
         "worker_onboarding",
@@ -582,7 +582,7 @@
       "locale": "en",
       "title": "Opportunities, quotes, and jobs",
       "summary": "Review matching requests, write clear quotes, and update real job progress.",
-      "version": 4,
+      "version": 5,
       "lastReviewedDate": "2026-08-25",
       "features": [
         "marketplace",
@@ -610,7 +610,7 @@
       "locale": "ar",
       "title": "الفرص والعروض والشغل",
       "summary": "راجع الطلبات المناسبة، اكتب عرض واضح، وحدّث تقدم الشغل الحقيقي.",
-      "version": 4,
+      "version": 5,
       "lastReviewedDate": "2026-08-25",
       "features": [
         "marketplace",
@@ -1198,7 +1198,7 @@
       "locale": "fr",
       "title": "Demandes, devis et interventions",
       "summary": "Comprenez le parcours d’une demande jusqu’à la fin ou l’annulation de l’intervention.",
-      "version": 4,
+      "version": 5,
       "lastReviewedDate": "2026-08-25",
       "features": [
         "marketplace",
@@ -1228,8 +1228,8 @@
       "locale": "fr",
       "title": "Compte, sécurité et préférences",
       "summary": "Connectez-vous, récupérez votre mot de passe et gérez langue, apparence et confidentialité.",
-      "version": 1,
-      "lastReviewedDate": "2026-08-24",
+      "version": 2,
+      "lastReviewedDate": "2026-08-25",
       "features": [
         "auth",
         "password_recovery",
@@ -1288,8 +1288,8 @@
       "locale": "fr",
       "title": "Bien démarrer comme professionnel",
       "summary": "Créez votre compte sans e-mail, terminez votre profil et préparez-vous à recevoir des opportunités.",
-      "version": 1,
-      "lastReviewedDate": "2026-08-21",
+      "version": 2,
+      "lastReviewedDate": "2026-08-25",
       "features": [
         "worker_auth",
         "worker_onboarding",
@@ -1344,7 +1344,7 @@
       "locale": "fr",
       "title": "Opportunités, devis et interventions",
       "summary": "Répondez aux demandes admissibles et mettez à jour le déroulement réel du travail.",
-      "version": 4,
+      "version": 5,
       "lastReviewedDate": "2026-08-25",
       "features": [
         "marketplace",

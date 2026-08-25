@@ -2,6 +2,8 @@ export const PUBLIC_ROUTES = [
   '/welcome',
   '/sign-in',
   '/create-account',
+  '/forgot-password',
+  '/resend-confirmation',
   '/reset-password',
   '/auth/confirm',
   '/legal',

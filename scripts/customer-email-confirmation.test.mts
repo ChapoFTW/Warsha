@@ -3,8 +3,13 @@ import { readFileSync } from 'node:fs';
 
 import { classifyAuthFailure } from '../src/auth/auth-errors.ts';
 import {
+  callbackFailureFromParameters,
+  classifyAuthCallbackFailure,
+  confirmationFailurePresentation,
+  confirmationResendErrorIsNeutral,
   customerSignUpResult,
   readAuthCallbackParameters,
+  safeAuthCallbackDiagnostic,
 } from '../src/auth/email-confirmation.ts';
 
 let checks = 0;
@@ -44,20 +49,47 @@ check(!('confirmationRequestAccepted' in acceptanceUnverified),
 assert.deepEqual(
   readAuthCallbackParameters(
     'warsha://auth/confirm#access_token=access&refresh_token=refresh&type=signup'),
-  { kind: 'signup', accessToken: 'access', refreshToken: 'refresh', code: undefined, error: undefined },
+  { kind: 'signup', accessToken: 'access', refreshToken: 'refresh', code: undefined, error: undefined,
+    errorCode: undefined, errorDescription: undefined },
 );
 checks += 1;
 assert.deepEqual(
   readAuthCallbackParameters('https://warsha.example/auth/confirm?code=pkce-code'),
-  { kind: 'signup', accessToken: undefined, refreshToken: undefined, code: 'pkce-code', error: undefined },
+  { kind: 'signup', accessToken: undefined, refreshToken: undefined, code: 'pkce-code', error: undefined,
+    errorCode: undefined, errorDescription: undefined },
 );
 checks += 1;
 check(readAuthCallbackParameters(
   'warsha://reset-password#access_token=access&refresh_token=refresh&type=recovery').kind === 'recovery',
 'password recovery remains a separate callback');
 check(readAuthCallbackParameters(
-  'warsha://auth/confirm#error=access_denied&error_description=Expired').error === 'Expired',
+  'warsha://auth/confirm#error=access_denied&error_description=Expired').errorDescription === 'Expired',
 'confirmation callback retains a safe invalid-link signal');
+
+check(classifyAuthCallbackFailure({ code: 'otp_expired', message: 'Email link is invalid or has expired' })
+  === 'expired_or_used', 'ambiguous provider evidence is not presented as a known expired or reused link');
+check(classifyAuthCallbackFailure({ code: 'otp_expired', message: 'Link already used' }) === 'used',
+  'explicit reused-link evidence has a distinct recovery state');
+check(classifyAuthCallbackFailure({ code: 'bad_code_verifier' }) === 'session_mismatch',
+  'PKCE browser/device mismatch gets specific recovery guidance');
+check(callbackFailureFromParameters(readAuthCallbackParameters(
+  'warsha://auth/confirm#error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired'))
+  === 'expired_or_used', 'callback parameters flow through the shared failure model');
+check(confirmationFailurePresentation('used').actions.includes('sign_in'),
+  'a used confirmation link offers the real sign-in recovery action');
+check(confirmationFailurePresentation('expired').actions.includes('resend_confirmation'),
+  'an expired confirmation link offers the real resend action');
+check(confirmationResendErrorIsNeutral({ code: 'user_not_found', status: 400 }),
+  'resend does not disclose whether an address exists');
+check(!confirmationResendErrorIsNeutral({ code: 'over_email_send_rate_limit', status: 429 }),
+  'request-level rate limits remain actionable');
+const diagnostic = safeAuthCallbackDiagnostic('signup', { status: 'failed', failure: 'expired' }, {
+  code: 'otp_expired', status: 403, message: 'secret provider prose',
+});
+assert.deepEqual(diagnostic, {
+  operation: 'auth-callback', kind: 'signup', state: 'failed', failure: 'expired', code: 'otp_expired', status: 403,
+});
+checks += 1;
 
 check(classifyAuthFailure({ code: 'email_address_not_authorized', status: 403 }, 'sign-up')
   === 'authEmailDeliveryRestricted', 'default-service recipient restrictions are specific');
@@ -86,14 +118,16 @@ check(/emailRedirectTo:\s*Linking\.createURL\('auth\/confirm'\)/.test(authContex
   'customer signup supplies a cross-platform confirmation callback');
 check(/exchangeCodeForSession/.test(authContext) && /auth\.setSession/.test(authContext),
   'callback supports PKCE and implicit-token responses');
-check(/customerConfirmationPending/.test(createAccount),
-  'canonical customer registration uses the non-enumerating pending state');
+check(/authOutcomeText\(language, 'confirmationPendingBody'\)/.test(createAccount),
+  'canonical customer registration uses the shared non-enumerating pending state');
 check(!/auth\.signUp\(/.test(profile) && /router\.push\('\/create-account'\)/.test(profile),
   'signed-out profile delegates account creation to the canonical legal-gated surface');
 check(!/setNotice\(t\('checkEmail'\)\)/.test(createAccount),
   'create-account no longer reports a bare email-sent claim');
-check(/confirmationInvalidBody/.test(callbackScreen) && /confirmationProcessingBody/.test(callbackScreen),
-  'callback renders processing and invalid states');
+check(/confirmationFailurePresentation/.test(callbackScreen) && /confirmationProcessingBody/.test(callbackScreen),
+  'callback renders processing and classified failure states');
+check(authRoutes.includes("'/forgot-password'") && authRoutes.includes("'/resend-confirmation'"),
+  'real recovery request routes remain reachable while signed out');
 check(authRoutes.includes("'/auth/confirm'"), 'confirmation callback remains reachable while signed out');
 check(authCopy.includes('cannot verify sending or delivery'), 'English status copy is explicit about evidence');
 check(authCopy.includes('ما تقدرش تتأكد من الإرسال أو الوصول'),
@@ -124,5 +158,81 @@ check(!/signInWithOtp|verifyOtp|sms\.signIn/i.test(workerBroker),
   'worker registration still sends no OTP or SMS');
 check(!/worker-auth\.invalid/.test(callbackScreen),
   'confirmation UI cannot surface synthetic worker identity details');
+
+
+// --- "Looks like you already have a Warsha account" --------------------------
+// The reported scenario: somebody with an account registers again, and the
+// confirmation link tells them only that it "cannot be used". Where Auth names
+// the identity conflict, Warsha owes them the recovery path instead. This state
+// had no coverage at all, so removing its detection changed nothing.
+{
+  for (const code of ['identity_already_exists', 'email_exists', 'phone_exists', 'manual_linking_disabled']) {
+    check(classifyAuthCallbackFailure({ errorCode: code }) === 'identity_conflict',
+      `${code} IS RECOGNISED AS AN EXISTING ACCOUNT, NOT A BROKEN LINK`);
+  }
+  const presentation = confirmationFailurePresentation('identity_conflict');
+  check(presentation.titleKey === 'existingAccountTitle',
+    'and is presented as an existing account');
+  check(presentation.bodyKey === 'existingEmailBody',
+    'with identifier-specific wording rather than "email/phone"');
+  // The recovery actions must be the ones that actually help, and must exist.
+  assert.deepEqual(presentation.actions, ['sign_in', 'forgot_password'],
+    'OFFERING SIGN IN AND FORGOT PASSWORD, NOT "CREATE THE ACCOUNT AGAIN"');
+  check(!presentation.actions.includes('create_account'),
+    'never looping an existing user back into registration');
+  checks += 1;
+
+  // It must NOT swallow the other states: a genuinely broken link still reads
+  // as one, or this fix would have replaced one wrong message with another.
+  check(confirmationFailurePresentation('invalid').titleKey === 'confirmationInvalidTitle',
+    'a malformed link still reports itself as invalid');
+  check(confirmationFailurePresentation('expired').titleKey === 'confirmationExpiredTitle',
+    'an expired link still reports expiry');
+  check(confirmationFailurePresentation('used').titleKey === 'confirmationUsedTitle',
+    'a reused link still reports reuse');
+  check(confirmationFailurePresentation('session_mismatch').titleKey === 'confirmationSessionMismatchTitle',
+    'a session mismatch is its own state');
+  const distinct = new Set((['expired', 'used', 'expired_or_used', 'invalid',
+    'session_mismatch', 'identity_conflict', 'network'] as const)
+    .map((failure) => confirmationFailurePresentation(failure).titleKey));
+  check(distinct.size >= 6, 'THE STATES ARE NOT CONFLATED INTO ONE MESSAGE');
+
+  // Every action a state offers must be a real, reachable Warsha destination.
+  const routes: Record<string, string> = {
+    sign_in: 'web/app/app/sign-in/page.tsx',
+    forgot_password: 'web/app/app/forgot-password/page.tsx',
+    resend_confirmation: 'web/app/app/resend-confirmation/page.tsx',
+    create_account: 'web/app/app/create-account/page.tsx',
+  };
+  const offered = new Set((['expired', 'used', 'expired_or_used', 'invalid',
+    'session_mismatch', 'identity_conflict', 'network', 'service'] as const)
+    .flatMap((failure) => confirmationFailurePresentation(failure).actions));
+  for (const action of offered) {
+    check(readFileSync(routes[action], 'utf8').length > 0,
+      `the "${action}" recovery action points at a real screen`);
+  }
+  // Native must reach the same destinations, or the copy is web-only advice.
+  for (const screen of ['app/forgot-password.tsx', 'app/resend-confirmation.tsx']) {
+    check(readFileSync(screen, 'utf8').length > 0, `native ships ${screen}`);
+  }
+  const layout = readFileSync('app/_layout.tsx', 'utf8');
+  check(/name="forgot-password"/.test(layout) && /name="resend-confirmation"/.test(layout),
+    'AND BOTH ARE REGISTERED AS NATIVE ROUTES, SO THE CTAs ARE NOT DEAD');
+  const gate = readFileSync('web/components/startup-gate.tsx', 'utf8');
+  check(/'\/resend-confirmation'/.test(gate),
+    'and the web gate lets a signed-out person reach the resend screen');
+}
+
+// --- Existing-account copy exists in all three languages ---------------------
+{
+  const copy = readFileSync('src/auth/auth-outcome-copy.ts', 'utf8');
+  for (const key of ['existingAccountTitle', 'existingEmailBody', 'existingPhoneBody']) {
+    const occurrences = copy.split(`${key}:`).length - 1;
+    check(occurrences === 3, `${key} is written for English, Arabic and French`);
+  }
+  // Phone and email must not share one vague sentence.
+  check(!/existingEmailBody: '[^']*email\/phone/i.test(copy),
+    'Warsha never says "email/phone" when it knows which was used');
+}
 
 console.log(`Customer email confirmation regressions: ${checks} checks passed.`);

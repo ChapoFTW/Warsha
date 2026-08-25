@@ -3,10 +3,17 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import { AuthStateCard } from '@/components/auth-panel';
-import { appCopy } from '@/lib/app-copy';
 import { arrivedBy } from '@/lib/auth-callback';
 import { supabase } from '@/lib/supabase';
 import { useAppLocale } from '@/lib/use-app-locale';
+import { authOutcomeCopy } from '@/src/auth/auth-outcome-copy';
+import {
+  classifyAuthCallbackFailure,
+  confirmationFailurePresentation,
+  safeAuthCallbackDiagnostic,
+  type AuthCallbackFailure,
+  type AuthRecoveryAction,
+} from '@/src/auth/email-confirmation';
 
 /**
  * Where a confirmation email lands.
@@ -26,19 +33,38 @@ import { useAppLocale } from '@/lib/use-app-locale';
  * not cause the visitor to be routed away before they can read the result.
  */
 
-type Status = 'checking' | 'confirmed' | 'failed';
+type Status =
+  | { status: 'checking' | 'confirmed' }
+  | { status: 'failed'; failure: AuthCallbackFailure };
+
+const hrefForAction: Record<AuthRecoveryAction, string> = {
+  sign_in: '/sign-in',
+  forgot_password: '/forgot-password',
+  resend_confirmation: '/resend-confirmation',
+  create_account: '/create-account',
+  retry: '/resend-confirmation',
+};
+
+const keyForAction: Record<AuthRecoveryAction, 'signInAction' | 'forgotPasswordAction' | 'resendConfirmationAction' | 'createAccountAction' | 'retryAction'> = {
+  sign_in: 'signInAction',
+  forgot_password: 'forgotPasswordAction',
+  resend_confirmation: 'resendConfirmationAction',
+  create_account: 'createAccountAction',
+  retry: 'retryAction',
+};
 
 export default function ConfirmEmailPage() {
   const locale = useAppLocale();
-  const words = appCopy[locale] as Record<string, string>;
+  const authWords = authOutcomeCopy[locale];
   const arrived = useMemo(() => arrivedBy(), []);
-  const [status, setStatus] = useState<Status>('checking');
+  const [status, setStatus] = useState<Status>({ status: 'checking' });
 
   useEffect(() => {
     let active = true;
 
-    if (arrived.refused) {
-      setStatus('failed');
+    if (arrived.failure) {
+      setStatus({ status: 'failed', failure: arrived.failure });
+      console.warn('[Warsha auth callback]', arrived.diagnostic);
       return () => { active = false; };
     }
 
@@ -48,34 +74,46 @@ export default function ConfirmEmailPage() {
         // credential was exchanged. A session here means Auth accepted it.
         const { data } = await supabase().auth.getSession();
         if (!active) return;
-        setStatus(data.session ? 'confirmed' : 'failed');
-      } catch {
-        if (active) setStatus('failed');
+        setStatus(data.session
+          ? { status: 'confirmed' }
+          : { status: 'failed', failure: 'session_mismatch' });
+      } catch (error) {
+        if (active) {
+          const failure = classifyAuthCallbackFailure(
+            error as { code?: unknown; status?: unknown; name?: unknown; message?: unknown },
+          );
+          const outcome = { status: 'failed' as const, failure };
+          console.warn('[Warsha auth callback]', safeAuthCallbackDiagnostic('signup', outcome, error as { code?: unknown; status?: unknown }));
+          setStatus(outcome);
+        }
       }
     })();
 
     return () => { active = false; };
   }, [arrived]);
 
-  if (status === 'checking') {
+  if (status.status === 'checking') {
     return (
       <AuthStateCard
         locale={locale}
-        title={words.confirmCheckingTitle}
-        body={words.confirmCheckingBody}
+        title={authWords.confirmationProcessingTitle}
+        body={authWords.confirmationProcessingBody}
         busy
       />
     );
   }
 
-  if (status === 'failed') {
+  if (status.status === 'failed') {
+    const presentation = confirmationFailurePresentation(status.failure);
     return (
       <AuthStateCard
         locale={locale}
-        title={words.confirmFailedTitle}
-        body={words.confirmFailedBody}
-        action={words.returnToSignIn}
-        href="/sign-in"
+        title={authWords[presentation.titleKey]}
+        body={authWords[presentation.bodyKey]}
+        actions={presentation.actions.map((action) => ({
+          label: authWords[keyForAction[action]],
+          href: hrefForAction[action],
+        }))}
       />
     );
   }
@@ -83,9 +121,9 @@ export default function ConfirmEmailPage() {
   return (
     <AuthStateCard
       locale={locale}
-      title={words.confirmedTitle}
-      body={words.confirmedBody}
-      action={words.continueAction}
+      title={authWords.confirmationCompleteTitle}
+      body={authWords.confirmationCompleteBody}
+      action={authWords.continueAction}
       // Deliberately the root, not a guessed destination. The startup gate reads
       // the account's real state and routes from there, so this page never has
       // to decide which product somebody belongs in.

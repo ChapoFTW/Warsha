@@ -1,6 +1,12 @@
 'use client';
 
-import { readAuthCallbackParameters, type AuthCallbackKind } from '../../src/auth/email-confirmation.ts';
+import {
+  callbackFailureFromParameters,
+  readAuthCallbackParameters,
+  safeAuthCallbackDiagnostic,
+  type AuthCallbackFailure,
+  type AuthCallbackKind,
+} from '../../src/auth/email-confirmation.ts';
 
 export type { AuthCallbackKind };
 
@@ -33,8 +39,10 @@ const snapshot = typeof window === 'undefined' ? null : window.location.href;
 export type ArrivedBy = {
   /** `recovery`, `signup`, or null when this was ordinary navigation. */
   kind: AuthCallbackKind | null;
-  /** True when Auth itself refused the link — expired, used, malformed. */
-  refused: boolean;
+  /** The shared product failure, or null while a supplied credential is exchanged. */
+  failure: AuthCallbackFailure | null;
+  /** Safe diagnostics: provider code only, never tokens or descriptions. */
+  diagnostic?: ReturnType<typeof safeAuthCallbackDiagnostic>;
 };
 
 /**
@@ -46,14 +54,18 @@ export type ArrivedBy = {
  * not be shown a password form as though they did.
  */
 export function arrivedBy(): ArrivedBy {
-  if (!snapshot) return { kind: null, refused: false };
+  if (!snapshot) return { kind: null, failure: null };
   const parameters = readAuthCallbackParameters(snapshot);
-  if (!parameters.kind) return { kind: null, refused: false };
+  if (!parameters.kind) return { kind: null, failure: null };
 
-  // Two ways a link is unusable, and they have to be treated alike: Auth said
-  // no outright, or it said nothing at all and left no credential to exchange.
-  const refused = Boolean(parameters.error)
-    || (!parameters.code && (!parameters.accessToken || !parameters.refreshToken));
+  const failure = callbackFailureFromParameters(parameters);
+  const outcome = failure
+    ? { status: 'failed' as const, failure }
+    : { status: 'processing' as const };
 
-  return { kind: parameters.kind, refused };
+  return {
+    kind: parameters.kind,
+    failure,
+    diagnostic: safeAuthCallbackDiagnostic(parameters.kind, outcome, parameters),
+  };
 }

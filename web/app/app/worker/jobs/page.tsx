@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { AppShell } from '@/components/app-shell';
+import { LifecycleBadge } from '@/components/lifecycle-badge';
 import { appCopy } from '@/lib/app-copy';
 import { workerNav } from '@/lib/nav';
 import { intlLocale, type Locale } from '@/lib/preferences';
@@ -17,6 +18,7 @@ import {
 } from '@/lib/worker';
 import { workerCopy, type WorkerWords } from '@/lib/worker-copy';
 import { cataloguedServiceReferenceLabel } from '@/src/services/specific-services';
+import { bookingLifecycleSemantic } from '@/src/lifecycle/lifecycle-presentation';
 
 import styles from '@/components/product-surface.module.css';
 
@@ -108,7 +110,8 @@ function WorkerJobDetail({ booking, locale, appWords, words, onClose, onChanged 
     <section className={styles.panel} aria-label={serviceLabel}>
       <div className={styles.head}><h2 className={styles.sectionTitle}>{serviceLabel}</h2>
         <button type="button" className={styles.secondary} onClick={onClose}>{appWords.close}</button></div>
-      <div className={styles.rowMeta}><span className={styles.badge}>{appWords[`bookingStatus_${booking.status}`] ?? booking.status}</span>
+      <div className={styles.rowMeta}><LifecycleBadge label={appWords[`bookingStatus_${booking.status}`] ?? booking.status}
+        semantic={bookingLifecycleSemantic(booking.status)} />
         <time className={styles.when}>{formatDay(booking.scheduledDate, locale)} · {booking.scheduledTime.slice(0, 5)}</time></div>
       <p className={styles.factValue}>{booking.issueDescription}</p>
       <div className={styles.facts}>
@@ -203,7 +206,8 @@ function WorkerJobList({ title, empty, rows, locale, appWords, onOpen }: {
       <ul className={styles.list}>{rows.map((item) => <li key={item.id} className={styles.row}>
         <button type="button" className={styles.rowTitle} onClick={() => onOpen(item.id)}>{cataloguedServiceReferenceLabel(item, [], locale)}</button>
         <span className={styles.cardMeta}>{item.customerName}</span>
-        <div className={styles.rowMeta}><span className={styles.badge}>{appWords[`bookingStatus_${item.status}`] ?? item.status}</span>
+        <div className={styles.rowMeta}><LifecycleBadge label={appWords[`bookingStatus_${item.status}`] ?? item.status}
+          semantic={bookingLifecycleSemantic(item.status)} />
           <time className={styles.when}>{formatDay(item.scheduledDate, locale)} · {item.scheduledTime.slice(0, 5)}</time></div>
       </li>)}</ul>
     )}</section>;

@@ -5,13 +5,14 @@ import { AppState, FlatList, Pressable, RefreshControl, StyleSheet, View } from 
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BrandLoadingMark as ActivityIndicator } from '@/components/warsha/BrandMark';
-import { EmptyState } from '@/components/warsha/BrandUI';
+import { EmptyState, StateBadge } from '@/components/warsha/BrandUI';
 import { AppText } from '@/components/warsha/Typography';
 import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
 import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
 import { useAuth } from '@/src/auth/auth-context';
 import { useBookings } from '@/src/bookings/booking-context';
 import { bookingStatusTranslationKeys, type Booking } from '@/src/bookings/booking-types';
+import { bookingLifecycleSemantic, lifecycleBadgeTone } from '@/src/lifecycle/lifecycle-presentation';
 import { chatRepository } from '@/src/chat/chat-repository';
 import { useChatText } from '@/src/chat/chat-translations';
 import type { ChatInboxItem, MessageKind } from '@/src/chat/chat-types';
@@ -125,7 +126,7 @@ export default function ChatInboxScreen() {
             <View style={styles.text}>
               <View style={[styles.between, isRTL && styles.reverse]}><AppText style={[styles.name, isRTL && styles.rtl]} numberOfLines={1}>{item.counterpartName || serviceLabel}</AppText>{item.lastMessageAt ? <AppText style={styles.time}>{formatTimestamp(item.lastMessageAt, localeFor(language))}</AppText> : null}</View>
               <AppText style={[styles.service, isRTL && styles.rtl]}>{serviceLabel}</AppText>
-              <View style={[styles.between, isRTL && styles.reverse]}><AppText style={[styles.preview, isRTL && styles.rtl]} numberOfLines={1}>{messageKindLabel(item.lastMessageKind, ct)}</AppText><AppText style={styles.status}>{t(bookingStatusTranslationKeys[item.status])}</AppText></View>
+              <View style={[styles.between, isRTL && styles.reverse]}><AppText style={[styles.preview, isRTL && styles.rtl]} numberOfLines={1}>{messageKindLabel(item.lastMessageKind, ct)}</AppText><StateBadge label={t(bookingStatusTranslationKeys[item.status])} tone={lifecycleBadgeTone(bookingLifecycleSemantic(item.status))} compact /></View>
             </View>
             {item.unreadCount > 0 ? <View accessibilityLabel={`${item.unreadCount} ${ct('unread')}`} style={styles.badge}><AppText style={styles.badgeText}>{item.unreadCount > 99 ? '99+' : item.unreadCount}</AppText></View> : null}
           </Pressable>;
@@ -165,7 +166,6 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   name: { flex: 1, fontSize: 15, fontWeight: typography.bold },
   service: { flexShrink: 1, color: colors.textSecondary, fontSize: 12, lineHeight: 18 },
   preview: { flex: 1, color: colors.textMuted, fontSize: 11 },
-  status: { color: colors.textMuted, fontSize: 9 },
   time: { color: colors.textMuted, fontSize: 10 },
   badge: { minWidth: 24, height: 24, paddingHorizontal: 6, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.white },
   badgeText: { color: colors.background, fontSize: 10, fontWeight: typography.bold },

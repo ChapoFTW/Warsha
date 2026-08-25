@@ -7,7 +7,7 @@ import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppText } from '@/components/warsha/Typography';
-import { EmptyState } from '@/components/warsha/BrandUI';
+import { EmptyState, StateBadge } from '@/components/warsha/BrandUI';
 import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
 import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
 import { useAuth } from '@/src/auth/auth-context';
@@ -18,6 +18,7 @@ import { useLocalization } from '@/src/i18n/localization';
 import { useReviews } from '@/src/reviews/review-context';
 import { cataloguedServiceReferenceLabel } from '@/src/services/specific-services';
 import { formatBookingDateTime, formatNumber, localeFor } from '@/src/utils/date-format';
+import { bookingLifecycleSemantic, lifecycleBadgeTone } from '@/src/lifecycle/lifecycle-presentation';
 
 type Tab = 'upcoming' | 'past' | 'cancelled';
 
@@ -163,11 +164,8 @@ function OrderCard({ booking, reviewed, reviewStateLoading, canReview }: { booki
         <View style={styles.grow}>
           <View style={styles.between}>
             <AppText style={styles.name}>{provider.name}</AppText>
-            <View style={[styles.badge, booking.status === 'cancelled' && styles.cancelBadge]}>
-              <AppText style={[styles.badgeText, booking.status === 'cancelled' && styles.cancelText]}>
-                {t(bookingStatusTranslationKeys[booking.status])}
-              </AppText>
-            </View>
+            <StateBadge label={t(bookingStatusTranslationKeys[booking.status])}
+              tone={lifecycleBadgeTone(bookingLifecycleSemantic(booking.status))} compact />
           </View>
           <AppText style={styles.service}>{serviceLabel}</AppText>
           <AppText style={styles.meta}>{formatBookingDateTime(booking.date, booking.time, localeFor(language), t('asap'))}</AppText>
@@ -224,10 +222,6 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   grow: { flex: 1, gap: 4 },
   between: { flexDirection: 'row', justifyContent: 'space-between', gap: spacing.sm },
   name: { fontSize: 16, fontWeight: typography.semibold, flexShrink: 1 },
-  badge: { maxWidth: 120, paddingHorizontal: 7, paddingVertical: 4, borderRadius: radii.pill, backgroundColor: colors.successSoft },
-  badgeText: { fontSize: 9, color: colors.success, textAlign: 'center' },
-  cancelBadge: { backgroundColor: colors.errorSoft },
-  cancelText: { color: colors.error },
   service: { fontSize: 13, color: colors.textSecondary },
   meta: { fontSize: 11, color: colors.textMuted },
   bottom: { flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.md },

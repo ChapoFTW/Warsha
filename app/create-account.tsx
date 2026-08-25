@@ -12,6 +12,7 @@ import { useThemedStyles } from '@/src/appearance/appearance-context';
 import { useAuth } from '@/src/auth/auth-context';
 import { authMessageKey } from '@/src/auth/auth-errors';
 import { isValidCustomerEmail } from '@/src/auth/auth-identifier';
+import { authOutcomeText } from '@/src/auth/auth-outcome-copy';
 import { useAuthText } from '@/src/auth/auth-translations';
 import { isValidPhone, normalizePhone } from '@/src/auth/phone-auth';
 import { useLocalization } from '@/src/i18n/localization';
@@ -335,9 +336,28 @@ export default function CreateAccount() {
         {/* One result, one element. These are branches of a single value, so
             a pending notice and a failure cannot both be on screen. */}
         {pendingConfirmation ? (
-          <AppText accessibilityRole="alert" style={styles.notice}>
-            {at('customerConfirmationPending')}
-          </AppText>
+          <View style={styles.pendingCard}>
+            <AppText accessibilityRole="header" style={styles.pendingTitle}>
+              {authOutcomeText(language, 'confirmationPendingTitle')}
+            </AppText>
+            <AppText accessibilityRole="alert" style={styles.notice}>
+              {authOutcomeText(language, 'confirmationPendingBody')}
+            </AppText>
+            <BrandButton
+              label={authOutcomeText(language, 'signInAction')}
+              onPress={() => router.replace('/sign-in')}
+            />
+            <BrandButton
+              label={authOutcomeText(language, 'forgotPasswordAction')}
+              variant="secondary"
+              onPress={() => router.replace('/forgot-password')}
+            />
+            <BrandButton
+              label={authOutcomeText(language, 'resendConfirmationAction')}
+              variant="ghost"
+              onPress={() => router.replace('/resend-confirmation')}
+            />
+          </View>
         ) : errorKey ? (
           <AppText accessibilityRole="alert" style={styles.error}>{t(errorKey)}</AppText>
         ) : null}
@@ -387,4 +407,6 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   form: { width: '100%', maxWidth: 420, gap: spacing.md },
   error: { color: colors.errorText, textAlign: 'center', maxWidth: 420 },
   notice: { color: colors.successText, textAlign: 'center', maxWidth: 420 },
+  pendingCard: { width: '100%', maxWidth: 420, gap: spacing.md },
+  pendingTitle: { fontSize: 20, fontWeight: typography.bold, textAlign: 'center', color: colors.textPrimary },
 });

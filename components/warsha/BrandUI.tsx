@@ -116,10 +116,11 @@ export function BrandTextField({
   );
 }
 
-type BadgeTone = 'neutral' | 'success' | 'warning' | 'error';
+type BadgeTone = 'neutral' | 'info' | 'success' | 'warning' | 'error';
 
 const badgeIcon: Record<BadgeTone, ComponentProps<typeof MaterialIcons>['name']> = {
   neutral: 'shield',
+  info: 'info-outline',
   success: 'verified',
   warning: 'info-outline',
   error: 'error-outline',
@@ -141,6 +142,8 @@ export function StateBadge({
   const { isRTL } = useLocalization();
   const ink = tone === 'success'
     ? colors.success
+    : tone === 'info'
+      ? colors.informationText
     : tone === 'warning'
       ? colors.warning
       : tone === 'error'
@@ -152,7 +155,7 @@ export function StateBadge({
       accessibilityLabel={label}
       style={[styles.badge, styles[`badge_${tone}`], compact && styles.badgeCompact, isRTL && styles.reverse]}>
       <MaterialIcons name={icon} size={compact ? 13 : 15} color={ink} />
-      <AppText numberOfLines={1} style={[styles.badgeLabel, compact && styles.badgeLabelCompact, { color: ink }]}>{label}</AppText>
+      <AppText style={[styles.badgeLabel, compact && styles.badgeLabelCompact, { color: ink }]}>{label}</AppText>
     </View>
   );
 }
@@ -246,6 +249,7 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
     borderWidth: 1,
   },
   badge_neutral: { backgroundColor: colors.surfaceElevated, borderColor: colors.border },
+  badge_info: { backgroundColor: colors.informationBackground, borderColor: colors.informationBorder },
   badge_success: { backgroundColor: colors.successSoft, borderColor: colors.successBorder },
   badge_warning: { backgroundColor: colors.warningSoft, borderColor: colors.warningBorder },
   badge_error: { backgroundColor: colors.errorSoft, borderColor: colors.errorBorder },

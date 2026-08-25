@@ -8,6 +8,12 @@ import { arrivedBy } from '@/lib/auth-callback';
 import { finishPasswordRecovery, updatePassword, type PasswordUpdateFailure } from '@/lib/auth-actions';
 import { supabase } from '@/lib/supabase';
 import { useAppLocale } from '@/lib/use-app-locale';
+import { authOutcomeCopy } from '@/src/auth/auth-outcome-copy';
+import {
+  classifyAuthCallbackFailure,
+  recoveryFailurePresentation,
+  type AuthCallbackFailure,
+} from '@/src/auth/email-confirmation';
 import { passwordRequirements } from '@/src/auth/password-policy';
 
 import type { Route } from 'next';
@@ -48,17 +54,20 @@ const FAILURE_COPY: Record<PasswordUpdateFailure, string> = {
   server: 'errServer',
 };
 
-type Status = 'checking' | 'ready' | 'invalid' | 'done';
+type Status =
+  | { status: 'checking' | 'ready' | 'done' }
+  | { status: 'invalid'; failure: AuthCallbackFailure };
 
 export default function ResetPasswordPage() {
   const locale = useAppLocale();
   const words = appCopy[locale] as Record<string, string>;
+  const authWords = authOutcomeCopy[locale];
 
   // Read once. The snapshot is module scope, so this is stable across renders
   // and unaffected by anything supabase-js does to the address bar.
   const arrived = useMemo(() => arrivedBy(), []);
 
-  const [status, setStatus] = useState<Status>('checking');
+  const [status, setStatus] = useState<Status>({ status: 'checking' });
   const [password, setPassword] = useState('');
   const [confirmation, setConfirmation] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -69,8 +78,8 @@ export default function ResetPasswordPage() {
   useEffect(() => {
     let active = true;
 
-    if (arrived.kind !== 'recovery' || arrived.refused) {
-      setStatus('invalid');
+    if (arrived.kind !== 'recovery' || arrived.failure) {
+      setStatus({ status: 'invalid', failure: arrived.failure ?? 'invalid' });
       return () => { active = false; };
     }
 
@@ -84,9 +93,16 @@ export default function ResetPasswordPage() {
       try {
         const { data } = await client.auth.getSession();
         if (!active) return;
-        setStatus(data.session ? 'ready' : 'invalid');
-      } catch {
-        if (active) setStatus('invalid');
+        setStatus(data.session
+          ? { status: 'ready' }
+          : { status: 'invalid', failure: 'session_mismatch' });
+      } catch (error) {
+        if (active) setStatus({
+          status: 'invalid',
+          failure: classifyAuthCallbackFailure(
+            error as { code?: unknown; status?: unknown; name?: unknown; message?: unknown },
+          ),
+        });
       }
     })();
 
@@ -94,7 +110,7 @@ export default function ResetPasswordPage() {
     // deferred a tick past the session being saved, so this can only ever
     // confirm what the await above already found — never contradict it.
     const { data: subscription } = client.auth.onAuthStateChange((event, session) => {
-      if (active && event === 'PASSWORD_RECOVERY' && session) setStatus('ready');
+      if (active && event === 'PASSWORD_RECOVERY' && session) setStatus({ status: 'ready' });
     });
 
     return () => {
@@ -122,27 +138,30 @@ export default function ResetPasswordPage() {
     setPassword('');
     setConfirmation('');
     await finishPasswordRecovery();
-    setStatus('done');
+    setStatus({ status: 'done' });
     setBusy(false);
   };
 
-  if (status === 'checking') {
+  if (status.status === 'checking') {
     return <AuthStateCard locale={locale} title={words.resetTitle} busy />;
   }
 
-  if (status === 'invalid') {
+  if (status.status === 'invalid') {
+    const presentation = recoveryFailurePresentation(status.failure);
     return (
       <AuthStateCard
         locale={locale}
-        title={words.resetLinkInvalidTitle}
-        body={words.resetLinkInvalidBody}
-        action={words.requestNewReset}
-        href="/forgot-password"
+        title={authWords[presentation.titleKey]}
+        body={authWords[presentation.bodyKey]}
+        actions={[
+          { label: authWords.forgotPasswordAction, href: '/forgot-password' },
+          { label: authWords.signInAction, href: '/sign-in' },
+        ]}
       />
     );
   }
 
-  if (status === 'done') {
+  if (status.status === 'done') {
     return (
       <AuthStateCard
         locale={locale}

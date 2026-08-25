@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { AppShell } from '@/components/app-shell';
+import { LifecycleBadge } from '@/components/lifecycle-badge';
 import { appCopy } from '@/lib/app-copy';
 import {
   classifyCustomerError,
@@ -14,14 +15,21 @@ import {
   type MarketplaceRequestDetail,
   type Quote,
   type QuoteSort,
+  parseServices,
+  type Service,
 } from '@/lib/customer';
 import { customerNav } from '@/lib/nav';
 import { intlLocale, type Locale } from '@/lib/preferences';
 import { supabase } from '@/lib/supabase';
 import { useAppLocale } from '@/lib/use-app-locale';
 import { formatMinor } from '@/src/payments/money';
-import { serviceCategoryLabel } from '@/src/i18n/service-labels';
-import { serviceCategoryTranslationKey } from '@/src/services/service-catalogue';
+import {
+  marketplaceRequestAcceptsQuoteActions,
+  marketplaceRequestIsTerminal,
+  marketplaceRequestStatusText,
+  requestLifecycleSemantic,
+} from '@/src/lifecycle/lifecycle-presentation';
+import { requestWorkLabel } from '@/src/marketplace-intelligence/request-work-label';
 
 import type { Route } from 'next';
 import styles from '@/components/product-surface.module.css';
@@ -62,25 +70,30 @@ const FAILURE_COPY: Record<CustomerFailure, string> = {
   failed: 'requestFailed',
 };
 
-type Row = { id: string; status: string; category_id: string; issue_description: string; created_at: string };
+type Row = { id: string; status: string; category_id: string; service_id: string | null; issue_description: string; created_at: string };
 
 export default function RequestsPage() {
   const locale = useAppLocale();
   const words = appCopy[locale] as Record<string, string>;
 
   const [rows, setRows] = useState<Row[] | null>(null);
+  const [services, setServices] = useState<Service[]>([]);
   const [failed, setFailed] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setFailed(false);
-    const { data, error } = await supabase()
-      .from('marketplace_requests')
-      .select('id,status,category_id,issue_description,created_at')
-      .order('created_at', { ascending: false })
-      .limit(50);
-    if (error) { setFailed(true); return; }
+    const client = supabase();
+    const [{ data, error }, { data: catalogData, error: catalogError }] = await Promise.all([
+      client.from('marketplace_requests')
+        .select('id,status,category_id,service_id,issue_description,created_at')
+        .order('created_at', { ascending: false })
+        .limit(50),
+      client.rpc('get_marketplace_catalog_v2'),
+    ]);
+    if (error || catalogError) { setFailed(true); return; }
     setRows((data ?? []) as Row[]);
+    setServices(parseServices(catalogData));
   }, []);
 
   useEffect(() => { void load(); }, [load]);
@@ -99,6 +112,7 @@ export default function RequestsPage() {
           requestId={openId}
           words={words}
           locale={locale}
+          services={services}
           onClose={() => setOpenId(null)}
           onChanged={load}
         />
@@ -125,12 +139,13 @@ export default function RequestsPage() {
                   {row.issue_description.slice(0, 90)}
                 </button>
                 <div className={styles.rowMeta}>
-                  <span className={styles.badge}>
-                    {words[`requestStatus_${row.status}`] ?? row.status}
-                  </span>
+                  <LifecycleBadge
+                    label={marketplaceRequestStatusText(locale, row.status)}
+                    semantic={requestLifecycleSemantic(row.status)}
+                  />
                   <span className={`${styles.badge} ${styles.workLabel}`}>
-                    {serviceCategoryLabel(
-                      serviceCategoryTranslationKey(row.category_id), locale, row.category_id)}
+                    {requestWorkLabel(
+                      { categoryId: row.category_id, serviceId: row.service_id }, services, locale)}
                   </span>
                   <time className={styles.when} dateTime={row.created_at}>
                     {formatDate(row.created_at, locale)}
@@ -149,12 +164,14 @@ function RequestDetail({
   requestId,
   words,
   locale,
+  services,
   onClose,
   onChanged,
 }: {
   requestId: string;
   words: Record<string, string>;
   locale: Locale;
+  services: Service[];
   onClose: () => void;
   onChanged: () => Promise<void>;
 }) {
@@ -247,7 +264,9 @@ function RequestDetail({
     );
   }
 
-  const live = !['cancelled', 'expired', 'converted_to_booking', 'closed'].includes(request.status);
+  const terminal = marketplaceRequestIsTerminal(request.status);
+  const activeQuoteSurface = marketplaceRequestAcceptsQuoteActions(request.status);
+  const live = !terminal;
   const selectionOpen = ['collecting_quotes', 'customer_reviewing'].includes(request.status)
     && Date.now() >= Date.parse(request.collectionNotBefore ?? '')
     && Date.now() < Date.parse(request.expiresAt ?? '');
@@ -260,17 +279,17 @@ function RequestDetail({
       </div>
 
       <div className={styles.rowMeta}>
-        <span className={styles.badge}>
-          {words[`requestStatus_${request.status}`] ?? request.status}
-        </span>
+        <LifecycleBadge
+          label={marketplaceRequestStatusText(locale, request.status)}
+          semantic={requestLifecycleSemantic(request.status)}
+        />
         {/* A request stores `category_id`. The copy catalogue is not keyed by id,
             so every lookup missed and fell through to the id itself: an Arabic
             customer reading their own request list was shown
             `water-heater-repair`. Resolved through the shared authority, which
             humanizes rather than ever surfacing a slug. */}
         <span className={`${styles.badge} ${styles.workLabel}`}>
-          {serviceCategoryLabel(
-            serviceCategoryTranslationKey(request.categoryId), locale, request.categoryId)}
+          {requestWorkLabel(request, services, locale)}
         </span>
         <span className={styles.badge}>
           {words[`schedule_${request.scheduleKind}`] ?? request.scheduleKind}
@@ -287,11 +306,11 @@ function RequestDetail({
             {[request.area.governorate, request.area.district].filter(Boolean).join(' · ') || '—'}
           </span>
         </div>
-        <div className={styles.fact}>
+        {!terminal ? <div className={styles.fact}>
           <span className={styles.factLabel}>{words.requestExpires}</span>
           <span className={styles.factValue}>{formatDate(request.expiresAt, locale, true)}</span>
-        </div>
-        {request.confirmationDeadlineAt ? (
+        </div> : null}
+        {!terminal && request.confirmationDeadlineAt ? (
           <div className={styles.fact}>
             <span className={styles.factLabel}>{words.requestConfirmBy}</span>
             <span className={styles.factValue}>
@@ -322,7 +341,7 @@ function RequestDetail({
         </p>
       ) : null}
 
-      <div className={styles.filters} style={{ marginTop: 18 }}>
+      {activeQuoteSurface ? <div className={styles.filters} style={{ marginTop: 18 }}>
         <label className={styles.field} style={{ flex: '0 1 240px', marginBottom: 0 }}>
           <span className={styles.label}>{words.requestSortBy}</span>
           <select
@@ -336,12 +355,14 @@ function RequestDetail({
             ))}
           </select>
         </label>
-      </div>
+      </div> : quotes?.length ? (
+        <h3 className={styles.sectionTitle} style={{ marginTop: 18 }}>{words.requestQuoteHistory}</h3>
+      ) : null}
 
       {quotes === null ? (
         <p className={styles.muted}>{words.loading}</p>
       ) : quotes.length === 0 ? (
-        <p className={styles.muted}>{words.requestNoQuotes}</p>
+        <p className={styles.muted}>{terminal ? words.requestNoQuotesClosed : words.requestNoQuotes}</p>
       ) : (
         <ul className={styles.list}>
           {quotes.map((quote) => (

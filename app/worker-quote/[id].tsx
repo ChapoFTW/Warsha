@@ -6,12 +6,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BrandLoadingMark as ActivityIndicator } from '@/components/warsha/BrandMark';
 import { ScreenHeader } from '@/components/warsha/ScreenHeader';
 import { AppText } from '@/components/warsha/Typography';
+import { StateBadge } from '@/components/warsha/BrandUI';
 import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
 import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
 import { useLocalization } from '@/src/i18n/localization';
 import { useMarketplaceIntelligence } from '@/src/marketplace-intelligence/marketplace-context';
 import { marketplaceRepository } from '@/src/marketplace-intelligence/marketplace-repository';
 import {
+  invitationStatusText,
   marketplacePaymentText,
   marketplaceScheduleText,
   requestWorkLabel,
@@ -19,6 +21,7 @@ import {
 } from '@/src/marketplace-intelligence/marketplace-translations';
 import { useMarketplaceData } from '@/src/data/marketplace-context';
 import type { QuoteInvitation, QuoteTerms } from '@/src/marketplace-intelligence/marketplace-types';
+import { invitationLifecycleSemantic, lifecycleBadgeTone } from '@/src/lifecycle/lifecycle-presentation';
 
 export default function WorkerQuoteDetail() {
   const colors = useThemeColors();
@@ -76,6 +79,8 @@ export default function WorkerQuoteDetail() {
     <ScreenHeader title={emergency ? mt('emergencyAccept') : mt('sendQuote')} />
     <ScrollView contentContainerStyle={[styles.content, isRTL && { direction: 'rtl' }]}>
       <View style={styles.card}>
+        <StateBadge label={invitationStatusText(language, invitation.status)}
+          tone={lifecycleBadgeTone(invitationLifecycleSemantic(invitation.status))} compact />
         <AppText style={styles.title}>{requestWorkLabel(invitation, catalogue, language)}</AppText>
         <AppText style={styles.copy}>{invitation.issueDescription}</AppText>
         <AppText style={styles.muted}>{invitation.area.district}, {invitation.area.governorate}</AppText>

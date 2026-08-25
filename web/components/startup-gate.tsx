@@ -36,7 +36,7 @@ import styles from './startup-gate.module.css';
 // belongs here beside sign-in. Leaving it out made the route unreachable: the
 // gate bounced every anonymous visitor to /sign-in, which is the same class of
 // defect as the admin origin's missing signed-out entry.
-const PUBLIC_APP_ROUTES = ['/sign-in', '/create-account', '/forgot-password', '/account/unavailable'];
+const PUBLIC_APP_ROUTES = ['/sign-in', '/create-account', '/forgot-password', '/resend-confirmation', '/account/unavailable'];
 
 /**
  * Routes the gate must never move anybody off, signed in or out.

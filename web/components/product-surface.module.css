@@ -94,6 +94,35 @@
 
 .badgeStrong { background: var(--brand); color: var(--brand-ink); border-color: transparent; }
 
+.lifecycleBadge { max-width: 100%; font-weight: 700; white-space: normal; overflow-wrap: anywhere; }
+.statusNeutral { background: var(--status-neutral-background); color: var(--text-secondary); }
+.statusActive {
+  background: var(--status-information-background);
+  border-color: var(--status-information-border);
+  color: var(--status-information-text);
+}
+.statusAttention {
+  background: var(--status-warning-background);
+  border-color: var(--status-warning-border);
+  color: var(--status-warning-text);
+}
+.statusConfirmed,
+.statusComplete {
+  background: var(--status-success-background);
+  border-color: var(--status-success-border);
+  color: var(--status-success-text);
+}
+.statusDestructive {
+  background: var(--status-error-background);
+  border-color: var(--status-error-border);
+  color: var(--status-error-text);
+}
+.statusExpired {
+  background: var(--status-neutral-background);
+  border-color: var(--border);
+  color: var(--text-muted);
+}
+
 /* Catalogue labels can be considerably longer in French. Status pills remain
    compact, while this opt-in variant wraps category/service words instead of
    forcing the row beyond the viewport. */

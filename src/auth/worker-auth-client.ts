@@ -41,7 +41,10 @@ async function responseCode(error: FunctionsError): Promise<string | null> {
  */
 const WORKER_AUTH_FAILURES: Record<string, AuthFailure> = {
   invalid_phone: 'authInvalidPhone',
-  phone_in_use: 'authPhoneInUse',
+  // Registration is public. Confirming that a submitted number belongs to an
+  // account would turn this endpoint into a phone-number enumeration oracle.
+  // The neutral state still suggests signing in or trying another number.
+  phone_in_use: 'authSignupPhoneUnavailable',
   invalid_credentials: 'authInvalidCredentials',
   rate_limited: 'authRateLimited',
   legal_acceptance_required: 'authOutdatedClient',

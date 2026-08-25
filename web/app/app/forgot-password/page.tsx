@@ -6,6 +6,7 @@ import { AuthScreen, authPanelStyles as styles } from '@/components/auth-panel';
 import { appCopy } from '@/lib/app-copy';
 import { requestPasswordReset, type ResetRequestFailure } from '@/lib/auth-actions';
 import { useAppLocale } from '@/lib/use-app-locale';
+import { authOutcomeCopy } from '@/src/auth/auth-outcome-copy';
 
 import type { Route } from 'next';
 
@@ -38,6 +39,7 @@ const FAILURE_COPY: Record<ResetRequestFailure, string> = {
 export default function ForgotPasswordPage() {
   const locale = useAppLocale();
   const words = appCopy[locale] as Record<string, string>;
+  const authWords = authOutcomeCopy[locale];
 
   const [email, setEmail] = useState('');
   const [busy, setBusy] = useState(false);
@@ -62,22 +64,22 @@ export default function ForgotPasswordPage() {
   if (sent) {
     return (
       <AuthScreen locale={locale} centred>
-        <h1 className={styles.title}>{words.forgotSentTitle}</h1>
-        <p className={styles.lead}>{words.forgotSentBody}</p>
+        <h1 className={styles.title}>{authWords.forgotSentTitle}</h1>
+        <p className={styles.lead}>{authWords.forgotSentBody}</p>
         <p className={styles.note}>{words.forgotSentAgain}</p>
-        <a className={styles.submit} href={'/sign-in' as Route}>{words.backToSignIn}</a>
+        <a className={styles.submit} href={'/sign-in' as Route}>{authWords.backToSignInAction}</a>
       </AuthScreen>
     );
   }
 
   return (
     <AuthScreen locale={locale}>
-      <h1 className={styles.title}>{words.forgotTitle}</h1>
-      <p className={styles.lead}>{words.forgotLead}</p>
+      <h1 className={styles.title}>{authWords.forgotTitle}</h1>
+      <p className={styles.lead}>{authWords.forgotBody}</p>
 
       <form className={styles.form} onSubmit={submit} noValidate>
         <div className={styles.field}>
-          <label className={styles.label} htmlFor="recovery-email">{words.signUpEmail}</label>
+          <label className={styles.label} htmlFor="recovery-email">{authWords.emailLabel}</label>
           <input
             id="recovery-email"
             className={styles.input}
@@ -97,12 +99,12 @@ export default function ForgotPasswordPage() {
         ) : null}
 
         <button className={styles.submit} type="submit" disabled={busy}>
-          {busy ? words.loading : words.forgotAction}
+          {busy ? authWords.loading : authWords.sendAction}
         </button>
       </form>
 
       <p className={styles.foot}>
-        <a className={styles.link} href={'/sign-in' as Route}>{words.backToSignIn}</a>
+        <a className={styles.link} href={'/sign-in' as Route}>{authWords.backToSignInAction}</a>
       </p>
       <p className={styles.note}>{words.forgotWorkerNote}</p>
     </AuthScreen>

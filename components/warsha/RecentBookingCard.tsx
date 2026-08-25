@@ -13,6 +13,8 @@ import { cataloguedServiceReferenceLabel } from '@/src/services/specific-service
 import { formatBookingDateTime, localeFor } from '@/src/utils/date-format';
 
 import { AppText } from './Typography';
+import { StateBadge } from './BrandUI';
+import { bookingLifecycleSemantic, lifecycleBadgeTone } from '@/src/lifecycle/lifecycle-presentation';
 
 export function RecentBookingCard() {
   const colors = useThemeColors();
@@ -36,10 +38,8 @@ export function RecentBookingCard() {
         <AppText style={styles.meta}>
           {serviceLabel} · {formatBookingDateTime(booking.date, booking.time, localeFor(language), t('asap'))}
         </AppText>
-        <View style={[styles.status, isRTL && styles.reverse]}>
-          <MaterialIcons name="schedule" size={14} color={colors.success} />
-          <AppText style={styles.statusText}>{t(bookingStatusTranslationKeys[booking.status])}</AppText>
-        </View>
+        <StateBadge label={t(bookingStatusTranslationKeys[booking.status])}
+          tone={lifecycleBadgeTone(bookingLifecycleSemantic(booking.status))} compact />
       </View>
       <View style={styles.button}>
         <MaterialIcons name={isRTL ? 'arrow-back' : 'arrow-forward'} size={20} color={colors.textPrimary} />
@@ -55,7 +55,5 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   info: { flex: 1, gap: 3 },
   name: { fontSize: 16, fontWeight: typography.semibold },
   meta: { fontSize: 12, color: colors.textMuted },
-  status: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3 },
-  statusText: { fontSize: 11, color: colors.success },
   button: { width: 38, height: 38, borderRadius: 14, backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
 });

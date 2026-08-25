@@ -54,6 +54,7 @@ export type AuthOperation =
   | 'phone-change-request'
   | 'phone-change-verify'
   | 'password-reset'
+  | 'confirmation-resend'
   | 'sign-out'
   | 'unknown';
 
@@ -118,11 +119,11 @@ export function classifyAuthFailure(error: unknown, operation: AuthOperation = '
   if (code === 'email_not_confirmed' || /email not confirmed/i.test(message)) return 'authEmailUnconfirmed';
   if (status === 429 || code.includes('rate_limit') || code.includes('over_request')) return 'authRateLimited';
   if (
-    operation === 'sign-up'
+    (operation === 'sign-up' || operation === 'confirmation-resend')
     && (code === 'email_address_not_authorized' || /email address not authorized/i.test(message))
   ) return 'authEmailDeliveryRestricted';
   if (
-    operation === 'sign-up'
+    (operation === 'sign-up' || operation === 'confirmation-resend')
     && (
       code === 'email_provider_disabled'
       || code === 'email_send_failed'
