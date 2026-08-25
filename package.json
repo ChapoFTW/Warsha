@@ -94,7 +94,8 @@
     "warsha:smoke": "node scripts/warsha-engineering.mjs smoke",
     "warsha:acceptance": "node scripts/warsha-engineering.mjs acceptance",
     "warsha:agent-handoff": "node scripts/warsha-engineering.mjs agent-handoff",
-    "test:specific-service-rendering": "node --no-warnings --experimental-strip-types scripts/specific-service-rendering.test.mts"
+    "test:specific-service-rendering": "node --no-warnings --experimental-strip-types scripts/specific-service-rendering.test.mts",
+    "test:request-creation": "node --no-warnings --experimental-strip-types scripts/request-creation-contract.test.mts"
   },
   "dependencies": {
     "@expo-google-fonts/cairo": "^0.4.2",
