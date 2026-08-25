@@ -21,7 +21,7 @@ import {
   type ServiceCategory,
 } from '@/lib/customer';
 import {
-  specificServiceLabel, specificServicesFor,
+  catalogueServiceLabel, orderedCatalogueServices,
 } from '@/src/services/specific-services';
 import { customerNav } from '@/lib/nav';
 import { supabase } from '@/lib/supabase';
@@ -92,16 +92,12 @@ export default function NewRequestPage() {
   // Scoped to the chosen category and ordered by the shared catalogue, so the
   // dropdown reads the same way on every platform rather than in whatever order
   // the server happened to return.
-  const orderedServices = useMemo(() => {
-    const forCategory = services.filter((service) => service.categoryId === categoryId);
-    const order = new Map(
-      specificServicesFor(categoryId).map((service, index) => [service.key, index]),
-    );
-    const rank = (service: Service) => service.translationKey
-      ? order.get(service.translationKey) ?? Number.MAX_SAFE_INTEGER
-      : Number.MAX_SAFE_INTEGER;
-    return forCategory.slice().sort((left, right) => rank(left) - rank(right));
-  }, [services, categoryId]);
+  //
+  // The derivation itself is shared. It used to live here, inline, and native
+  // grew the same control -- two copies of one product rule is how a fallback
+  // gets fixed on one surface and not the other.
+  const orderedServices = useMemo(
+    () => orderedCatalogueServices(services, categoryId), [services, categoryId]);
   const [addressId, setAddressId] = useState('');
   const [issue, setIssue] = useState('');
   const [notes, setNotes] = useState('');
@@ -256,8 +252,7 @@ export default function NewRequestPage() {
                 being shown for every service, which is the defect this fixes. */}
             {orderedServices.map((service) => (
               <option key={service.id} value={service.id}>
-                {(service.translationKey
-                  && specificServiceLabel(service.translationKey, locale)) || service.name}
+                {catalogueServiceLabel(service, locale)}
               </option>
             ))}
           </select>

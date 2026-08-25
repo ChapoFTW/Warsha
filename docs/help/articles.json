@@ -2,131 +2,1001 @@
   "schemaVersion": 1,
   "articles": [
     {
-      "id": "customer-getting-started", "audience": "customer", "locale": "en", "title": "Getting started as a customer", "summary": "Create an account, add an address, request work, compare quotes, and follow the job.", "version": 2, "lastReviewedDate": "2026-08-21", "features": ["auth", "onboarding", "discovery", "marketplace", "bookings"], "routes": ["/create-account", "/addresses", "/discover", "/requests", "/jobs"], "capabilities": [], "keywords": ["start", "signup", "book", "service", "quote"],
+      "id": "customer-getting-started",
+      "audience": "customer",
+      "locale": "en",
+      "title": "Getting started as a customer",
+      "summary": "Create an account, add an address, request work, compare quotes, and follow the job.",
+      "version": 2,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "auth",
+        "onboarding",
+        "discovery",
+        "marketplace",
+        "bookings"
+      ],
+      "routes": [
+        "/create-account",
+        "/addresses",
+        "/discover",
+        "/requests",
+        "/jobs"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "start",
+        "signup",
+        "book",
+        "service",
+        "quote"
+      ],
       "body": "## The usual journey\n\n1. Create a customer account with your name, email, Egyptian mobile number, and password.\n2. Confirm the email Warsha sends. Phone OTP is not part of registration.\n3. Add a service address and confirm its map pin.\n4. Find a service or post a request describing what you need.\n5. Review the quotes that workers submit. A quote is an offer, not a completed booking.\n6. Choose a worker and follow the job from My jobs.\n7. Use Support if something is unclear or goes wrong.\n\n## Good to know\n\nWorkers see only the address details needed for a booked job. Prices marked as estimates can change only through the product's approval flow.\n\nWhen you create an account with an email address, Warsha sends a confirmation link. Opening it on the same device returns you to Warsha and tells you plainly whether the address was confirmed. Confirmation links are single-use and expire, so if you open an old one — or one you have already used — Warsha says so and offers a way back to sign in; request a new email and use only the newest link."
     },
     {
-      "id": "customer-getting-started", "audience": "customer", "locale": "ar", "title": "ابدأ كعميل", "summary": "اعمل حساب، ضيف عنوان، اطلب خدمة، قارن العروض، وتابع الشغل.", "version": 2, "lastReviewedDate": "2026-08-21", "features": ["auth", "onboarding", "discovery", "marketplace", "bookings"], "routes": ["/create-account", "/addresses", "/discover", "/requests", "/jobs"], "capabilities": [], "keywords": ["ابدأ", "حساب", "حجز", "خدمة", "عرض"],
+      "id": "customer-getting-started",
+      "audience": "customer",
+      "locale": "ar",
+      "title": "ابدأ كعميل",
+      "summary": "اعمل حساب، ضيف عنوان، اطلب خدمة، قارن العروض، وتابع الشغل.",
+      "version": 2,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "auth",
+        "onboarding",
+        "discovery",
+        "marketplace",
+        "bookings"
+      ],
+      "routes": [
+        "/create-account",
+        "/addresses",
+        "/discover",
+        "/requests",
+        "/jobs"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "ابدأ",
+        "حساب",
+        "حجز",
+        "خدمة",
+        "عرض"
+      ],
       "body": "## خطواتك المعتادة\n\n1. اعمل حساب عميل باسمك وبريدك الإلكتروني ورقم موبايل مصري وكلمة سر.\n2. أكّد البريد من الرسالة اللي ورشة بتبعتها. مفيش كود SMS وقت التسجيل.\n3. ضيف عنوان الخدمة وأكّد مكانه على الخريطة.\n4. دور على خدمة أو انشر طلب واشرح محتاج إيه.\n5. راجع عروض الصنايعية. العرض لسه مش حجز مكتمل.\n6. اختار صنايعي وتابع الشغل من «شغلي».\n7. استخدم الدعم لو حاجة مش واضحة أو حصلت مشكلة.\n\n## مهم تعرف\n\nالصنايعي بيشوف تفاصيل العنوان اللازمة للشغل المحجوز بس. السعر التقديري ما بيتغيرش إلا من خلال خطوات الموافقة داخل ورشة.\n\nلما تعمل حساب بإيميل، ورشة بتبعت لك لينك تأكيد. لما تفتحه على نفس الجهاز بيرجّعك لورشة ويقول لك بوضوح إذا كان الإيميل اتأكد ولا لأ. لينكات التأكيد بتستخدم مرة واحدة وبتنتهي صلاحيتها، فلو فتحت لينك قديم أو لينك استخدمته قبل كده، ورشة هتقول لك وهتديك طريق ترجع بيه لتسجيل الدخول؛ اطلب إيميل جديد واستخدم أحدث لينك بس."
     },
     {
-      "id": "customer-addresses-location", "audience": "customer", "locale": "en", "title": "Addresses and location", "summary": "Save a clear service address without losing the exact map pin.", "version": 2, "lastReviewedDate": "2026-08-21", "features": ["addresses", "location"], "routes": ["/addresses", "/onboarding/address"], "capabilities": [], "keywords": ["address", "map", "pin", "location", "permission", "home", "work"],
+      "id": "customer-addresses-location",
+      "audience": "customer",
+      "locale": "en",
+      "title": "Addresses and location",
+      "summary": "Save a clear service address without losing the exact map pin.",
+      "version": 2,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "addresses",
+        "location"
+      ],
+      "routes": [
+        "/addresses",
+        "/onboarding/address"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "address",
+        "map",
+        "pin",
+        "location",
+        "permission",
+        "home",
+        "work"
+      ],
       "body": "## Add an address\n\nGive the address a familiar name such as Home or Work. Search for an address or use your current location when those options are available. Warsha keeps the exact coordinates separately from the editable address text.\n\nFill in the street and governorate. Building, floor, apartment, landmark, and worker directions are optional unless the screen says otherwise. Confirm the pin before booking.\n\n## If current location fails\n\nAllow location access in your browser or device settings, make sure location services are on, and try again. If Warsha gets coordinates but cannot find an address, it says so and lets you search or edit the address manually.\n\nChanging the words in the form does not silently move the saved pin.\n\nGovernorate and area are chosen from Egypt's official administrative list rather than typed, so the address you save matches the one workers and support see. Choosing a governorate shows only its own areas, and changing the governorate clears an area that no longer belongs to it.\n\nLocation is its own required step. Warsha needs the exact spot so the worker can reach you, so an address cannot be saved until the location is confirmed by searching for the address or using your current location. If saving is unavailable the form says which step is outstanding. If location permission is blocked, allow it for the site in your browser settings, or search for the address instead. Address name, building, floor, apartment, nearby landmark and notes for the worker are all optional and can be left empty."
     },
     {
-      "id": "customer-addresses-location", "audience": "customer", "locale": "ar", "title": "العناوين والموقع", "summary": "احفظ عنوان خدمة واضح من غير ما تفقد مكان الدبوس الدقيق.", "version": 2, "lastReviewedDate": "2026-08-21", "features": ["addresses", "location"], "routes": ["/addresses", "/onboarding/address"], "capabilities": [], "keywords": ["عنوان", "خريطة", "دبوس", "موقع", "إذن", "البيت", "الشغل"],
+      "id": "customer-addresses-location",
+      "audience": "customer",
+      "locale": "ar",
+      "title": "العناوين والموقع",
+      "summary": "احفظ عنوان خدمة واضح من غير ما تفقد مكان الدبوس الدقيق.",
+      "version": 2,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "addresses",
+        "location"
+      ],
+      "routes": [
+        "/addresses",
+        "/onboarding/address"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "عنوان",
+        "خريطة",
+        "دبوس",
+        "موقع",
+        "إذن",
+        "البيت",
+        "الشغل"
+      ],
       "body": "## ضيف عنوان\n\nسمّي العنوان باسم مألوف زي «البيت» أو «الشغل». دور على عنوان أو استخدم موقعك الحالي لما الاختيارات دي تكون متاحة. ورشة بتحفظ الإحداثيات الدقيقة لوحدها بعيد عن كلام العنوان اللي تقدر تعدله.\n\nاكتب الشارع والمحافظة. المبنى والدور والشقة والعلامة المميزة وتعليمات الوصول اختيارية إلا لو الشاشة قالت غير كده. أكّد الدبوس قبل الحجز.\n\n## لو الموقع الحالي ما اشتغلش\n\nاسمح لورشة بالموقع من إعدادات المتصفح أو الجهاز، واتأكد إن خدمة الموقع شغالة، وجرّب تاني. لو ورشة جابت الإحداثيات بس ما عرفتش العنوان، هتقولك بوضوح وتقدر تدور أو تعدل العنوان بنفسك.\n\nتعديل كلام العنوان ما بيحرّكش الدبوس المحفوظ من غير ما تعرف.\n\nالمحافظة والمنطقة بتتختار من القائمة الإدارية الرسمية لمصر مش بتتكتب، عشان العنوان اللي بتحفظه يبقى مطابق للي الصنايعي والدعم بيشوفوه. لما تختار محافظة بتظهر مناطقها هي بس، ولو غيّرت المحافظة بتتشال المنطقة اللي مبقتش تابعة ليها.\n\nالموقع خطوة مطلوبة لوحدها. ورشة محتاجة المكان بالظبط عشان الصنايعي يوصلك، فمش هينفع تحفظ عنوان قبل ما تأكّد الموقع بالبحث عن العنوان أو باستخدام موقعك الحالي. لو الحفظ مش متاح، الفورم بيقول لك الخطوة الناقصة. ولو إذن الموقع متمنوع، اسمح بيه للموقع من إعدادات المتصفح، أو ابحث عن العنوان بدل كده. اسم العنوان والمبنى والدور والشقة والعلامة المميزة وملاحظات الصنايعي كلها اختيارية وممكن تسيبها فاضية."
     },
     {
-      "id": "customer-requests-quotes-jobs", "audience": "customer", "locale": "en", "title": "Requests, quotes, and jobs", "summary": "Understand what happens from posting a request to completing or cancelling a job.", "version": 2, "lastReviewedDate": "2026-08-25", "features": ["marketplace", "quotes", "bookings", "payments", "disputes"], "routes": ["/requests/new", "/requests", "/jobs"], "capabilities": [], "keywords": ["request", "quote", "worker", "job", "cancel", "dispute"],
-      "body": "## Request and quotes\n\nDescribe the problem, choose the approximate area and timing, and send the request. Matching workers can submit one quote and revise it while the request allows changes. Compare the amount, timing, message, materials, payment methods, rating, and verification information shown.\n\n## Job\n\nAccepting a quote creates or advances the authoritative booking. Follow its status in My jobs. Schedule changes, extra work, completion, cancellation, and disputes use their own confirmation steps; a message alone does not change the booking.\n\nIf a worker cancels or does not arrive, use the actions shown on that job or contact Support. The job stays in history so both sides can understand what happened.\n\nService types are shown by their name in your language — Electrical, Plumbing, Satellite and TV installation — in English, Arabic and French. After choosing one you can narrow it further with a specific service, such as a blocked drain or a socket installation; that field is optional, and \"Any service in this category\" means you have not narrowed it and no professional is excluded. The names you see are display labels; the category and the specific service are recorded the same way whichever language you use, so switching language never changes what you requested."
+      "id": "customer-requests-quotes-jobs",
+      "audience": "customer",
+      "locale": "en",
+      "title": "Requests, quotes, and jobs",
+      "summary": "Understand what happens from posting a request to completing or cancelling a job.",
+      "version": 3,
+      "lastReviewedDate": "2026-08-25",
+      "features": [
+        "marketplace",
+        "quotes",
+        "bookings",
+        "payments",
+        "disputes"
+      ],
+      "routes": [
+        "/requests/new",
+        "/requests",
+        "/jobs"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "request",
+        "quote",
+        "worker",
+        "job",
+        "cancel",
+        "dispute"
+      ],
+      "body": "## Request and quotes\n\nDescribe the problem, choose the approximate area and timing, and send the request. Matching workers can submit one quote and revise it while the request allows changes. Compare the amount, timing, message, materials, payment methods, rating, and verification information shown.\n\n## Job\n\nAccepting a quote creates or advances the authoritative booking. Follow its status in My jobs. Schedule changes, extra work, completion, cancellation, and disputes use their own confirmation steps; a message alone does not change the booking.\n\nIf a worker cancels or does not arrive, use the actions shown on that job or contact Support. The job stays in history so both sides can understand what happened.\n\nService types are shown by their name in your language — Electrical, Plumbing, Satellite and TV installation — in English, Arabic and French. After choosing one you can narrow it further with a specific service, such as a blocked drain or a socket installation; that field is optional, and \"Any service in this category\" means you have not narrowed it and no professional is excluded. It works the same way on the website and in the Android and iOS apps. The names you see are display labels; the category and the specific service are recorded the same way whichever language you use, so switching language never changes what you requested."
     },
     {
-      "id": "customer-requests-quotes-jobs", "audience": "customer", "locale": "ar", "title": "الطلبات والعروض والشغل", "summary": "افهم اللي بيحصل من نشر الطلب لحد اكتمال الشغل أو إلغائه.", "version": 2, "lastReviewedDate": "2026-08-25", "features": ["marketplace", "quotes", "bookings", "payments", "disputes"], "routes": ["/requests/new", "/requests", "/jobs"], "capabilities": [], "keywords": ["طلب", "عرض", "صنايعي", "شغل", "إلغاء", "خلاف"],
-      "body": "## الطلب والعروض\n\nاشرح المشكلة، واختار المنطقة التقريبية والميعاد، وابعت الطلب. الصنايعية المطابقين يقدروا يبعتوا عرض واحد ويعدلوه طول ما الطلب بيسمح. قارن المبلغ والميعاد والرسالة والخامات وطرق الدفع والتقييم والتوثيق الظاهر.\n\n## الشغل\n\nقبول العرض بيعمل أو يحدّث الحجز الرسمي. تابع حالته من «شغلي». تغيير الميعاد والشغل الإضافي والإكمال والإلغاء والخلافات ليهم خطوات تأكيد خاصة؛ الرسالة لوحدها ما بتغيرش الحجز.\n\nلو الصنايعي لغى أو ما وصلش، استخدم الاختيارات الظاهرة في الشغل أو كلم الدعم. الشغل بيفضل في السجل عشان الطرفين يعرفوا اللي حصل.\n\nأنواع الخدمة بتظهر باسمها بلغتك — كهرباء، سباكة، تركيب دش وتلفزيون — بالعربي والإنجليزي والفرنسي. بعد ما تختار النوع تقدر تحدّد أكتر بخدمة معيّنة، زي مواسير مسدودة أو تركيب بريزة؛ الخانة دي اختيارية، و«أي خدمة في الفئة دي» معناها إنك ماحددتش ومفيش صنايعي بيتستبعد. الاسم اللي بتشوفه للعرض بس؛ الخدمة نفسها بتتسجّل بنفس الطريقة مهما كانت لغتك، فتغيير اللغة عمره ما بيغيّر اللي طلبته."
+      "id": "customer-requests-quotes-jobs",
+      "audience": "customer",
+      "locale": "ar",
+      "title": "الطلبات والعروض والشغل",
+      "summary": "افهم اللي بيحصل من نشر الطلب لحد اكتمال الشغل أو إلغائه.",
+      "version": 3,
+      "lastReviewedDate": "2026-08-25",
+      "features": [
+        "marketplace",
+        "quotes",
+        "bookings",
+        "payments",
+        "disputes"
+      ],
+      "routes": [
+        "/requests/new",
+        "/requests",
+        "/jobs"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "طلب",
+        "عرض",
+        "صنايعي",
+        "شغل",
+        "إلغاء",
+        "خلاف"
+      ],
+      "body": "## الطلب والعروض\n\nاشرح المشكلة، واختار المنطقة التقريبية والميعاد، وابعت الطلب. الصنايعية المطابقين يقدروا يبعتوا عرض واحد ويعدلوه طول ما الطلب بيسمح. قارن المبلغ والميعاد والرسالة والخامات وطرق الدفع والتقييم والتوثيق الظاهر.\n\n## الشغل\n\nقبول العرض بيعمل أو يحدّث الحجز الرسمي. تابع حالته من «شغلي». تغيير الميعاد والشغل الإضافي والإكمال والإلغاء والخلافات ليهم خطوات تأكيد خاصة؛ الرسالة لوحدها ما بتغيرش الحجز.\n\nلو الصنايعي لغى أو ما وصلش، استخدم الاختيارات الظاهرة في الشغل أو كلم الدعم. الشغل بيفضل في السجل عشان الطرفين يعرفوا اللي حصل.\n\nأنواع الخدمة بتظهر باسمها بلغتك — كهرباء، سباكة، تركيب دش وتلفزيون — بالعربي والإنجليزي والفرنسي. بعد ما تختار النوع تقدر تحدّد أكتر بخدمة معيّنة، زي مواسير مسدودة أو تركيب بريزة؛ الخانة دي اختيارية، و«أي خدمة في الفئة دي» معناها إنك ماحددتش ومفيش صنايعي بيتستبعد. الاسم اللي بتشوفه للعرض بس؛ الخدمة نفسها بتتسجّل بنفس الطريقة مهما كانت لغتك، فتغيير اللغة عمره ما بيغيّر اللي طلبته.\n\nأنواع الخدمة بتظهر باسمها بلغتك. بعد ما تختار النوع تقدر تحدد خدمة معينة زي ماسورة مسدودة أو تركيب بريزة، والحقل ده اختياري: «أي خدمة في النوع ده» معناها إنك ما حددتش ومحدش من الصنايعية مستبعد. الأسماء اللي بتشوفها للعرض بس؛ النوع والخدمة بيتسجلوا بنفس الشكل مهما كانت لغتك، فتغيير اللغة عمره ما بيغير طلبك."
     },
     {
-      "id": "customer-account-security", "audience": "customer", "locale": "en", "title": "Account, security, and preferences", "summary": "Sign in, recover your password, choose language and appearance, and manage privacy.", "version": 1, "lastReviewedDate": "2026-08-24", "features": ["auth", "password_recovery", "preferences", "privacy", "legal"], "routes": ["/sign-in", "/forgot-password", "/account", "/privacy", "/legal"], "capabilities": [], "keywords": ["password", "email", "phone", "language", "dark", "privacy", "delete"],
+      "id": "customer-account-security",
+      "audience": "customer",
+      "locale": "en",
+      "title": "Account, security, and preferences",
+      "summary": "Sign in, recover your password, choose language and appearance, and manage privacy.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-24",
+      "features": [
+        "auth",
+        "password_recovery",
+        "preferences",
+        "privacy",
+        "legal"
+      ],
+      "routes": [
+        "/sign-in",
+        "/forgot-password",
+        "/account",
+        "/privacy",
+        "/legal"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "password",
+        "email",
+        "phone",
+        "language",
+        "dark",
+        "privacy",
+        "delete"
+      ],
       "body": "Customers sign in with email and password. Use Forgot password to request a recovery link; Warsha gives the same safe response whether or not an address is registered. Never share a password or recovery link.\n\nLanguage and Light, Dark, or System appearance follow your saved preference where available. On the web both sit at the foot of the page, under Preferences; in the admin console they are at the bottom of the sidebar, and on an account entry screen below the form. In the app they are in the header. Arabic uses right-to-left layout.\n\nThe Privacy Center explains deactivation, data export, and governed deletion. Deactivation is reversible and does not delete history. A deletion request can be blocked by active work, financial retention, a dispute, or a legal hold; the screen reports the real state."
     },
     {
-      "id": "customer-account-security", "audience": "customer", "locale": "ar", "title": "الحساب والأمان والتفضيلات", "summary": "سجّل الدخول، استرجع كلمة السر، واختار اللغة والمظهر وتحكم في الخصوصية.", "version": 1, "lastReviewedDate": "2026-08-24", "features": ["auth", "password_recovery", "preferences", "privacy", "legal"], "routes": ["/sign-in", "/forgot-password", "/account", "/privacy", "/legal"], "capabilities": [], "keywords": ["كلمة السر", "البريد", "الموبايل", "اللغة", "داكن", "خصوصية", "حذف"],
+      "id": "customer-account-security",
+      "audience": "customer",
+      "locale": "ar",
+      "title": "الحساب والأمان والتفضيلات",
+      "summary": "سجّل الدخول، استرجع كلمة السر، واختار اللغة والمظهر وتحكم في الخصوصية.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-24",
+      "features": [
+        "auth",
+        "password_recovery",
+        "preferences",
+        "privacy",
+        "legal"
+      ],
+      "routes": [
+        "/sign-in",
+        "/forgot-password",
+        "/account",
+        "/privacy",
+        "/legal"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "كلمة السر",
+        "البريد",
+        "الموبايل",
+        "اللغة",
+        "داكن",
+        "خصوصية",
+        "حذف"
+      ],
       "body": "العميل بيسجل الدخول بالبريد الإلكتروني وكلمة السر. استخدم «نسيت كلمة السر» عشان تطلب رابط استرجاع؛ ورشة بتدي نفس الرد الآمن سواء البريد مسجل أو لأ. ما تشاركش كلمة السر أو رابط الاسترجاع مع حد.\n\nاختيار اللغة والمظهر فاتح أو داكن أو حسب الجهاز بيتحفظ لما يكون متاح. على الويب الاتنين في آخر الصفحة تحت «التفضيلات»؛ وفي لوحة الإدارة في آخر القائمة الجانبية، وفي شاشات الدخول تحت النموذج. وفي التطبيق موجودين في أعلى الشاشة. العربي بيظهر من اليمين للشمال.\n\nمركز الخصوصية بيشرح إيقاف الحساب مؤقتًا وتنزيل البيانات وطلب الحذف المنظم. الإيقاف قابل للرجوع ومابيحذفش التاريخ. طلب الحذف ممكن يتوقف لو فيه شغل نشط أو حفظ مالي أو خلاف أو احتفاظ قانوني، والشاشة هتقول الحالة الحقيقية."
     },
     {
-      "id": "customer-support-faq", "audience": "customer", "locale": "en", "title": "Notifications, support, and common questions", "summary": "Know where updates appear and how to get help safely.", "version": 1, "lastReviewedDate": "2026-08-21", "features": ["notifications", "support"], "routes": ["/notifications", "/support", "/help"], "capabilities": [], "keywords": ["notification", "support", "reply", "case", "reset", "address"],
+      "id": "customer-support-faq",
+      "audience": "customer",
+      "locale": "en",
+      "title": "Notifications, support, and common questions",
+      "summary": "Know where updates appear and how to get help safely.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "notifications",
+        "support"
+      ],
+      "routes": [
+        "/notifications",
+        "/support",
+        "/help"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "notification",
+        "support",
+        "reply",
+        "case",
+        "reset",
+        "address"
+      ],
       "body": "## Notifications\n\nWarsha records important account, request, job, payment, and security updates in Notifications. Delivery to an external channel can fail, so the in-product record is the reliable place to check.\n\n## Support\n\nSearch Help first. If the answer is not there, open a support case with a short subject and the useful facts. Do not send passwords, full payment credentials, or identity-document contents in a support message. Replies and status changes stay with the case.\n\n## Common questions\n\n- **Can I change an address?** Yes. Edit the text and confirm the location required by the flow.\n- **When do I choose a worker?** After reviewing the quotes available for your request.\n- **How do I reset my password?** Use Forgot password on Sign in.\n- **How do I delete my account?** Start in the Privacy Center; Warsha will show any blockers."
     },
     {
-      "id": "customer-support-faq", "audience": "customer", "locale": "ar", "title": "الإشعارات والدعم والأسئلة الشائعة", "summary": "اعرف التحديثات بتظهر فين وإزاي تطلب مساعدة بأمان.", "version": 1, "lastReviewedDate": "2026-08-21", "features": ["notifications", "support"], "routes": ["/notifications", "/support", "/help"], "capabilities": [], "keywords": ["إشعار", "دعم", "رد", "حالة", "كلمة السر", "عنوان"],
+      "id": "customer-support-faq",
+      "audience": "customer",
+      "locale": "ar",
+      "title": "الإشعارات والدعم والأسئلة الشائعة",
+      "summary": "اعرف التحديثات بتظهر فين وإزاي تطلب مساعدة بأمان.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "notifications",
+        "support"
+      ],
+      "routes": [
+        "/notifications",
+        "/support",
+        "/help"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "إشعار",
+        "دعم",
+        "رد",
+        "حالة",
+        "كلمة السر",
+        "عنوان"
+      ],
       "body": "## الإشعارات\n\nورشة بيسجل تحديثات الحساب والطلبات والشغل والدفع والأمان المهمة في الإشعارات. التوصيل لقناة خارجية ممكن يفشل، فالسجل جوه ورشة هو المكان الموثوق للمراجعة.\n\n## الدعم\n\nدور في المساعدة الأول. لو مالقيتش الإجابة، افتح حالة دعم بعنوان قصير واكتب التفاصيل المفيدة. ما تبعتش كلمة السر أو بيانات دفع كاملة أو محتوى مستندات الهوية في رسالة دعم. الردود وتغييرات الحالة بتفضل محفوظة مع الحالة.\n\n## أسئلة شائعة\n\n- **أقدر أغير العنوان؟** أيوه. عدل الكلام وأكّد الموقع اللي الخطوة محتاجاه.\n- **إمتى أختار الصنايعي؟** بعد ما تراجع العروض المتاحة لطلبك.\n- **أرجع كلمة السر إزاي؟** استخدم «نسيت كلمة السر» من تسجيل الدخول.\n- **أحذف حسابي إزاي؟** ابدأ من مركز الخصوصية، وورشة هيقولك لو فيه حاجة مانعة."
     },
     {
-      "id": "worker-getting-started", "audience": "worker", "locale": "en", "title": "Getting started as a worker", "summary": "Register with phone and password, finish onboarding, and wait for governed approval.", "version": 1, "lastReviewedDate": "2026-08-21", "features": ["worker_auth", "worker_onboarding", "worker_vetting"], "routes": ["/create-account", "/worker/onboarding", "/worker/verification", "/worker"], "capabilities": [], "keywords": ["worker", "phone", "signup", "onboarding", "approval"],
+      "id": "worker-getting-started",
+      "audience": "worker",
+      "locale": "en",
+      "title": "Getting started as a worker",
+      "summary": "Register with phone and password, finish onboarding, and wait for governed approval.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "worker_auth",
+        "worker_onboarding",
+        "worker_vetting"
+      ],
+      "routes": [
+        "/create-account",
+        "/worker/onboarding",
+        "/worker/verification",
+        "/worker"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "worker",
+        "phone",
+        "signup",
+        "onboarding",
+        "approval"
+      ],
       "body": "## Register\n\nChoose Worker and enter your full name, Egyptian mobile number, and password. There is no worker email field and no email or SMS confirmation step. Warsha creates a private internal Auth identity; it is not a contact address and is never shown as your email. You sign in with phone number and password.\n\n## Prepare your profile\n\nAdd your photo and profile details, choose your trades and services, select service areas, and save a private work location. Then complete identity and criminal-record steps shown by the app.\n\nApproval is a staff decision under the current vetting policy. You cannot quote or accept work until the backend says your worker capability is active."
     },
     {
-      "id": "worker-getting-started", "audience": "worker", "locale": "ar", "title": "ابدأ كصنايعي", "summary": "سجّل بالموبايل وكلمة السر، كمّل التقديم، واستنى الموافقة المنظمة.", "version": 1, "lastReviewedDate": "2026-08-21", "features": ["worker_auth", "worker_onboarding", "worker_vetting"], "routes": ["/create-account", "/worker/onboarding", "/worker/verification", "/worker"], "capabilities": [], "keywords": ["صنايعي", "موبايل", "تسجيل", "تقديم", "موافقة"],
+      "id": "worker-getting-started",
+      "audience": "worker",
+      "locale": "ar",
+      "title": "ابدأ كصنايعي",
+      "summary": "سجّل بالموبايل وكلمة السر، كمّل التقديم، واستنى الموافقة المنظمة.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "worker_auth",
+        "worker_onboarding",
+        "worker_vetting"
+      ],
+      "routes": [
+        "/create-account",
+        "/worker/onboarding",
+        "/worker/verification",
+        "/worker"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "صنايعي",
+        "موبايل",
+        "تسجيل",
+        "تقديم",
+        "موافقة"
+      ],
       "body": "## التسجيل\n\nاختار «صنايعي» واكتب اسمك الكامل ورقم موبايل مصري وكلمة السر. مفيش خانة بريد للصنايعي ومفيش تأكيد بريد أو SMS وقت التسجيل. ورشة بيعمل هوية دخول داخلية خاصة؛ دي مش وسيلة تواصل ومش هتظهر كبريدك. بعد كده بتدخل برقم الموبايل وكلمة السر.\n\n## جهّز ملفك\n\nضيف صورتك وبياناتك، اختار المهن والخدمات، حدد مناطق الشغل، واحفظ موقع شغلك الخاص. بعد كده كمّل خطوات الهوية والفيش اللي التطبيق بيطلبها.\n\nالموافقة قرار موظف حسب سياسة المراجعة الحالية. مش هتقدر تبعت عروض أو تقبل شغل قبل ما النظام يأكد إن صلاحية الشغل عندك نشطة."
     },
     {
-      "id": "worker-onboarding-verification", "audience": "worker", "locale": "en", "title": "Onboarding, service areas, and verification", "summary": "Understand every application stage and what customers can see.", "version": 2, "lastReviewedDate": "2026-08-21", "features": ["worker_onboarding", "location", "verification", "legal"], "routes": ["/worker/onboarding", "/worker/verification"], "capabilities": [], "keywords": ["trade", "profession", "service area", "location", "verification", "rejected"],
+      "id": "worker-onboarding-verification",
+      "audience": "worker",
+      "locale": "en",
+      "title": "Onboarding, service areas, and verification",
+      "summary": "Understand every application stage and what customers can see.",
+      "version": 2,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "worker_onboarding",
+        "location",
+        "verification",
+        "legal"
+      ],
+      "routes": [
+        "/worker/onboarding",
+        "/worker/verification"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "trade",
+        "profession",
+        "service area",
+        "location",
+        "verification",
+        "rejected"
+      ],
       "body": "Trades describe the work you offer. Services are the specific tasks customers can request. Service areas describe where you will travel. Your exact work/home location is private and is used for nearby matching; customers do not see it.\n\nVerification can be Not started, Draft, Submitted, Under review, Approved, More information required, Rejected, or Expired. The app shows the safe reason and next action. Identity documents and criminal-record evidence are private. A certificate upload is reviewed by a person and is not claimed to be checked with a government system.\n\nIf more information is required, correct only the requested step and submit again. If rejected, use the appeal path when the app offers it or contact Support.\n\nWhere a worker supplies a service area, the governorate and area come from the same official administrative list customers use, so coverage and requests are compared against identical values rather than two spellings of the same place."
     },
     {
-      "id": "worker-onboarding-verification", "audience": "worker", "locale": "ar", "title": "التقديم ومناطق الشغل والتوثيق", "summary": "افهم كل مرحلة في التقديم وإيه اللي العميل يقدر يشوفه.", "version": 2, "lastReviewedDate": "2026-08-21", "features": ["worker_onboarding", "location", "verification", "legal"], "routes": ["/worker/onboarding", "/worker/verification"], "capabilities": [], "keywords": ["مهنة", "خدمة", "منطقة", "موقع", "توثيق", "رفض"],
+      "id": "worker-onboarding-verification",
+      "audience": "worker",
+      "locale": "ar",
+      "title": "التقديم ومناطق الشغل والتوثيق",
+      "summary": "افهم كل مرحلة في التقديم وإيه اللي العميل يقدر يشوفه.",
+      "version": 2,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "worker_onboarding",
+        "location",
+        "verification",
+        "legal"
+      ],
+      "routes": [
+        "/worker/onboarding",
+        "/worker/verification"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "مهنة",
+        "خدمة",
+        "منطقة",
+        "موقع",
+        "توثيق",
+        "رفض"
+      ],
       "body": "المهن بتوضح نوع الشغل اللي بتقدمه. الخدمات هي المهام المحددة اللي العميل يطلبها. مناطق الخدمة بتوضح هتتحرك فين. موقع شغلك أو بيتك الدقيق خاص وبيستخدم للمطابقة القريبة؛ العملاء مش بيشوفوه.\n\nحالة التوثيق ممكن تكون: لسه ما بدأش، مسودة، اتبعت، تحت المراجعة، اتوافق عليه، محتاج معلومات تانية، اترفض، أو انتهت صلاحيته. التطبيق بيعرض السبب الآمن والخطوة الجاية. مستندات الهوية والفيش خاصة. المستند بيراجعه شخص، وورشة ما بيدّعيش إنه اتراجع مع جهة حكومية.\n\nلو مطلوب معلومات تانية، صحح الخطوة المطلوبة بس وابعت من جديد. لو اترفضت، استخدم الاعتراض لما التطبيق يتيحه أو كلم الدعم.\n\nلما الصنايعي يحدد منطقة خدمة، المحافظة والمنطقة بييجوا من نفس القائمة الإدارية الرسمية اللي العملاء بيستخدموها، فالتغطية والطلبات بتتقارن بنفس القيم مش بكتابتين مختلفتين لنفس المكان."
     },
     {
-      "id": "worker-opportunities-jobs", "audience": "worker", "locale": "en", "title": "Opportunities, quotes, and jobs", "summary": "Review matching requests, write clear quotes, and update real job progress.", "version": 2, "lastReviewedDate": "2026-08-25", "features": ["marketplace", "quotes", "bookings", "job_operations"], "routes": ["/worker/opportunities", "/worker/jobs"], "capabilities": [], "keywords": ["request", "opportunity", "quote", "price", "job", "cancel"],
-      "body": "Opportunities appear only when your active worker capability, trades, service areas, availability, and the request match. Not seeing requests can be correct while onboarding or verification is incomplete.\n\nA quote should state the price, arrival estimate, expected duration, what labour/materials include, supported payment methods, and a useful message. Do not put contact details into the quote. A retry must not create a second quote.\n\nWhen selected, manage the job from Jobs. Use the provided progress actions—on the way, arrived, started, completion, reschedule, cancellation—because chat messages do not change job state. Give a truthful reason where required.\n\nService types appear under their name in your language rather than an internal code. The underlying service is the same record customers and staff see, so a job you accept in Arabic is the same job in English."
+      "id": "worker-opportunities-jobs",
+      "audience": "worker",
+      "locale": "en",
+      "title": "Opportunities, quotes, and jobs",
+      "summary": "Review matching requests, write clear quotes, and update real job progress.",
+      "version": 3,
+      "lastReviewedDate": "2026-08-25",
+      "features": [
+        "marketplace",
+        "quotes",
+        "bookings",
+        "job_operations"
+      ],
+      "routes": [
+        "/worker/opportunities",
+        "/worker/jobs"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "request",
+        "opportunity",
+        "quote",
+        "price",
+        "job",
+        "cancel"
+      ],
+      "body": "Opportunities appear only when your active worker capability, trades, service areas, availability, and the request match. Not seeing requests can be correct while onboarding or verification is incomplete.\n\nA quote should state the price, arrival estimate, expected duration, what labour/materials include, supported payment methods, and a useful message. Do not put contact details into the quote. A retry must not create a second quote.\n\nWhen selected, manage the job from Jobs. Use the provided progress actions—on the way, arrived, started, completion, reschedule, cancellation—because chat messages do not change job state. Give a truthful reason where required.\n\nService types appear under their name in your language rather than an internal code. The underlying service is the same record customers and staff see, so a job you accept in Arabic is the same job in English. Each invitation names the trade it is for and, when the customer narrowed their request, the specific service they asked for, so you know what you are quoting on before you open it."
     },
     {
-      "id": "worker-opportunities-jobs", "audience": "worker", "locale": "ar", "title": "الفرص والعروض والشغل", "summary": "راجع الطلبات المناسبة، اكتب عرض واضح، وحدّث تقدم الشغل الحقيقي.", "version": 2, "lastReviewedDate": "2026-08-25", "features": ["marketplace", "quotes", "bookings", "job_operations"], "routes": ["/worker/opportunities", "/worker/jobs"], "capabilities": [], "keywords": ["طلب", "فرصة", "عرض", "سعر", "شغل", "إلغاء"],
-      "body": "الفرص بتظهر بس لما صلاحية الشغل تكون نشطة ومهنتك ومنطقة خدمتك وتوفرك مناسبين للطلب. طبيعي ما تشوفش طلبات لو التقديم أو التوثيق لسه ناقص.\n\nالعرض الواضح فيه السعر ووقت الوصول والمدة المتوقعة والخامات أو المصنعية المشمولة وطرق الدفع ورسالة مفيدة. ما تحطش بيانات تواصل في العرض. إعادة المحاولة ما ينفعش تعمل عرض تاني لنفس الطلب.\n\nلما العميل يختارك، تابع من «الشغل». استخدم خطوات التقدم الموجودة—في الطريق، وصلت، بدأت، اكتمل، تغيير الموعد، إلغاء—لأن رسائل الشات ما بتغيرش حالة الشغل. اكتب سبب حقيقي لما يكون مطلوب.\n\nأنواع الخدمة بتظهر باسمها بلغتك مش بكود داخلي. الخدمة الأساسية هي نفس السجل اللي العملاء والفريق بيشوفوه، فالشغلانة اللي بتقبلها بالعربي هي نفسها بالإنجليزي."
+      "id": "worker-opportunities-jobs",
+      "audience": "worker",
+      "locale": "ar",
+      "title": "الفرص والعروض والشغل",
+      "summary": "راجع الطلبات المناسبة، اكتب عرض واضح، وحدّث تقدم الشغل الحقيقي.",
+      "version": 3,
+      "lastReviewedDate": "2026-08-25",
+      "features": [
+        "marketplace",
+        "quotes",
+        "bookings",
+        "job_operations"
+      ],
+      "routes": [
+        "/worker/opportunities",
+        "/worker/jobs"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "طلب",
+        "فرصة",
+        "عرض",
+        "سعر",
+        "شغل",
+        "إلغاء"
+      ],
+      "body": "الفرص بتظهر بس لما صلاحية الشغل تكون نشطة ومهنتك ومنطقة خدمتك وتوفرك مناسبين للطلب. طبيعي ما تشوفش طلبات لو التقديم أو التوثيق لسه ناقص.\n\nالعرض الواضح فيه السعر ووقت الوصول والمدة المتوقعة والخامات أو المصنعية المشمولة وطرق الدفع ورسالة مفيدة. ما تحطش بيانات تواصل في العرض. إعادة المحاولة ما ينفعش تعمل عرض تاني لنفس الطلب.\n\nلما العميل يختارك، تابع من «الشغل». استخدم خطوات التقدم الموجودة—في الطريق، وصلت، بدأت، اكتمل، تغيير الموعد، إلغاء—لأن رسائل الشات ما بتغيرش حالة الشغل. اكتب سبب حقيقي لما يكون مطلوب.\n\nأنواع الخدمة بتظهر باسمها بلغتك مش بكود داخلي. الخدمة الأساسية هي نفس السجل اللي العملاء والفريق بيشوفوه، فالشغلانة اللي بتقبلها بالعربي هي نفسها بالإنجليزي. كل دعوة بتوضح نوع الشغل، ولو العميل حدد خدمة معينة بتظهر كمان، عشان تعرف بتسعّر على إيه قبل ما تفتحها."
     },
     {
-      "id": "worker-earnings-profile", "audience": "worker", "locale": "en", "title": "Earnings, profile, availability, and support", "summary": "Understand ledger balances, payout details, public profile information, and help.", "version": 1, "lastReviewedDate": "2026-08-21", "features": ["earnings", "payments", "worker_profile", "support"], "routes": ["/worker/earnings", "/worker/profile", "/support"], "capabilities": [], "keywords": ["earnings", "withdraw", "wallet", "bank", "profile", "available", "support"],
+      "id": "worker-earnings-profile",
+      "audience": "worker",
+      "locale": "en",
+      "title": "Earnings, profile, availability, and support",
+      "summary": "Understand ledger balances, payout details, public profile information, and help.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "earnings",
+        "payments",
+        "worker_profile",
+        "support"
+      ],
+      "routes": [
+        "/worker/earnings",
+        "/worker/profile",
+        "/support"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "earnings",
+        "withdraw",
+        "wallet",
+        "bank",
+        "profile",
+        "available",
+        "support"
+      ],
       "body": "Earnings shown by Warsha come from the job ledger. Pending, available, held, withdrawal requested, paid, and reversed are different states. A balance is not proof that an external bank or wallet transfer settled.\n\nWhen payout destinations are enabled, give the destination a clear name such as “My mobile wallet” and enter the requested phone/account reference. Warsha displays only a masked value later. Confirm only a destination you own.\n\nYour public profile can show your name, photo, introduction, experience, trades, services, portfolio, and approved certificates. Your exact work/home location and private verification documents stay private. Set availability truthfully and contact Support from the app when needed."
     },
     {
-      "id": "worker-earnings-profile", "audience": "worker", "locale": "ar", "title": "الأرباح والملف والتوفر والدعم", "summary": "افهم رصيد الدفتر وبيانات السحب ومعلومات الملف العام والمساعدة.", "version": 1, "lastReviewedDate": "2026-08-21", "features": ["earnings", "payments", "worker_profile", "support"], "routes": ["/worker/earnings", "/worker/profile", "/support"], "capabilities": [], "keywords": ["أرباح", "سحب", "محفظة", "بنك", "ملف", "متاح", "دعم"],
+      "id": "worker-earnings-profile",
+      "audience": "worker",
+      "locale": "ar",
+      "title": "الأرباح والملف والتوفر والدعم",
+      "summary": "افهم رصيد الدفتر وبيانات السحب ومعلومات الملف العام والمساعدة.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "earnings",
+        "payments",
+        "worker_profile",
+        "support"
+      ],
+      "routes": [
+        "/worker/earnings",
+        "/worker/profile",
+        "/support"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "أرباح",
+        "سحب",
+        "محفظة",
+        "بنك",
+        "ملف",
+        "متاح",
+        "دعم"
+      ],
       "body": "الأرباح اللي ورشة بيعرضها جاية من دفتر الشغل. «معلّقة» و«متاحة» و«محجوزة» و«طلب سحب» و«اتدفعت» و«اتعكست» حالات مختلفة. ظهور رصيد مش دليل إن تحويل البنك أو المحفظة تم خارجيًا.\n\nلما وجهات السحب تكون متاحة، سمّي الوجهة باسم واضح زي «محفظتي على الموبايل» واكتب رقم الموبايل أو مرجع الحساب المطلوب. بعد كده ورشة بيعرض قيمة مخفية جزئيًا بس. أكّد وجهة إنت صاحبها.\n\nملفك العام ممكن يعرض اسمك وصورتك ونبذتك وخبرتك ومهنك وخدماتك وأعمالك وشهاداتك المقبولة. موقع البيت أو الشغل الدقيق ومستندات التوثيق الخاصة بيفضلوا سريين. حدّث توفرك بصدق وكلم الدعم من التطبيق وقت الحاجة."
     },
     {
-      "id": "admin-getting-started", "audience": "admin", "locale": "en", "title": "Admin portal: getting started", "summary": "Understand the separate staff portal, capabilities, reauthentication, dual control, privacy, and auditability.", "version": 1, "lastReviewedDate": "2026-08-21", "features": ["admin", "staff_auth", "governance"], "routes": ["/admin", "/admin/help"], "capabilities": [], "keywords": ["admin", "staff", "capability", "role", "fresh authentication", "dual control"],
+      "id": "admin-getting-started",
+      "audience": "admin",
+      "locale": "en",
+      "title": "Admin portal: getting started",
+      "summary": "Understand the separate staff portal, capabilities, reauthentication, dual control, privacy, and auditability.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "admin",
+        "staff_auth",
+        "governance"
+      ],
+      "routes": [
+        "/admin",
+        "/admin/help"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "admin",
+        "staff",
+        "capability",
+        "role",
+        "fresh authentication",
+        "dual control"
+      ],
       "body": "The Warsha Console is web-only and separate from customer and worker experiences. A product role answers whether an account books or performs work. A staff role grants a reviewed set of operational capabilities. One never substitutes for the other.\n\nThe server checks the required capability on every RPC. Hiding a link is convenience, not authorization. Sensitive actions can require a recent real authentication. Dual control means a different authorized person must complete the second decision.\n\nUse development data for safe training. Read the action's scope, reversibility, evidence, and audit notice before confirming. Never work around a refusal with direct table edits, service credentials, disabled RLS, or invented audit rows. Ask a Security Administrator or follow the named runbook."
     },
     {
-      "id": "admin-getting-started", "audience": "admin", "locale": "ar", "title": "ابدأ في بوابة الإدارة", "summary": "افهم بوابة الموظفين المنفصلة والصلاحيات وإعادة التحقق والتحكم المزدوج والخصوصية والسجل.", "version": 1, "lastReviewedDate": "2026-08-21", "features": ["admin", "staff_auth", "governance"], "routes": ["/admin", "/admin/help"], "capabilities": [], "keywords": ["إدارة", "موظف", "صلاحية", "دور", "تحقق حديث", "تحكم مزدوج"],
+      "id": "admin-getting-started",
+      "audience": "admin",
+      "locale": "ar",
+      "title": "ابدأ في بوابة الإدارة",
+      "summary": "افهم بوابة الموظفين المنفصلة والصلاحيات وإعادة التحقق والتحكم المزدوج والخصوصية والسجل.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "admin",
+        "staff_auth",
+        "governance"
+      ],
+      "routes": [
+        "/admin",
+        "/admin/help"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "إدارة",
+        "موظف",
+        "صلاحية",
+        "دور",
+        "تحقق حديث",
+        "تحكم مزدوج"
+      ],
       "body": "بوابة ورشة للموظفين موجودة على الويب بس ومنفصلة عن تجربة العميل والصنايعي. دور المنتج بيحدد الحساب بيحجز شغل ولا بينفذه. دور الموظف بيدي مجموعة صلاحيات تشغيلية مراجعة. واحد ما ينفعش يحل مكان التاني.\n\nالسيرفر بيراجع الصلاحية المطلوبة مع كل طلب. إخفاء اللينك للراحة مش وسيلة حماية. الإجراءات الحساسة ممكن تحتاج تسجيل دخول حديث فعلي. التحكم المزدوج معناه إن شخص تاني مصرح له لازم يكمل القرار الثاني.\n\nاستخدم بيانات التطوير للتدريب الآمن. اقرأ نطاق الإجراء وإمكانية الرجوع والدليل وإشعار السجل قبل التأكيد. ما تتجاوزش الرفض بتعديل جداول مباشر أو مفاتيح خادم أو تعطيل RLS أو سجل مصنوع. ارجع لمسؤول الأمان أو دليل التشغيل المحدد."
     },
     {
-      "id": "admin-users-roles", "audience": "admin", "locale": "en", "title": "User lookup and product roles", "summary": "Find one redacted record and understand customer/worker state without treating the console as a directory.", "version": 1, "lastReviewedDate": "2026-08-21", "features": ["admin_search", "product_roles", "account_recovery"], "routes": ["/admin/users"], "capabilities": ["safe_search", "view_safe_customer_profile", "view_safe_worker_profile", "view_contact_details"], "keywords": ["search", "user", "customer", "worker", "product role", "recovery"],
+      "id": "admin-users-roles",
+      "audience": "admin",
+      "locale": "en",
+      "title": "User lookup and product roles",
+      "summary": "Find one redacted record and understand customer/worker state without treating the console as a directory.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "admin_search",
+        "product_roles",
+        "account_recovery"
+      ],
+      "routes": [
+        "/admin/users"
+      ],
+      "capabilities": [
+        "safe_search",
+        "view_safe_customer_profile",
+        "view_safe_worker_profile",
+        "view_contact_details"
+      ],
+      "keywords": [
+        "search",
+        "user",
+        "customer",
+        "worker",
+        "product role",
+        "recovery"
+      ],
       "body": "Record lookup finds one exact identifier. It is not a browsable user directory. Results are redacted to the operator's capabilities, and the lookup itself is logged. Contact details require the separate `view_contact_details` capability and fresh authentication.\n\nCustomer and worker are product roles. Worker capability additionally depends on onboarding, vetting, activation, and enforcement. Do not create, remove, or infer product roles with raw database edits. Use an existing governed product action or documented recovery authority.\n\nA malformed historical account must be inventoried before any retirement. Preserve bookings, jobs, support, audit, financial, and staff history. Authentication success does not prove Warsha onboarding is complete."
     },
     {
-      "id": "admin-users-roles", "audience": "admin", "locale": "ar", "title": "البحث عن المستخدم وأدوار المنتج", "summary": "دور على سجل واحد مخفي البيانات وافهم حالة العميل أو الصنايعي من غير ما تحول البوابة لدليل مستخدمين.", "version": 1, "lastReviewedDate": "2026-08-21", "features": ["admin_search", "product_roles", "account_recovery"], "routes": ["/admin/users"], "capabilities": ["safe_search", "view_safe_customer_profile", "view_safe_worker_profile", "view_contact_details"], "keywords": ["بحث", "مستخدم", "عميل", "صنايعي", "دور المنتج", "استرجاع"],
+      "id": "admin-users-roles",
+      "audience": "admin",
+      "locale": "ar",
+      "title": "البحث عن المستخدم وأدوار المنتج",
+      "summary": "دور على سجل واحد مخفي البيانات وافهم حالة العميل أو الصنايعي من غير ما تحول البوابة لدليل مستخدمين.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "admin_search",
+        "product_roles",
+        "account_recovery"
+      ],
+      "routes": [
+        "/admin/users"
+      ],
+      "capabilities": [
+        "safe_search",
+        "view_safe_customer_profile",
+        "view_safe_worker_profile",
+        "view_contact_details"
+      ],
+      "keywords": [
+        "بحث",
+        "مستخدم",
+        "عميل",
+        "صنايعي",
+        "دور المنتج",
+        "استرجاع"
+      ],
       "body": "البحث بيجيب معرّف واحد مطابق. مش دليل تقدر تتصفح منه كل المستخدمين. النتيجة بتخفي البيانات حسب صلاحيات الموظف، والبحث نفسه بيتسجل. بيانات التواصل محتاجة صلاحية `view_contact_details` وتحقق حديث منفصل.\n\nالعميل والصنايعي أدوار منتج. صلاحية الشغل كصنايعي بتعتمد كمان على التقديم والمراجعة والتفعيل وإجراءات الأمان. ما تعملش أو تشيل أو تستنتج دور منتج بتعديل جداول مباشر. استخدم إجراء منتج منظم موجود أو مسار استرجاع موثق.\n\nأي حساب تاريخي ناقص لازم يتعمل له حصر قبل التقاعد. حافظ على تاريخ الحجوزات والشغل والدعم والسجل والمال وأدوار الموظفين. نجاح تسجيل الدخول مش معناه إن إعداد حساب ورشة كامل."
     },
     {
-      "id": "admin-verification-enforcement", "audience": "admin", "locale": "en", "title": "Worker verification and enforcement", "summary": "Review evidence, record safe reasons, and understand approval, rejection, suspension, ban, and appeal boundaries.", "version": 2, "lastReviewedDate": "2026-08-21", "features": ["worker_vetting", "trust", "enforcement", "appeals"], "routes": ["/admin/verification", "/admin/users"], "capabilities": ["review_worker_vetting", "review_identity_verification", "review_criminal_records", "activate_worker", "reject_worker_application", "issue_temporary_restriction", "approve_permanent_ban", "review_appeals"], "keywords": ["verification", "approve", "reject", "suspend", "ban", "appeal", "evidence"],
+      "id": "admin-verification-enforcement",
+      "audience": "admin",
+      "locale": "en",
+      "title": "Worker verification and enforcement",
+      "summary": "Review evidence, record safe reasons, and understand approval, rejection, suspension, ban, and appeal boundaries.",
+      "version": 2,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "worker_vetting",
+        "trust",
+        "enforcement",
+        "appeals"
+      ],
+      "routes": [
+        "/admin/verification",
+        "/admin/users"
+      ],
+      "capabilities": [
+        "review_worker_vetting",
+        "review_identity_verification",
+        "review_criminal_records",
+        "activate_worker",
+        "reject_worker_application",
+        "issue_temporary_restriction",
+        "approve_permanent_ban",
+        "review_appeals"
+      ],
+      "keywords": [
+        "verification",
+        "approve",
+        "reject",
+        "suspend",
+        "ban",
+        "appeal",
+        "evidence"
+      ],
       "body": "Review the submitted identity and criminal-record steps against the active policy. Record evidence only in the private evidence field and give the worker a separate safe, useful reason. Warsha does not claim an automated government check.\n\nApproval and activation are separate authorities. Rejection can require dual control. A temporary restriction or suspension is time/scope bounded when the policy says so. A permanent ban is high-risk, requires the specific capability, investigated evidence, fresh authentication, and the configured second-person approval.\n\nNever put offence detail, document contents, reviewer identity, or private notes into worker-visible text. Appeals do not erase the original decision; they add an auditable later decision.\n\nA decision that asks you to confirm who you are is not lost. If your session needs refreshing at the moment you submit a vetting decision or an enforcement action, Warsha holds the decision exactly as you composed it, asks you to confirm, and then submits that same decision. Previously the confirmation closed and the decision had to be re-entered — and because nothing had been recorded, the screen looked unchanged. Cancelling the confirmation, or failing it, submits nothing."
     },
     {
-      "id": "admin-verification-enforcement", "audience": "admin", "locale": "ar", "title": "مراجعة الصنايعي وإجراءات الأمان", "summary": "راجع الدليل وسجل سبب آمن وافهم حدود الموافقة والرفض والإيقاف والحظر والاعتراض.", "version": 2, "lastReviewedDate": "2026-08-21", "features": ["worker_vetting", "trust", "enforcement", "appeals"], "routes": ["/admin/verification", "/admin/users"], "capabilities": ["review_worker_vetting", "review_identity_verification", "review_criminal_records", "activate_worker", "reject_worker_application", "issue_temporary_restriction", "approve_permanent_ban", "review_appeals"], "keywords": ["توثيق", "موافقة", "رفض", "إيقاف", "حظر", "اعتراض", "دليل"],
+      "id": "admin-verification-enforcement",
+      "audience": "admin",
+      "locale": "ar",
+      "title": "مراجعة الصنايعي وإجراءات الأمان",
+      "summary": "راجع الدليل وسجل سبب آمن وافهم حدود الموافقة والرفض والإيقاف والحظر والاعتراض.",
+      "version": 2,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "worker_vetting",
+        "trust",
+        "enforcement",
+        "appeals"
+      ],
+      "routes": [
+        "/admin/verification",
+        "/admin/users"
+      ],
+      "capabilities": [
+        "review_worker_vetting",
+        "review_identity_verification",
+        "review_criminal_records",
+        "activate_worker",
+        "reject_worker_application",
+        "issue_temporary_restriction",
+        "approve_permanent_ban",
+        "review_appeals"
+      ],
+      "keywords": [
+        "توثيق",
+        "موافقة",
+        "رفض",
+        "إيقاف",
+        "حظر",
+        "اعتراض",
+        "دليل"
+      ],
       "body": "راجع خطوات الهوية والفيش المرسلة حسب السياسة النشطة. سجل الدليل في خانة الدليل الخاصة بس، واكتب للصنايعي سبب آمن ومفيد منفصل. ورشة ما بيدّعيش إن فيه كشف حكومي آلي.\n\nالموافقة والتفعيل صلاحيتين منفصلتين. الرفض ممكن يحتاج تحكم مزدوج. التقييد المؤقت أو الإيقاف بيكون بمدة ونطاق لما السياسة تقول كده. الحظر الدائم عالي الخطورة ومحتاج الصلاحية المحددة ودليل متحقق وتسجيل دخول حديث وموافقة الشخص الثاني حسب الإعداد.\n\nما تحطش تفاصيل مخالفة أو محتوى مستند أو اسم المراجع أو ملاحظات خاصة في الكلام اللي الصنايعي هيشوفه. الاعتراض ما بيمسحش القرار الأول؛ بيضيف قرار جديد قابل للمراجعة.\n\nالقرار اللي بيطلب منك تأكيد شخصيتك مش بيضيع. لو جلستك محتاجة تجديد في اللحظة اللي بتبعت فيها قرار توثيق أو إجراء إنفاذ، ورشة بتحتفظ بالقرار زي ما كتبته بالظبط، وبتطلب منك التأكيد، وبعدين بتبعت نفس القرار. قبل كده كان التأكيد بيتقفل والقرار لازم يتكتب تاني — وعشان مفيش حاجة كانت اتسجّلت، الشاشة كانت مبيّنة كأن مفيش حاجة حصلت. ولو لغيت التأكيد أو فشل، مفيش حاجة بتتبعت."
     },
     {
-      "id": "admin-staff-security", "audience": "admin", "locale": "en", "title": "Staff roles, fresh authentication, and dual control", "summary": "Grant only reviewed roles, never self-escalate, and keep immutable evidence.", "version": 8, "lastReviewedDate": "2026-08-21", "features": ["staff_roles", "reauth", "dual_control", "audit"], "routes": ["/admin/staff", "/admin/audit"], "capabilities": ["manage_staff_roles", "view_audit_logs"], "keywords": ["grant", "revoke", "staff role", "capability", "reauthentication", "dual control", "audit"],
+      "id": "admin-staff-security",
+      "audience": "admin",
+      "locale": "en",
+      "title": "Staff roles, fresh authentication, and dual control",
+      "summary": "Grant only reviewed roles, never self-escalate, and keep immutable evidence.",
+      "version": 8,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "staff_roles",
+        "reauth",
+        "dual_control",
+        "audit"
+      ],
+      "routes": [
+        "/admin/staff",
+        "/admin/audit"
+      ],
+      "capabilities": [
+        "manage_staff_roles",
+        "view_audit_logs"
+      ],
+      "keywords": [
+        "grant",
+        "revoke",
+        "staff role",
+        "capability",
+        "reauthentication",
+        "dual control",
+        "audit"
+      ],
       "body": "Staff roles are reviewed capability bundles. `manage_staff_roles` can grant or revoke them through the governed UI; it does not allow self-grant. State the business reason and choose the narrowest role. Revocation ends future authority but preserves grant history.\n\nFresh authentication proves the same operator authenticated recently. It does not add a missing capability. Dual control requires two different authorized identities; never ask one person to impersonate the other.\n\nThe first Security Administrator is the only exceptional bootstrap. It is performed by the documented one-time database-owner procedure, only when no effective administrator exists, and creates an immutable grant with a bootstrap idempotency key. Ordinary staff changes must never repeat that procedure.\n\nThe console states its environment on every page. DEVELOPMENT or STAGING means the backend is bound to that hosted project. LOCAL is correct only on a developer machine. If the console shows an environment fault instead, the backend is still carrying the unbound bootstrap configuration and cannot say which data you are looking at: stop, and have the platform environment bound before trusting anything on screen.\n\nCapabilities are listed by name rather than by database identifier, and each links to the manual section that explains it. The identifier remains the authority behind every grant and every refusal; the name is only how it is read.\n\nPlatform environment and Platform release verification live under Platform in the console.\n\nPlatform environment identifies this backend. Identifying it is one-way and audited, needs the Manage feature flags permission and a recent sign-in, deploys no code, and cannot select Production. If the current state does not match the change the tool is allowed to make, no action is offered and nothing is altered.\n\nPlatform release verification is read-only and needs the View audit logs permission. It reports checks passed, known and expected gaps, and unexpected problems. The unowned rate limits check is recorded as an open gap in the launch readiness register: it is expected while that gap is open and does not block a release on its own. An unexpected problem is a stop — do not continue a release, and report it.\n\nMulti-factor authentication is currently not required on this backend. If it is ever switched on it applies to every staff capability at once, and it is satisfied only by an authenticator app enrolled against your own account; there is no override and no bypass. Enrol a factor and store its recovery codes before the requirement is enabled. A required factor with nothing enrolled locks every operator out of the console, including the tools that would turn it off again, and recovery then needs a database-owner procedure.\n\nPlatform release verification is genuinely read-only: it inspects structure and writes nothing at all. That a staff member ran it is recorded separately, immediately afterwards, so an audit write can never cause a structural check to fail and the check can never quietly change platform state.\n\nExternal providers are switched on under Providers in the console, and the order there is enforced by Warsha rather than suggested. Switching an outside service on sends customer data to it, so activation always needs two different people: one raises a request with a reason, and a colleague holding the same permission approves it. Nobody can approve their own request, whatever permissions they hold, and a request expires after 24 hours. Address search is enabled only after the provider is active — doing it earlier does not save a step, because activation is refused while the feature is already on. A safe test then proves the service actually answers. No credential, environment-variable name, or digest is ever shown; the console asks only whether a credential is configured.\n\nGranting a role no longer requires transcribing an account ID. If you hold the account lookup permission, search by email or phone and choose the matching account; Warsha carries the identifier for you. The search deliberately shows no name or email — it answers which account, not who — because identifying a person needs its own separate permission. If your role does not include account lookup, the form still accepts an account ID directly and says so rather than showing an empty search. You still cannot grant a role to your own account.\n\nChoosing who to grant a role to no longer means finding an account identifier. Enter the person's full email address and Warsha confirms which account it belongs to, then carries the identifier internally. You can clear the choice and look up a different address before submitting.\n\nWhy this lookup is allowed, and what it shows. Granting a staff role and identifying the person receiving it are the same job, so the lookup is gated on the same permission as the grant and requires the same recent sign-in. It is deliberately not a search: it matches one complete email address exactly, returns at most one account, and refuses wildcards, so it cannot be used to browse or enumerate accounts. It reveals only the display name, the email masked back to you as confirmation, whether the account is in good standing, and any staff roles already held — the last so you do not duplicate or unknowingly widen an existing grant. It shows no phone number, no address, no contact details and no verification history. Every lookup is rate limited and written to the audit trail against your account, recording the domain you searched.\n\nWhen a privileged action asks you to confirm who you are, the action you started is carried through it. Warsha holds the exact grant, revocation or lookup you were making, opens the confirmation, and — once you have confirmed — sends that same call for you. You do not press the button a second time.\n\nWhat this deliberately will not do. It carries one action at a time, so a second action cannot be substituted for the one named in the confirmation you are about to approve. It sends that action once and once only, however the confirmation completes. If you cancel, or your password is not accepted, nothing is sent. If you leave the confirmation open for more than five minutes, Warsha lets the action go rather than running it after you have stopped expecting it, and tells you so; press the button again when you are ready. And if the server still asks for confirmation immediately after you have given it, Warsha reports that instead of asking again, because a repeated prompt would hide the real problem — sign out, sign in, and retry.\n\nA re-sent action cannot double. Warsha re-sends the call the server refused, and the server refuses a stale confirmation before it reads or writes anything, so the refused attempt never took effect. A grant carries the same idempotency key into the retry, so a repeated grant is recognised rather than duplicated."
     },
     {
-      "id": "admin-staff-security", "audience": "admin", "locale": "ar", "title": "أدوار الموظفين والتحقق الحديث والتحكم المزدوج", "summary": "امنح دور مراجع بس، ما ترفعش صلاحيتك بنفسك، وحافظ على الدليل الدائم.", "version": 8, "lastReviewedDate": "2026-08-21", "features": ["staff_roles", "reauth", "dual_control", "audit"], "routes": ["/admin/staff", "/admin/audit"], "capabilities": ["manage_staff_roles", "view_audit_logs"], "keywords": ["منح", "سحب", "دور موظف", "صلاحية", "تحقق حديث", "تحكم مزدوج", "سجل"],
+      "id": "admin-staff-security",
+      "audience": "admin",
+      "locale": "ar",
+      "title": "أدوار الموظفين والتحقق الحديث والتحكم المزدوج",
+      "summary": "امنح دور مراجع بس، ما ترفعش صلاحيتك بنفسك، وحافظ على الدليل الدائم.",
+      "version": 8,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "staff_roles",
+        "reauth",
+        "dual_control",
+        "audit"
+      ],
+      "routes": [
+        "/admin/staff",
+        "/admin/audit"
+      ],
+      "capabilities": [
+        "manage_staff_roles",
+        "view_audit_logs"
+      ],
+      "keywords": [
+        "منح",
+        "سحب",
+        "دور موظف",
+        "صلاحية",
+        "تحقق حديث",
+        "تحكم مزدوج",
+        "سجل"
+      ],
       "body": "أدوار الموظفين مجموعات صلاحيات مراجعة. صلاحية `manage_staff_roles` تقدر تمنح أو تسحب الأدوار من الواجهة المنظمة؛ ما تسمحش للموظف يمنح نفسه. اكتب سبب الشغل واختار أضيق دور مناسب. سحب الدور بيوقف الصلاحية بعد كده لكنه بيحافظ على تاريخ المنح.\n\nالتحقق الحديث بيثبت إن نفس الموظف سجل دخوله قريب. ما بيديش صلاحية ناقصة. التحكم المزدوج محتاج هويتين مختلفتين مصرح ليهم؛ ما تطلبش من شخص يمثل الشخص التاني.\n\nأول مسؤول أمان هو الاستثناء الوحيد. بيتعمل بإجراء مالك قاعدة البيانات الموثق لمرة واحدة، بس لما ما يكونش فيه مسؤول فعال، وبيعمل منحة دائمة بمفتاح منع تكرار. تغييرات الموظفين العادية ممنوع تكرر الإجراء ده.\n\nالكونسول بيقول البيئة بتاعته في كل صفحة. DEVELOPMENT أو STAGING يعني الباك إند مربوط بالمشروع المستضاف ده. LOCAL صح بس على جهاز مطوّر. لو ظهر بدل كده عطل في البيئة، يبقى الباك إند لسه شايل إعدادات البداية غير المربوطة ومش قادر يقول لك إنت شايف بيانات إيه: وقّف، واربط بيئة المنصة قبل ما تثق في أي حاجة على الشاشة.\n\nالصلاحيات بتتعرض بأسماء مفهومة مش بمعرّفات قاعدة البيانات، وكل واحدة فيها وصلة للقسم اللي بيشرحها في الدليل. المعرّف فضل هو المرجع في كل منح وكل رفض؛ الاسم ده بس طريقة القراءة.\n\nبيئة المنصة والتحقق من إصدار المنصة موجودين تحت قسم المنصة في الكونسول.\n\nبيئة المنصة بتحدّد الباك إند ده. التحديد باتجاه واحد وبيتسجّل في التدقيق، ومحتاج صلاحية إدارة مفاتيح الخصائص وتسجيل دخول حديث، ومش بينشر كود، ومش ممكن يختار الإنتاج. لو الحالة الحالية مش مطابقة للتغيير المسموح للأداة، مش هيتعرض أي إجراء ومش هيتغيّر أي حاجة.\n\nالتحقق من إصدار المنصة للقراءة بس ومحتاج صلاحية عرض سجلات التدقيق. بيعرض الفحوصات الناجحة، والثغرات المعروفة والمتوقعة، والمشاكل غير المتوقعة. فحص حدود الاستخدام غير المملوكة مسجّل كثغرة مفتوحة في سجل جاهزية الإطلاق: متوقع طول ما الثغرة مفتوحة ومش بيمنع الإصدار لوحده. أي مشكلة غير متوقعة معناها وقوف — ما تكمّلش إصدار وبلّغ عنها.\n\nالتحقق بخطوتين مش مطلوب حاليًا على الباك إند ده. لو اتفعّل في أي وقت هيطبّق على كل صلاحيات الفريق مرة واحدة، ومش بيتحقق غير بتطبيق مصادقة مسجّل على حسابك إنت؛ مفيش تجاوز ولا استثناء. سجّل التطبيق واحتفظ بأكواد الاسترجاع قبل ما المطلب ده يتفعّل. لو المطلب اتفعّل ومفيش تطبيق مسجّل، كل المشغّلين هيتقفل عليهم الكونسول، بما فيه الأدوات اللي ممكن تقفل المطلب ده تاني، والاسترجاع ساعتها بيحتاج إجراء من مالك قاعدة البيانات.\n\nالتحقق من إصدار المنصة للقراءة بس بجد: بيفحص البنية ومش بيكتب أي حاجة خالص. إن عضو من الفريق شغّله بيتسجّل بشكل منفصل بعده على طول، عشان كتابة التدقيق عمرها ما تخلّي فحص بنيوي يفشل، والفحص عمره ما يغيّر حالة المنصة في الخفاء.\n\nالمزوّدون الخارجيون بيتشغّلوا من قسم المزوّدين في الكونسول، والترتيب هناك ورشة بتفرضه مش بتقترحه. تشغيل خدمة خارجية معناه إرسال بيانات العملاء ليها، فالتفعيل دايمًا محتاج شخصين مختلفين: واحد يرفع طلب بسبب، وزميل معاه نفس الصلاحية يوافق. محدش يقدر يوافق على طلبه هو مهما كانت صلاحياته، والطلب بتنتهي صلاحيته بعد ٢٤ ساعة. البحث عن العناوين بيتشغّل بعد ما المزوّد يبقى مفعّل بس — إنك تعمله بدري مش بيوفّر خطوة، لأن التفعيل بيترفض طول ما الخاصية شغالة. وبعدين اختبار آمن بيثبت إن الخدمة بترد فعلًا. مفيش أي بيانات اعتماد أو اسم متغيّر بيئة أو بصمة بتتعرض؛ الكونسول بيسأل بس إذا كانت بيانات الاعتماد متظبطة.\n\nمنح دور مبقاش محتاج تنقل معرّف الحساب بإيدك. لو معاك صلاحية البحث عن الحسابات، ابحث بالإيميل أو رقم التليفون واختر الحساب المطابق؛ ورشة هتحمل المعرّف بدالك. البحث بقصد مش بيعرض اسم ولا إيميل — بيجاوب على أنهي حساب، مش مين — لأن التعرّف على الشخص محتاج صلاحية منفصلة. ولو دورك مش شامل البحث عن الحسابات، الفورم لسه بيقبل معرّف الحساب مباشرة وبيقول لك كده بدل ما يعرض بحث فاضي. وبرضه مش هتقدر تمنح دور لحسابك إنت.\n\nاختيار مين تديله دور مبقاش محتاج تدوّر على معرّف حساب. اكتب الإيميل بالكامل وورشة هتأكد لك الحساب اللي بيخصه، وهتحمل المعرّف داخليًا. وتقدر تلغي الاختيار وتدوّر على إيميل تاني قبل ما تبعت.\n\nليه البحث ده مسموح، وإيه اللي بيظهره. منح دور للفريق والتعرّف على الشخص اللي هياخده نفس الشغلانة، فالبحث مربوط بنفس الصلاحية بتاعة المنح ومحتاج نفس تسجيل الدخول الحديث. وهو بقصد مش بحث عام: بيطابق إيميل كامل واحد بالظبط، وبيرجّع حساب واحد على الأكثر، وبيرفض أي رموز عامة، فمش ممكن يُستخدم للتصفح أو حصر الحسابات. وبيكشف بس الاسم الظاهر، والإيميل مقنّع كتأكيد ليك، وإذا كان الحساب سليم، والأدوار اللي معاه بالفعل — دي الأخيرة عشان ما تكررش أو توسّع منح موجود من غير ما تدري. مش بيعرض رقم تليفون ولا عنوان ولا بيانات تواصل ولا تاريخ توثيق. وكل عملية بحث ليها حد أقصى وبتتسجّل في سجل التدقيق باسم حسابك مع نطاق الإيميل اللي بحثت فيه.\n\nلما إجراء حسّاس يطلب منك تأكيد شخصيتك، الإجراء اللي بدأته بيكمل معاك. ورشة بتحتفظ بالمنح أو السحب أو البحث اللي كنت بتعمله بالظبط، وبتفتح التأكيد، وأول ما تأكد بتبعت نفس الطلب نيابةً عنك. مش هتضغط الزرار تاني.\n\nحاجات بقصد مش هتحصل. بيشيل إجراء واحد بس في المرة، فمش ممكن إجراء تاني ياخد مكان اللي مذكور في التأكيد اللي هتوافق عليه. وبيبعت الإجراء ده مرة واحدة بس مهما اتكرر التأكيد. ولو لغيت، أو الباسورد مااتقبلش، مفيش حاجة بتتبعت. ولو سبت التأكيد مفتوح أكتر من خمس دقايق، ورشة بتسيب الإجراء بدل ما تنفّذه بعد ما بقيت مش متوقّعه، وبتقولك كده؛ اضغط الزرار تاني لما تكون جاهز. ولو السيرفر لسه بيطلب تأكيد بعد ما أكدت على طول، ورشة بتبلّغك بده بدل ما تسأل تاني، لأن تكرار الطلب هيخبّي المشكلة الحقيقية — اخرج وادخل وجرّب تاني.\n\nالإجراء المُعاد إرساله ما ينفعش يتكرر. ورشة بتبعت الطلب اللي السيرفر رفضه، والسيرفر بيرفض التأكيد القديم قبل ما يقرا أو يكتب أي حاجة، يعني المحاولة المرفوضة ماأثرتش أصلًا. والمنح بيحمل نفس مفتاح عدم التكرار في المحاولة التانية، فالمنح المتكرر بيتعرف عليه بدل ما يتضاعف."
     },
     {
-      "id": "admin-audit-analytics", "audience": "admin", "locale": "en", "title": "Audit, analytics, and exports", "summary": "Read immutable history, interpret metric definitions, and export aggregate data safely.", "version": 3, "lastReviewedDate": "2026-08-21", "features": ["audit", "analytics", "exports"], "routes": ["/admin/audit", "/admin/analytics"], "capabilities": ["view_audit_logs", "view_analytics", "export_operational_report", "view_financial_ledger"], "keywords": ["audit", "analytics", "metric", "report", "csv", "export", "financial"],
+      "id": "admin-audit-analytics",
+      "audience": "admin",
+      "locale": "en",
+      "title": "Audit, analytics, and exports",
+      "summary": "Read immutable history, interpret metric definitions, and export aggregate data safely.",
+      "version": 3,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "audit",
+        "analytics",
+        "exports"
+      ],
+      "routes": [
+        "/admin/audit",
+        "/admin/analytics"
+      ],
+      "capabilities": [
+        "view_audit_logs",
+        "view_analytics",
+        "export_operational_report",
+        "view_financial_ledger"
+      ],
+      "keywords": [
+        "audit",
+        "analytics",
+        "metric",
+        "report",
+        "csv",
+        "export",
+        "financial"
+      ],
       "body": "Audit is append-only evidence of actions that happened. Search by bounded period, source, actor, or exact subject; do not treat it as an editable case note. Reading sensitive sources is itself logged.\n\nAnalytics derives first-party aggregate facts from authoritative Warsha tables and histories. Read the metric definition before comparing numbers. Reporting days use Africa/Cairo while storage remains UTC. A partial period includes today. Financial cards show ledger facts only and do not claim external settlement or revenue.\n\nCSV export requires `export_operational_report`, fresh authentication, a reason, an expiring request owned by the operator, and an audit entry. It contains aggregate snake_case columns and no PII. Do not combine it with another dataset to identify people. Detailed exports are not available without separate privacy authority.\n\nCategory filters and dimension breakdowns show the localized service name. The stable category identifier remains the value stored and exported, so a report exported in one language is comparable with one exported in another.\n\nAn export interrupted by a confirmation resumes on its own. Exporting an operational report requires a recent sign-in; when Warsha asks you to confirm, the export you requested — the same period, filters and stated reason — is the one that runs once you have confirmed. It runs once. Cancelling exports nothing."
     },
     {
-      "id": "admin-audit-analytics", "audience": "admin", "locale": "ar", "title": "السجل والتحليلات والتنزيل", "summary": "اقرأ التاريخ الدائم وافهم تعريفات الأرقام ونزّل بيانات مجمعة بأمان.", "version": 3, "lastReviewedDate": "2026-08-21", "features": ["audit", "analytics", "exports"], "routes": ["/admin/audit", "/admin/analytics"], "capabilities": ["view_audit_logs", "view_analytics", "export_operational_report", "view_financial_ledger"], "keywords": ["سجل", "تحليلات", "رقم", "تقرير", "CSV", "تنزيل", "مالي"],
+      "id": "admin-audit-analytics",
+      "audience": "admin",
+      "locale": "ar",
+      "title": "السجل والتحليلات والتنزيل",
+      "summary": "اقرأ التاريخ الدائم وافهم تعريفات الأرقام ونزّل بيانات مجمعة بأمان.",
+      "version": 3,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "audit",
+        "analytics",
+        "exports"
+      ],
+      "routes": [
+        "/admin/audit",
+        "/admin/analytics"
+      ],
+      "capabilities": [
+        "view_audit_logs",
+        "view_analytics",
+        "export_operational_report",
+        "view_financial_ledger"
+      ],
+      "keywords": [
+        "سجل",
+        "تحليلات",
+        "رقم",
+        "تقرير",
+        "CSV",
+        "تنزيل",
+        "مالي"
+      ],
       "body": "السجل دليل بيتضاف عليه بس للإجراءات اللي حصلت. دور بمدة محدودة أو مصدر أو موظف أو موضوع مطابق؛ ما تتعاملش معاه كملاحظة حالة قابلة للتعديل. قراءة المصادر الحساسة نفسها بتتسجل.\n\nالتحليلات بتطلع أرقام مجمعة من جداول وتواريخ ورشة الرسمية. اقرأ تعريف الرقم قبل المقارنة. أيام التقرير بتوقيت القاهرة والتخزين UTC. المدة الجزئية شاملة النهارده. الكروت المالية حقائق من الدفتر بس وما بتدّعيش إن التحويل الخارجي تم أو إنها إيرادات.\n\nتنزيل CSV محتاج `export_operational_report` وتحقق حديث وسبب وطلب مؤقت مملوك للموظف وسجل مراجعة. الملف فيه أعمدة مجمعة ثابتة ومن غير بيانات شخصية. ما تدمجوش مع بيانات تانية عشان تحدد أشخاص. مفيش تنزيل تفصيلي من غير صلاحية خصوصية منفصلة.\n\nفلاتر التصنيف وتفصيل الأبعاد بيعرضوا اسم الخدمة المترجم. معرّف التصنيف الثابت فضل هو القيمة اللي بتتخزّن وبتتصدّر، فالتقرير المصدَّر بلغة يبقى قابل للمقارنة بتقرير مصدَّر بلغة تانية.\n\nالتصدير اللي بيتقطع بطلب تأكيد بيكمل لوحده. تصدير التقرير التشغيلي محتاج تسجيل دخول حديث؛ ولما ورشة تطلب منك التأكيد، التصدير اللي طلبته — بنفس الفترة والفلاتر والسبب المكتوب — هو اللي بيشتغل بعد ما تأكد. وبيشتغل مرة واحدة. ولو لغيت، مفيش حاجة بتتصدّر."
     },
     {
-      "id": "admin-recovery", "audience": "admin", "locale": "en", "title": "Incidents, recovery, and actions that must stay governed", "summary": "Respond safely when a provider, account, or admin authority is unavailable.", "version": 1, "lastReviewedDate": "2026-08-21", "features": ["incidents", "provider_governance", "account_recovery", "privacy"], "routes": ["/admin", "/admin/audit"], "capabilities": ["manage_incidents", "manage_feature_flags", "manage_kill_switches", "review_privacy_incidents"], "keywords": ["incident", "recovery", "provider", "feature flag", "kill switch", "emergency"],
+      "id": "admin-recovery",
+      "audience": "admin",
+      "locale": "en",
+      "title": "Incidents, recovery, and actions that must stay governed",
+      "summary": "Respond safely when a provider, account, or admin authority is unavailable.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "incidents",
+        "provider_governance",
+        "account_recovery",
+        "privacy"
+      ],
+      "routes": [
+        "/admin",
+        "/admin/audit"
+      ],
+      "capabilities": [
+        "manage_incidents",
+        "manage_feature_flags",
+        "manage_kill_switches",
+        "review_privacy_incidents"
+      ],
+      "keywords": [
+        "incident",
+        "recovery",
+        "provider",
+        "feature flag",
+        "kill switch",
+        "emergency"
+      ],
       "body": "Open an operational incident when a real service failure needs ownership and a timeline. Record the affected systems and a factual summary. A kill switch stops a risky capability; it is not a substitute for diagnosing or repairing the cause.\n\nProvider activation follows the provider registry, environment binding, privacy/subprocessor review where required, health checks, feature flag, and kill switch. Never make a direct table edit just to turn a disabled button on. Human legal or dual-control approval must remain human.\n\nFor account recovery, authenticate the identity, inventory every dependency, and prefer an existing self-service or governed RPC. Do not delete/recreate an account that owns retained audit, staff, booking, job, support, or ledger history. Never use service-role credentials as an application workaround."
     },
     {
-      "id": "admin-recovery", "audience": "admin", "locale": "ar", "title": "الحوادث والاسترجاع والإجراءات المنظمة", "summary": "اتصرف بأمان لما مزود أو حساب أو صلاحية إدارة ما تكونش متاحة.", "version": 1, "lastReviewedDate": "2026-08-21", "features": ["incidents", "provider_governance", "account_recovery", "privacy"], "routes": ["/admin", "/admin/audit"], "capabilities": ["manage_incidents", "manage_feature_flags", "manage_kill_switches", "review_privacy_incidents"], "keywords": ["حادث", "استرجاع", "مزود", "ميزة", "إيقاف", "طوارئ"],
+      "id": "admin-recovery",
+      "audience": "admin",
+      "locale": "ar",
+      "title": "الحوادث والاسترجاع والإجراءات المنظمة",
+      "summary": "اتصرف بأمان لما مزود أو حساب أو صلاحية إدارة ما تكونش متاحة.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "incidents",
+        "provider_governance",
+        "account_recovery",
+        "privacy"
+      ],
+      "routes": [
+        "/admin",
+        "/admin/audit"
+      ],
+      "capabilities": [
+        "manage_incidents",
+        "manage_feature_flags",
+        "manage_kill_switches",
+        "review_privacy_incidents"
+      ],
+      "keywords": [
+        "حادث",
+        "استرجاع",
+        "مزود",
+        "ميزة",
+        "إيقاف",
+        "طوارئ"
+      ],
       "body": "افتح حادث تشغيلي لما عطل حقيقي محتاج مسؤول وتاريخ متابعة. سجل الأنظمة المتأثرة وملخص واقعي. مفتاح الإيقاف بيوقف صلاحية فيها خطر؛ مش بديل عن تشخيص السبب وإصلاحه.\n\nتفعيل المزود بيمشي من سجل المزود وربط البيئة ومراجعة الخصوصية أو المقاول الفرعي لما تكون مطلوبة وفحص الصحة وعلم الميزة ومفتاح الإيقاف. ما تعملش تعديل جدول مباشر عشان تفتح زر مقفول. موافقة القانون أو التحكم المزدوج لازم تفضل بشرية.\n\nفي استرجاع الحساب، اتأكد من الهوية واعمل حصر لكل الاعتماديات واستخدم خدمة ذاتية أو RPC منظم موجود. ما تحذفش وتعمل حساب من جديد لو مالك لتاريخ محفوظ في السجل أو الموظفين أو الحجوزات أو الشغل أو الدعم أو الدفتر. ما تستخدمش مفتاح الخدمة كحل للتطبيق."
     },
     {
-      "id": "warsha-glossary", "audience": "all", "locale": "en", "title": "Warsha glossary", "summary": "Plain-language meanings for the words Warsha uses.", "version": 1, "lastReviewedDate": "2026-08-21", "features": ["glossary"], "routes": ["/help", "/admin/help"], "capabilities": [], "keywords": ["customer", "worker", "request", "quote", "booking", "role", "capability", "audit"],
+      "id": "warsha-glossary",
+      "audience": "all",
+      "locale": "en",
+      "title": "Warsha glossary",
+      "summary": "Plain-language meanings for the words Warsha uses.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "glossary"
+      ],
+      "routes": [
+        "/help",
+        "/admin/help"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "customer",
+        "worker",
+        "request",
+        "quote",
+        "booking",
+        "role",
+        "capability",
+        "audit"
+      ],
       "body": "- **Customer:** a person using Warsha to request or book work.\n- **Worker / provider:** a person offering services after the required onboarding and approval. “Provider” is the internal data term; the product says Worker.\n- **Request:** a description of work sent to matching workers.\n- **Quote:** a worker's offer with price and terms.\n- **Job / booking:** the authoritative agreement and its progress. The product usually says Job; some stored authorities say Booking.\n- **Service area:** the approximate places a worker agrees to serve.\n- **Verification:** the governed review of required worker information.\n- **Product role:** Customer or Worker; what the account does in the product.\n- **Staff role:** a reviewed bundle of admin capabilities.\n- **Capability:** one server-checked admin permission.\n- **Fresh authentication:** proof that the operator authenticated recently; it does not add permission.\n- **Dual control:** a second, different authorized person must approve.\n- **Suspension:** an account or worker capability is stopped under a governed state.\n- **Ban:** a high-risk permanent enforcement action.\n- **Recovery:** a governed way to restore a valid state without rewriting history.\n- **Audit log:** append-only evidence of an action.\n- **Onboarding:** the required steps before the permanent experience.\n- **Address pin:** exact stored coordinates confirmed separately from editable address words.\n- **Default address:** the saved address Warsha selects first; it can be changed."
     },
     {
-      "id": "warsha-glossary", "audience": "all", "locale": "ar", "title": "قاموس ورشة", "summary": "معاني بسيطة للكلمات اللي ورشة بيستخدمها.", "version": 1, "lastReviewedDate": "2026-08-21", "features": ["glossary"], "routes": ["/help", "/admin/help"], "capabilities": [], "keywords": ["عميل", "صنايعي", "طلب", "عرض", "حجز", "دور", "صلاحية", "سجل"],
+      "id": "warsha-glossary",
+      "audience": "all",
+      "locale": "ar",
+      "title": "قاموس ورشة",
+      "summary": "معاني بسيطة للكلمات اللي ورشة بيستخدمها.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "glossary"
+      ],
+      "routes": [
+        "/help",
+        "/admin/help"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "عميل",
+        "صنايعي",
+        "طلب",
+        "عرض",
+        "حجز",
+        "دور",
+        "صلاحية",
+        "سجل"
+      ],
       "body": "- **العميل:** شخص بيستخدم ورشة عشان يطلب أو يحجز شغل.\n- **الصنايعي / مقدم الخدمة:** شخص بيقدم خدمات بعد التقديم والموافقة المطلوبة. «Provider» اسم داخلي في البيانات، والمنتج بيقول صنايعي.\n- **الطلب:** وصف للشغل بيتبعت للصنايعية المناسبين.\n- **العرض:** اقتراح الصنايعي وفيه السعر والشروط.\n- **الشغل / الحجز:** الاتفاق الرسمي ومراحل تنفيذه. المنتج غالبًا بيقول شغل، وبعض الجداول بتقول حجز.\n- **منطقة الخدمة:** الأماكن التقريبية اللي الصنايعي موافق يشتغل فيها.\n- **التوثيق:** مراجعة منظمة لمعلومات الصنايعي المطلوبة.\n- **دور المنتج:** عميل أو صنايعي؛ الحساب بيعمل إيه في المنتج.\n- **دور الموظف:** مجموعة صلاحيات إدارة مراجعة.\n- **الصلاحية:** إذن إدارة واحد بيراجعه السيرفر.\n- **التحقق الحديث:** دليل إن الموظف سجل دخوله قريب؛ ما بيديش صلاحية جديدة.\n- **التحكم المزدوج:** شخص تاني مختلف ومصرح له لازم يوافق.\n- **الإيقاف:** وقف الحساب أو صلاحية الشغل حسب حالة منظمة.\n- **الحظر:** إجراء أمان دائم وعالي الخطورة.\n- **الاسترجاع:** طريقة منظمة ترجع الحالة الصحيحة من غير ما تمسح التاريخ.\n- **سجل المراجعة:** دليل بيتضاف عليه بس للإجراءات.\n- **التقديم:** الخطوات المطلوبة قبل التجربة الدائمة.\n- **دبوس العنوان:** الإحداثيات الدقيقة المتأكدة لوحدها عن كلام العنوان القابل للتعديل.\n- **العنوان الأساسي:** العنوان المحفوظ اللي ورشة بيختاره الأول، وتقدر تغيره."
     }
   ]

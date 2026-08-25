@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-import { parseServices, type Service } from '../web/lib/customer.ts';
+import { parseServices } from '../web/lib/customer.ts';
 import {
-  specificServiceLabel, specificServicesFor,
+  catalogueServiceLabel, orderedCatalogueServices, specificServiceLabel,
 } from '../src/services/specific-services.ts';
 
 /**
@@ -55,26 +55,17 @@ function catalogPayload() {
 }
 
 /**
- * The page's own derivation, reproduced.
+ * The page's derivation -- the real one, not a copy of it.
  *
- * If the request form changes how it orders or labels, this diverges and the
- * static assertions at the bottom fail -- so the copy cannot rot into a
- * different implementation that passes on its own terms.
+ * This used to reproduce the ordering and labelling inline, mirroring what the
+ * form did. Then native grew the same control and the rule existed in three
+ * places, so it moved into `src/services` and both screens now call it. Calling
+ * it here too means this test exercises the shipped code path rather than a
+ * lookalike that can pass on its own terms while the page breaks.
  */
 function optionLabels(categoryId: string, locale: 'en' | 'ar' | 'fr'): string[] {
-  const services = parseServices(catalogPayload());
-  const forCategory = services.filter((service) => service.categoryId === categoryId);
-  const order = new Map(
-    specificServicesFor(categoryId).map((service, index) => [service.key, index]),
-  );
-  const rank = (service: Service) => service.translationKey
-    ? order.get(service.translationKey) ?? Number.MAX_SAFE_INTEGER
-    : Number.MAX_SAFE_INTEGER;
-  return forCategory
-    .slice()
-    .sort((left, right) => rank(left) - rank(right))
-    .map((service) => (service.translationKey
-      && specificServiceLabel(service.translationKey, locale)) || service.name);
+  return orderedCatalogueServices(parseServices(catalogPayload()), categoryId)
+    .map((service) => catalogueServiceLabel(service, locale));
 }
 
 // --- The parser must not drop the key ---------------------------------------
@@ -167,9 +158,10 @@ function optionLabels(categoryId: string, locale: 'en' | 'ar' | 'fr'): string[] 
 // same way, so the copy cannot drift into a version that only passes here.
 {
   const form = readFileSync('web/app/app/requests/new/page.tsx', 'utf8');
-  check(/specificServiceLabel\(service\.translationKey, locale\)/.test(form),
+  check(/catalogueServiceLabel\(service, locale\)/.test(form),
     'THE FORM RESOLVES THE LABEL FROM THE KEY AND THE ACTIVE LOCALE');
-  check(/\|\| service\.name/.test(form),
+  const shared = readFileSync('src/services/specific-services.ts', 'utf8');
+  check(/\|\| service\.name/.test(shared),
     'with the stored name as a fallback, not as the normal path');
   // The exact pattern that shipped the bug.
   const optionBlock = /<option key=\{service\.id\}[\s\S]{0,240}?<\/option>/.exec(form)?.[0] ?? '';
@@ -178,15 +170,15 @@ function optionLabels(categoryId: string, locale: 'en' | 'ar' | 'fr'): string[] 
     'AND NEVER RENDERS service.name DIRECTLY FOR A KEYED SERVICE');
   check(/orderedServices\.map/.test(form),
     'the list is the catalogue-ordered one, not the raw server order');
-  check(/specificServicesFor\(categoryId\)/.test(form),
-    'ordered by the shared catalogue');
+  check(/orderedCatalogueServices\(services, categoryId\)/.test(form),
+    'ordered by the shared catalogue, through the derivation native also uses');
   check(/locale/.test(form) && /useAppLocale/.test(form),
     'and the locale it resolves with is the live one, not a captured constant');
   // Recomputation: the memo must depend on the data, and the label call must sit
   // inside render so a locale change re-runs it.
   check(/\[services, categoryId\]/.test(form),
     'the ordering memo depends on the data it orders');
-  const renderIndex = form.indexOf('specificServiceLabel(service.translationKey, locale)');
+  const renderIndex = form.indexOf('catalogueServiceLabel(service, locale)');
   const memoIndex = form.indexOf('const orderedServices');
   check(renderIndex > memoIndex,
     'the label is resolved at render, so switching language relabels without refetching');

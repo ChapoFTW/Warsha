@@ -20,6 +20,8 @@ import { intlLocale, type Locale } from '@/lib/preferences';
 import { supabase } from '@/lib/supabase';
 import { useAppLocale } from '@/lib/use-app-locale';
 import { formatMinor } from '@/src/payments/money';
+import { serviceCategoryLabel } from '@/src/i18n/service-labels';
+import { serviceCategoryTranslationKey } from '@/src/services/service-catalogue';
 
 import type { Route } from 'next';
 import styles from '@/components/product-surface.module.css';
@@ -260,7 +262,15 @@ function RequestDetail({
         <span className={styles.badge}>
           {words[`requestStatus_${request.status}`] ?? request.status}
         </span>
-        <span className={styles.badge}>{words[request.categoryId] ?? request.categoryId}</span>
+        {/* A request stores `category_id`. The copy catalogue is not keyed by id,
+            so every lookup missed and fell through to the id itself: an Arabic
+            customer reading their own request list was shown
+            `water-heater-repair`. Resolved through the shared authority, which
+            humanizes rather than ever surfacing a slug. */}
+        <span className={styles.badge}>
+          {serviceCategoryLabel(
+            serviceCategoryTranslationKey(request.categoryId), locale, request.categoryId)}
+        </span>
         <span className={styles.badge}>
           {words[`schedule_${request.scheduleKind}`] ?? request.scheduleKind}
         </span>

@@ -131,7 +131,7 @@
       "locale": "en",
       "title": "Requests, quotes, and jobs",
       "summary": "Understand what happens from posting a request to completing or cancelling a job.",
-      "version": 2,
+      "version": 3,
       "lastReviewedDate": "2026-08-25",
       "features": [
         "marketplace",
@@ -154,7 +154,7 @@
         "cancel",
         "dispute"
       ],
-      "body": "## Request and quotes\n\nDescribe the problem, choose the approximate area and timing, and send the request. Matching workers can submit one quote and revise it while the request allows changes. Compare the amount, timing, message, materials, payment methods, rating, and verification information shown.\n\n## Job\n\nAccepting a quote creates or advances the authoritative booking. Follow its status in My jobs. Schedule changes, extra work, completion, cancellation, and disputes use their own confirmation steps; a message alone does not change the booking.\n\nIf a worker cancels or does not arrive, use the actions shown on that job or contact Support. The job stays in history so both sides can understand what happened.\n\nService types are shown by their name in your language — Electrical, Plumbing, Satellite and TV installation — in English, Arabic and French. After choosing one you can narrow it further with a specific service, such as a blocked drain or a socket installation; that field is optional, and \"Any service in this category\" means you have not narrowed it and no professional is excluded. The names you see are display labels; the category and the specific service are recorded the same way whichever language you use, so switching language never changes what you requested."
+      "body": "## Request and quotes\n\nDescribe the problem, choose the approximate area and timing, and send the request. Matching workers can submit one quote and revise it while the request allows changes. Compare the amount, timing, message, materials, payment methods, rating, and verification information shown.\n\n## Job\n\nAccepting a quote creates or advances the authoritative booking. Follow its status in My jobs. Schedule changes, extra work, completion, cancellation, and disputes use their own confirmation steps; a message alone does not change the booking.\n\nIf a worker cancels or does not arrive, use the actions shown on that job or contact Support. The job stays in history so both sides can understand what happened.\n\nService types are shown by their name in your language — Electrical, Plumbing, Satellite and TV installation — in English, Arabic and French. After choosing one you can narrow it further with a specific service, such as a blocked drain or a socket installation; that field is optional, and \"Any service in this category\" means you have not narrowed it and no professional is excluded. It works the same way on the website and in the Android and iOS apps. The names you see are display labels; the category and the specific service are recorded the same way whichever language you use, so switching language never changes what you requested."
     },
     {
       "id": "customer-requests-quotes-jobs",
@@ -162,7 +162,7 @@
       "locale": "ar",
       "title": "الطلبات والعروض والشغل",
       "summary": "افهم اللي بيحصل من نشر الطلب لحد اكتمال الشغل أو إلغائه.",
-      "version": 2,
+      "version": 3,
       "lastReviewedDate": "2026-08-25",
       "features": [
         "marketplace",
@@ -185,7 +185,7 @@
         "إلغاء",
         "خلاف"
       ],
-      "body": "## الطلب والعروض\n\nاشرح المشكلة، واختار المنطقة التقريبية والميعاد، وابعت الطلب. الصنايعية المطابقين يقدروا يبعتوا عرض واحد ويعدلوه طول ما الطلب بيسمح. قارن المبلغ والميعاد والرسالة والخامات وطرق الدفع والتقييم والتوثيق الظاهر.\n\n## الشغل\n\nقبول العرض بيعمل أو يحدّث الحجز الرسمي. تابع حالته من «شغلي». تغيير الميعاد والشغل الإضافي والإكمال والإلغاء والخلافات ليهم خطوات تأكيد خاصة؛ الرسالة لوحدها ما بتغيرش الحجز.\n\nلو الصنايعي لغى أو ما وصلش، استخدم الاختيارات الظاهرة في الشغل أو كلم الدعم. الشغل بيفضل في السجل عشان الطرفين يعرفوا اللي حصل.\n\nأنواع الخدمة بتظهر باسمها بلغتك — كهرباء، سباكة، تركيب دش وتلفزيون — بالعربي والإنجليزي والفرنسي. بعد ما تختار النوع تقدر تحدّد أكتر بخدمة معيّنة، زي مواسير مسدودة أو تركيب بريزة؛ الخانة دي اختيارية، و«أي خدمة في الفئة دي» معناها إنك ماحددتش ومفيش صنايعي بيتستبعد. الاسم اللي بتشوفه للعرض بس؛ الخدمة نفسها بتتسجّل بنفس الطريقة مهما كانت لغتك، فتغيير اللغة عمره ما بيغيّر اللي طلبته."
+      "body": "## الطلب والعروض\n\nاشرح المشكلة، واختار المنطقة التقريبية والميعاد، وابعت الطلب. الصنايعية المطابقين يقدروا يبعتوا عرض واحد ويعدلوه طول ما الطلب بيسمح. قارن المبلغ والميعاد والرسالة والخامات وطرق الدفع والتقييم والتوثيق الظاهر.\n\n## الشغل\n\nقبول العرض بيعمل أو يحدّث الحجز الرسمي. تابع حالته من «شغلي». تغيير الميعاد والشغل الإضافي والإكمال والإلغاء والخلافات ليهم خطوات تأكيد خاصة؛ الرسالة لوحدها ما بتغيرش الحجز.\n\nلو الصنايعي لغى أو ما وصلش، استخدم الاختيارات الظاهرة في الشغل أو كلم الدعم. الشغل بيفضل في السجل عشان الطرفين يعرفوا اللي حصل.\n\nأنواع الخدمة بتظهر باسمها بلغتك — كهرباء، سباكة، تركيب دش وتلفزيون — بالعربي والإنجليزي والفرنسي. بعد ما تختار النوع تقدر تحدّد أكتر بخدمة معيّنة، زي مواسير مسدودة أو تركيب بريزة؛ الخانة دي اختيارية، و«أي خدمة في الفئة دي» معناها إنك ماحددتش ومفيش صنايعي بيتستبعد. الاسم اللي بتشوفه للعرض بس؛ الخدمة نفسها بتتسجّل بنفس الطريقة مهما كانت لغتك، فتغيير اللغة عمره ما بيغيّر اللي طلبته.\n\nأنواع الخدمة بتظهر باسمها بلغتك. بعد ما تختار النوع تقدر تحدد خدمة معينة زي ماسورة مسدودة أو تركيب بريزة، والحقل ده اختياري: «أي خدمة في النوع ده» معناها إنك ما حددتش ومحدش من الصنايعية مستبعد. الأسماء اللي بتشوفها للعرض بس؛ النوع والخدمة بيتسجلوا بنفس الشكل مهما كانت لغتك، فتغيير اللغة عمره ما بيغير طلبك."
     },
     {
       "id": "customer-account-security",
@@ -433,7 +433,7 @@
       "locale": "en",
       "title": "Opportunities, quotes, and jobs",
       "summary": "Review matching requests, write clear quotes, and update real job progress.",
-      "version": 2,
+      "version": 3,
       "lastReviewedDate": "2026-08-25",
       "features": [
         "marketplace",
@@ -454,7 +454,7 @@
         "job",
         "cancel"
       ],
-      "body": "Opportunities appear only when your active worker capability, trades, service areas, availability, and the request match. Not seeing requests can be correct while onboarding or verification is incomplete.\n\nA quote should state the price, arrival estimate, expected duration, what labour/materials include, supported payment methods, and a useful message. Do not put contact details into the quote. A retry must not create a second quote.\n\nWhen selected, manage the job from Jobs. Use the provided progress actions—on the way, arrived, started, completion, reschedule, cancellation—because chat messages do not change job state. Give a truthful reason where required.\n\nService types appear under their name in your language rather than an internal code. The underlying service is the same record customers and staff see, so a job you accept in Arabic is the same job in English."
+      "body": "Opportunities appear only when your active worker capability, trades, service areas, availability, and the request match. Not seeing requests can be correct while onboarding or verification is incomplete.\n\nA quote should state the price, arrival estimate, expected duration, what labour/materials include, supported payment methods, and a useful message. Do not put contact details into the quote. A retry must not create a second quote.\n\nWhen selected, manage the job from Jobs. Use the provided progress actions—on the way, arrived, started, completion, reschedule, cancellation—because chat messages do not change job state. Give a truthful reason where required.\n\nService types appear under their name in your language rather than an internal code. The underlying service is the same record customers and staff see, so a job you accept in Arabic is the same job in English. Each invitation names the trade it is for and, when the customer narrowed their request, the specific service they asked for, so you know what you are quoting on before you open it."
     },
     {
       "id": "worker-opportunities-jobs",
@@ -462,7 +462,7 @@
       "locale": "ar",
       "title": "الفرص والعروض والشغل",
       "summary": "راجع الطلبات المناسبة، اكتب عرض واضح، وحدّث تقدم الشغل الحقيقي.",
-      "version": 2,
+      "version": 3,
       "lastReviewedDate": "2026-08-25",
       "features": [
         "marketplace",
@@ -483,7 +483,7 @@
         "شغل",
         "إلغاء"
       ],
-      "body": "الفرص بتظهر بس لما صلاحية الشغل تكون نشطة ومهنتك ومنطقة خدمتك وتوفرك مناسبين للطلب. طبيعي ما تشوفش طلبات لو التقديم أو التوثيق لسه ناقص.\n\nالعرض الواضح فيه السعر ووقت الوصول والمدة المتوقعة والخامات أو المصنعية المشمولة وطرق الدفع ورسالة مفيدة. ما تحطش بيانات تواصل في العرض. إعادة المحاولة ما ينفعش تعمل عرض تاني لنفس الطلب.\n\nلما العميل يختارك، تابع من «الشغل». استخدم خطوات التقدم الموجودة—في الطريق، وصلت، بدأت، اكتمل، تغيير الموعد، إلغاء—لأن رسائل الشات ما بتغيرش حالة الشغل. اكتب سبب حقيقي لما يكون مطلوب.\n\nأنواع الخدمة بتظهر باسمها بلغتك مش بكود داخلي. الخدمة الأساسية هي نفس السجل اللي العملاء والفريق بيشوفوه، فالشغلانة اللي بتقبلها بالعربي هي نفسها بالإنجليزي."
+      "body": "الفرص بتظهر بس لما صلاحية الشغل تكون نشطة ومهنتك ومنطقة خدمتك وتوفرك مناسبين للطلب. طبيعي ما تشوفش طلبات لو التقديم أو التوثيق لسه ناقص.\n\nالعرض الواضح فيه السعر ووقت الوصول والمدة المتوقعة والخامات أو المصنعية المشمولة وطرق الدفع ورسالة مفيدة. ما تحطش بيانات تواصل في العرض. إعادة المحاولة ما ينفعش تعمل عرض تاني لنفس الطلب.\n\nلما العميل يختارك، تابع من «الشغل». استخدم خطوات التقدم الموجودة—في الطريق، وصلت، بدأت، اكتمل، تغيير الموعد، إلغاء—لأن رسائل الشات ما بتغيرش حالة الشغل. اكتب سبب حقيقي لما يكون مطلوب.\n\nأنواع الخدمة بتظهر باسمها بلغتك مش بكود داخلي. الخدمة الأساسية هي نفس السجل اللي العملاء والفريق بيشوفوه، فالشغلانة اللي بتقبلها بالعربي هي نفسها بالإنجليزي. كل دعوة بتوضح نوع الشغل، ولو العميل حدد خدمة معينة بتظهر كمان، عشان تعرف بتسعّر على إيه قبل ما تفتحها."
     },
     {
       "id": "worker-earnings-profile",
@@ -669,7 +669,7 @@
       "locale": "fr",
       "title": "Demandes, devis et interventions",
       "summary": "Comprenez le parcours d’une demande jusqu’à la fin ou l’annulation de l’intervention.",
-      "version": 2,
+      "version": 3,
       "lastReviewedDate": "2026-08-25",
       "features": [
         "marketplace",
@@ -692,7 +692,7 @@
         "annuler",
         "litige"
       ],
-      "body": "## Demande et devis\n\nDécrivez le problème, choisissez la zone et le moment souhaité, puis envoyez la demande. Les professionnels correspondants peuvent proposer un devis et le réviser tant que la demande l’autorise. Comparez le montant, le délai, le message, les matériaux, les moyens de paiement, la note et les informations de vérification affichées.\n\n## Intervention\n\nAccepter un devis crée ou fait avancer la réservation officielle. Suivez son état dans Mes travaux. Les changements d’horaire, travaux supplémentaires, clôtures, annulations et litiges ont leurs propres confirmations ; un message seul ne modifie pas la réservation.\n\nLes types de service s’affichent sous leur nom dans votre langue — Électricité, Plomberie, Installation satellite et TV — en anglais, arabe et français. Après l’avoir choisi, vous pouvez préciser avec un service spécifique, comme une canalisation bouchée ou l’installation d’une prise ; ce champ est facultatif, et « Tout service de cette catégorie » signifie que vous n’avez pas précisé et qu’aucun professionnel n’est exclu. Le nom affiché est une étiquette ; le service lui-même est enregistré de la même manière quelle que soit la langue, si bien que changer de langue ne modifie jamais votre demande."
+      "body": "## Demande et devis\n\nDécrivez le problème, choisissez la zone et le moment souhaité, puis envoyez la demande. Les professionnels correspondants peuvent proposer un devis et le réviser tant que la demande l’autorise. Comparez le montant, le délai, le message, les matériaux, les moyens de paiement, la note et les informations de vérification affichées.\n\n## Intervention\n\nAccepter un devis crée ou fait avancer la réservation officielle. Suivez son état dans Mes travaux. Les changements d’horaire, travaux supplémentaires, clôtures, annulations et litiges ont leurs propres confirmations ; un message seul ne modifie pas la réservation.\n\nLes types de service s’affichent sous leur nom dans votre langue — Électricité, Plomberie, Installation satellite et TV — en anglais, arabe et français. Après l’avoir choisi, vous pouvez préciser avec un service spécifique, comme une canalisation bouchée ou l’installation d’une prise ; ce champ est facultatif, et « Tout service de cette catégorie » signifie que vous n’avez pas précisé et qu’aucun professionnel n’est exclu. Le nom affiché est une étiquette ; le service lui-même est enregistré de la même manière quelle que soit la langue, si bien que changer de langue ne modifie jamais votre demande.\n\nLes types de service apparaissent sous leur nom dans votre langue. Après avoir choisi un type, vous pouvez préciser un service exact, par exemple une canalisation bouchée ou la pose d’une prise ; ce champ est facultatif, et « Tout service de cette catégorie » signifie que vous n’avez rien restreint et qu’aucun professionnel n’est exclu. Les noms affichés ne sont que des libellés : la catégorie et le service précis sont enregistrés de la même manière quelle que soit votre langue, donc changer de langue ne modifie jamais votre demande."
     },
     {
       "id": "customer-account-security",
@@ -820,7 +820,7 @@
       "locale": "fr",
       "title": "Opportunités, devis et interventions",
       "summary": "Répondez aux demandes admissibles et mettez à jour le déroulement réel du travail.",
-      "version": 2,
+      "version": 3,
       "lastReviewedDate": "2026-08-25",
       "features": [
         "marketplace",
@@ -842,7 +842,7 @@
         "arrivée",
         "terminer"
       ],
-      "body": "Les opportunités sont filtrées par admissibilité, métier, zone et disponibilité. Ouvrez une demande avant de répondre. Un devis doit indiquer un prix réaliste, le délai d’arrivée, la durée estimée et ce qui est inclus.\n\nLorsqu’un devis est choisi et confirmé, l’intervention apparaît dans Mes travaux. Utilisez les actions Warsha pour signaler le départ, l’arrivée, le début et la fin. Les messages servent à coordonner mais ne remplacent pas ces étapes officielles. En cas de retard, d’absence du client ou de problème sérieux, utilisez l’action correspondante et décrivez les faits.\n\nLes types de service apparaissent sous leur nom dans votre langue plutôt que sous un code interne. Le service sous-jacent est le même enregistrement que voient les clients et le personnel : un travail accepté en arabe est le même travail en anglais."
+      "body": "Les opportunités sont filtrées par admissibilité, métier, zone et disponibilité. Ouvrez une demande avant de répondre. Un devis doit indiquer un prix réaliste, le délai d’arrivée, la durée estimée et ce qui est inclus.\n\nLorsqu’un devis est choisi et confirmé, l’intervention apparaît dans Mes travaux. Utilisez les actions Warsha pour signaler le départ, l’arrivée, le début et la fin. Les messages servent à coordonner mais ne remplacent pas ces étapes officielles. En cas de retard, d’absence du client ou de problème sérieux, utilisez l’action correspondante et décrivez les faits.\n\nLes types de service apparaissent sous leur nom dans votre langue plutôt que sous un code interne. Le service sous-jacent est le même enregistrement que voient les clients et le personnel : un travail accepté en arabe est le même travail en anglais. Chaque invitation indique le métier concerné et, lorsque le client a précisé sa demande, le service exact demandé, afin que vous sachiez sur quoi vous chiffrez avant même de l’ouvrir."
     },
     {
       "id": "worker-earnings-profile",

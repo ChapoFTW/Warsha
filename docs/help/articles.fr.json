@@ -2,67 +2,493 @@
   "schemaVersion": 1,
   "articles": [
     {
-      "id": "customer-getting-started", "audience": "customer", "locale": "fr", "title": "Bien démarrer comme client", "summary": "Créez votre compte, ajoutez une adresse, demandez un service, comparez les devis et suivez l’intervention.", "version": 2, "lastReviewedDate": "2026-08-21", "features": ["auth", "onboarding", "discovery", "marketplace", "bookings"], "routes": ["/create-account", "/addresses", "/discover", "/requests", "/jobs"], "capabilities": [], "keywords": ["démarrer", "compte", "inscription", "service", "devis"],
+      "id": "customer-getting-started",
+      "audience": "customer",
+      "locale": "fr",
+      "title": "Bien démarrer comme client",
+      "summary": "Créez votre compte, ajoutez une adresse, demandez un service, comparez les devis et suivez l’intervention.",
+      "version": 2,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "auth",
+        "onboarding",
+        "discovery",
+        "marketplace",
+        "bookings"
+      ],
+      "routes": [
+        "/create-account",
+        "/addresses",
+        "/discover",
+        "/requests",
+        "/jobs"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "démarrer",
+        "compte",
+        "inscription",
+        "service",
+        "devis"
+      ],
       "body": "## Le parcours habituel\n\n1. Créez un compte client avec votre nom, votre e-mail, un numéro de mobile égyptien et un mot de passe.\n2. Confirmez l’e-mail envoyé par Warsha. Aucun code SMS n’est utilisé à l’inscription.\n3. Ajoutez une adresse de service et confirmez sa position.\n4. Recherchez un service ou publiez une demande en décrivant votre besoin.\n5. Comparez les devis reçus. Un devis est une offre, pas encore une réservation.\n6. Choisissez un professionnel et suivez l’intervention dans Mes travaux.\n7. Contactez l’assistance si quelque chose reste imprécis ou se passe mal.\n\n## À savoir\n\nLe professionnel ne voit que les informations d’adresse nécessaires à une intervention confirmée. Une estimation ne peut changer que par le parcours d’approbation prévu dans Warsha.\n\nLorsque vous créez un compte avec une adresse e-mail, Warsha envoie un lien de confirmation. En l’ouvrant sur le même appareil, vous revenez dans Warsha et l’application vous indique clairement si l’adresse a été confirmée. Les liens de confirmation sont à usage unique et expirent : si vous ouvrez un ancien lien, ou un lien déjà utilisé, Warsha vous le dit et vous propose de revenir à la connexion ; demandez un nouvel e-mail et n’utilisez que le lien le plus récent."
     },
     {
-      "id": "customer-addresses-location", "audience": "customer", "locale": "fr", "title": "Adresses et localisation", "summary": "Enregistrez une adresse claire tout en conservant la position exacte.", "version": 2, "lastReviewedDate": "2026-08-21", "features": ["addresses", "location"], "routes": ["/addresses", "/onboarding/address"], "capabilities": [], "keywords": ["adresse", "carte", "repère", "position", "autorisation", "maison", "travail"],
+      "id": "customer-addresses-location",
+      "audience": "customer",
+      "locale": "fr",
+      "title": "Adresses et localisation",
+      "summary": "Enregistrez une adresse claire tout en conservant la position exacte.",
+      "version": 2,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "addresses",
+        "location"
+      ],
+      "routes": [
+        "/addresses",
+        "/onboarding/address"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "adresse",
+        "carte",
+        "repère",
+        "position",
+        "autorisation",
+        "maison",
+        "travail"
+      ],
       "body": "## Ajouter une adresse\n\nDonnez-lui un nom familier, comme Maison ou Travail. Recherchez une adresse ou utilisez votre position actuelle lorsque ces options sont disponibles. Warsha conserve les coordonnées exactes séparément du texte que vous pouvez corriger.\n\nRenseignez la rue et le gouvernorat. Le bâtiment, l’étage, l’appartement, le point de repère et les indications sont facultatifs sauf mention contraire. Confirmez la position avant de réserver.\n\n## Si la position actuelle échoue\n\nAutorisez la localisation dans les réglages du navigateur ou de l’appareil, vérifiez que les services de localisation sont actifs, puis réessayez. Si Warsha obtient les coordonnées sans trouver l’adresse, l’écran le précise et vous laisse rechercher ou corriger les informations.\n\nLe gouvernorat et la zone se choisissent dans la liste administrative officielle de l’Égypte plutôt qu’en saisie libre, afin que l’adresse enregistrée corresponde à celle que voient les professionnels et le support. Choisir un gouvernorat n’affiche que ses propres zones, et en changer efface une zone qui n’en dépend plus.\n\nL’emplacement est une étape obligatoire à part entière. Warsha a besoin de l’endroit exact pour que le professionnel puisse vous rejoindre : une adresse ne peut donc pas être enregistrée tant que l’emplacement n’est pas confirmé, par recherche d’adresse ou avec votre position actuelle. Si l’enregistrement est indisponible, le formulaire indique l’étape manquante. Si l’autorisation de localisation est bloquée, autorisez-la pour le site dans les réglages de votre navigateur, ou recherchez l’adresse. Le nom de l’adresse, le bâtiment, l’étage, l’appartement, le point de repère et les indications pour le professionnel sont tous facultatifs et peuvent rester vides."
     },
     {
-      "id": "customer-requests-quotes-jobs", "audience": "customer", "locale": "fr", "title": "Demandes, devis et interventions", "summary": "Comprenez le parcours d’une demande jusqu’à la fin ou l’annulation de l’intervention.", "version": 2, "lastReviewedDate": "2026-08-25", "features": ["marketplace", "quotes", "bookings", "payments", "disputes"], "routes": ["/requests/new", "/requests", "/jobs"], "capabilities": [], "keywords": ["demande", "devis", "professionnel", "intervention", "annuler", "litige"],
-      "body": "## Demande et devis\n\nDécrivez le problème, choisissez la zone et le moment souhaité, puis envoyez la demande. Les professionnels correspondants peuvent proposer un devis et le réviser tant que la demande l’autorise. Comparez le montant, le délai, le message, les matériaux, les moyens de paiement, la note et les informations de vérification affichées.\n\n## Intervention\n\nAccepter un devis crée ou fait avancer la réservation officielle. Suivez son état dans Mes travaux. Les changements d’horaire, travaux supplémentaires, clôtures, annulations et litiges ont leurs propres confirmations ; un message seul ne modifie pas la réservation.\n\nLes types de service s’affichent sous leur nom dans votre langue — Électricité, Plomberie, Installation satellite et TV — en anglais, arabe et français. Après l’avoir choisi, vous pouvez préciser avec un service spécifique, comme une canalisation bouchée ou l’installation d’une prise ; ce champ est facultatif, et « Tout service de cette catégorie » signifie que vous n’avez pas précisé et qu’aucun professionnel n’est exclu. Le nom affiché est une étiquette ; le service lui-même est enregistré de la même manière quelle que soit la langue, si bien que changer de langue ne modifie jamais votre demande."
+      "id": "customer-requests-quotes-jobs",
+      "audience": "customer",
+      "locale": "fr",
+      "title": "Demandes, devis et interventions",
+      "summary": "Comprenez le parcours d’une demande jusqu’à la fin ou l’annulation de l’intervention.",
+      "version": 3,
+      "lastReviewedDate": "2026-08-25",
+      "features": [
+        "marketplace",
+        "quotes",
+        "bookings",
+        "payments",
+        "disputes"
+      ],
+      "routes": [
+        "/requests/new",
+        "/requests",
+        "/jobs"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "demande",
+        "devis",
+        "professionnel",
+        "intervention",
+        "annuler",
+        "litige"
+      ],
+      "body": "## Demande et devis\n\nDécrivez le problème, choisissez la zone et le moment souhaité, puis envoyez la demande. Les professionnels correspondants peuvent proposer un devis et le réviser tant que la demande l’autorise. Comparez le montant, le délai, le message, les matériaux, les moyens de paiement, la note et les informations de vérification affichées.\n\n## Intervention\n\nAccepter un devis crée ou fait avancer la réservation officielle. Suivez son état dans Mes travaux. Les changements d’horaire, travaux supplémentaires, clôtures, annulations et litiges ont leurs propres confirmations ; un message seul ne modifie pas la réservation.\n\nLes types de service s’affichent sous leur nom dans votre langue — Électricité, Plomberie, Installation satellite et TV — en anglais, arabe et français. Après l’avoir choisi, vous pouvez préciser avec un service spécifique, comme une canalisation bouchée ou l’installation d’une prise ; ce champ est facultatif, et « Tout service de cette catégorie » signifie que vous n’avez pas précisé et qu’aucun professionnel n’est exclu. Le nom affiché est une étiquette ; le service lui-même est enregistré de la même manière quelle que soit la langue, si bien que changer de langue ne modifie jamais votre demande.\n\nLes types de service apparaissent sous leur nom dans votre langue. Après avoir choisi un type, vous pouvez préciser un service exact, par exemple une canalisation bouchée ou la pose d’une prise ; ce champ est facultatif, et « Tout service de cette catégorie » signifie que vous n’avez rien restreint et qu’aucun professionnel n’est exclu. Les noms affichés ne sont que des libellés : la catégorie et le service précis sont enregistrés de la même manière quelle que soit votre langue, donc changer de langue ne modifie jamais votre demande."
     },
     {
-      "id": "customer-account-security", "audience": "customer", "locale": "fr", "title": "Compte, sécurité et préférences", "summary": "Connectez-vous, récupérez votre mot de passe et gérez langue, apparence et confidentialité.", "version": 1, "lastReviewedDate": "2026-08-24", "features": ["auth", "password_recovery", "preferences", "privacy", "legal"], "routes": ["/sign-in", "/forgot-password", "/account", "/privacy", "/legal"], "capabilities": [], "keywords": ["mot de passe", "e-mail", "téléphone", "langue", "sombre", "confidentialité", "suppression"],
+      "id": "customer-account-security",
+      "audience": "customer",
+      "locale": "fr",
+      "title": "Compte, sécurité et préférences",
+      "summary": "Connectez-vous, récupérez votre mot de passe et gérez langue, apparence et confidentialité.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-24",
+      "features": [
+        "auth",
+        "password_recovery",
+        "preferences",
+        "privacy",
+        "legal"
+      ],
+      "routes": [
+        "/sign-in",
+        "/forgot-password",
+        "/account",
+        "/privacy",
+        "/legal"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "mot de passe",
+        "e-mail",
+        "téléphone",
+        "langue",
+        "sombre",
+        "confidentialité",
+        "suppression"
+      ],
       "body": "Les clients se connectent avec leur e-mail et leur mot de passe. Utilisez Mot de passe oublié pour demander un lien ; Warsha affiche la même réponse sûre, que l’adresse soit inscrite ou non. Ne partagez jamais votre mot de passe ni un lien de récupération.\n\nLa langue et l’apparence Clair, Sombre ou Système suivent votre préférence enregistrée. Sur le web, les deux se trouvent en bas de page, sous Préférences ; dans la console d’administration, en bas de la barre latérale, et sur un écran de connexion, sous le formulaire. Dans l’application, elles sont dans l’en-tête. L’arabe utilise une mise en page de droite à gauche.\n\nLe Centre de confidentialité explique la désactivation, l’export des données et la suppression gouvernée. Une demande de suppression peut être bloquée par une intervention active, une obligation financière, un litige ou une conservation légale."
     },
     {
-      "id": "customer-support-faq", "audience": "customer", "locale": "fr", "title": "Notifications, assistance et questions fréquentes", "summary": "Retrouvez les mises à jour et demandez de l’aide en toute sécurité.", "version": 1, "lastReviewedDate": "2026-08-21", "features": ["notifications", "support"], "routes": ["/notifications", "/support", "/help"], "capabilities": [], "keywords": ["notification", "assistance", "réponse", "dossier", "mot de passe", "adresse"],
+      "id": "customer-support-faq",
+      "audience": "customer",
+      "locale": "fr",
+      "title": "Notifications, assistance et questions fréquentes",
+      "summary": "Retrouvez les mises à jour et demandez de l’aide en toute sécurité.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "notifications",
+        "support"
+      ],
+      "routes": [
+        "/notifications",
+        "/support",
+        "/help"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "notification",
+        "assistance",
+        "réponse",
+        "dossier",
+        "mot de passe",
+        "adresse"
+      ],
       "body": "## Notifications\n\nWarsha conserve dans Notifications les mises à jour importantes concernant le compte, les demandes, les interventions, les paiements et la sécurité. Une diffusion externe peut échouer ; l’historique dans le produit reste la référence.\n\n## Assistance\n\nCherchez d’abord dans l’aide. Si vous ne trouvez pas la réponse, ouvrez un dossier avec un objet court et les faits utiles. N’envoyez jamais de mot de passe, de données de paiement complètes ni le contenu d’une pièce d’identité.\n\n## Questions fréquentes\n\n- **Puis-je modifier une adresse ?** Oui, corrigez le texte et confirmez la position demandée.\n- **Quand choisir un professionnel ?** Après avoir comparé les devis reçus.\n- **Comment réinitialiser mon mot de passe ?** Utilisez Mot de passe oublié.\n- **Comment supprimer mon compte ?** Commencez dans le Centre de confidentialité."
     },
     {
-      "id": "worker-getting-started", "audience": "worker", "locale": "fr", "title": "Bien démarrer comme professionnel", "summary": "Créez votre compte sans e-mail, terminez votre profil et préparez-vous à recevoir des opportunités.", "version": 1, "lastReviewedDate": "2026-08-21", "features": ["worker_auth", "worker_onboarding", "worker_vetting"], "routes": ["/create-account", "/worker/onboarding", "/worker"], "capabilities": [], "keywords": ["professionnel", "inscription", "téléphone", "profil", "démarrer"],
+      "id": "worker-getting-started",
+      "audience": "worker",
+      "locale": "fr",
+      "title": "Bien démarrer comme professionnel",
+      "summary": "Créez votre compte sans e-mail, terminez votre profil et préparez-vous à recevoir des opportunités.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "worker_auth",
+        "worker_onboarding",
+        "worker_vetting"
+      ],
+      "routes": [
+        "/create-account",
+        "/worker/onboarding",
+        "/worker"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "professionnel",
+        "inscription",
+        "téléphone",
+        "profil",
+        "démarrer"
+      ],
       "body": "1. Choisissez Professionnel lors de la création du compte.\n2. Saisissez votre nom complet, votre numéro de mobile égyptien et un mot de passe. Aucun e-mail ni code SMS n’est demandé.\n3. Connectez-vous ensuite avec ce numéro et ce mot de passe.\n4. Complétez votre profil, vos métiers, votre zone de service et votre position de travail privée.\n5. Envoyez les éléments de vérification demandés et attendez la décision.\n6. Une fois admissible, consultez les opportunités, envoyez des devis et gérez les interventions.\n\nUtiliser Demander un service ouvre temporairement l’expérience client. Après un redémarrage, le compte revient à l’accueil Professionnel."
     },
     {
-      "id": "worker-onboarding-verification", "audience": "worker", "locale": "fr", "title": "Profil, métiers, zone de service et vérification", "summary": "Comprenez les étapes nécessaires avant de pouvoir recevoir des interventions.", "version": 2, "lastReviewedDate": "2026-08-21", "features": ["worker_onboarding", "location", "verification", "legal"], "routes": ["/worker/onboarding", "/worker/verification", "/onboarding/address"], "capabilities": [], "keywords": ["onboarding", "métier", "zone", "vérification", "document", "position"],
+      "id": "worker-onboarding-verification",
+      "audience": "worker",
+      "locale": "fr",
+      "title": "Profil, métiers, zone de service et vérification",
+      "summary": "Comprenez les étapes nécessaires avant de pouvoir recevoir des interventions.",
+      "version": 2,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "worker_onboarding",
+        "location",
+        "verification",
+        "legal"
+      ],
+      "routes": [
+        "/worker/onboarding",
+        "/worker/verification",
+        "/onboarding/address"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "onboarding",
+        "métier",
+        "zone",
+        "vérification",
+        "document",
+        "position"
+      ],
       "body": "Le profil indique aux clients qui vous êtes et les services que vous proposez. Choisissez uniquement vos métiers réels et les zones où vous acceptez de vous déplacer. La position de travail sert à trouver des interventions proches ; les clients ne voient pas votre domicile exact.\n\nLa vérification est une procédure gouvernée. Saisissez les informations demandées, téléversez des images lisibles et vérifiez les valeurs extraites avant l’envoi. Les états En attente, Approuvé, Refusé ou Informations supplémentaires ont un sens précis affiché à l’écran. Un refus ne doit pas être contourné en créant un autre compte.\n\nLorsqu’un professionnel indique une zone d’intervention, le gouvernorat et la zone proviennent de la même liste administrative officielle que celle utilisée par les clients : la couverture et les demandes sont donc comparées à des valeurs identiques plutôt qu’à deux orthographes d’un même lieu."
     },
     {
-      "id": "worker-opportunities-jobs", "audience": "worker", "locale": "fr", "title": "Opportunités, devis et interventions", "summary": "Répondez aux demandes admissibles et mettez à jour le déroulement réel du travail.", "version": 2, "lastReviewedDate": "2026-08-25", "features": ["marketplace", "quotes", "bookings", "job_operations"], "routes": ["/worker/opportunities", "/worker/jobs", "/worker/requests"], "capabilities": [], "keywords": ["opportunité", "demande", "devis", "intervention", "arrivée", "terminer"],
-      "body": "Les opportunités sont filtrées par admissibilité, métier, zone et disponibilité. Ouvrez une demande avant de répondre. Un devis doit indiquer un prix réaliste, le délai d’arrivée, la durée estimée et ce qui est inclus.\n\nLorsqu’un devis est choisi et confirmé, l’intervention apparaît dans Mes travaux. Utilisez les actions Warsha pour signaler le départ, l’arrivée, le début et la fin. Les messages servent à coordonner mais ne remplacent pas ces étapes officielles. En cas de retard, d’absence du client ou de problème sérieux, utilisez l’action correspondante et décrivez les faits.\n\nLes types de service apparaissent sous leur nom dans votre langue plutôt que sous un code interne. Le service sous-jacent est le même enregistrement que voient les clients et le personnel : un travail accepté en arabe est le même travail en anglais."
+      "id": "worker-opportunities-jobs",
+      "audience": "worker",
+      "locale": "fr",
+      "title": "Opportunités, devis et interventions",
+      "summary": "Répondez aux demandes admissibles et mettez à jour le déroulement réel du travail.",
+      "version": 3,
+      "lastReviewedDate": "2026-08-25",
+      "features": [
+        "marketplace",
+        "quotes",
+        "bookings",
+        "job_operations"
+      ],
+      "routes": [
+        "/worker/opportunities",
+        "/worker/jobs",
+        "/worker/requests"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "opportunité",
+        "demande",
+        "devis",
+        "intervention",
+        "arrivée",
+        "terminer"
+      ],
+      "body": "Les opportunités sont filtrées par admissibilité, métier, zone et disponibilité. Ouvrez une demande avant de répondre. Un devis doit indiquer un prix réaliste, le délai d’arrivée, la durée estimée et ce qui est inclus.\n\nLorsqu’un devis est choisi et confirmé, l’intervention apparaît dans Mes travaux. Utilisez les actions Warsha pour signaler le départ, l’arrivée, le début et la fin. Les messages servent à coordonner mais ne remplacent pas ces étapes officielles. En cas de retard, d’absence du client ou de problème sérieux, utilisez l’action correspondante et décrivez les faits.\n\nLes types de service apparaissent sous leur nom dans votre langue plutôt que sous un code interne. Le service sous-jacent est le même enregistrement que voient les clients et le personnel : un travail accepté en arabe est le même travail en anglais. Chaque invitation indique le métier concerné et, lorsque le client a précisé sa demande, le service exact demandé, afin que vous sachiez sur quoi vous chiffrez avant même de l’ouvrir."
     },
     {
-      "id": "worker-earnings-profile", "audience": "worker", "locale": "fr", "title": "Gains, profil et assistance", "summary": "Comprenez les montants affichés, entretenez votre profil et obtenez de l’aide.", "version": 1, "lastReviewedDate": "2026-08-21", "features": ["earnings", "payments", "worker_profile", "support"], "routes": ["/worker/earnings", "/worker/profile", "/support", "/help"], "capabilities": [], "keywords": ["gains", "paiement", "retrait", "profil", "assistance"],
+      "id": "worker-earnings-profile",
+      "audience": "worker",
+      "locale": "fr",
+      "title": "Gains, profil et assistance",
+      "summary": "Comprenez les montants affichés, entretenez votre profil et obtenez de l’aide.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "earnings",
+        "payments",
+        "worker_profile",
+        "support"
+      ],
+      "routes": [
+        "/worker/earnings",
+        "/worker/profile",
+        "/support",
+        "/help"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "gains",
+        "paiement",
+        "retrait",
+        "profil",
+        "assistance"
+      ],
       "body": "La page Gains distingue les montants en attente, disponibles, retenus et versés selon le registre Warsha. Elle ne prouve pas qu’un organisme externe a exécuté un virement tant que le produit ne l’indique pas. Les retraits réels peuvent rester indisponibles dans certains environnements.\n\nGardez votre nom, votre présentation, vos métiers, vos zones, vos disponibilités et vos documents à jour. Les modifications soumises à contrôle peuvent repasser en vérification.\n\nPour un problème de compte, d’intervention ou de paiement, consultez l’aide puis ouvrez un dossier d’assistance sans partager de mot de passe ni de document d’identité dans le message."
     },
     {
-      "id": "admin-getting-started", "audience": "admin", "locale": "fr", "title": "Bien démarrer dans la console d’administration", "summary": "Comprenez la console, ses autorisations et les règles de sécurité avant d’agir.", "version": 1, "lastReviewedDate": "2026-08-21", "features": ["admin", "staff_auth", "governance"], "routes": ["/admin", "/admin/users", "/admin/audit"], "capabilities": [], "keywords": ["admin", "personnel", "capacité", "connexion récente", "double contrôle"],
+      "id": "admin-getting-started",
+      "audience": "admin",
+      "locale": "fr",
+      "title": "Bien démarrer dans la console d’administration",
+      "summary": "Comprenez la console, ses autorisations et les règles de sécurité avant d’agir.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "admin",
+        "staff_auth",
+        "governance"
+      ],
+      "routes": [
+        "/admin",
+        "/admin/users",
+        "/admin/audit"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "admin",
+        "personnel",
+        "capacité",
+        "connexion récente",
+        "double contrôle"
+      ],
       "body": "La console d’administration est réservée au web. Un rôle produit décrit l’usage Client ou Professionnel ; un rôle du personnel regroupe des capacités administratives vérifiées par le serveur. Cacher un bouton n’accorde ni ne retire aucune autorisation.\n\nUne authentification récente confirme que l’opérateur s’est reconnecté récemment ; elle n’ajoute aucune capacité. Le double contrôle exige l’approbation d’une deuxième personne autorisée distincte. Les actions sensibles demandent une raison factuelle et créent une preuve d’audit.\n\nCommencez par lire la finalité de chaque section et utilisez des données de développement pour les essais. Ne contournez jamais un refus avec l’éditeur SQL, un rôle de service ou une modification directe de table."
     },
     {
-      "id": "admin-users-roles", "audience": "admin", "locale": "fr", "title": "Recherche d’utilisateurs et rôles produit", "summary": "Trouvez le bon compte et gérez ses rôles produit sans confondre accès client et accès du personnel.", "version": 1, "lastReviewedDate": "2026-08-21", "features": ["admin_search", "product_roles", "account_recovery"], "routes": ["/admin/users"], "capabilities": ["safe_search", "view_user_detail", "manage_product_roles"], "keywords": ["utilisateur", "recherche", "client", "professionnel", "rôle produit"],
+      "id": "admin-users-roles",
+      "audience": "admin",
+      "locale": "fr",
+      "title": "Recherche d’utilisateurs et rôles produit",
+      "summary": "Trouvez le bon compte et gérez ses rôles produit sans confondre accès client et accès du personnel.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "admin_search",
+        "product_roles",
+        "account_recovery"
+      ],
+      "routes": [
+        "/admin/users"
+      ],
+      "capabilities": [
+        "safe_search",
+        "view_user_detail",
+        "manage_product_roles"
+      ],
+      "keywords": [
+        "utilisateur",
+        "recherche",
+        "client",
+        "professionnel",
+        "rôle produit"
+      ],
       "body": "La recherche sûre accepte les critères prévus par l’interface et limite les résultats. Ouvrez le détail avant toute action afin de vérifier l’identité, l’état du compte, les rôles produit et les dépendances visibles.\n\nLes rôles Client et Professionnel déterminent les expériences du produit. Ils ne donnent aucun accès administratif. Ajouter ou retirer un rôle exige la capacité correspondante, une raison et parfois une authentification récente selon les métadonnées affichées. Vérifiez l’effet sur l’onboarding avant de confirmer. Ne modifiez jamais les métadonnées Auth pour simuler un rôle produit."
     },
     {
-      "id": "admin-verification-enforcement", "audience": "admin", "locale": "fr", "title": "Vérification, suspension et mesures de sécurité", "summary": "Examinez les preuves et appliquez une mesure proportionnée avec une raison claire.", "version": 2, "lastReviewedDate": "2026-08-21", "features": ["worker_vetting", "trust", "enforcement", "appeals"], "routes": ["/admin/verification", "/admin/users"], "capabilities": ["review_worker_vetting", "manage_suspensions", "manage_bans"], "keywords": ["vérification", "approuver", "refuser", "suspendre", "bannir", "preuve"],
+      "id": "admin-verification-enforcement",
+      "audience": "admin",
+      "locale": "fr",
+      "title": "Vérification, suspension et mesures de sécurité",
+      "summary": "Examinez les preuves et appliquez une mesure proportionnée avec une raison claire.",
+      "version": 2,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "worker_vetting",
+        "trust",
+        "enforcement",
+        "appeals"
+      ],
+      "routes": [
+        "/admin/verification",
+        "/admin/users"
+      ],
+      "capabilities": [
+        "review_worker_vetting",
+        "manage_suspensions",
+        "manage_bans"
+      ],
+      "keywords": [
+        "vérification",
+        "approuver",
+        "refuser",
+        "suspendre",
+        "bannir",
+        "preuve"
+      ],
       "body": "Comparez les informations soumises avec les preuves disponibles. Approuver rend la décision effective selon les règles d’admissibilité ; demander de nouvelles informations renvoie le dossier au professionnel ; refuser conserve l’historique et doit expliquer ce qui manque.\n\nUne suspension arrête temporairement le périmètre indiqué et peut être levée par le parcours gouverné. Un bannissement est une mesure permanente à haut risque. L’interface doit afficher le périmètre, la réversibilité, la raison, les exigences d’authentification récente ou de double contrôle et l’événement d’audit avant confirmation. Ne choisissez jamais une mesure plus large pour gagner du temps.\n\nUne décision qui vous demande de confirmer votre identité n’est pas perdue. Si votre session doit être rafraîchie au moment où vous soumettez une décision de vérification ou une mesure d’application, Warsha conserve la décision telle que vous l’avez rédigée, vous demande de confirmer, puis soumet cette même décision. Auparavant, la confirmation se fermait et la décision devait être ressaisie — et comme rien n’avait été enregistré, l’écran semblait inchangé. Annuler la confirmation, ou échouer à la valider, ne soumet rien."
     },
     {
-      "id": "admin-staff-security", "audience": "admin", "locale": "fr", "title": "Rôles du personnel, authentification récente et double contrôle", "summary": "Accordez le minimum nécessaire tout en conservant une preuve complète.", "version": 8, "lastReviewedDate": "2026-08-21", "features": ["staff_roles", "reauth", "dual_control", "audit"], "routes": ["/admin/staff", "/admin/audit"], "capabilities": ["manage_staff_roles", "view_audit_logs"], "keywords": ["personnel", "rôle", "capacité", "authentification récente", "double contrôle", "audit"],
+      "id": "admin-staff-security",
+      "audience": "admin",
+      "locale": "fr",
+      "title": "Rôles du personnel, authentification récente et double contrôle",
+      "summary": "Accordez le minimum nécessaire tout en conservant une preuve complète.",
+      "version": 8,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "staff_roles",
+        "reauth",
+        "dual_control",
+        "audit"
+      ],
+      "routes": [
+        "/admin/staff",
+        "/admin/audit"
+      ],
+      "capabilities": [
+        "manage_staff_roles",
+        "view_audit_logs"
+      ],
+      "keywords": [
+        "personnel",
+        "rôle",
+        "capacité",
+        "authentification récente",
+        "double contrôle",
+        "audit"
+      ],
       "body": "Les rôles du personnel sont des ensembles révisés de capacités. `manage_staff_roles` permet d’accorder ou de révoquer un rôle depuis l’autorité gouvernée ; l’auto-attribution reste interdite. Saisissez une raison professionnelle et choisissez le rôle le plus restreint. Révoquer coupe l’accès futur tout en conservant l’historique de l’attribution.\n\nL’authentification récente prouve une connexion récente sans combler une capacité absente. Le double contrôle exige deux identités autorisées distinctes. Le premier Administrateur de sécurité est l’unique procédure exceptionnelle, utilisable seulement lorsqu’aucun administrateur effectif n’existe et protégée par une clé d’idempotence.\n\nLa console indique son environnement sur chaque page. DEVELOPMENT ou STAGING signifie que le backend est lié à ce projet hébergé. LOCAL n’est correct que sur une machine de développement. Si la console affiche plutôt une erreur d’environnement, le backend porte encore la configuration d’amorçage non liée et ne peut pas indiquer quelles données vous consultez : arrêtez-vous et faites lier l’environnement de la plateforme avant de vous fier à quoi que ce soit à l’écran.\n\nLes capacités sont affichées par nom plutôt que par identifiant de base de données, et chacune renvoie à la section du manuel qui l’explique. L’identifiant reste l’autorité derrière chaque octroi et chaque refus ; le nom n’en est que la lecture.\n\nEnvironnement de la plateforme et Vérification de publication se trouvent sous Plateforme dans la console.\n\nEnvironnement de la plateforme identifie ce backend. L’identification est à sens unique et auditée, exige la permission Gérer les indicateurs de fonctionnalité et une connexion récente, ne déploie aucun code et ne peut pas sélectionner la Production. Si l’état actuel ne correspond pas au changement autorisé, aucune action n’est proposée et rien n’est modifié.\n\nVérification de publication est en lecture seule et exige la permission Consulter les journaux d’audit. Elle rapporte les contrôles réussis, les lacunes connues et attendues, et les problèmes inattendus. Le contrôle des limites de débit sans propriétaire est enregistré comme lacune ouverte dans le registre de préparation au lancement : il est attendu tant que cette lacune est ouverte et ne bloque pas une publication à lui seul. Un problème inattendu est un arrêt — ne poursuivez pas une publication et signalez-le.\n\nL’authentification multifacteur n’est actuellement pas requise sur ce backend. Si elle est activée, elle s’applique à toutes les autorisations du personnel en même temps et n’est satisfaite que par une application d’authentification enregistrée sur votre propre compte ; il n’existe ni dérogation ni contournement. Enregistrez un facteur et conservez ses codes de récupération avant d’activer l’exigence. Une exigence active sans facteur enregistré verrouille tous les opérateurs hors de la console, y compris les outils permettant de la désactiver, et la récupération exige alors une procédure du propriétaire de la base de données.\n\nLa vérification de publication est réellement en lecture seule : elle inspecte la structure et n’écrit absolument rien. Le fait qu’un membre du personnel l’ait lancée est enregistré séparément, juste après, afin qu’une écriture d’audit ne puisse jamais faire échouer un contrôle structurel et que le contrôle ne puisse jamais modifier discrètement l’état de la plateforme.\n\nLes prestataires externes s’activent dans la section Prestataires de la console, et l’ordre y est imposé par Warsha, non suggéré. Activer un service externe lui transmet des données clients : l’activation exige donc toujours deux personnes différentes, l’une qui dépose une demande motivée et une collègue disposant de la même permission qui l’approuve. Personne ne peut approuver sa propre demande, quelles que soient ses permissions, et une demande expire après 24 heures. La recherche d’adresses n’est activée qu’une fois le prestataire actif : le faire plus tôt ne fait pas gagner d’étape, car l’activation est refusée tant que la fonctionnalité est déjà active. Un test sûr prouve ensuite que le service répond réellement. Aucun identifiant, nom de variable d’environnement ou empreinte n’est jamais affiché ; la console demande seulement si un identifiant est configuré.\n\nAttribuer un rôle n’exige plus de recopier un identifiant de compte. Si vous disposez de la permission de consultation des comptes, recherchez par e-mail ou téléphone et choisissez le compte correspondant ; Warsha transporte l’identifiant pour vous. La recherche n’affiche délibérément ni nom ni e-mail — elle répond à quel compte, pas à qui — car identifier une personne relève d’une permission distincte. Si votre rôle n’inclut pas la consultation des comptes, le formulaire accepte toujours un identifiant saisi directement et vous le dit, plutôt que d’afficher une recherche vide. Vous ne pouvez toujours pas vous attribuer un rôle à vous-même.\n\nChoisir à qui attribuer un rôle ne suppose plus de retrouver un identifiant de compte. Saisissez l’adresse e-mail complète de la personne : Warsha confirme à quel compte elle correspond, puis transporte l’identifiant en interne. Vous pouvez annuler ce choix et rechercher une autre adresse avant de valider.\n\nPourquoi cette recherche est autorisée, et ce qu’elle révèle. Attribuer un rôle et identifier la personne qui le reçoit relèvent du même travail : la recherche est donc soumise à la même permission que l’attribution et exige la même connexion récente. Ce n’est délibérément pas un moteur de recherche : elle compare une adresse e-mail complète à l’identique, renvoie au plus un compte et refuse les caractères génériques ; elle ne permet donc ni de parcourir ni d’énumérer les comptes. Elle ne révèle que le nom affiché, l’e-mail masqué en guise de confirmation, si le compte est en règle, et les rôles du personnel déjà détenus — ce dernier point pour éviter de dupliquer ou d’élargir sans le savoir une attribution existante. Aucun numéro de téléphone, aucune adresse, aucune coordonnée ni historique de vérification n’est affiché. Chaque recherche est limitée en fréquence et inscrite dans la piste d’audit sous votre compte, avec le domaine recherché.\n\nLorsqu’une action privilégiée vous demande de confirmer votre identité, l’action que vous aviez lancée est menée à son terme. Warsha conserve exactement l’attribution, la révocation ou la recherche en cours, ouvre la confirmation, puis — une fois celle-ci validée — envoie cet appel pour vous. Vous n’appuyez pas une seconde fois sur le bouton.\n\nCe que cela ne fera délibérément pas. Une seule action est retenue à la fois : aucune autre ne peut se substituer à celle que nomme la confirmation que vous vous apprêtez à valider. Cette action est envoyée une fois et une seule, quelle que soit la manière dont la confirmation se termine. Si vous annulez, ou si votre mot de passe est refusé, rien n’est envoyé. Si vous laissez la confirmation ouverte plus de cinq minutes, Warsha abandonne l’action plutôt que de l’exécuter alors que vous ne l’attendez plus, et vous le signale ; appuyez de nouveau sur le bouton lorsque vous êtes prêt. Et si le serveur redemande une confirmation immédiatement après que vous l’avez donnée, Warsha le signale au lieu de redemander, car une invite répétée masquerait le vrai problème : déconnectez-vous, reconnectez-vous, puis réessayez.\n\nUne action réémise ne peut pas se dédoubler. Warsha réémet l’appel que le serveur a refusé, et le serveur refuse une confirmation périmée avant toute lecture ou écriture : la tentative refusée n’a donc jamais pris effet. Une attribution conserve la même clé d’idempotence lors de la nouvelle tentative, si bien qu’une attribution répétée est reconnue plutôt que dupliquée."
     },
     {
-      "id": "admin-audit-analytics", "audience": "admin", "locale": "fr", "title": "Audit, analyses et exports", "summary": "Lisez l’historique immuable, interprétez les métriques et exportez des agrégats en sécurité.", "version": 3, "lastReviewedDate": "2026-08-21", "features": ["audit", "analytics", "exports"], "routes": ["/admin/audit", "/admin/analytics"], "capabilities": ["view_audit_logs", "view_analytics", "export_operational_report", "view_financial_ledger"], "keywords": ["audit", "analyse", "métrique", "rapport", "CSV", "export", "financier"],
+      "id": "admin-audit-analytics",
+      "audience": "admin",
+      "locale": "fr",
+      "title": "Audit, analyses et exports",
+      "summary": "Lisez l’historique immuable, interprétez les métriques et exportez des agrégats en sécurité.",
+      "version": 3,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "audit",
+        "analytics",
+        "exports"
+      ],
+      "routes": [
+        "/admin/audit",
+        "/admin/analytics"
+      ],
+      "capabilities": [
+        "view_audit_logs",
+        "view_analytics",
+        "export_operational_report",
+        "view_financial_ledger"
+      ],
+      "keywords": [
+        "audit",
+        "analyse",
+        "métrique",
+        "rapport",
+        "CSV",
+        "export",
+        "financier"
+      ],
       "body": "L’audit est une preuve ajoutée sans modification des actions passées. Recherchez par période bornée, source, acteur ou sujet exact ; ce n’est pas une note de dossier modifiable. La lecture de sources sensibles est elle-même auditée.\n\nLes analyses calculent des faits agrégés depuis les tables et historiques officiels de Warsha. Lisez la définition avant de comparer une métrique. Les journées de rapport suivent Africa/Cairo, tandis que le stockage reste en UTC. Les cartes financières ne s’affichent qu’avec `view_financial_ledger` et ne prétendent pas qu’un règlement externe a eu lieu.\n\nL’export CSV exige `export_operational_report`, une authentification récente, une raison et une demande temporaire auditée. Il ne contient pas de données personnelles.\n\nLes filtres de catégorie et les répartitions affichent le nom localisé du service. L’identifiant de catégorie stable reste la valeur stockée et exportée : un rapport exporté dans une langue reste comparable à un rapport exporté dans une autre.\n\nUn export interrompu par une confirmation reprend de lui-même. L’export d’un rapport opérationnel exige une connexion récente ; lorsque Warsha vous demande de confirmer, c’est l’export que vous aviez demandé — même période, mêmes filtres, même motif indiqué — qui s’exécute une fois la confirmation donnée. Il s’exécute une seule fois. Annuler n’exporte rien."
     },
     {
-      "id": "admin-recovery", "audience": "admin", "locale": "fr", "title": "Incidents, récupération et actions gouvernées", "summary": "Réagissez en sécurité lorsqu’un fournisseur, un compte ou une autorité administrative est indisponible.", "version": 1, "lastReviewedDate": "2026-08-21", "features": ["incidents", "provider_governance", "account_recovery", "privacy"], "routes": ["/admin", "/admin/audit"], "capabilities": ["manage_incidents", "manage_feature_flags", "manage_kill_switches", "review_privacy_incidents"], "keywords": ["incident", "récupération", "fournisseur", "fonctionnalité", "arrêt", "urgence"],
+      "id": "admin-recovery",
+      "audience": "admin",
+      "locale": "fr",
+      "title": "Incidents, récupération et actions gouvernées",
+      "summary": "Réagissez en sécurité lorsqu’un fournisseur, un compte ou une autorité administrative est indisponible.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "incidents",
+        "provider_governance",
+        "account_recovery",
+        "privacy"
+      ],
+      "routes": [
+        "/admin",
+        "/admin/audit"
+      ],
+      "capabilities": [
+        "manage_incidents",
+        "manage_feature_flags",
+        "manage_kill_switches",
+        "review_privacy_incidents"
+      ],
+      "keywords": [
+        "incident",
+        "récupération",
+        "fournisseur",
+        "fonctionnalité",
+        "arrêt",
+        "urgence"
+      ],
       "body": "Ouvrez un incident opérationnel lorsqu’une panne réelle nécessite un responsable et une chronologie. Indiquez les systèmes touchés et un résumé factuel. Un interrupteur d’arrêt bloque une capacité risquée ; il ne remplace pas le diagnostic.\n\nL’activation d’un fournisseur passe par le registre, la liaison d’environnement, l’examen confidentialité ou sous-traitant si nécessaire, les contrôles de santé, le drapeau de fonctionnalité et l’interrupteur d’arrêt. Ne modifiez jamais directement une table pour activer un bouton. Les approbations juridiques ou à double contrôle restent humaines.\n\nPour récupérer un compte, authentifiez l’identité, inventoriez les dépendances et préférez un RPC gouverné existant. Ne supprimez pas un compte qui possède un historique conservé."
     },
     {
-      "id": "warsha-glossary", "audience": "all", "locale": "fr", "title": "Glossaire Warsha", "summary": "Définitions simples des mots utilisés dans Warsha.", "version": 1, "lastReviewedDate": "2026-08-21", "features": ["glossary"], "routes": ["/help", "/admin/help"], "capabilities": [], "keywords": ["client", "professionnel", "demande", "devis", "intervention", "rôle", "capacité", "audit"],
+      "id": "warsha-glossary",
+      "audience": "all",
+      "locale": "fr",
+      "title": "Glossaire Warsha",
+      "summary": "Définitions simples des mots utilisés dans Warsha.",
+      "version": 1,
+      "lastReviewedDate": "2026-08-21",
+      "features": [
+        "glossary"
+      ],
+      "routes": [
+        "/help",
+        "/admin/help"
+      ],
+      "capabilities": [],
+      "keywords": [
+        "client",
+        "professionnel",
+        "demande",
+        "devis",
+        "intervention",
+        "rôle",
+        "capacité",
+        "audit"
+      ],
       "body": "- **Client :** personne qui utilise Warsha pour demander ou réserver un service.\n- **Professionnel / prestataire :** personne qui propose des services après l’onboarding et l’approbation nécessaires. Provider est le terme interne ; le produit dit Professionnel.\n- **Demande de service :** description d’un besoin envoyée aux professionnels correspondants.\n- **Devis :** offre d’un professionnel avec prix et conditions.\n- **Intervention / réservation :** accord officiel et suivi de son déroulement.\n- **Zone de service :** lieux approximatifs où un professionnel accepte d’intervenir.\n- **Vérification :** examen gouverné des informations requises du professionnel.\n- **Rôle produit :** Client ou Professionnel, c’est-à-dire l’usage du compte.\n- **Rôle du personnel :** ensemble révisé de capacités d’administration.\n- **Capacité :** autorisation administrative vérifiée par le serveur.\n- **Authentification récente :** preuve d’une connexion récente, sans permission supplémentaire.\n- **Double contrôle :** approbation obligatoire d’une deuxième personne autorisée distincte.\n- **Suspension :** arrêt gouverné d’un compte ou d’une capacité de travail.\n- **Bannissement :** mesure permanente à haut risque.\n- **Journal d’audit :** preuve ajoutée sans modification d’une action.\n- **Analyses :** métriques agrégées issues des autorités métier.\n- **Export :** fichier gouverné destiné à une analyse autorisée.\n- **Repère d’adresse :** coordonnées exactes confirmées séparément du texte modifiable."
     }
   ]

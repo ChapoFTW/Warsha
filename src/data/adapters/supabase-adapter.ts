@@ -14,7 +14,7 @@ function mapCategory(row: Record<string, unknown>): Category {
   return { id: String(row.id), label: String(row.translation_key) as Category['label'], icon: String(row.icon_name) as Category['icon'], description: String(row.description_key) as Category['description'] };
 }
 function mapService(row: Record<string, unknown>): Service {
-  return { id: String(row.id), name: String(row.name), price: Number(row.price_egp), pricingType: String(row.pricing_type) as Service['pricingType'], duration: String(row.duration_label ?? '') };
+  return { id: String(row.id), categoryId: row.category_id === undefined || row.category_id === null ? undefined : String(row.category_id), translationKey: row.translation_key === undefined || row.translation_key === null ? null : String(row.translation_key), name: String(row.name), price: Number(row.price_egp), pricingType: String(row.pricing_type) as Service['pricingType'], duration: String(row.duration_label ?? '') };
 }
 function mapLinkedService(link: Record<string, unknown>): Service {
   const service = mapService(link.service as Record<string, unknown>);

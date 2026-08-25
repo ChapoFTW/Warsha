@@ -713,15 +713,22 @@ check(!specificServices.some((service) => /other .*(work|services?)$/i.test(ser
     'NO HISTORICAL SERVICE ROW IS DESTROYED');
 }
 
-// --- Web consumes the shared authority --------------------------------------
+// --- Both surfaces consume the shared authority ------------------------------
+// The ordering and labelling rule moved into `src/services` when native grew
+// the same picker, so these follow it there rather than pinning web's inlined
+// copy of it -- which no longer exists.
 {
   const form = readFileSync('web/app/app/requests/new/page.tsx', 'utf8');
-  check(/specificServiceLabel\(service\.translationKey, locale\)/.test(form),
+  const shared = readFileSync('src/services/specific-services.ts', 'utf8');
+  check(/catalogueServiceLabel\(service, locale\)/.test(form),
     'THE REQUEST FORM RENDERS THE LOCALIZED LABEL, NOT THE ENGLISH ROW NAME');
-  check(/\|\| service\.name/.test(form),
+  check(/specificServiceLabel\(service\.translationKey, language\)\) \|\| service\.name/.test(shared),
     'falling back to the row name only when no key resolves');
-  check(/specificServicesFor\(categoryId\)/.test(form),
+  check(/specificServicesFor\(categoryId\)/.test(shared),
     'and orders the dropdown by the shared catalogue');
+  const picker = readFileSync('components/warsha/SpecificServiceSelector.tsx', 'utf8');
+  check(/orderedCatalogueServices\(/.test(picker) && /catalogueServiceLabel\(/.test(picker),
+    'AND ANDROID AND iOS RESOLVE THROUGH THE SAME TWO FUNCTIONS');
   check(/from '@\/src\/services\/specific-services'/.test(form),
     'reading the same module Android and iOS can, not a web copy');
   // "Any service in this category" must stay the optional, non-restricting choice.

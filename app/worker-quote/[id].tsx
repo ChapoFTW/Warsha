@@ -9,14 +9,15 @@ import { AppText } from '@/components/warsha/Typography';
 import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
 import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
 import { useLocalization } from '@/src/i18n/localization';
-import type { TranslationKey } from '@/src/i18n/translations';
 import { useMarketplaceIntelligence } from '@/src/marketplace-intelligence/marketplace-context';
 import { marketplaceRepository } from '@/src/marketplace-intelligence/marketplace-repository';
 import {
   marketplacePaymentText,
   marketplaceScheduleText,
+  requestWorkLabel,
   useMarketplaceText,
 } from '@/src/marketplace-intelligence/marketplace-translations';
+import { useMarketplaceData } from '@/src/data/marketplace-context';
 import type { QuoteInvitation, QuoteTerms } from '@/src/marketplace-intelligence/marketplace-types';
 
 export default function WorkerQuoteDetail() {
@@ -25,7 +26,8 @@ export default function WorkerQuoteDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const market = useMarketplaceIntelligence();
   const mt = useMarketplaceText();
-  const { isRTL, language, t } = useLocalization();
+  const { isRTL, language } = useLocalization();
+  const { services: catalogue } = useMarketplaceData();
   const [invitation, setInvitation] = useState<QuoteInvitation>();
   const [loading, setLoading] = useState(true);
   const [price, setPrice] = useState('');
@@ -74,7 +76,7 @@ export default function WorkerQuoteDetail() {
     <ScreenHeader title={emergency ? mt('emergencyAccept') : mt('sendQuote')} />
     <ScrollView contentContainerStyle={[styles.content, isRTL && { direction: 'rtl' }]}>
       <View style={styles.card}>
-        <AppText style={styles.title}>{t(invitation.categoryId as TranslationKey)}</AppText>
+        <AppText style={styles.title}>{requestWorkLabel(invitation, catalogue, language)}</AppText>
         <AppText style={styles.copy}>{invitation.issueDescription}</AppText>
         <AppText style={styles.muted}>{invitation.area.district}, {invitation.area.governorate}</AppText>
         <AppText style={styles.muted}>{marketplaceScheduleText(language, invitation.scheduleKind)} · {marketplacePaymentText(language, invitation.paymentCompatibility)}</AppText>

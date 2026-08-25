@@ -303,3 +303,103 @@ export function specificServiceLabel(key: string, language: Language): string | 
   if (!service) return null;
   return language === 'ar' ? service.ar : language === 'fr' ? service.fr : service.en;
 }
+
+/* ---------------------------------------------------------------------------
+ * The consumer boundary
+ *
+ * Everything above answers "what is this service called?". Everything below
+ * answers "what does a customer see in the picker?", which is a different
+ * question and the one that kept being answered twice.
+ *
+ * Web derived its dropdown inline: filter the catalogue rows by category, rank
+ * them by `specificServicesFor`, then label each one with `specificServiceLabel`
+ * falling back to the row's English `name`. Native is now growing the same
+ * control, and a second copy of that derivation is exactly how the two surfaces
+ * drift -- one gets a fallback fixed, or an ordering rule, and the other does
+ * not. So the derivation lives here once and both call it.
+ *
+ * The row type is structural rather than imported: web's `Service` and the
+ * mobile `Service` are different types that happen to agree on the four fields
+ * that matter. Requiring the shape rather than the type lets both pass their
+ * own rows in without either depending on the other's model.
+ * ------------------------------------------------------------------------- */
+
+/**
+ * The minimum a row must carry to be *named*.
+ *
+ * Deliberately smaller than what it takes to be *offered*: naming a service
+ * does not require knowing its category, and a service reached through a
+ * provider does not carry one. Requiring it here would have forced those call
+ * sites to invent a category just to render a label.
+ */
+export type CatalogueServiceName = {
+  /** The English name stored on the row: the fallback, never the normal case. */
+  name: string;
+  /** `services.translation_key`, absent on rows written before keys existed. */
+  translationKey?: string | null;
+};
+
+/** The minimum a catalogue row must carry to be offered as a choice. */
+export type CatalogueServiceRow = CatalogueServiceName & {
+  /** The stable service UUID. This, and never a label, is what gets persisted. */
+  id: string;
+  categoryId: string;
+};
+
+/**
+ * The rows a customer may pick from, in the order they should be offered.
+ *
+ * Filtered to one category -- mixing categories would offer a selection the
+ * backend rejects with 22023 -- and ordered by the shared catalogue rather than
+ * by the server's `order by s.name`, which is alphabetical in English and
+ * therefore meaningless to an Arabic reader.
+ *
+ * A row this build does not know sorts last instead of first, so an unfamiliar
+ * service never leads the list.
+ */
+export function orderedCatalogueServices<T extends CatalogueServiceRow>(
+  services: readonly T[],
+  categoryId: string,
+): T[] {
+  if (!categoryId) return [];
+  const order = new Map(
+    specificServicesFor(categoryId).map((service, index) => [service.key, index]),
+  );
+  const rank = (row: T) => (row.translationKey
+    ? order.get(row.translationKey) ?? Number.MAX_SAFE_INTEGER
+    : Number.MAX_SAFE_INTEGER);
+  return services
+    .filter((row) => row.categoryId === categoryId)
+    .slice()
+    .sort((left, right) => rank(left) - rank(right));
+}
+
+/**
+ * What to render for a catalogue row, in the reader's language.
+ *
+ * Resolved from the key on every call rather than computed once, so switching
+ * language relabels the same UUID instead of requiring a refetch. The row's
+ * stored `name` is reached only when the key is absent or unknown.
+ */
+export function catalogueServiceLabel(
+  service: CatalogueServiceName,
+  language: Language,
+): string {
+  return (service.translationKey
+    && specificServiceLabel(service.translationKey, language)) || service.name;
+}
+
+/**
+ * The picker's own words, in the three languages Warsha speaks.
+ *
+ * These are the strings web already ships from its copy catalogue. They are
+ * repeated here rather than imported because `web/lib/app-copy.ts` is a web
+ * bundle that native must not pull in -- and `specific-service-parity` asserts
+ * the two agree exactly, so a change to one that is not made to the other fails
+ * the suite rather than reaching a customer.
+ */
+export const specificServicePickerCopy = {
+  en: { label: 'Specific service (optional)', anyService: 'Any service in this category' },
+  ar: { label: 'خدمة محددة (اختياري)', anyService: 'أي خدمة في النوع ده' },
+  fr: { label: 'Service précis (facultatif)', anyService: 'Tout service de cette catégorie' },
+} as const satisfies Record<Language, { label: string; anyService: string }>;

@@ -185,3 +185,51 @@ export function selectableCategories<T>(
     .slice()
     .sort(byServiceDemand(categoryIdOf, tieBreak));
 }
+
+/**
+ * The translation key `public.service_categories` stores for each category.
+ *
+ * A request row carries only `category_id`. Any surface that lists requests --
+ * the customer's own list, a worker's invitation card -- therefore has an
+ * identifier and needs a name, and without this map the only thing it can show
+ * is the identifier itself. Web's request list did exactly that, rendering
+ * `water-heater-repair` to every reader in every language.
+ *
+ * `general-maintenance` is included deliberately: it is withdrawn from
+ * selection but old requests still reference it, and those must read as words.
+ *
+ * `service-catalogue.test.mts` asserts this agrees with the seeded rows, so the
+ * map cannot drift from the database it describes.
+ */
+const categoryTranslationKeys: Record<string, string> = {
+  'plumbing': 'plumbing',
+  'electrical': 'electrical',
+  'cleaning': 'cleaning',
+  'ac': 'acRepair',
+  'appliance-repair': 'applianceRepair',
+  'carpentry': 'carpentry',
+  'painting': 'painting',
+  'moving-help': 'movingHelp',
+  'pest-control': 'pestControl',
+  'water-heater-repair': 'waterHeaterRepair',
+  'flooring-tiling': 'flooringTiling',
+  'renovation-finishing': 'renovationFinishing',
+  'alumetal': 'alumetal',
+  'satellite-tv-installation': 'satelliteTv',
+  'locksmithing': 'locksmithing',
+  'gardening': 'gardening',
+  'barber': 'barber',
+  'hairdressing': 'hairdressing',
+  'personal-styling': 'personalStyling',
+  'general-maintenance': 'generalMaintenance',
+};
+
+/**
+ * The translation key for a category id, or the id when it is unrecognised.
+ *
+ * Returning the id keeps `serviceCategoryLabel` able to humanize it into words
+ * rather than leaving a caller holding a slug.
+ */
+export function serviceCategoryTranslationKey(categoryId: string): string {
+  return categoryTranslationKeys[categoryId] ?? categoryId;
+}
