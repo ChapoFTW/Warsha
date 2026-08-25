@@ -284,6 +284,12 @@ for (const gate of ['npm ci', 'typecheck', 'lint', 'check:mojibake', 'git diff -
 match(validateWorkflow, /concurrency:/, 'superseded validation runs are cancelled');
 match(validateWorkflow, /permissions:\s*\n\s*contents: read/, 'the validation workflow is read-only');
 notMatch(validateWorkflow, /secrets\./, 'the validation workflow uses no secret');
+match(validateWorkflow, /GOOGLE_MAPS_ANDROID_RENDER_KEY: ci-noncredential-android-render-key/,
+  'CI supplies a synthetic Android Maps render key for fail-closed Expo config evaluation');
+match(validateWorkflow, /GOOGLE_MAPS_IOS_RENDER_KEY: ci-noncredential-ios-render-key/,
+  'CI supplies a synthetic iOS Maps render key for fail-closed Expo config evaluation');
+notMatch(validateWorkflow, /AIza[0-9A-Za-z_-]{30,}/,
+  'the validation workflow contains no Google API credential shape');
 match(validateWorkflow, /audit:bundle/, 'exported bundles are scanned for credential values');
 // The scan must match credential VALUES; a bare prefix appears in supabase-js's
 // own client-side guard and must remain a separate Hermes string literal.

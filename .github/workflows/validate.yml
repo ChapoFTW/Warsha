@@ -25,6 +25,12 @@ env:
   # build gates independent of any hosted environment.
   EXPO_PUBLIC_DATA_MODE: mock
   EXPO_PUBLIC_ADMIN_SURFACE: enabled
+  # app.config.js deliberately fails closed when a native Maps render key is
+  # absent. CI exports are non-deployable validation artifacts, so use obvious
+  # non-credential stubs rather than granting this read-only workflow access to
+  # Development render keys.
+  GOOGLE_MAPS_ANDROID_RENDER_KEY: ci-noncredential-android-render-key
+  GOOGLE_MAPS_IOS_RENDER_KEY: ci-noncredential-ios-render-key
 
 jobs:
   static:
