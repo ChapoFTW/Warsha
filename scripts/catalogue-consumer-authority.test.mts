@@ -252,7 +252,11 @@ for (const file of ['app/onboarding/worker.tsx', 'app/worker/profile.tsx'] as co
       `${file} lets long French profession labels wrap`);
   }
   const categoryCard = readFileSync('components/warsha/CategoryCard.tsx', 'utf8');
-  check(!/numberOfLines=\{1\}/.test(categoryCard) && /minHeight:112/.test(categoryCard),
+  // Whitespace-tolerant: the rule is that the card is 112 tall AT MINIMUM and
+  // clips nothing, not how the style object happens to be formatted. Pinning
+  // the spelling `minHeight:112` failed the moment the file was reformatted,
+  // which tests the author's editor rather than the layout.
+  check(!/numberOfLines=\{1\}/.test(categoryCard) && /minHeight:\s*112\b/.test(categoryCard),
     'narrow category cards wrap long localized labels and grow vertically');
   const webStyles = readFileSync('web/components/product-surface.module.css', 'utf8');
   check(/\.workLabel\s*\{[^}]*white-space:\s*normal;[^}]*overflow-wrap:\s*anywhere;/.test(webStyles),

@@ -1,4 +1,6 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { WarshaIcon } from '@/components/warsha/WarshaIcon';
+import { categoryIconName } from '@/src/brand/warsha-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
@@ -306,7 +308,7 @@ function SearchLanding({ suggestions, onPick, onPickService, onClear }: {
                 accessibilityLabel={t(category.translationKey as TranslationKey)}
                 onPress={() => router.push({ pathname: '/categories/[id]', params: { id: category.id } })}
                 style={[styles.chip, isRTL && styles.reverse]}>
-                <MaterialIcons name={category.iconName as never} size={14} color={colors.textSecondary} />
+                <WarshaIcon name={categoryIconName(category.id)} size={16} color={colors.textSecondary} />
                 <AppText style={styles.chipText}>{t(category.translationKey as TranslationKey)}</AppText>
               </Pressable>
             ))}

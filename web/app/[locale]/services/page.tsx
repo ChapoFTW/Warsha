@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
 import { SiteFooter, SiteHeader } from '@/components/site-chrome';
+import { WarshaIcon } from '@/components/warsha-icon';
 import { serviceCategoryDescription, serviceCategoryLabel } from '@/src/i18n/service-labels.ts';
 import {
   SERVICE_DEMAND_ORDER,
@@ -11,6 +12,7 @@ import {
 import { copy } from '@/lib/copy';
 import { pageContent } from '@/lib/pages-copy';
 import { isLocale, type Locale } from '@/lib/preferences';
+import { categoryIconName } from '@/src/brand/warsha-icons.ts';
 import { appHref } from '@/lib/routes';
 
 import styles from './page.module.css';
@@ -77,6 +79,11 @@ export default async function ServicesPage({
               aria-label={`${words.servicesCardAction}: ${category.label}`}
               data-category-id={category.id}
             >
+              {/* Decorative: the localized category name is the next element,
+                  and announcing it twice helps nobody. */}
+              <span className={styles.cardIcon}>
+                <WarshaIcon name={categoryIconName(category.id)} size="lg" />
+              </span>
               <span className={styles.cardCopy}>
                 <span className={styles.cardTitle}>{category.label}</span>
                 {category.description ? (

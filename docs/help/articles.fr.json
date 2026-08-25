@@ -68,7 +68,7 @@
       "title": "Demandes, devis et interventions",
       "summary": "Comprenez le parcours d’une demande jusqu’à la fin ou l’annulation de l’intervention.",
       "version": 5,
-      "lastReviewedDate": "2026-08-25",
+      "lastReviewedDate": "2026-08-26",
       "features": [
         "marketplace",
         "quotes",
@@ -219,7 +219,7 @@
       "title": "Opportunités, devis et interventions",
       "summary": "Répondez aux demandes admissibles et mettez à jour le déroulement réel du travail.",
       "version": 5,
-      "lastReviewedDate": "2026-08-25",
+      "lastReviewedDate": "2026-08-26",
       "features": [
         "marketplace",
         "quotes",

@@ -96,6 +96,7 @@
     "warsha:agent-handoff": "node scripts/warsha-engineering.mjs agent-handoff",
     "test:specific-service-rendering": "node --no-warnings --experimental-strip-types scripts/specific-service-rendering.test.mts",
     "test:catalogue-consumers": "node --no-warnings --experimental-strip-types scripts/catalogue-consumer-authority.test.mts",
+    "test:warsha-icons": "node --no-warnings --experimental-strip-types scripts/warsha-icons.test.mts",
     "test:request-creation": "node --no-warnings --experimental-strip-types scripts/request-creation-contract.test.mts",
     "test:native-specific-service": "node --no-warnings --experimental-strip-types scripts/native-specific-service-parity.test.mts"
   },

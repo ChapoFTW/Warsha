@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useSession } from '@/components/session-provider';
+import { WarshaIcon } from '@/components/warsha-icon';
 import { parseServices, type Service } from '@/lib/customer';
 import { supabase } from '@/lib/supabase';
 import { useAppLocale } from '@/lib/use-app-locale';
@@ -32,6 +33,7 @@ import {
   withProfessionServices,
   withTradeSelection,
 } from '@/src/providers/worker-trade-selection.ts';
+import { professionIconName } from '@/src/brand/warsha-icons.ts';
 import { catalogueServiceLabel } from '@/src/services/specific-services.ts';
 import {
   egyptGovernorateForStoredValue,
@@ -272,6 +274,7 @@ export function WorkerProfileEditor({
                 <label key={item.key} className={styles.card}>
                   <input type="checkbox" checked={selected.includes(item.key)}
                     onChange={() => toggleProfession(item.key)} disabled={busy} />
+                  <WarshaIcon name={professionIconName(item.key)} size="md" />
                   <span className={styles.cardName}>{item[locale]}</span>
                 </label>
               ))}
@@ -296,6 +299,8 @@ export function WorkerProfileEditor({
               return (
                 <details key={tradeSection.professionKey} className={styles.panel} open={selected.length === 1}>
                   <summary className={styles.label}>
+                    <WarshaIcon name={professionIconName(tradeSection.professionKey)} size="md" />
+                    {' '}
                     {professionLabel(tradeSection.professionKey, locale)}
                     {' — '}
                     {count === 0

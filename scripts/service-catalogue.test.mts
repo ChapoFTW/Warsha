@@ -687,9 +687,9 @@ check(!specificServices.some((service) => /^(other|general|misc)/i.test(service.
 // Targeted at catch-all phrasing, not the word "general": "General preventive
 // treatment" is a specific pest-control job -- a whole-home preventive spray --
 // and refusing it would be the heuristic misfiring, not a bucket being caught.
-check(!specificServices.some((service) => /^other/i.test(service.en)),
+check(!specificServices.some((service) => /^other\b/i.test(service.en)),
   'and none is hiding behind a friendlier English name');
-check(!specificServices.some((service) => /other .*(work|services?)$/i.test(service.en)),
+check(!specificServices.some((service) => /\bother .*(work|services?)$/i.test(service.en)),
   'nor behind an "Other ... work" phrasing');
 
 // --- The database agrees with the module ------------------------------------

@@ -6,6 +6,8 @@ import { AppText } from '@/components/warsha/Typography';
 import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
 import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
 import { useLocalization } from '@/src/i18n/localization';
+import { WarshaIcon } from '@/components/warsha/WarshaIcon';
+import { professionIconName } from '@/src/brand/warsha-icons';
 import { professionLabel } from '@/src/providers/profession-taxonomy';
 import type { ProviderServiceInput } from '@/src/providers/provider-types';
 import type { TradeSection } from '@/src/providers/worker-trade-selection';
@@ -138,6 +140,7 @@ function TradeAccordion<T extends CatalogueServiceRow>({
         disabled={!collapsible || disabled}
         onPress={onExpand}
         style={[styles.header, isRTL && styles.reverse]}>
+        <WarshaIcon name={professionIconName(section.professionKey)} size="lg" />
         <View style={styles.headerText}>
           <AppText style={styles.trade}>{trade}</AppText>
           <AppText style={[styles.summary, count === 0 && styles.summaryEmpty]}>{summary}</AppText>

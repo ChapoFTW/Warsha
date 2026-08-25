@@ -135,3 +135,18 @@
     justify-content: space-between;
   }
 }
+
+/* The approved container for a category card: a 48px squircle on the soft
+   surface holding a 24px mark, which is the 12px optical padding the icon
+   family was drawn for. Hovering changes ground and ink, never geometry. */
+.cardIcon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  flex: 0 0 auto;
+}

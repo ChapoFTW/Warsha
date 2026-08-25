@@ -5,6 +5,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BrandButton, BrandTextField } from '@/components/warsha/BrandUI';
 import { AppText } from '@/components/warsha/Typography';
+import { WarshaIcon } from '@/components/warsha/WarshaIcon';
+import { professionIconName } from '@/src/brand/warsha-icons';
 import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
 import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
 import { useLocalization } from '@/src/i18n/localization';
@@ -53,6 +55,7 @@ export function ProfessionSelector({
               accessibilityLabel={`${wt.text('removeProfession')} ${professionLabel(key, language)}`}
               onPress={() => onChange(selected.filter(item => item !== key))}
               style={[styles.chip, isRTL && styles.reverse]}>
+              <WarshaIcon name={professionIconName(key)} size="md" />
               <AppText style={styles.chipLabel}>{professionLabel(key, language)}</AppText>
               <MaterialIcons name="close" size={18} color={colors.textPrimary} />
             </Pressable>
@@ -100,6 +103,11 @@ export function ProfessionSelector({
                     size={26}
                     color={colors.textPrimary}
                   />
+                  {/* The trade's own mark where the package draws one, its
+                      category's where it deliberately does not. A worker
+                      scanning thirty-four trades reads a silhouette faster
+                      than a word. */}
+                  <WarshaIcon name={professionIconName(profession.key)} size="lg" />
                   <AppText style={styles.optionLabel}>{profession[language]}</AppText>
                 </Pressable>
               );
