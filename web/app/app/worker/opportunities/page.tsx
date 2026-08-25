@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { AppShell } from '@/components/app-shell';
 import { appCopy } from '@/lib/app-copy';
+import { parseServices, type Service } from '@/lib/customer';
 import { workerNav } from '@/lib/nav';
 import { intlLocale, type Locale } from '@/lib/preferences';
 import { supabase } from '@/lib/supabase';
@@ -17,6 +18,7 @@ import {
   type WorkerQuote,
 } from '@/lib/worker';
 import { workerCopy, type WorkerWords } from '@/lib/worker-copy';
+import { requestWorkLabel } from '@/src/marketplace-intelligence/request-work-label';
 
 import styles from '@/components/product-surface.module.css';
 
@@ -44,17 +46,22 @@ export default function WorkerOpportunitiesPage() {
   const appWords = appCopy[locale] as Record<string, string>;
   const words = workerCopy[locale];
   const [invitations, setInvitations] = useState<QuoteInvitation[] | null>(null);
+  const [services, setServices] = useState<Service[]>([]);
   const [failed, setFailed] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setFailed(false);
-    const { data, error } = await supabase().rpc('get_worker_quote_invitations', {
-      p_cursor: null,
-      p_limit: 50,
-    });
-    if (error) setFailed(true);
-    else setInvitations(parseInvitations(data));
+    const client = supabase();
+    const [{ data, error }, { data: catalogData, error: catalogError }] = await Promise.all([
+      client.rpc('get_worker_quote_invitations', { p_cursor: null, p_limit: 50 }),
+      client.rpc('get_marketplace_catalog_v2'),
+    ]);
+    if (error || catalogError) setFailed(true);
+    else {
+      setInvitations(parseInvitations(data));
+      setServices(parseServices(catalogData));
+    }
   }, []);
   useEffect(() => { void load(); }, [load]);
 
@@ -65,7 +72,7 @@ export default function WorkerOpportunitiesPage() {
       <div className={styles.head}><h1 className={styles.title}>{words.opportunitiesTitle}</h1></div>
       <p className={styles.lead}>{words.opportunitiesLead}</p>
 
-      {selected ? <OpportunityDetail invitation={selected} locale={locale} appWords={appWords} words={words}
+      {selected ? <OpportunityDetail invitation={selected} services={services} locale={locale} appWords={appWords} words={words}
         onClose={() => setOpenId(null)} onChanged={load} /> : null}
 
       <section className={styles.panel}>
@@ -83,7 +90,7 @@ export default function WorkerOpportunitiesPage() {
                     </button>
                     <div className={styles.rowMeta}>
                       <span className={styles.badge}>{words[`invitationStatus_${item.status}` as keyof typeof words] ?? item.status}</span>
-                      <span className={styles.badge}>{appWords[item.categoryId] ?? item.categoryId}</span>
+                      <span className={`${styles.badge} ${styles.workLabel}`}>{requestWorkLabel(item, services, locale)}</span>
                       <span className={styles.cardMeta}>{[item.area.governorate, item.area.district].filter(Boolean).join(' · ')}</span>
                       <time className={styles.when}>{formatMoment(item.expiresAt, locale)}</time>
                     </div>
@@ -97,9 +104,10 @@ export default function WorkerOpportunitiesPage() {
 }
 
 function OpportunityDetail({
-  invitation, locale, appWords, words, onClose, onChanged,
+  invitation, services, locale, appWords, words, onClose, onChanged,
 }: {
   invitation: QuoteInvitation;
+  services: Service[];
   locale: Locale;
   appWords: Record<string, string>;
   words: WorkerWords;
@@ -116,6 +124,7 @@ function OpportunityDetail({
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
   const [done, setDone] = useState(false);
+  const workLabel = requestWorkLabel(invitation, services, locale);
 
   const loadQuote = useCallback(async () => {
     setLoading(true);
@@ -191,13 +200,14 @@ function OpportunityDetail({
     && Date.now() < Date.parse(invitation.expiresAt);
 
   return (
-    <section className={styles.panel} aria-label={invitation.issueDescription.slice(0, 80)}>
+    <section className={styles.panel} aria-label={workLabel}>
       <div className={styles.head}>
         <h2 className={styles.sectionTitle}>{words.opportunityDetail}</h2>
         <button type="button" className={styles.secondary} onClick={onClose}>{appWords.close}</button>
       </div>
       <p className={styles.factValue}>{invitation.issueDescription}</p>
       <div className={styles.facts}>
+        <Fact label={appWords.service} value={workLabel} />
         <Fact label={words.opportunityArea} value={[invitation.area.governorate, invitation.area.district].filter(Boolean).join(' · ')} />
         <Fact label={words.opportunityExpires} value={formatMoment(invitation.expiresAt, locale)} />
         <Fact label={words.opportunityPayment} value={invitation.paymentCompatibility === 'either'

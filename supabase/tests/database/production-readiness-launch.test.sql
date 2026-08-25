@@ -559,8 +559,8 @@ select is((select payout_mode from private.payment_configuration where id), 'dis
   'payouts remain disabled');
 select is((select automatic_release_scheduler_enabled from private.payment_configuration where id), false,
   'the earnings release scheduler remains disabled');
-select is((select enabled from private.marketplace_configuration where singleton), false,
-  'the marketplace remains disabled');
+select is((select enabled from private.marketplace_configuration where singleton), true,
+  'the marketplace request path is enabled by its readiness migration');
 
 -- ---------------------------------------------------------------------------
 -- Release verification must survive the transaction the Console actually uses

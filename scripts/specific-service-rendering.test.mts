@@ -202,10 +202,11 @@ function optionLabels(categoryId: string, locale: 'en' | 'ar' | 'fr'): string[] 
     'THE JOBS QUERY ASKS FOR THE SERVICE KEY, NOT JUST THE SNAPSHOT');
   check(/function serviceLabel\(booking: Booking, locale: Locale\)/.test(jobs),
     'and resolves it through one helper, so the call sites cannot disagree');
-  check(/specificServiceLabel\(booking\.serviceTranslationKey, locale\)/.test(jobs),
-    'using the shared resolver and the live locale');
-  check(/\|\| booking\.serviceName/.test(jobs),
-    'with the historical snapshot as the fallback');
+  check(/cataloguedServiceReferenceLabel\(booking, \[\], locale\)/.test(jobs),
+    'using the shared reference resolver and the live locale');
+  const shared = readFileSync('src/services/specific-services.ts', 'utf8');
+  check(/return service \? catalogueServiceLabel\(service, language\) : reference\.serviceName/.test(shared),
+    'with the historical snapshot as the final fallback');
   check(!/>\{booking\.serviceName\}</.test(jobs),
     'AND NEVER RENDERS THE ENGLISH SNAPSHOT DIRECTLY');
   const parser = readFileSync('web/lib/customer.ts', 'utf8');

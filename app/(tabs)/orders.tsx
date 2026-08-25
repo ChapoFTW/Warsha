@@ -16,6 +16,7 @@ import { bookingStatusTranslationKeys, terminalStatuses, type Booking } from '@/
 import { useMarketplaceData } from '@/src/data/marketplace-context';
 import { useLocalization } from '@/src/i18n/localization';
 import { useReviews } from '@/src/reviews/review-context';
+import { cataloguedServiceReferenceLabel } from '@/src/services/specific-services';
 import { formatBookingDateTime, formatNumber, localeFor } from '@/src/utils/date-format';
 
 type Tab = 'upcoming' | 'past' | 'cancelled';
@@ -147,9 +148,10 @@ function OrderCard({ booking, reviewed, reviewStateLoading, canReview }: { booki
   const colors = useThemeColors();
   const styles = useThemedStyles(makeStyles);
   const { t, isRTL, language } = useLocalization();
-  const { getProvider } = useMarketplaceData();
+  const { getProvider, services } = useMarketplaceData();
   const provider = getProvider(booking.providerId);
   if (!provider) return null;
+  const serviceLabel = cataloguedServiceReferenceLabel(booking, services, language);
   const openDetails = (focusReview = false) => router.push({
     pathname: '/booking/[id]',
     params: { id: booking.id, ...(focusReview ? { focusReview: '1' } : {}) },
@@ -167,7 +169,7 @@ function OrderCard({ booking, reviewed, reviewStateLoading, canReview }: { booki
               </AppText>
             </View>
           </View>
-          <AppText style={styles.service}>{booking.serviceName}</AppText>
+          <AppText style={styles.service}>{serviceLabel}</AppText>
           <AppText style={styles.meta}>{formatBookingDateTime(booking.date, booking.time, localeFor(language), t('asap'))}</AppText>
         </View>
       </View>
@@ -185,7 +187,7 @@ function OrderCard({ booking, reviewed, reviewStateLoading, canReview }: { booki
       ) : (
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`${t('rateServiceAccessibility')}: ${provider.name}, ${booking.serviceName}`}
+          accessibilityLabel={`${t('rateServiceAccessibility')}: ${provider.name}, ${serviceLabel}`}
           onPress={event => {
             event.stopPropagation();
             openDetails(true);

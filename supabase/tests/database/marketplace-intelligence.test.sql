@@ -23,8 +23,8 @@ select is(has_function_privilege('anon','public.create_marketplace_request(jsonb
 select is(has_function_privilege('authenticated','public.create_marketplace_request(jsonb,text)','EXECUTE'),true,'authenticated customer can invoke guarded create');
 select is(has_function_privilege('authenticated','private.create_marketplace_wave(uuid,text,text)','EXECUTE'),false,'clients cannot invoke matching waves');
 select is(has_table_privilege('authenticated','private.marketplace_candidate_scores','SELECT'),false,'clients cannot read scores');
-select is((select enabled from private.marketplace_configuration where singleton),false,'Marketplace ships disabled');
-select is((select scheduler_enabled from private.marketplace_configuration where singleton),false,'scheduler gate ships disabled');
+select is((select enabled from private.marketplace_configuration where singleton),true,'request-readiness migration activates the Development marketplace contract');
+select is((select scheduler_enabled from private.marketplace_configuration where singleton),true,'request-readiness migration activates the marketplace scheduler contract');
 select is((select useful_quote_target from private.marketplace_configuration where singleton),5,'useful quote target is five');
 select is((select request_lifetime_seconds from private.marketplace_configuration where singleton),600,'request lifetime is ten minutes');
 select is((select initial_collection_seconds from private.marketplace_configuration where singleton),120,'initial collection window is two minutes');
@@ -79,6 +79,10 @@ values('92000000-0000-0000-0002-000000000001','92000000-0000-0000-0000-000000000
 insert into private.marketplace_category_duration_defaults(category_id,estimated_duration_minutes,policy_version)
 values('plumbing',90,1) on conflict(category_id) do update set estimated_duration_minutes=90,policy_version=1;
 update private.marketplace_capacity_configuration set road_factor=1.3,average_urban_speed_kmh=30 where singleton;
+
+-- The activation migration is the shipped state. Exercise the kill switch
+-- explicitly before restoring readiness for the creation-path assertions.
+update private.marketplace_configuration set enabled=false,scheduler_enabled=false where singleton;
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub','92000000-0000-0000-0000-000000000001',true);
@@ -138,7 +142,7 @@ select set_config('request.jwt.claim.sub','',true);
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub','92000000-0000-0000-0000-000000000002',true);
-select is((select count(*)::integer from public.quote_invitations),1,'worker sees only own invitation');
+select is((select count(*)::integer from public.quote_invitations where request_id=current_setting('warsha_test.request_id')::uuid),1,'worker sees only own invitation for the request');
 select set_config('warsha_test.invitation_one',(select id::text from public.quote_invitations where request_id=current_setting('warsha_test.request_id')::uuid),true);
 select lives_ok($$select public.view_quote_invitation(current_setting('warsha_test.invitation_one')::uuid)$$,'worker can view owned invitation');
 select lives_ok(

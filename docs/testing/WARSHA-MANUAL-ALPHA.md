@@ -449,10 +449,15 @@ sent.
 - Persona: Customer A
 - Preconditions: app running; seed applied.
 - Actions: from Home, open Services; open several categories.
-- Expected visible: exactly the ten launch categories (Plumbing, Electrical,
-  Carpentry, AC repair, Cleaning, Painting, Appliance repair, Satellite & TV
-  installation, Moving help, General maintenance); each lists fictional
-  workers with ratings/prices.
+- Expected visible: exactly 19 selectable categories in demand order: Plumbing,
+  Electrical, Cleaning, AC repair, Appliance repair, Carpentry, Painting,
+  Moving help, Pest control, Water-heater repair, Flooring & tiling, Renovation
+  & finishing, Alumetal, Satellite & TV installation, Locks & keys, Gardening,
+  Barber, Hairdressing, and Personal styling. General maintenance is absent
+  from new-work selection; it remains readable only in historical records.
+  Categories with seeded eligible workers list fictional workers with
+  ratings/prices; zero-provider categories still remain selectable for a
+  marketplace request.
 - Expected state: matches `public.service_categories` active rows.
 - Result: NOT RUN | Severity if failed: __ | Screenshot: A08-01.png
 - Notes:

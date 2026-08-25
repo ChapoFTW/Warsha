@@ -262,7 +262,7 @@ function row(key: string, categoryId: string, name: string, id = `uuid-${key}`):
   const customer = readFileSync('app/marketplace-request/[id].tsx', 'utf8');
   check(/requestWorkLabel\(request/.test(customer),
     'AND THE CUSTOMER SEES THEIR CHOSEN SERVICE AFTER SUBMITTING');
-  const shared = readFileSync('src/marketplace-intelligence/marketplace-translations.ts', 'utf8');
+  const shared = readFileSync('src/marketplace-intelligence/request-work-label.ts', 'utf8');
   check(/export function requestWorkLabel/.test(shared),
     'one resolver, shared by all three screens');
   const copies = ['app/worker-quotes.tsx', 'app/worker-quote/[id].tsx', 'app/marketplace-request/[id].tsx']

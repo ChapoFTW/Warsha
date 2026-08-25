@@ -403,7 +403,8 @@ notMatch(migration, /gateway_mode\s*=\s*'live'/, 'no live gateway is selected');
 notMatch(migration, /payout_mode\s*=\s*'(live|sandbox)'/, 'no live or sandbox payout mode is selected');
 notMatch(migration, /automatic_release_scheduler_enabled\s*=\s*true/, 'no scheduler is enabled');
 notMatch(migration, /marketplace_configuration set enabled = true/, 'the marketplace is not activated');
-ok(pgtap.includes('the marketplace remains disabled'), 'pgTAP asserts the marketplace stays disabled');
+ok(pgtap.includes('the marketplace request path is enabled by its readiness migration'),
+  'pgTAP distinguishes the later request-readiness activation from WPS-018');
 ok(pgtap.includes('payouts remain disabled'), 'pgTAP asserts payouts stay disabled');
 
 // Every SECURITY DEFINER function pins a search path.

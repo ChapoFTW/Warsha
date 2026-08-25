@@ -7,7 +7,12 @@ export type ProviderOnboardingStatus =
   | 'rejected'
   | 'suspended';
 
-export type ProviderServiceInput = { serviceId: string; name: string };
+export type ProviderServiceInput = {
+  serviceId: string;
+  /** Stable catalogue label key; `name` remains the historical fallback. */
+  translationKey?: string | null;
+  name: string;
+};
 export type ProviderAreaInput = { governorate: string; district: string; radiusKm: number };
 
 export type ProviderDraft = {

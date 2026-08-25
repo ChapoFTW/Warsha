@@ -20,6 +20,7 @@ import { listProviderServiceOptions } from '@/src/providers/provider-repository'
 import { professionLabel, selectedProfessionKeys, withSelectedProfessions } from '@/src/providers/profession-taxonomy';
 import { MARKETPLACE_MANAGED_RADIUS_KM, type ProviderDraft, type ProviderMediaInput } from '@/src/providers/provider-types';
 import { useWorkerText } from '@/src/worker/worker-copy';
+import { catalogueServiceLabel } from '@/src/services/specific-services';
 
 export default function WorkerProfileScreen() {
   const styles = useThemedStyles(makeStyles);
@@ -31,7 +32,7 @@ export default function WorkerProfileScreen() {
   const state = useProviderFoundation();
   const [draft, setDraft] = useState<ProviderDraft | null>(null);
   const [experienceInput, setExperienceInput] = useState('');
-  const [serviceOptions, setServiceOptions] = useState<{ id: string; name: string }[]>([]);
+  const [serviceOptions, setServiceOptions] = useState<{ id: string; name: string; translationKey?: string | null }[]>([]);
   const [optionsLoading, setOptionsLoading] = useState(true);
   const optionsRequest = useRef(0);
 
@@ -129,7 +130,7 @@ export default function WorkerProfileScreen() {
           {optionsLoading ? <AppText style={styles.muted}>{wt.text('continueJourney')}</AppText> : (
             <View style={styles.wrap}>
               {serviceOptions.map(option => (
-                <Chip key={option.id} label={option.name} selected={draft.services.some(item => item.serviceId === option.id)} onPress={() => setDraft(current => current ? { ...current, services: current.services.some(item => item.serviceId === option.id) ? current.services.filter(item => item.serviceId !== option.id) : [...current.services, { serviceId: option.id, name: option.name }] } : current)} />
+                <Chip key={option.id} label={catalogueServiceLabel(option, language)} selected={draft.services.some(item => item.serviceId === option.id)} onPress={() => setDraft(current => current ? { ...current, services: current.services.some(item => item.serviceId === option.id) ? current.services.filter(item => item.serviceId !== option.id) : [...current.services, { serviceId: option.id, translationKey: option.translationKey, name: option.name }] } : current)} />
               ))}
             </View>
           )}

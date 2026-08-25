@@ -49,6 +49,8 @@ export type MessageDraft = {
 
 export type ChatInboxItem = {
   bookingId: string;
+  serviceId?: string;
+  serviceTranslationKey?: string;
   serviceName: string;
   status: BookingStatus;
   counterpartName: string;

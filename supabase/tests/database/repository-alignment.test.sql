@@ -2,27 +2,28 @@ begin;
 
 select plan(39);
 
--- The launch ten plus barber, hairdressing and personal styling. The launch ids
--- are unchanged, so every stored request, quote and booking remains valid.
+-- The current nineteen selectable categories. The launch ids are unchanged and
+-- general-maintenance is withdrawn, so stored history remains valid without
+-- allowing new catch-all work.
 select is(
   (select count(*)::integer from public.service_categories where is_active and deleted_at is null),
-  13,
-  'the thirteen active categories are the launch ten plus three personal services'
+  19,
+  'the catalogue exposes exactly nineteen selectable categories'
 );
 select set_eq(
   $$select id from public.service_categories where is_active and deleted_at is null$$,
-  $$values ('plumbing'),('electrical'),('carpentry'),('ac'),('cleaning'),('painting'),('appliance-repair'),('satellite-tv-installation'),('moving-help'),('general-maintenance'),('barber'),('hairdressing'),('personal-styling')$$,
-  'active category ids match the catalogue, launch identifiers unchanged'
+  $$values ('plumbing'),('electrical'),('carpentry'),('ac'),('cleaning'),('painting'),('appliance-repair'),('satellite-tv-installation'),('moving-help'),('barber'),('hairdressing'),('personal-styling'),('pest-control'),('water-heater-repair'),('flooring-tiling'),('renovation-finishing'),('alumetal'),('locksmithing'),('gardening')$$,
+  'active category ids match the expanded catalogue and exclude the withdrawn catch-all'
 );
 -- Presentation order is an explicit, unique, self-describing cold-start rank.
 select set_eq(
   $$select id from public.service_categories where is_active and deleted_at is null order by demand_rank limit 4$$,
-  $$values ('plumbing'),('electrical'),('ac'),('cleaning')$$,
+  $$values ('plumbing'),('electrical'),('cleaning'),('ac')$$,
   'the highest-demand household trades are offered first'
 );
 select is(
   (select count(distinct demand_rank)::integer from public.service_categories where is_active and deleted_at is null),
-  13,
+  19,
   'every active category has a unique demand rank'
 );
 select is(
@@ -32,7 +33,7 @@ select is(
 );
 select is(
   (select demand_rank from public.service_categories where id = 'personal-styling'),
-  13,
+  19,
   'personal styling is not promoted for being new'
 );
 select has_function('public', 'mark_worker_available', array['boolean'], 'binary worker availability RPC exists');
@@ -227,7 +228,10 @@ reset role;
 select set_config('request.jwt.claim.sub','',true);
 
 insert into private.marketplace_category_duration_defaults(category_id,estimated_duration_minutes,policy_version)
-values('plumbing',120,1);
+values('plumbing',120,1)
+on conflict(category_id) do update
+set estimated_duration_minutes=excluded.estimated_duration_minutes,
+    policy_version=excluded.policy_version;
 update private.marketplace_capacity_configuration
 set routing_provider='configured-routing-adapter', road_factor=1.3, average_urban_speed_kmh=30;
 

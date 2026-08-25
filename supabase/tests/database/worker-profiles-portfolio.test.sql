@@ -1,6 +1,6 @@
 begin;
 
-select plan(77);
+select plan(78);
 select set_config('storage.allow_delete_query', 'true', true);
 
 select has_table('public','provider_portfolio_images','multi-image portfolio table exists'); -- 1
@@ -68,6 +68,7 @@ insert into storage.objects(bucket_id,name,metadata) values
 set local role authenticated;
 select set_config('request.jwt.claim.sub','a5100000-0000-4000-8000-000000000001',true);
 select is(public.get_my_worker_profile()->>'displayName','Worker Alpha','worker reads own draft-capable profile projection'); -- 36
+select isnt(public.get_my_worker_profile()->'services'->0->>'translationKey',null,'worker profile service projection carries stable translation identity');
 select is((select count(*)::integer from public.provider_services where provider_id='a5200000-0000-4000-8000-000000000001'),1,'worker reads own services'); -- 37
 select is((select count(*)::integer from public.provider_service_areas where provider_id='a5200000-0000-4000-8000-000000000001'),1,'worker reads own service areas'); -- 38
 select lives_ok($$select public.save_my_provider_portfolio_item('{"title":"Bathroom pipe repair","description":"Replaced a damaged pipe without exposing customer details.","completedPeriod":"2026-07","status":"draft"}'::jsonb)$$,'worker creates owned portfolio metadata'); -- 39

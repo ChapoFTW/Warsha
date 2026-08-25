@@ -240,6 +240,11 @@ The launch category set is fixed.
 
 No additional launch category may be inferred or added through WPS-008 implementation without a product-specification change.
 
+> **Current-build supersession:** migration `202608240001` is that later
+> product-specification change. `src/services/service-catalogue.ts` now owns 19
+> selectable categories; `general-maintenance` is withdrawn from new work and
+> remains resolvable only for historical compatibility.
+
 ## 10. Worker eligibility
 
 A worker must pass every applicable hard filter:

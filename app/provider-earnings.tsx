@@ -21,9 +21,11 @@ import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-con
 import { useLocalization } from '@/src/i18n/localization';
 import { usePaymentText, withdrawalStatusText } from '@/src/i18n/payment-translations';
 import { normalizeEgyptianPhone } from '@/src/auth/phone-auth';
+import { useMarketplaceData } from '@/src/data/marketplace-context';
 import { compareMinor, egpDecimalToMinor, formatMinor } from '@/src/payments/money';
 import { usePayments } from '@/src/payments/payment-context';
 import type { PayoutDestinationType } from '@/src/payments/payment-types';
+import { cataloguedServiceReferenceLabel } from '@/src/services/specific-services';
 import { formatTimestamp, localeFor } from '@/src/utils/date-format';
 
 const destinationTypes: PayoutDestinationType[] = [
@@ -37,6 +39,7 @@ export default function ProviderEarningsScreen() {
   const { language, isRTL, t } = useLocalization();
   const pt = usePaymentText();
   const payments = usePayments();
+  const { services } = useMarketplaceData();
   const [destinationType, setDestinationType] = useState<PayoutDestinationType>('mobile_wallet');
   const [destinationLabel, setDestinationLabel] = useState('');
   const [destinationValue, setDestinationValue] = useState('');
@@ -242,7 +245,11 @@ export default function ProviderEarningsScreen() {
             {summary?.transactions.length ? summary.transactions.map(item => (
               <View key={item.id} style={styles.transaction}>
                 <View style={styles.grow}>
-                  <AppText style={styles.transactionTitle}>{item.service}</AppText>
+                  <AppText style={styles.transactionTitle}>{cataloguedServiceReferenceLabel({
+                    serviceId: item.serviceId,
+                    serviceTranslationKey: item.serviceTranslationKey,
+                    serviceName: item.service,
+                  }, services, language)}</AppText>
                   <AppText style={styles.muted}>{formatTimestamp(item.date, localeFor(language))}</AppText>
                   {item.status === 'held_for_dispute'
                     ? <AppText style={styles.warning}>{pt('heldIssue')}</AppText>

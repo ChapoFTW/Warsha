@@ -52,7 +52,7 @@ export function DiscoveryResultCard({ provider }: { provider: DiscoveryProviderC
         : <View style={[styles.image, styles.imageFallback]}><MaterialIcons name="person" size={30} color={colors.textMuted} /></View>}
       <View style={styles.body}>
         <AppText numberOfLines={1} style={styles.name}>{provider.displayName}</AppText>
-        <AppText numberOfLines={1} style={styles.profession}>
+        <AppText style={styles.profession}>
           {professionLabel(provider.professionKey, language)}
           {provider.areaLabel ? ` · ${provider.areaLabel}` : ''}
           {provider.distanceKm !== null ? ` · ${provider.distanceKm} ${dt.text('kilometresAway')}` : ''}
@@ -127,7 +127,7 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   imageFallback: { alignItems: 'center', justifyContent: 'center' },
   body: { flex: 1, gap: 5 },
   name: { fontSize: 17, fontWeight: typography.semibold },
-  profession: { fontSize: 12, color: colors.textSecondary },
+  profession: { flexShrink: 1, fontSize: 12, lineHeight: 18, color: colors.textSecondary },
   badges: { flexDirection: 'row', flexWrap: 'wrap', gap: 5 },
   badge: { flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 7, paddingVertical: 3, borderRadius: radii.pill, borderWidth: 1, borderColor: colors.borderSubtle, backgroundColor: colors.surfaceElevated },
   badgeText: { fontSize: 9, color: colors.textSecondary },

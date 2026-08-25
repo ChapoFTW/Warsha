@@ -28,6 +28,7 @@ import {
 } from '@/src/discovery/discovery-types';
 import { useLocalization } from '@/src/i18n/localization';
 import type { TranslationKey } from '@/src/i18n/translations';
+import { catalogueServiceLabel } from '@/src/services/specific-services';
 
 const filterLabels: Record<keyof DiscoveryFilters, DiscoveryTextKey> = {
   categoryId: 'filterCategory',
@@ -227,7 +228,16 @@ export default function SearchScreen() {
               </View>
             ) : null}
 
-            {showLanding ? <SearchLanding onPick={submit} onClear={clearSearches} suggestions={suggestions} /> : null}
+            {showLanding ? <SearchLanding
+              onPick={submit}
+              onPickService={(serviceId) => {
+                setQuery('');
+                setSubmitted('');
+                setFilters(current => ({ ...current, serviceId }));
+                router.setParams({ q: undefined });
+              }}
+              onClear={clearSearches}
+              suggestions={suggestions} /> : null}
           </View>
         }
         ListEmptyComponent={loading ? (
@@ -255,14 +265,15 @@ export default function SearchScreen() {
   );
 }
 
-function SearchLanding({ suggestions, onPick, onClear }: {
+function SearchLanding({ suggestions, onPick, onPickService, onClear }: {
   suggestions: ReturnType<typeof useDiscovery>['suggestions'];
   onPick: (value: string) => void;
+  onPickService: (serviceId: string) => void;
   onClear: () => void;
 }) {
   const colors = useThemeColors();
   const styles = useThemedStyles(makeStyles);
-  const { t, isRTL } = useLocalization();
+  const { t, isRTL, language } = useLocalization();
   const dt = useDiscoveryText();
   return (
     <View style={styles.landing}>
@@ -313,9 +324,9 @@ function SearchLanding({ suggestions, onPick, onClear }: {
           <View style={[styles.chips, isRTL && styles.reverse]}>
             {suggestions.commonServices.map(service => (
               <Pressable key={service.id} accessibilityRole="button"
-                accessibilityLabel={`${service.name}. ${service.providerCount} ${dt.text('providersOffering')}`}
-                onPress={() => onPick(service.name)} style={[styles.chip, isRTL && styles.reverse]}>
-                <AppText style={styles.chipText}>{service.name}</AppText>
+                accessibilityLabel={`${catalogueServiceLabel(service, language)}. ${service.providerCount} ${dt.text('providersOffering')}`}
+                onPress={() => onPickService(service.id)} style={[styles.chip, isRTL && styles.reverse]}>
+                <AppText style={styles.chipText}>{catalogueServiceLabel(service, language)}</AppText>
                 <AppText style={styles.chipCount}>{service.providerCount}</AppText>
               </Pressable>
             ))}

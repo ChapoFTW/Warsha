@@ -14,13 +14,14 @@ import { useLocalization } from '@/src/i18n/localization';
 import { useWorkerProfileText } from '@/src/i18n/worker-profile-translations';
 import { useProviderFoundation } from '@/src/providers/provider-context';
 import type { PortfolioItem, PortfolioItemInput } from '@/src/providers/provider-types';
+import { catalogueServiceLabel } from '@/src/services/specific-services';
 
 const emptyInput: PortfolioItemInput = { title: '', description: '', completedPeriod: '', status: 'draft' };
 
 export default function ProviderPortfolioScreen() {
   const colors = useThemeColors();
   const styles = useThemedStyles(makeStyles);
-  const { isRTL } = useLocalization();
+  const { isRTL, language } = useLocalization();
   const wt = useWorkerProfileText();
   const state = useProviderFoundation();
   const [form, setForm] = useState<PortfolioItemInput>(emptyInput);
@@ -88,7 +89,7 @@ export default function ProviderPortfolioScreen() {
           <Field label={wt('portfolioTitle')} value={form.title} maxLength={80} onChangeText={title => setForm(current => ({ ...current, title }))} />
           <Field label={wt('portfolioDescription')} value={form.description} maxLength={500} multiline onChangeText={description => setForm(current => ({ ...current, description }))} />
           <Field label={wt('completedPeriod')} value={form.completedPeriod ?? ''} maxLength={40} onChangeText={completedPeriod => setForm(current => ({ ...current, completedPeriod }))} />
-          {state.profile?.services.length ? <><AppText style={styles.strong}>{wt('relatedWork')}</AppText><View style={styles.wrap}>{state.profile.services.map(service => <Pressable key={service.serviceId} accessibilityRole="radio" accessibilityState={{ checked: form.serviceId === service.serviceId }} onPress={() => setForm(current => ({ ...current, serviceId: current.serviceId === service.serviceId ? undefined : service.serviceId }))} style={[styles.chip, form.serviceId === service.serviceId && styles.selected]}><AppText>{service.name}</AppText></Pressable>)}</View></> : null}
+          {state.profile?.services.length ? <><AppText style={styles.strong}>{wt('relatedWork')}</AppText><View style={styles.wrap}>{state.profile.services.map(service => <Pressable key={service.serviceId} accessibilityRole="radio" accessibilityState={{ checked: form.serviceId === service.serviceId }} onPress={() => setForm(current => ({ ...current, serviceId: current.serviceId === service.serviceId ? undefined : service.serviceId }))} style={[styles.chip, form.serviceId === service.serviceId && styles.selected]}><AppText>{catalogueServiceLabel(service, language)}</AppText></Pressable>)}</View></> : null}
           <Pressable accessibilityRole="button" accessibilityState={{ disabled: state.saving || form.title.trim().length < 2 }} disabled={state.saving || form.title.trim().length < 2} onPress={() => void save()} style={[styles.primary, form.title.trim().length < 2 && styles.disabled]}>
             {state.saving ? <BrandLoadingMark size={20} color={colors.background} /> : <AppText style={styles.dark}>{wt('saveItem')}</AppText>}
           </Pressable>

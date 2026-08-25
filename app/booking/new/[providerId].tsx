@@ -35,6 +35,7 @@ import { useMarketplaceData } from "@/src/data/marketplace-context";
 import { useLocalization } from "@/src/i18n/localization";
 import { useAddressFormText } from "@/src/i18n/address-form-copy";
 import type { TranslationKey } from "@/src/i18n/translations";
+import { catalogueServiceLabel } from "@/src/services/specific-services";
 import { resolvedAddressFields } from "@/src/providers/location-address";
 import {
   formatBookingDateTime,
@@ -247,6 +248,7 @@ export default function NewBookingScreen() {
       const booking = await createBooking({
         providerId: provider.id,
         serviceId: service.id,
+        serviceTranslationKey: service.translationKey,
         serviceName: service.name,
         issueDescription: normalizeProblem(issue),
         notes: notes.trim(),
@@ -319,7 +321,7 @@ export default function NewBookingScreen() {
                     ]}
                   >
                     <View style={styles.grow}>
-                      <AppText style={styles.cardTitle}>{item.name}</AppText>
+                      <AppText style={styles.cardTitle}>{catalogueServiceLabel(item, language)}</AppText>
                       <AppText style={styles.help}>
                         {t(serviceDescriptionKey(item))} — {item.duration}
                       </AppText>
@@ -560,7 +562,7 @@ export default function NewBookingScreen() {
             <View style={styles.section}>
               <Title text={t("reviewYourBooking")} />
               <Summary label={t("provider")} value={provider.name} />
-              <Summary label={t("service")} value={service.name} />
+              <Summary label={t("service")} value={catalogueServiceLabel(service, language)} />
               <Summary label={t("problem")} value={issue} />
               {notes ? <Summary label={t("notes")} value={notes} /> : null}
               <Summary

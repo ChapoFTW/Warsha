@@ -111,6 +111,11 @@ function mapProfile(value: Record<string, unknown>): ProviderDraft {
     categoryIds: Array.isArray(categoryIds) ? categoryIds.map(String) : [],
     services: (services as Record<string, unknown>[]).map(link => ({
       serviceId: String(link.serviceId ?? link.service_id ?? ''),
+      translationKey: link.translationKey ?? link.translation_key
+        ?? (link.service as Record<string, unknown> | undefined)?.translation_key
+        ? String(link.translationKey ?? link.translation_key
+          ?? (link.service as Record<string, unknown> | undefined)?.translation_key)
+        : null,
       name: String(link.name ?? (link.service as Record<string, unknown> | undefined)?.name ?? ''),
     })),
     areas: (areas as Record<string, unknown>[]).map(area => ({
@@ -580,9 +585,21 @@ export const providerRepository = environment.dataMode === 'supabase' ? supabase
 export async function listProviderServiceOptions() {
   if (environment.dataMode === 'mock') {
     const { providers } = await import('@/src/data/mock-data');
-    return [...new Map(providers.flatMap(provider => provider.services).map(service => [service.id, { id: service.id, name: service.name }])).values()];
+    return [...new Map(providers.flatMap(provider => provider.services).map(service => [service.id, {
+      id: service.id, name: service.name, translationKey: service.translationKey ?? null,
+    }])).values()];
   }
-  const { data, error } = await getSupabaseClient().from('services').select('id,name').eq('is_active', true).is('deleted_at', null).order('name');
+  const { data, error } = await getSupabaseClient().from('services')
+    .select('id,name,translation_key,service_categories!inner(is_active,deleted_at)')
+    .eq('is_active', true)
+    .is('deleted_at', null)
+    .eq('service_categories.is_active', true)
+    .is('service_categories.deleted_at', null)
+    .order('name');
   if (error) throw error;
-  return data;
+  return (data ?? []).map(row => ({
+    id: String(row.id),
+    name: String(row.name),
+    translationKey: row.translation_key ? String(row.translation_key) : null,
+  }));
 }

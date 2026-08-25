@@ -514,8 +514,8 @@ select is((select count(*)::integer from jsonb_object_keys(public.get_search_sug
 reset role;
 select is((select count(*)::integer from private.marketplace_candidate_scores),
   0,'browsing writes no matching-run score: browsing consumes no marketplace opportunity');
-select is((select enabled from private.marketplace_configuration limit 1),false,
-  'WPS-020 does not enable the marketplace');
+select is((select enabled from private.marketplace_configuration limit 1),true,
+  'the later request-readiness migration enables the marketplace independently of WPS-020');
 select is((select count(*)::integer from private.staff_feature_flags where enabled),0,
   'WPS-020 enables no feature flag');
 select is((select count(*)::integer from pg_catalog.pg_publication_tables

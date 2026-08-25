@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { AppShell } from '@/components/app-shell';
 import { appCopy } from '@/lib/app-copy';
+import { parseServices, type Service } from '@/lib/customer';
 import { workerNav } from '@/lib/nav';
 import { intlLocale, type Locale } from '@/lib/preferences';
 import { supabase } from '@/lib/supabase';
@@ -19,6 +20,7 @@ import {
   type Withdrawal,
 } from '@/lib/worker';
 import { workerCopy } from '@/lib/worker-copy';
+import { cataloguedServiceReferenceLabel } from '@/src/services/specific-services';
 
 import styles from '@/components/product-surface.module.css';
 
@@ -28,6 +30,7 @@ export default function WorkerEarningsPage() {
   const appWords = appCopy[locale] as Record<string, string>;
   const words = workerCopy[locale];
   const [summary, setSummary] = useState<EarningsSummary | null>(null);
+  const [services, setServices] = useState<Service[]>([]);
   const [destinations, setDestinations] = useState<PayoutDestination[]>([]);
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   const [failed, setFailed] = useState(false);
@@ -44,13 +47,18 @@ export default function WorkerEarningsPage() {
   const load = useCallback(async () => {
     setFailed(false);
     const client = supabase();
-    const { data: earningsData, error: earningsError } = await client.rpc('get_my_provider_earnings');
+    const [earningsResult, catalogueResult] = await Promise.all([
+      client.rpc('get_my_provider_earnings'),
+      client.rpc('get_marketplace_catalog_v2'),
+    ]);
+    const { data: earningsData, error: earningsError } = earningsResult;
     const next = parseEarnings(earningsData);
-    if (earningsError || !next) {
+    if (earningsError || catalogueResult.error || !next) {
       setFailed(true);
       return;
     }
     setSummary(next);
+    setServices(parseServices(catalogueResult.data));
     if (next.withdrawalsEnabled) {
       const [{ data: destinationData, error: destinationError }, { data: withdrawalData, error: withdrawalError }] = await Promise.all([
         client.rpc('get_my_payout_destinations'),
@@ -144,7 +152,11 @@ export default function WorkerEarningsPage() {
             {summary.transactions.length === 0 ? <p className={styles.muted}>{words.earningsNone}</p> : (
               <ul className={styles.list}>{summary.transactions.map((item) => (
                 <li key={item.id} className={styles.row}>
-                  <span className={styles.cardName}>{item.service}</span>
+                  <span className={styles.cardName}>{cataloguedServiceReferenceLabel({
+                    serviceId: item.serviceId,
+                    serviceTranslationKey: item.serviceTranslationKey,
+                    serviceName: item.service,
+                  }, services, locale)}</span>
                   <div className={styles.rowMeta}><span className={styles.price}>{egpFromMinor(item.netMinor, locale)}</span>
                     <span className={styles.badge}>{words[`earningStatus_${item.status}` as keyof typeof words] ?? item.status}</span><time className={styles.when}>{formatMoment(item.date, locale)}</time></div>
                 </li>

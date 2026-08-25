@@ -390,6 +390,42 @@ export function catalogueServiceLabel(
 }
 
 /**
+ * A persisted reference to a service, plus the historical display fallback.
+ *
+ * Bookings and conversation summaries deliberately keep `serviceName`: it is
+ * the only meaningful label an unkeyed or deleted historical service may have.
+ * For a known service, however, the UUID/key wins and the snapshot is never
+ * the normal presentation path.
+ */
+export type CataloguedServiceReference = {
+  serviceId?: string | null;
+  serviceTranslationKey?: string | null;
+  serviceName: string;
+};
+
+/**
+ * Resolve a booking/request-style service reference in the active language.
+ *
+ * The embedded key is preferred, then the live catalogue is searched by the
+ * stable UUID. Only an entity with neither a usable key nor a known UUID falls
+ * back to its preserved name snapshot.
+ */
+export function cataloguedServiceReferenceLabel(
+  reference: CataloguedServiceReference,
+  catalogue: readonly (CatalogueServiceName & { id: string })[],
+  language: Language,
+): string {
+  if (reference.serviceTranslationKey) {
+    const embeddedLabel = specificServiceLabel(reference.serviceTranslationKey, language);
+    if (embeddedLabel) return embeddedLabel;
+  }
+  const service = reference.serviceId
+    ? catalogue.find((item) => item.id === reference.serviceId)
+    : undefined;
+  return service ? catalogueServiceLabel(service, language) : reference.serviceName;
+}
+
+/**
  * The picker's own words, in the three languages Warsha speaks.
  *
  * These are the strings web already ships from its copy catalogue. They are

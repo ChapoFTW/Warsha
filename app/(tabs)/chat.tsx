@@ -16,6 +16,8 @@ import { chatRepository } from '@/src/chat/chat-repository';
 import { useChatText } from '@/src/chat/chat-translations';
 import type { ChatInboxItem, MessageKind } from '@/src/chat/chat-types';
 import { useLocalization } from '@/src/i18n/localization';
+import { useMarketplaceData } from '@/src/data/marketplace-context';
+import { cataloguedServiceReferenceLabel } from '@/src/services/specific-services';
 import { useProviderJobs } from '@/src/provider-jobs/provider-job-context';
 import { realtimeService } from '@/src/realtime/realtime-service';
 import { formatTimestamp, localeFor } from '@/src/utils/date-format';
@@ -26,6 +28,7 @@ export default function ChatInboxScreen() {
   const { mode, user } = useAuth();
   const bookings = useBookings();
   const jobs = useProviderJobs();
+  const { services } = useMarketplaceData();
   const { language, isRTL, t } = useLocalization();
   const ct = useChatText();
   const accountId = mode === 'mock' ? 'mock-user' : user?.id ?? null;
@@ -110,20 +113,23 @@ export default function ChatInboxScreen() {
         contentContainerStyle={[styles.content, !items.length && styles.grow]}
         ListHeaderComponent={<View style={styles.header}><AppText style={styles.heading}>{ct('inboxTitle')}</AppText></View>}
         ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
-        renderItem={({ item }) => <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`${item.counterpartName}. ${item.serviceName}. ${item.unreadCount} ${ct('unread')}`}
-          onPress={() => router.push({ pathname: '/conversation/[bookingId]', params: { bookingId: item.bookingId } })}
-          style={[styles.card, isRTL && styles.reverse, item.unreadCount > 0 && styles.unreadCard]}
-        >
-          <View style={[styles.avatar, item.unreadCount > 0 && styles.avatarUnread]}><MaterialIcons name="chat-bubble-outline" size={22} color={item.unreadCount > 0 ? colors.background : colors.textSecondary} /></View>
-          <View style={styles.text}>
-            <View style={[styles.between, isRTL && styles.reverse]}><AppText style={[styles.name, isRTL && styles.rtl]} numberOfLines={1}>{item.counterpartName || item.serviceName}</AppText>{item.lastMessageAt ? <AppText style={styles.time}>{formatTimestamp(item.lastMessageAt, localeFor(language))}</AppText> : null}</View>
-            <AppText style={[styles.service, isRTL && styles.rtl]} numberOfLines={1}>{item.serviceName}</AppText>
-            <View style={[styles.between, isRTL && styles.reverse]}><AppText style={[styles.preview, isRTL && styles.rtl]} numberOfLines={1}>{messageKindLabel(item.lastMessageKind, ct)}</AppText><AppText style={styles.status}>{t(bookingStatusTranslationKeys[item.status])}</AppText></View>
-          </View>
-          {item.unreadCount > 0 ? <View accessibilityLabel={`${item.unreadCount} ${ct('unread')}`} style={styles.badge}><AppText style={styles.badgeText}>{item.unreadCount > 99 ? '99+' : item.unreadCount}</AppText></View> : null}
-        </Pressable>}
+        renderItem={({ item }) => {
+          const serviceLabel = cataloguedServiceReferenceLabel(item, services, language);
+          return <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`${item.counterpartName}. ${serviceLabel}. ${item.unreadCount} ${ct('unread')}`}
+            onPress={() => router.push({ pathname: '/conversation/[bookingId]', params: { bookingId: item.bookingId } })}
+            style={[styles.card, isRTL && styles.reverse, item.unreadCount > 0 && styles.unreadCard]}
+          >
+            <View style={[styles.avatar, item.unreadCount > 0 && styles.avatarUnread]}><MaterialIcons name="chat-bubble-outline" size={22} color={item.unreadCount > 0 ? colors.background : colors.textSecondary} /></View>
+            <View style={styles.text}>
+              <View style={[styles.between, isRTL && styles.reverse]}><AppText style={[styles.name, isRTL && styles.rtl]} numberOfLines={1}>{item.counterpartName || serviceLabel}</AppText>{item.lastMessageAt ? <AppText style={styles.time}>{formatTimestamp(item.lastMessageAt, localeFor(language))}</AppText> : null}</View>
+              <AppText style={[styles.service, isRTL && styles.rtl]}>{serviceLabel}</AppText>
+              <View style={[styles.between, isRTL && styles.reverse]}><AppText style={[styles.preview, isRTL && styles.rtl]} numberOfLines={1}>{messageKindLabel(item.lastMessageKind, ct)}</AppText><AppText style={styles.status}>{t(bookingStatusTranslationKeys[item.status])}</AppText></View>
+            </View>
+            {item.unreadCount > 0 ? <View accessibilityLabel={`${item.unreadCount} ${ct('unread')}`} style={styles.badge}><AppText style={styles.badgeText}>{item.unreadCount > 99 ? '99+' : item.unreadCount}</AppText></View> : null}
+          </Pressable>;
+        }}
         ListEmptyComponent={loading
           ? <View style={styles.state}><ActivityIndicator color={colors.white} /></View>
           : error
@@ -157,7 +163,7 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   reverse: { flexDirection: 'row-reverse' },
   rtl: { textAlign: 'right', writingDirection: 'rtl' },
   name: { flex: 1, fontSize: 15, fontWeight: typography.bold },
-  service: { color: colors.textSecondary, fontSize: 12 },
+  service: { flexShrink: 1, color: colors.textSecondary, fontSize: 12, lineHeight: 18 },
   preview: { flex: 1, color: colors.textMuted, fontSize: 11 },
   status: { color: colors.textMuted, fontSize: 9 },
   time: { color: colors.textMuted, fontSize: 10 },

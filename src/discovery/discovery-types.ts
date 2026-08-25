@@ -121,7 +121,13 @@ export type DiscoverySuggestions = {
   /** Ranked by how many discoverable workers offer the service. Never labelled
    * "popular" in the interface: Warsha has no traffic data and will not invent
    * a popularity signal. */
-  commonServices: { id: string; name: string; categoryId: string; providerCount: number }[];
+  commonServices: {
+    id: string;
+    translationKey?: string | null;
+    name: string;
+    categoryId: string;
+    providerCount: number;
+  }[];
 };
 
 export type DiscoveryHome = {

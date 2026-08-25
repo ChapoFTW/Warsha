@@ -93,6 +93,8 @@ export function BookingPaymentCard({ booking }: { booking: Booking }) {
         bookingId: booking.id,
         providerId: booking.providerId,
         providerName: provider?.name ?? '',
+        serviceId: booking.serviceId,
+        serviceTranslationKey: booking.serviceTranslationKey,
         service: booking.serviceName,
         totalMinor: egpDecimalToMinor(String(total)),
         method,

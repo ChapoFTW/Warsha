@@ -42,7 +42,8 @@ request creation and discovery while appearing everywhere else.
 
 | Source | What it shows |
 |---|---|
-| FilKhedma, Egypt's largest home-services platform | Leads with A/C, then cleaning, plumbing, carpentry, electricity |
+| FilKhedma, Egypt's largest home-services platform | Publishes plumbing, A/C, carpentry, electricity, Alumetal, satellite dish, painting, appliances, and six cleaning services |
+| Taskty, greater Cairo | Leads with house and furniture cleaning, then pest control, plumbing, electricity, carpentry, and furniture moving |
 | YalaFix | Leads with plumbing, electrical, then cleaning, AC & appliances, painting, carpentry, general repairs |
 | Egypt air-conditioner market | USD 1.12B (2024) → USD 1.65B (2030), 6.72% CAGR, against Cairo summers now exceeding 40°C |
 | Cut Egypt | At-home barbering is an established Egyptian product — haircuts delivered to homes and offices |
@@ -56,12 +57,16 @@ Two judgements worth stating plainly:
   unambiguous — but it is seasonal, where plumbing is urgent and year-round and
   sits top-three on both operators. A static annual rank should not encode
   August. Seasonal adjustment is a later refinement, not a cold-start decision.
-- **The grooming services sit below every household trade.** They are a
-  legitimate hyperlocal category and they are new. Neither is a reason to place
-  them above the work Egyptian households actually call somebody out for.
+- **Cleaning is third and A/C fourth.** Cleaning is the recurring service in
+  the catalogue and leads Taskty; A/C has exceptional seasonal demand, but a
+  static annual rank should not encode August.
+- **The grooming services sit below every household trade.** They are
+  legitimate hyperlocal categories and they are new. Neither is a reason to
+  place them above the work Egyptian households actually call somebody out for.
 
-Warsha has no Pest Control category; it exists only as a profession under
-Cleaning, so there was nothing to rank.
+Pest control is a top-level category rather than a profession under Cleaning:
+Taskty presents it as a distinct customer intent, and a pest problem is not a
+cleaning request.
 
 ## The order
 
@@ -69,17 +74,23 @@ Cleaning, so there was nothing to rank.
 |---|---|---|
 | 1 | `plumbing` | |
 | 2 | `electrical` | |
-| 3 | `ac` | |
-| 4 | `cleaning` | |
+| 3 | `cleaning` | |
+| 4 | `ac` | |
 | 5 | `appliance-repair` | |
 | 6 | `carpentry` | |
 | 7 | `painting` | |
-| 8 | `general-maintenance` | |
-| 9 | `moving-help` | |
-| 10 | `barber` | new |
-| 11 | `hairdressing` | new |
-| 12 | `satellite-tv-installation` | |
-| 13 | `personal-styling` | new |
+| 8 | `moving-help` | |
+| 9 | `pest-control` | replaces the catch-all |
+| 10 | `water-heater-repair` | replaces the catch-all |
+| 11 | `flooring-tiling` | replaces the catch-all |
+| 12 | `renovation-finishing` | replaces the catch-all |
+| 13 | `alumetal` | replaces the catch-all |
+| 14 | `satellite-tv-installation` | |
+| 15 | `locksmithing` | replaces the catch-all |
+| 16 | `gardening` | replaces the catch-all |
+| 17 | `barber` | personal service |
+| 18 | `hairdressing` | personal service |
+| 19 | `personal-styling` | personal service |
 
 Ranks are unique among active categories, enforced by a partial unique index.
 Ordering is `demand_rank, sort_order, id`, so an equally ranked pair still has a
@@ -91,11 +102,11 @@ later build without a rank sorts after every ranked one and is never hidden.
 
 ## Taxonomy
 
-Three top-level categories, not specializations. All ten existing categories are
-household maintenance, so none can host personal services without distorting
-what it means, and these are three different customer intents — barbering,
-hairdressing, and fashion styling that involves no hair at all. Warsha has no
-category-group authority and none was invented for this.
+Nineteen top-level categories, not specializations. Seven concrete household
+categories replace the withdrawn `general-maintenance` catch-all; three more
+represent distinct personal-service intents — barbering, hairdressing, and
+fashion styling that involves no hair at all. Warsha has no category-group
+authority and none was invented for this.
 
 Terminology is chosen rather than translated. Arabic **كوافير** is the ordinary
 Egyptian word, itself borrowed from *coiffeur*, and reads as hairdressing

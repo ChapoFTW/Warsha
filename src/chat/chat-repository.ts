@@ -75,6 +75,8 @@ function mapMessage(row: Record<string, unknown>): BookingMessage {
 function mapInbox(row: Record<string, unknown>): ChatInboxItem {
   return {
     bookingId: String(row.bookingId),
+    serviceId: optional(row.serviceId),
+    serviceTranslationKey: optional(row.serviceTranslationKey),
     serviceName: String(row.serviceName ?? ''),
     status: String(row.status) as ChatInboxItem['status'],
     counterpartName: String(row.counterpartName ?? ''),
@@ -138,9 +140,11 @@ const mockRepository: ChatRepository = {
       const last = messages.sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
       return {
         bookingId: booking.id,
+        serviceId: booking.serviceId,
+        serviceTranslationKey: booking.serviceTranslationKey ?? undefined,
         serviceName: booking.serviceName,
         status: booking.status,
-        counterpartName: booking.customerName ?? booking.serviceName,
+        counterpartName: booking.customerName ?? '',
         lastMessageAt: last?.createdAt,
         lastMessageKind: last?.kind,
         unreadCount: messages.filter((message) => message.senderId !== accountId && (!lastReadAt || message.createdAt > lastReadAt)).length,

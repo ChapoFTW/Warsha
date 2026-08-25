@@ -8,7 +8,7 @@ import { intlLocale, type Locale } from './preferences.ts';
  * that a page can render without guessing at missing fields.
  */
 
-export type WorkerService = { serviceId: string; name: string };
+export type WorkerService = { serviceId: string; translationKey?: string | null; name: string };
 export type WorkerArea = { governorate: string; district: string; radiusKm: number };
 
 export type WorkerProfile = {
@@ -71,6 +71,8 @@ export type WorkerQuote = {
 
 export type WorkerBooking = {
   id: string;
+  serviceId: string;
+  serviceTranslationKey?: string | null;
   status: string;
   customerName: string;
   serviceName: string;
@@ -90,6 +92,8 @@ export type WorkerBooking = {
 export type Earning = {
   id: string;
   bookingId: string;
+  serviceId: string;
+  serviceTranslationKey: string | null;
   service: string;
   date: string;
   grossMinor: string;
@@ -163,7 +167,11 @@ export function parseWorkerProfile(value: unknown): WorkerProfile | null {
     services: services.flatMap((item) => {
       const service = record(item);
       return typeof service.serviceId === 'string'
-        ? [{ serviceId: service.serviceId, name: string(service.name) }]
+        ? [{
+          serviceId: service.serviceId,
+          translationKey: optional(service.translationKey ?? service.translation_key),
+          name: string(service.name),
+        }]
         : [];
     }),
     areas: areas.flatMap((item) => {
@@ -245,6 +253,8 @@ export function parseWorkerBookings(value: unknown): WorkerBooking[] {
     const history = Array.isArray(row.booking_status_history) ? row.booking_status_history : [];
     return [{
       id: row.id,
+      serviceId: string(row.service_id),
+      serviceTranslationKey: optional(record(row.services).translation_key),
       status: string(row.status),
       customerName: string(row.customer_name_snapshot),
       serviceName: string(row.service_name_snapshot),
@@ -290,6 +300,8 @@ export function parseEarnings(value: unknown): EarningsSummary | null {
       return [{
         id: entry.id,
         bookingId: string(entry.bookingId),
+        serviceId: string(entry.serviceId),
+        serviceTranslationKey: optional(entry.serviceTranslationKey),
         service: string(entry.service),
         date: string(entry.date),
         grossMinor: string(entry.grossMinor),

@@ -30,6 +30,8 @@ import type {
 type MockPayment = BookingPayment & {
   accountKey: string;
   providerId: string;
+  serviceId?: string | null;
+  serviceTranslationKey?: string | null;
   service: string;
   providerName: string;
   idempotencyKey: string;
@@ -164,6 +166,8 @@ async function mockCreateIntent(accountKey: string, input: CheckoutInput) {
     const payment: MockPayment = {
       accountKey,
       providerId: input.providerId,
+      serviceId: input.serviceId,
+      serviceTranslationKey: input.serviceTranslationKey,
       service: input.service,
       providerName: input.providerName,
       idempotencyKey: input.idempotencyKey,
@@ -246,6 +250,8 @@ async function mockSimulatePayment(
           providerId: payment.providerId,
           bookingId: payment.bookingId,
           paymentId: payment.paymentId,
+          serviceId: payment.serviceId,
+          serviceTranslationKey: payment.serviceTranslationKey,
           service: payment.service,
           date: payment.paidAt,
           grossMinor: payment.snapshot.approvedJobPriceMinor,
@@ -591,6 +597,8 @@ export const paymentRepository = {
       return {
         transactionReference: payment.reference,
         bookingReference: payment.bookingId,
+        serviceId: stored?.serviceId,
+        serviceTranslationKey: stored?.serviceTranslationKey,
         service: stored?.service ?? '',
         providerName: stored?.providerName ?? '',
         timestamp: payment.paidAt ?? payment.createdAt,

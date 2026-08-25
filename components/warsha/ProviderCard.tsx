@@ -82,7 +82,7 @@ export function ProviderCard({ item, width }: { item: Provider; width: number })
         <ProviderTrustIndicators identityVerified={item.verified} skillCertificateVerified={item.skillCertificateVerified} compact />
 
         <View style={[styles.meta, isRTL && styles.reverse]}>
-          <AppText numberOfLines={1} style={styles.profession}>{professionLabel(item.profession, language)}</AppText>
+          <AppText style={styles.profession}>{professionLabel(item.profession, language)}</AppText>
           <AppText style={styles.profession}>{item.distance.toFixed(1)} km</AppText>
         </View>
 
@@ -118,7 +118,7 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   favorite: { width: 44, height: 44, borderRadius: radii.pill, backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
   name: { fontSize: 19, fontWeight: typography.semibold, flexShrink: 1 },
   meta: { flexDirection: 'row', justifyContent: 'space-between', gap: spacing.sm },
-  profession: { flexShrink: 1, fontSize: 13, color: colors.textSecondary },
+  profession: { flexShrink: 1, fontSize: 13, lineHeight: 19, color: colors.textSecondary },
   rating: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   ratingText: { fontSize: 12, fontWeight: typography.semibold },
   reviewCount: { color: colors.textSecondary, fontSize: 11, fontWeight: typography.regular },

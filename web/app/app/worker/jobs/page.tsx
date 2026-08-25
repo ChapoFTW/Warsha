@@ -16,6 +16,7 @@ import {
   type WorkerBooking,
 } from '@/lib/worker';
 import { workerCopy, type WorkerWords } from '@/lib/worker-copy';
+import { cataloguedServiceReferenceLabel } from '@/src/services/specific-services';
 
 import styles from '@/components/product-surface.module.css';
 
@@ -39,10 +40,10 @@ export default function WorkerJobsPage() {
       return;
     }
     const { data, error } = await client.from('bookings')
-      .select('id,status,customer_name_snapshot,service_name_snapshot,issue_description,notes,'
+      .select('id,status,customer_name_snapshot,service_id,service_name_snapshot,issue_description,notes,'
         + 'scheduled_date,scheduled_time,address_snapshot,estimated_price_egp,final_price_egp,'
         + 'proposed_scheduled_date,proposed_scheduled_time,provider_reschedule_note,'
-        + 'booking_status_history(status,created_at,metadata)')
+        + 'services(translation_key),booking_status_history(status,created_at,metadata)')
       .eq('provider_id', providerId)
       .is('deleted_at', null)
       .order('created_at', { ascending: false })
@@ -91,6 +92,7 @@ function WorkerJobDetail({ booking, locale, appWords, words, onClose, onChanged 
   const [time, setTime] = useState('');
   const [note, setNote] = useState('');
   const next = WORKER_NEXT_STATUS[booking.status];
+  const serviceLabel = cataloguedServiceReferenceLabel(booking, [], locale);
 
   const act = async (operation: () => PromiseLike<{ error: unknown }>) => {
     if (busy) return;
@@ -103,8 +105,8 @@ function WorkerJobDetail({ booking, locale, appWords, words, onClose, onChanged 
   };
 
   return (
-    <section className={styles.panel} aria-label={booking.serviceName}>
-      <div className={styles.head}><h2 className={styles.sectionTitle}>{booking.serviceName}</h2>
+    <section className={styles.panel} aria-label={serviceLabel}>
+      <div className={styles.head}><h2 className={styles.sectionTitle}>{serviceLabel}</h2>
         <button type="button" className={styles.secondary} onClick={onClose}>{appWords.close}</button></div>
       <div className={styles.rowMeta}><span className={styles.badge}>{appWords[`bookingStatus_${booking.status}`] ?? booking.status}</span>
         <time className={styles.when}>{formatDay(booking.scheduledDate, locale)} · {booking.scheduledTime.slice(0, 5)}</time></div>
@@ -199,7 +201,7 @@ function WorkerJobList({ title, empty, rows, locale, appWords, onOpen }: {
   return <section className={styles.panel}><h2 className={styles.sectionTitle}>{title}</h2>
     {rows === null ? <p className={styles.muted}>{appWords.loading}</p> : rows.length === 0 ? <p className={styles.muted}>{empty}</p> : (
       <ul className={styles.list}>{rows.map((item) => <li key={item.id} className={styles.row}>
-        <button type="button" className={styles.rowTitle} onClick={() => onOpen(item.id)}>{item.serviceName}</button>
+        <button type="button" className={styles.rowTitle} onClick={() => onOpen(item.id)}>{cataloguedServiceReferenceLabel(item, [], locale)}</button>
         <span className={styles.cardMeta}>{item.customerName}</span>
         <div className={styles.rowMeta}><span className={styles.badge}>{appWords[`bookingStatus_${item.status}`] ?? item.status}</span>
           <time className={styles.when}>{formatDay(item.scheduledDate, locale)} · {item.scheduledTime.slice(0, 5)}</time></div>

@@ -128,8 +128,9 @@ export default function RequestsPage() {
                   <span className={styles.badge}>
                     {words[`requestStatus_${row.status}`] ?? row.status}
                   </span>
-                  <span className={styles.badge}>
-                    {words[row.category_id] ?? row.category_id}
+                  <span className={`${styles.badge} ${styles.workLabel}`}>
+                    {serviceCategoryLabel(
+                      serviceCategoryTranslationKey(row.category_id), locale, row.category_id)}
                   </span>
                   <time className={styles.when} dateTime={row.created_at}>
                     {formatDate(row.created_at, locale)}
@@ -267,7 +268,7 @@ function RequestDetail({
             customer reading their own request list was shown
             `water-heater-repair`. Resolved through the shared authority, which
             humanizes rather than ever surfacing a slug. */}
-        <span className={styles.badge}>
+        <span className={`${styles.badge} ${styles.workLabel}`}>
           {serviceCategoryLabel(
             serviceCategoryTranslationKey(request.categoryId), locale, request.categoryId)}
         </span>

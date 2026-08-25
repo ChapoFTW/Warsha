@@ -409,6 +409,7 @@ export type Booking = {
   /** Resolved to a localized name; `serviceName` is the historical fallback. */
   serviceTranslationKey?: string | null;
   id: string;
+  serviceId: string;
   status: string;
   serviceName: string;
   issueDescription: string;
@@ -431,6 +432,7 @@ export function parseBookings(value: unknown): Booking[] {
     if (typeof row.id !== 'string') return [];
     return [{
       id: row.id,
+      serviceId: str(row.service_id) ?? '',
       status: str(row.status) ?? '',
       serviceName: str(row.service_name_snapshot) ?? '',
       // The key of the service this booking is for, when it is still known.

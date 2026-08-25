@@ -65,6 +65,7 @@ export async function syncMockProviderCatalog(accountId = 'mock-user') {
   provider.services = profile.services.map(item => previousServices.get(item.serviceId) ?? {
     id: item.serviceId,
     name: item.name,
+    translationKey: item.translationKey,
     price: 0,
     pricingType: 'quote',
     duration: '',

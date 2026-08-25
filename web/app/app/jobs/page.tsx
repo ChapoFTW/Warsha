@@ -9,7 +9,7 @@ import { customerNav } from '@/lib/nav';
 import { intlLocale, type Locale } from '@/lib/preferences';
 import { supabase } from '@/lib/supabase';
 import { useAppLocale } from '@/lib/use-app-locale';
-import { specificServiceLabel } from '@/src/services/specific-services';
+import { cataloguedServiceReferenceLabel } from '@/src/services/specific-services';
 
 import styles from '@/components/product-surface.module.css';
 
@@ -29,8 +29,7 @@ const CANCEL_REASONS = ['plans_changed', 'booked_by_mistake', 'provider_delay', 
  * reader as the normal case is the same defect the request form had.
  */
 function serviceLabel(booking: Booking, locale: Locale): string {
-  return (booking.serviceTranslationKey
-    && specificServiceLabel(booking.serviceTranslationKey, locale)) || booking.serviceName;
+  return cataloguedServiceReferenceLabel(booking, [], locale);
 }
 
 export default function JobsPage() {
@@ -51,7 +50,7 @@ export default function JobsPage() {
       // normal case. The service is joined for its key so the label can be
       // resolved live, with the snapshot as the fallback it was always meant
       // to be.
-      .select('id,status,service_name_snapshot,issue_description,scheduled_date,'
+      .select('id,status,service_id,service_name_snapshot,issue_description,scheduled_date,'
         + 'scheduled_time,address_snapshot,estimated_price_egp,final_price_egp,created_at,'
         + 'proposed_scheduled_date,proposed_scheduled_time,provider_reschedule_note,'
         + 'services(translation_key),'

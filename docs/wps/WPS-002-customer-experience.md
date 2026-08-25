@@ -26,6 +26,11 @@ Primary evidence includes the customer routes under `app`, marketplace/address/b
 
 - Home shows search, active service categories, featured workers, an offer banner, and a recent-booking card when applicable.
 - The aligned launch taxonomy contains exactly ten active categories: plumbing, electrical, carpentry, AC, cleaning, painting, appliance repair, satellite/TV installation, moving help, and general maintenance.
+- **Current-build supersession:** this bullet records the 2026-07 launch
+  baseline. The current catalogue authority is
+  `src/services/service-catalogue.ts` plus migration `202608240001`: 19
+  selectable categories, with `general-maintenance` withdrawn from new work
+  and retained only for history.
 - Category pages list workers and expose local filter/sort controls with loading, error, retry, and empty states.
 - Search matches worker name, location, biography, skills, services, and translated profession. It supports category/preset filtering, recent searches, availability, verification, rating, price, distance, and recommended/nearest/top-rated/lowest-price ordering.
 - Current Supabase discovery loads one sanitized catalog RPC and performs UI filtering locally. It is not yet the server-ranked WPS-008 quote marketplace.

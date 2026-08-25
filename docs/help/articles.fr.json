@@ -67,7 +67,7 @@
       "locale": "fr",
       "title": "Demandes, devis et interventions",
       "summary": "Comprenez le parcours d’une demande jusqu’à la fin ou l’annulation de l’intervention.",
-      "version": 3,
+      "version": 4,
       "lastReviewedDate": "2026-08-25",
       "features": [
         "marketplace",
@@ -90,7 +90,7 @@
         "annuler",
         "litige"
       ],
-      "body": "## Demande et devis\n\nDécrivez le problème, choisissez la zone et le moment souhaité, puis envoyez la demande. Les professionnels correspondants peuvent proposer un devis et le réviser tant que la demande l’autorise. Comparez le montant, le délai, le message, les matériaux, les moyens de paiement, la note et les informations de vérification affichées.\n\n## Intervention\n\nAccepter un devis crée ou fait avancer la réservation officielle. Suivez son état dans Mes travaux. Les changements d’horaire, travaux supplémentaires, clôtures, annulations et litiges ont leurs propres confirmations ; un message seul ne modifie pas la réservation.\n\nLes types de service s’affichent sous leur nom dans votre langue — Électricité, Plomberie, Installation satellite et TV — en anglais, arabe et français. Après l’avoir choisi, vous pouvez préciser avec un service spécifique, comme une canalisation bouchée ou l’installation d’une prise ; ce champ est facultatif, et « Tout service de cette catégorie » signifie que vous n’avez pas précisé et qu’aucun professionnel n’est exclu. Le nom affiché est une étiquette ; le service lui-même est enregistré de la même manière quelle que soit la langue, si bien que changer de langue ne modifie jamais votre demande.\n\nLes types de service apparaissent sous leur nom dans votre langue. Après avoir choisi un type, vous pouvez préciser un service exact, par exemple une canalisation bouchée ou la pose d’une prise ; ce champ est facultatif, et « Tout service de cette catégorie » signifie que vous n’avez rien restreint et qu’aucun professionnel n’est exclu. Les noms affichés ne sont que des libellés : la catégorie et le service précis sont enregistrés de la même manière quelle que soit votre langue, donc changer de langue ne modifie jamais votre demande."
+      "body": "## Demande et devis\n\nDécrivez le problème, choisissez la zone et le moment souhaité, puis envoyez la demande. Les professionnels correspondants peuvent proposer un devis et le réviser tant que la demande l’autorise. Comparez le montant, le délai, le message, les matériaux, les moyens de paiement, la note et les informations de vérification affichées.\n\n## Intervention\n\nAccepter un devis crée ou fait avancer la réservation officielle. Suivez son état dans Mes travaux. Les changements d’horaire, travaux supplémentaires, clôtures, annulations et litiges ont leurs propres confirmations ; un message seul ne modifie pas la réservation.\n\nLes types de service s’affichent sous leur nom dans votre langue — Électricité, Plomberie, Installation satellite et TV — en anglais, arabe et français. Après l’avoir choisi, vous pouvez préciser avec un service spécifique, comme une canalisation bouchée ou l’installation d’une prise ; ce champ est facultatif, et « Tout service de cette catégorie » signifie que vous n’avez pas précisé et qu’aucun professionnel n’est exclu. Les noms affichés ne sont que des libellés : la catégorie et le service précis sont enregistrés de la même manière quelle que soit votre langue, donc changer de langue ne modifie jamais votre demande. Les écrans des demandes et interventions, actuelles comme historiques, résolvent ces libellés dans la langue sélectionnée ; seul un service ancien ou retiré devenu introuvable conserve sa description d’origine comme repère historique."
     },
     {
       "id": "customer-account-security",
@@ -218,7 +218,7 @@
       "locale": "fr",
       "title": "Opportunités, devis et interventions",
       "summary": "Répondez aux demandes admissibles et mettez à jour le déroulement réel du travail.",
-      "version": 3,
+      "version": 4,
       "lastReviewedDate": "2026-08-25",
       "features": [
         "marketplace",
@@ -240,7 +240,7 @@
         "arrivée",
         "terminer"
       ],
-      "body": "Les opportunités sont filtrées par admissibilité, métier, zone et disponibilité. Ouvrez une demande avant de répondre. Un devis doit indiquer un prix réaliste, le délai d’arrivée, la durée estimée et ce qui est inclus.\n\nLorsqu’un devis est choisi et confirmé, l’intervention apparaît dans Mes travaux. Utilisez les actions Warsha pour signaler le départ, l’arrivée, le début et la fin. Les messages servent à coordonner mais ne remplacent pas ces étapes officielles. En cas de retard, d’absence du client ou de problème sérieux, utilisez l’action correspondante et décrivez les faits.\n\nLes types de service apparaissent sous leur nom dans votre langue plutôt que sous un code interne. Le service sous-jacent est le même enregistrement que voient les clients et le personnel : un travail accepté en arabe est le même travail en anglais. Chaque invitation indique le métier concerné et, lorsque le client a précisé sa demande, le service exact demandé, afin que vous sachiez sur quoi vous chiffrez avant même de l’ouvrir."
+      "body": "Les opportunités sont filtrées par admissibilité, métier, zone et disponibilité. Ouvrez une demande avant de répondre. Un devis doit indiquer un prix réaliste, le délai d’arrivée, la durée estimée et ce qui est inclus.\n\nLorsqu’un devis est choisi et confirmé, l’intervention apparaît dans Mes travaux. Utilisez les actions Warsha pour signaler le départ, l’arrivée, le début et la fin. Les messages servent à coordonner mais ne remplacent pas ces étapes officielles. En cas de retard, d’absence du client ou de problème sérieux, utilisez l’action correspondante et décrivez les faits.\n\nLes types de service apparaissent sous leur nom dans votre langue plutôt que sous un code interne. Le service sous-jacent est le même enregistrement que voient les clients et le personnel : un travail accepté en arabe est le même travail en anglais. Chaque invitation indique le métier concerné et, lorsque le client a précisé sa demande, le service exact demandé, afin que vous sachiez sur quoi vous chiffrez avant même de l’ouvrir. Les opportunités et l’historique continuent de résoudre ces noms dans la langue sélectionnée ; seul un service ancien ou retiré devenu introuvable utilise sa description d’origine comme repère historique."
     },
     {
       "id": "worker-earnings-profile",

@@ -47,6 +47,7 @@ export const DETERMINISTIC_TEST_SCRIPTS = [
   'test:service-labels',
   'test:service-catalogue',
   'test:specific-service-rendering',
+  'test:catalogue-consumers',
   'test:request-creation',
   'test:native-specific-service',
   'test:address-contract',

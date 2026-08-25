@@ -26,6 +26,8 @@ import {
 } from '@/src/providers/provider-types';
 import { useWorkerText } from '@/src/worker/worker-copy';
 import { workerJourneyProgress } from '@/src/worker/worker-onboarding-policy';
+import { useLocalization } from '@/src/i18n/localization';
+import { catalogueServiceLabel } from '@/src/services/specific-services';
 
 export default function WorkerOnboarding() {
   const styles = useThemedStyles(makeStyles);
@@ -33,9 +35,10 @@ export default function WorkerOnboarding() {
   const wt = useWorkerText();
   const onboarding = useOnboarding();
   const provider = useProviderFoundation();
+  const { language } = useLocalization();
   const [draft, setDraft] = useState<ProviderDraft>(provider.profile ?? emptyProviderDraft);
   const [experienceInput, setExperienceInput] = useState('');
-  const [options, setOptions] = useState<{ id: string; name: string }[]>([]);
+  const [options, setOptions] = useState<{ id: string; name: string; translationKey?: string | null }[]>([]);
   const [optionsLoading, setOptionsLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
@@ -215,10 +218,10 @@ export default function WorkerOnboarding() {
                         ...current,
                         services: selected
                           ? current.services.filter(item => item.serviceId !== option.id)
-                          : [...current.services, { serviceId: option.id, name: option.name }],
+                          : [...current.services, { serviceId: option.id, translationKey: option.translationKey, name: option.name }],
                       }))}
                       style={[styles.chip, selected && styles.chipSelected]}>
-                      <AppText>{option.name}</AppText>
+                      <AppText>{catalogueServiceLabel(option, language)}</AppText>
                     </Pressable>
                   );
                 })}

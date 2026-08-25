@@ -54,7 +54,7 @@ export default function WorkerHome() {
     setAvailability(profile.isAvailable);
     setOpportunityCount(parseInvitations(invitationData).filter((item) => ['invited', 'viewed'].includes(item.status)).length);
     const { data, error } = await client.from('bookings')
-      .select('id,status,customer_name_snapshot,service_name_snapshot,issue_description,notes,scheduled_date,scheduled_time,address_snapshot,estimated_price_egp,final_price_egp,proposed_scheduled_date,proposed_scheduled_time,provider_reschedule_note,booking_status_history(status,created_at,metadata)')
+      .select('id,status,customer_name_snapshot,service_id,service_name_snapshot,issue_description,notes,scheduled_date,scheduled_time,address_snapshot,estimated_price_egp,final_price_egp,proposed_scheduled_date,proposed_scheduled_time,provider_reschedule_note,services(translation_key),booking_status_history(status,created_at,metadata)')
       .eq('provider_id', profile.id)
       .is('deleted_at', null);
     if (error) setFailed(true);

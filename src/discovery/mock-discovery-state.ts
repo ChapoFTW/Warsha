@@ -210,10 +210,15 @@ export function mockFilterMetadata(): DiscoveryFilterMetadata {
 }
 
 export function mockSuggestions(accountKey: string | null): DiscoverySuggestions {
-  const counts = new Map<string, { name: string; categoryId: string; count: number }>();
+  const counts = new Map<string, { name: string; translationKey?: string | null; categoryId: string; count: number }>();
   for (const provider of mockProviders) {
     for (const service of provider.services) {
-      const entry = counts.get(service.id) ?? { name: service.name, categoryId: provider.categoryId, count: 0 };
+      const entry = counts.get(service.id) ?? {
+        name: service.name,
+        translationKey: service.translationKey,
+        categoryId: provider.categoryId,
+        count: 0,
+      };
       entry.count += 1;
       counts.set(service.id, entry);
     }
@@ -223,7 +228,13 @@ export function mockSuggestions(accountKey: string | null): DiscoverySuggestions
     suggestedCategories: mockCategories.slice(0, 8)
       .map(category => ({ id: category.id, translationKey: category.label, iconName: category.icon })),
     commonServices: [...counts.entries()]
-      .map(([id, entry]) => ({ id, name: entry.name, categoryId: entry.categoryId, providerCount: entry.count }))
+      .map(([id, entry]) => ({
+        id,
+        name: entry.name,
+        translationKey: entry.translationKey,
+        categoryId: entry.categoryId,
+        providerCount: entry.count,
+      }))
       .sort((a, b) => b.providerCount - a.providerCount || a.name.localeCompare(b.name))
       .slice(0, 8),
   };

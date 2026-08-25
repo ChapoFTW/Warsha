@@ -1,6 +1,6 @@
 begin;
 
-select plan(101);
+select plan(103);
 
 -- Schema, ACLs, RLS, and publication boundaries.
 select has_table('public', 'financial_booking_payments', 'minor-unit payments table exists'); -- 1
@@ -317,6 +317,16 @@ select is(
   '9000',
   'provider sees the correct available earnings'
 ); -- 47
+select is(
+  public.get_my_provider_earnings()->'transactions'->0->>'serviceId',
+  (select service_id::text from public.bookings where id = '95000000-0000-0000-0000-000000000001'),
+  'provider earnings project the booking service UUID'
+);
+select is(
+  public.get_my_provider_earnings()->'transactions'->0->>'serviceTranslationKey',
+  (select s.translation_key from public.bookings b join public.services s on s.id = b.service_id where b.id = '95000000-0000-0000-0000-000000000001'),
+  'provider earnings project the service translation key'
+);
 select is(
   (select count(*)::integer from public.provider_earnings_ledger),
   1,

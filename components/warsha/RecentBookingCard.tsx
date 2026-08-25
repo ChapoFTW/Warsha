@@ -9,6 +9,7 @@ import { bookingStatusTranslationKeys } from '@/src/bookings/booking-types';
 import { useBookings } from '@/src/bookings/booking-context';
 import { useMarketplaceData } from '@/src/data/marketplace-context';
 import { useLocalization } from '@/src/i18n/localization';
+import { cataloguedServiceReferenceLabel } from '@/src/services/specific-services';
 import { formatBookingDateTime, localeFor } from '@/src/utils/date-format';
 
 import { AppText } from './Typography';
@@ -18,10 +19,11 @@ export function RecentBookingCard() {
   const styles = useThemedStyles(makeStyles);
   const { t, isRTL, language } = useLocalization();
   const { bookings } = useBookings();
-  const { getProvider } = useMarketplaceData();
+  const { getProvider, services } = useMarketplaceData();
   const booking = [...bookings].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
   const provider = booking ? getProvider(booking.providerId) : undefined;
   if (!booking || !provider) return null;
+  const serviceLabel = cataloguedServiceReferenceLabel(booking, services, language);
   return (
     <Pressable
       accessibilityRole="button"
@@ -32,7 +34,7 @@ export function RecentBookingCard() {
       <View style={styles.info}>
         <AppText style={styles.name}>{provider.name}</AppText>
         <AppText style={styles.meta}>
-          {booking.serviceName} · {formatBookingDateTime(booking.date, booking.time, localeFor(language), t('asap'))}
+          {serviceLabel} · {formatBookingDateTime(booking.date, booking.time, localeFor(language), t('asap'))}
         </AppText>
         <View style={[styles.status, isRTL && styles.reverse]}>
           <MaterialIcons name="schedule" size={14} color={colors.success} />

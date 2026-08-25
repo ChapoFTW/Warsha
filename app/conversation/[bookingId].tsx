@@ -45,11 +45,13 @@ import {
   type MessageDraft,
 } from '@/src/chat/chat-types';
 import { useLocalization } from '@/src/i18n/localization';
+import { useMarketplaceData } from '@/src/data/marketplace-context';
 import type { SupportedLanguage } from '@/src/i18n/language-preference';
 import { useProviderJobs } from '@/src/provider-jobs/provider-job-context';
 import { useProviderFoundation } from '@/src/providers/provider-context';
 import { realtimeService } from '@/src/realtime/realtime-service';
 import { formatTimestamp, localeFor } from '@/src/utils/date-format';
+import { cataloguedServiceReferenceLabel } from '@/src/services/specific-services';
 
 const MAX_ATTACHMENT_BYTES = 8 * 1024 * 1024;
 const clientId = () => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (character) => {
@@ -68,6 +70,7 @@ export default function ConversationScreen() {
   const bookings = useBookings();
   const jobs = useProviderJobs();
   const provider = useProviderFoundation();
+  const { services } = useMarketplaceData();
   const { language, isRTL } = useLocalization();
   const ct = useChatText();
   const { setActiveBookingId } = useChatVisibility();
@@ -357,7 +360,7 @@ export default function ConversationScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <KeyboardAvoidingView style={styles.safe} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScreenHeader title={ct('title')} subtitle={booking.serviceName} />
+        <ScreenHeader title={ct('title')} subtitle={cataloguedServiceReferenceLabel(booking, services, language)} />
         <View style={[styles.safetyBar, isRTL && styles.reverse]}>
           <Pressable
             accessibilityRole="button"

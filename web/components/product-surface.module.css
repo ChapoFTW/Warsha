@@ -94,6 +94,11 @@
 
 .badgeStrong { background: var(--brand); color: var(--brand-ink); border-color: transparent; }
 
+/* Catalogue labels can be considerably longer in French. Status pills remain
+   compact, while this opt-in variant wraps category/service words instead of
+   forcing the row beyond the viewport. */
+.workLabel { white-space: normal; overflow-wrap: anywhere; }
+
 .price {
   font-size: 20px; font-weight: 700; color: var(--text-primary);
   font-variant-numeric: tabular-nums;

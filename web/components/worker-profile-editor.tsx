@@ -14,11 +14,11 @@ import {
 import { workerCopy } from '@/lib/worker-copy';
 import {
   listProfessions,
-  professions,
   selectedProfessionKeys,
-  STORED_PROFESSION_PREFIX,
+  withSelectedProfessions,
   type ProfessionKey,
 } from '@/src/providers/profession-taxonomy.ts';
+import { catalogueServiceLabel } from '@/src/services/specific-services.ts';
 import {
   egyptGovernorateForStoredValue,
   listEgyptAreas,
@@ -76,20 +76,7 @@ export function WorkerProfileEditor({
   const toggleProfession = (key: ProfessionKey) => {
     if (!draft) return;
     const keys = selected.includes(key) ? selected.filter((item) => item !== key) : [...selected, key];
-    const chosen = [...new Set(keys)].slice(0, 10);
-    const legacySpecialties = draft.specialties
-      .filter((item) => !item.startsWith(STORED_PROFESSION_PREFIX))
-      .slice(0, Math.max(0, 10 - chosen.length));
-    const chosenCategories = chosen.flatMap((item) => {
-      const categoryId = professions.find((profession) => profession.key === item)?.categoryId;
-      return categoryId ? [categoryId] : [];
-    });
-    setDraft({
-      ...draft,
-      profession: chosen[0] ?? '',
-      specialties: [...chosen.map((item) => `${STORED_PROFESSION_PREFIX}${item}`), ...legacySpecialties],
-      categoryIds: [...new Set([...draft.categoryIds, ...chosenCategories])].slice(0, 10),
-    });
+    setDraft(withSelectedProfessions(draft, keys));
   };
 
   const toggleService = (service: Service) => {
@@ -99,7 +86,7 @@ export function WorkerProfileEditor({
       ...draft,
       services: on
         ? draft.services.filter((item) => item.serviceId !== service.id)
-        : [...draft.services, { serviceId: service.id, name: service.name }],
+        : [...draft.services, { serviceId: service.id, translationKey: service.translationKey, name: service.name }],
     });
   };
 
@@ -248,7 +235,7 @@ export function WorkerProfileEditor({
                 <label key={service.id} className={styles.card}>
                   <input type="checkbox" checked={draft.services.some((item) => item.serviceId === service.id)}
                     onChange={() => toggleService(service)} disabled={busy} />
-                  <span className={styles.cardName}>{service.name}</span>
+                  <span className={styles.cardName}>{catalogueServiceLabel(service, locale)}</span>
                 </label>
               ))}
             </div>

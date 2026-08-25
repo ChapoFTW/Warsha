@@ -1,5 +1,5 @@
 import { translations, type Language } from '../i18n/translations.ts';
-import { byServiceDemand } from '../services/service-catalogue.ts';
+import { byServiceDemand, isLegacyCategory } from '../services/service-catalogue.ts';
 import type { ProviderDraft } from './provider-types.ts';
 
 export const STORED_PROFESSION_PREFIX = 'profession:';
@@ -59,7 +59,10 @@ export function isProfessionKey(value: string): value is ProfessionKey {
 export function professionLabel(key: string, language: Language): string {
   const profession = professionByKey.get(key);
   const legacy = (translations[language] as Record<string, unknown>)[key];
-  return profession?.[language] ?? (typeof legacy === 'string' ? legacy : key);
+  if (profession) return profession[language];
+  if (typeof legacy === 'string') return legacy;
+  const words = key.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/[-_]+/g, ' ').trim();
+  return words ? words.charAt(0).toUpperCase() + words.slice(1) : key;
 }
 
 /**
@@ -92,7 +95,10 @@ export function selectedProfessionKeys(value: Pick<ProviderDraft, 'profession' |
   return [...new Set([value.profession, ...stored].filter(isProfessionKey))];
 }
 
-export function withSelectedProfessions(value: ProviderDraft, keys: ProfessionKey[]): ProviderDraft {
+export function withSelectedProfessions<T extends Pick<ProviderDraft, 'profession' | 'specialties' | 'categoryIds'>>(
+  value: T,
+  keys: ProfessionKey[],
+): T {
   const selected = [...new Set(keys)].slice(0, 10);
   const legacySpecialties = value.specialties
     .filter(item => !item.startsWith(STORED_PROFESSION_PREFIX))
@@ -102,7 +108,10 @@ export function withSelectedProfessions(value: ProviderDraft, keys: ProfessionKe
     const categoryId = professionByKey.get(key)?.categoryId;
     if (categoryId) selectedCategoryIds.push(categoryId);
   }
-  const categoryIds = [...new Set([...value.categoryIds, ...selectedCategoryIds])].slice(0, 10);
+  const categoryIds = [...new Set([
+    ...value.categoryIds.filter(categoryId => !isLegacyCategory(categoryId)),
+    ...selectedCategoryIds,
+  ])].slice(0, 10);
   return {
     ...value,
     profession: selected[0] ?? '',
@@ -111,7 +120,7 @@ export function withSelectedProfessions(value: ProviderDraft, keys: ProfessionKe
       ...legacySpecialties,
     ],
     categoryIds,
-  };
+  } as T;
 }
 
 export function publicSpecialties(values: string[]): string[] {

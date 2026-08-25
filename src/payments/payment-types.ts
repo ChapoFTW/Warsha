@@ -56,6 +56,8 @@ export type ProviderBookingPayment = Pick<
 export type PaymentReceipt = {
   transactionReference: string;
   bookingReference: string;
+  serviceId?: string | null;
+  serviceTranslationKey?: string | null;
   service: string;
   providerName: string;
   timestamp: string;
@@ -80,6 +82,8 @@ export type EarningStatus =
 export type ProviderEarning = {
   id: string;
   bookingId: string;
+  serviceId?: string | null;
+  serviceTranslationKey?: string | null;
   service: string;
   date: string;
   grossMinor: MinorAmount;
@@ -157,6 +161,8 @@ export type PriceAdjustment = {
 export type CheckoutInput = {
   bookingId: string;
   providerId: string;
+  serviceId?: string | null;
+  serviceTranslationKey?: string | null;
   service: string;
   providerName: string;
   totalMinor: MinorAmount;
