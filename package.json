@@ -93,7 +93,8 @@
     "warsha:release": "node scripts/warsha-engineering.mjs release",
     "warsha:smoke": "node scripts/warsha-engineering.mjs smoke",
     "warsha:acceptance": "node scripts/warsha-engineering.mjs acceptance",
-    "warsha:agent-handoff": "node scripts/warsha-engineering.mjs agent-handoff"
+    "warsha:agent-handoff": "node scripts/warsha-engineering.mjs agent-handoff",
+    "test:specific-service-rendering": "node --no-warnings --experimental-strip-types scripts/specific-service-rendering.test.mts"
   },
   "dependencies": {
     "@expo-google-fonts/cairo": "^0.4.2",

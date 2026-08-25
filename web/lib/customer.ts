@@ -406,6 +406,8 @@ export function isFinished(status: string): boolean {
 }
 
 export type Booking = {
+  /** Resolved to a localized name; `serviceName` is the historical fallback. */
+  serviceTranslationKey?: string | null;
   id: string;
   status: string;
   serviceName: string;
@@ -431,6 +433,9 @@ export function parseBookings(value: unknown): Booking[] {
       id: row.id,
       status: str(row.status) ?? '',
       serviceName: str(row.service_name_snapshot) ?? '',
+      // The key of the service this booking is for, when it is still known.
+      // Null for a booking whose service predates keys, or was withdrawn.
+      serviceTranslationKey: str(record(row.services).translation_key),
       issueDescription: str(row.issue_description) ?? '',
       scheduledDate: str(row.scheduled_date) ?? '',
       scheduledTime: str(row.scheduled_time) ?? '',

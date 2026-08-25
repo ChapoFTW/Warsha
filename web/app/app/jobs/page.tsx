@@ -9,6 +9,7 @@ import { customerNav } from '@/lib/nav';
 import { intlLocale, type Locale } from '@/lib/preferences';
 import { supabase } from '@/lib/supabase';
 import { useAppLocale } from '@/lib/use-app-locale';
+import { specificServiceLabel } from '@/src/services/specific-services';
 
 import styles from '@/components/product-surface.module.css';
 
@@ -20,6 +21,18 @@ const RESCHEDULABLE = new Set(['pending_provider_approval', 'accepted', 'confirm
 const CANCEL_REASONS = ['plans_changed', 'booked_by_mistake', 'provider_delay', 'price_concern', 'other'] as const;
 
 /** Customer booking state and the customer transitions the database permits. */
+/**
+ * What this booking's service is called, now, in the reader's language.
+ *
+ * `service_name_snapshot` records what it was called when the booking was made.
+ * That is worth keeping and is the right fallback, but showing it to an Arabic
+ * reader as the normal case is the same defect the request form had.
+ */
+function serviceLabel(booking: Booking, locale: Locale): string {
+  return (booking.serviceTranslationKey
+    && specificServiceLabel(booking.serviceTranslationKey, locale)) || booking.serviceName;
+}
+
 export default function JobsPage() {
   const locale = useAppLocale();
   const words = appCopy[locale] as Record<string, string>;
@@ -32,9 +45,16 @@ export default function JobsPage() {
     setFailed(false);
     const { data, error } = await supabase()
       .from('bookings')
+      // `service_name_snapshot` is the English name recorded when the booking
+      // was made. It is the right thing to keep -- it says what this was called
+      // at the time -- and the wrong thing to show an Arabic reader as the
+      // normal case. The service is joined for its key so the label can be
+      // resolved live, with the snapshot as the fallback it was always meant
+      // to be.
       .select('id,status,service_name_snapshot,issue_description,scheduled_date,'
         + 'scheduled_time,address_snapshot,estimated_price_egp,final_price_egp,created_at,'
         + 'proposed_scheduled_date,proposed_scheduled_time,provider_reschedule_note,'
+        + 'services(translation_key),'
         + 'booking_status_history(status,created_at,metadata)')
       .is('deleted_at', null)
       .order('created_at', { ascending: false })
@@ -106,7 +126,7 @@ function JobDetail({
   };
 
   return (
-    <section className={styles.panel} aria-label={booking.serviceName}>
+    <section className={styles.panel} aria-label={serviceLabel(booking, locale)}>
       <div className={styles.head}>
         <h2 className={styles.sectionTitle}>{words.jobsDetail}</h2>
         <button type="button" className={styles.secondary} onClick={onClose}>{words.close}</button>
@@ -221,7 +241,7 @@ function JobList({
             {bookings.map((booking) => (
               <li key={booking.id} className={styles.row}>
                 <button type="button" className={styles.rowTitle} onClick={() => onOpen(booking.id)}>
-                  {booking.serviceName}
+                  {serviceLabel(booking, locale)}
                 </button>
                 <span className={styles.cardMeta}>{booking.issueDescription.slice(0, 140)}</span>
                 <div className={styles.rowMeta}>
