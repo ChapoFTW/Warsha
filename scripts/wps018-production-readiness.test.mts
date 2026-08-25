@@ -290,6 +290,12 @@ match(validateWorkflow, /GOOGLE_MAPS_IOS_RENDER_KEY: ci-noncredential-ios-render
   'CI supplies a synthetic iOS Maps render key for fail-closed Expo config evaluation');
 notMatch(validateWorkflow, /AIza[0-9A-Za-z_-]{30,}/,
   'the validation workflow contains no Google API credential shape');
+for (const [name, workflow] of [['validation', validateWorkflow], ['database deployment', deployWorkflow]] as const) {
+  match(workflow, /supabase\/setup-cli@v1[\s\S]*?version: 2\.115\.0/,
+    `${name} pins the locally validated Supabase CLI release`);
+  notMatch(workflow, /supabase\/setup-cli@v1[\s\S]*?version: latest/,
+    `${name} never depends on rate-limited latest-release resolution`);
+}
 match(validateWorkflow, /audit:bundle/, 'exported bundles are scanned for credential values');
 // The scan must match credential VALUES; a bare prefix appears in supabase-js's
 // own client-side guard and must remain a separate Hermes string literal.

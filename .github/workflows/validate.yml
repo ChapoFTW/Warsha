@@ -124,7 +124,7 @@ jobs:
 
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.115.0
 
       # A clean reset proves the whole forward-only chain applies from nothing,
       # which is exactly what a hosted deployment does.
