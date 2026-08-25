@@ -10,10 +10,12 @@
  * order "popular on Warsha", because Warsha has no traffic to measure yet.
  */
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 import { serviceCategoryDescription, serviceCategoryLabel } from '../src/i18n/service-labels.ts';
 import { translations } from '../src/i18n/translations.ts';
+import { appCopy as appCopyForCatalogue } from '../web/lib/app-copy.ts';
 import { categories as mockCategories } from '../src/data/mock-data.ts';
 import { listProfessions, professions } from '../src/providers/profession-taxonomy.ts';
 import {
@@ -23,6 +25,9 @@ import {
 import {
   matchServiceCategories, SERVICE_SEARCH_ALIASES, searchTermsFor,
 } from '../src/services/service-search-aliases.ts';
+import {
+  specificServiceLabel, specificServices, specificServicesFor,
+} from '../src/services/specific-services.ts';
 
 let checks = 0;
 function check(condition: unknown, message: string) {
@@ -517,5 +522,247 @@ equal(matchServiceCategories('ac'), ['ac'],
   check(/byAlias\.has\(category\.id\)/.test(discover),
     'and an alias hit is enough on its own, whatever the interface language');
 }
+
+// --- Every catalogue icon resolves to a real glyph ---------------------------
+//
+// `supabase-adapter.ts` casts the stored value straight to the icon type --
+// `String(row.icon_name) as Category['icon']` -- so TypeScript validates the
+// shared mock catalogue and never sees what the database actually holds. Four of
+// the seven names introduced with the expansion did not exist in MaterialIcons:
+// `water-heater`, `flooring`, `renovation`, `garden`. They read like icon names,
+// which is why nobody questioned them, and an unknown name renders whatever the
+// font falls back to -- on a screen no test could read.
+{
+  const glyphs = JSON.parse(readFileSync(
+    'node_modules/@expo/vector-icons/build/vendor/react-native-vector-icons/glyphmaps/MaterialIcons.json',
+    'utf8')) as Record<string, number>;
+  const available = new Set(Object.keys(glyphs));
+  check(available.size > 1000, 'the MaterialIcons glyph map is the real one');
+
+  for (const category of mockCategories) {
+    check(available.has(category.icon),
+      `${category.id} renders a real glyph, not a fallback (${category.icon})`);
+  }
+
+  // What the database is actually told to store, across every migration that
+  // writes an icon. Reading the SQL rather than the module is the point: the
+  // module is typed and the database is not.
+  const iconWrites = new Map<string, string>();
+  for (const file of readdirSync('supabase/migrations').filter((n) => n.endsWith('.sql'))) {
+    const sql = readFileSync(join('supabase/migrations', file), 'utf8');
+    // Scoped to statements that actually touch service_categories. A blanket
+    // scan over every migration matches tuples from unrelated tables -- the
+    // first version of this test read an image-format row and asked why "webp"
+    // was not an icon.
+    for (const [statement] of sql.matchAll(
+      /insert into public\.service_categories[\s\S]*?;/g)) {
+      for (const [, id, icon] of statement.matchAll(
+        /\('([a-z-]+)', '[A-Za-z]+', '[A-Za-z]+', '([a-z-]+)'/g)) {
+        iconWrites.set(id, icon);
+      }
+    }
+    for (const [, icon, id] of sql.matchAll(
+      /update public\.service_categories set icon_name = '([a-z-]+)'\s+where id = '([a-z-]+)'/g)) {
+      iconWrites.set(id, icon);
+    }
+  }
+  check(iconWrites.size > 0, 'the migrations do write icon names');
+  for (const [id, icon] of iconWrites) {
+    check(available.has(icon),
+      `THE DATABASE STORES A REAL GLYPH FOR ${id}, NOT "${icon}"`);
+  }
+  // And the two sources must agree, or a customer sees one icon in mock mode
+  // and a different one against the real backend.
+  const byId = new Map(mockCategories.map((c) => [c.id, c.icon]));
+  for (const [id, icon] of iconWrites) {
+    // A withdrawn category is absent from the shared catalogue by design; the
+    // database keeps its icon so history still renders.
+    if (isLegacyCategory(id) || !byId.has(id)) continue;
+    equal(icon, byId.get(id),
+      `${id} has the same icon in the database as in the shared catalogue`);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Specific services: what the customer is actually asking for
+// ---------------------------------------------------------------------------
+//
+// `public.services` stored a display string in `name` and nothing else. Five
+// rows existed in the whole product, and the request form rendered
+// `service.name` directly -- so an Arabic customer choosing plumbing was
+// offered "Home inspection" and "Leak repair" in English, and a customer
+// choosing any of the other fifteen categories was offered nothing at all.
+
+// --- Every category has an intentional strategy -----------------------------
+for (const category of SERVICE_DEMAND_ORDER) {
+  const services = specificServicesFor(category);
+  check(services.length >= 6,
+    `${category} offers a useful set of specific services (${services.length})`);
+  check(services.every((service) => service.categoryId === category),
+    `${category} owns every service listed under it`);
+}
+check(specificServices.length >= 150,
+  'the catalogue is comprehensive rather than a token sample');
+
+// --- Identity ---------------------------------------------------------------
+{
+  const keys = specificServices.map((service) => service.key);
+  equal(new Set(keys).size, keys.length, 'EVERY SPECIFIC SERVICE HAS A UNIQUE KEY');
+  check(keys.every((key) => /^[a-z][a-z0-9-]*$/.test(key)),
+    'and a key that is machine identity, not prose');
+  // Exactly one parent, and a real one.
+  for (const service of specificServices) {
+    check(SERVICE_DEMAND_ORDER.includes(service.categoryId),
+      `${service.key} names a category that exists`);
+    check(!isLegacyCategory(service.categoryId),
+      `${service.key} IS NOT PARENTED TO A WITHDRAWN CATEGORY`);
+  }
+  equal(specificServicesFor('general-maintenance'), [],
+    'the withdrawn category offers no specific services for new work');
+}
+
+// --- Ordering is deterministic ---------------------------------------------
+{
+  const first = specificServicesFor('plumbing').map((service) => service.key);
+  const again = specificServicesFor('plumbing').map((service) => service.key);
+  equal(first, again, 'the order is stable between calls');
+  check(first[0] === 'plumbing-leak-repair',
+    'the common job leads rather than the diagnostic one');
+  check(first[first.length - 1] === 'plumbing-inspection',
+    'and the survey is last, where somebody who knows what they need can skip it');
+}
+
+// --- This is the QA bug: a label in the wrong language ----------------------
+// The dropdown showed English to every reader. A test that only checked the
+// English name would have passed while the defect shipped, so this checks that
+// the three languages genuinely differ and that each resolves.
+for (const service of specificServices) {
+  for (const language of ['en', 'ar', 'fr'] as const) {
+    const label = specificServiceLabel(service.key, language);
+    check(typeof label === 'string' && label.length > 0,
+      `${service.key} resolves a ${language} label`);
+    check(label !== service.key,
+      `${service.key} never shows its own key to a customer`);
+  }
+  const ar = specificServiceLabel(service.key, 'ar')!;
+  check(/[؀-ۿ]/.test(ar),
+    `${service.key} IS ARABIC IN ARABIC, NOT ENGLISH LEFT IN PLACE`);
+  check(specificServiceLabel(service.key, 'ar') !== specificServiceLabel(service.key, 'en'),
+    `${service.key} does not silently fall back to English`);
+}
+// Switching language changes what is on screen.
+{
+  const key = 'plumbing-blocked-drain';
+  const en = specificServiceLabel(key, 'en');
+  const ar = specificServiceLabel(key, 'ar');
+  const fr = specificServiceLabel(key, 'fr');
+  check(en !== ar && en !== fr && ar !== fr,
+    'CHANGING LANGUAGE CHANGES THE VISIBLE SPECIFIC-SERVICE LABEL');
+  equal(en, 'Blocked drain', 'the English reads naturally');
+  equal(ar, 'مواسير مسدودة', 'and the Arabic is what an Egyptian customer would say');
+}
+// An unknown key resolves to nothing, so a caller falls back rather than
+// rendering a slug. That is the compatibility path for pre-key rows.
+equal(specificServiceLabel('some-legacy-row', 'ar'), null,
+  'an unknown key resolves to null so the row can fall back to its own name');
+
+// --- Category boundaries ----------------------------------------------------
+// The point of removing the catch-all was not to rebuild it one level down.
+for (const [key, expected] of [
+  ['water-heater-no-hot-water', 'water-heater-repair'],
+  ['water-heater-install', 'water-heater-repair'],
+  ['pest-cockroaches', 'pest-control'],
+  ['flooring-ceramic-install', 'flooring-tiling'],
+  ['alumetal-window-install', 'alumetal'],
+  ['locksmith-key-copy', 'locksmithing'],
+] as [string, string][]) {
+  const service = specificServices.find((item) => item.key === key);
+  check(service !== undefined, `${key} exists`);
+  equal(service?.categoryId, expected, `${key} SITS UNDER ${expected}, NOT A GENERIC TRADE`);
+}
+// No category may quietly become the new dumping ground.
+check(!specificServices.some((service) => /^(other|general|misc)/i.test(service.key)),
+  'NO "OTHER" OR "GENERAL" CATCH-ALL SERVICE EXISTS');
+// Targeted at catch-all phrasing, not the word "general": "General preventive
+// treatment" is a specific pest-control job -- a whole-home preventive spray --
+// and refusing it would be the heuristic misfiring, not a bucket being caught.
+check(!specificServices.some((service) => /^other/i.test(service.en)),
+  'and none is hiding behind a friendlier English name');
+check(!specificServices.some((service) => /other .*(work|services?)$/i.test(service.en)),
+  'nor behind an "Other ... work" phrasing');
+
+// --- The database agrees with the module ------------------------------------
+{
+  const migration = readFileSync(
+    'supabase/migrations/202608250002_specific_service_catalogue.sql', 'utf8');
+  const seeded = [...migration.matchAll(/\('([a-z-]+)', '(?:[^']|'')*', '([a-z0-9-]+)', 'quote'/g)]
+    .map(([, category, key]) => ({ category, key }));
+  equal(seeded.length, specificServices.length,
+    'THE MIGRATION SEEDS EXACTLY THE SHARED CATALOGUE');
+  equal(seeded.map((row) => row.key), specificServices.map((service) => service.key),
+    'in the same order, so the dropdown reads the same everywhere');
+  equal(seeded.map((row) => row.category), specificServices.map((service) => service.categoryId),
+    'and under the same parents');
+  check(/add column if not exists translation_key/.test(migration),
+    'the key is a column, not a convention');
+  check(/on conflict \(translation_key\) do nothing/.test(migration),
+    'RE-RUNNING NEVER OVERWRITES A PRE-EXISTING ROW OR ITS PRICE');
+  check(/update public\.services set translation_key = '[a-z-]+' where id = '[0-9a-f-]+'/.test(migration),
+    'and the rows that predate keys are given one rather than replaced');
+  check(!/delete from public\.services/i.test(migration),
+    'NO HISTORICAL SERVICE ROW IS DESTROYED');
+}
+
+// --- Web consumes the shared authority --------------------------------------
+{
+  const form = readFileSync('web/app/app/requests/new/page.tsx', 'utf8');
+  check(/specificServiceLabel\(service\.translationKey, locale\)/.test(form),
+    'THE REQUEST FORM RENDERS THE LOCALIZED LABEL, NOT THE ENGLISH ROW NAME');
+  check(/\|\| service\.name/.test(form),
+    'falling back to the row name only when no key resolves');
+  check(/specificServicesFor\(categoryId\)/.test(form),
+    'and orders the dropdown by the shared catalogue');
+  check(/from '@\/src\/services\/specific-services'/.test(form),
+    'reading the same module Android and iOS can, not a web copy');
+  // "Any service in this category" must stay the optional, non-restricting choice.
+  check(/<option value="">\{words\.requestAnyService\}<\/option>/.test(form),
+    'ANY SERVICE IS THE EMPTY VALUE, SO IT STORES NO SERVICE IDENTITY');
+  check(/\.\.\.\(serviceId \? \{ serviceId \} : \{\}\)/.test(form),
+    'and is omitted from the payload rather than sent as a fake id');
+  const parser = readFileSync('web/lib/customer.ts', 'utf8');
+  check(/translationKey: str\(row\.translation_key\)/.test(parser),
+    'the parser carries the key through from the server');
+}
+for (const locale of ['en', 'ar', 'fr'] as const) {
+  const copy = (appCopyForCatalogue[locale] as Record<string, string>).requestAnyService;
+  check(typeof copy === 'string' && copy.length > 0,
+    `"Any service in this category" is localized in ${locale}`);
+}
+check((appCopyForCatalogue.ar as Record<string, string>).requestAnyService
+  !== (appCopyForCatalogue.en as Record<string, string>).requestAnyService,
+  'and is not English on an Arabic screen');
+
+// --- Specific services feed discovery ---------------------------------------
+// A customer does not necessarily know the trade. "Blocked drain" contains no
+// word about plumbing.
+for (const [query, expected] of [
+  ['blocked drain', 'plumbing'],
+  ['مواسير مسدودة', 'plumbing'],
+  ['canalisation bouchée', 'plumbing'],
+  ['bedbugs', 'pest-control'],
+  ['بق الفراش', 'pest-control'],
+  ['نسخ مفاتيح', 'locksmithing'],
+  ['keratin', 'hairdressing'],
+] as [string, string][]) {
+  check(matchServiceCategories(query).includes(expected as never),
+    `searching "${query}" leads to ${expected}`);
+}
+// And the precision that vocabulary could easily have destroyed.
+equal(matchServiceCategories('ac'), ['ac'],
+  'A SHORT QUERY STILL MATCHES WHOLE WORDS, NOT "ACCOMPAGNEMENT"');
+equal(matchServiceCategories('keratin'), ['hairdressing'],
+  'and "keratin" is not a rodent problem because it contains "rat"');
+check(!matchServiceCategories('blocked drain').includes('locksmithing' as never),
+  'nor is a blocked drain a locksmith job because it contains "lock"');
 
 console.log(`Service catalogue: ${checks} checks passed.`);

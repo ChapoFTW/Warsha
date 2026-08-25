@@ -81,7 +81,16 @@ export type ServiceCategory = {
 export type Service = {
   id: string;
   categoryId: string;
+  /**
+   * The English name the row carries.
+   *
+   * A fallback, never what is shown when a key resolves: rows written before
+   * keys existed have only this, and showing it to an Arabic customer is the
+   * defect the key exists to fix.
+   */
   name: string;
+  /** Stable machine identity, resolved to a localized label by the shared catalogue. */
+  translationKey: string | null;
 };
 
 export type ProviderCard = {
@@ -149,6 +158,7 @@ export function parseServices(value: unknown): Service[] {
     return [{
       id: row.id,
       categoryId: row.category_id,
+      translationKey: str(row.translation_key),
       name: str(row.name) ?? row.id,
     }];
   });

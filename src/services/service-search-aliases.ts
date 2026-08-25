@@ -1,6 +1,7 @@
 import type { Language } from '../i18n/translations.ts';
 
 import { SERVICE_DEMAND_ORDER, type ServiceCategoryId } from './service-catalogue.ts';
+import { specificServices } from './specific-services.ts';
 
 /**
  * The words a customer actually types when they want a service.
@@ -179,9 +180,41 @@ export function searchTermsFor(categoryId: ServiceCategoryId): string[] {
  */
 function termMatches(term: string, folded: string): boolean {
   if (term === folded) return true;
-  if (folded.length >= term.length && folded.includes(term)) return true;
-  return term.split(' ').some((word) => word.startsWith(folded));
+
+  // A longer query may contain the term, but only as whole words. Plain
+  // substring containment matched `lock` inside "blocked drain" and `rat`
+  // inside "keratin", which is how a drain became a locksmith job.
+  const queryWords = folded.split(' ');
+  const termWords = term.split(' ');
+  for (let start = 0; start + termWords.length <= queryWords.length; start += 1) {
+    if (termWords.every((word, offset) => queryWords[start + offset] === word)) return true;
+  }
+
+  // Prefix matching earns `locks` and `locksmith` from `lock`, but only for a
+  // query long enough to mean something: at two characters `ac` would also
+  // claim "accompagnement shopping", so a short query must match a whole word.
+  if (folded.length < 3) return false;
+  return termWords.some((word) => word.startsWith(folded));
 }
+
+/**
+ * The specific-service names, folded, grouped by the category they belong to.
+ *
+ * A customer looking for help does not necessarily know the trade. "Blocked
+ * drain", `مواسير مسدودة` and "canalisation bouchée" are what they would type,
+ * and none of them contains the word plumbing. The specific services already
+ * name every common job in three languages, so they are search vocabulary for
+ * free -- and they stay in the same matcher rather than becoming a second one.
+ */
+const specificTermsByCategory = (() => {
+  const map = new Map<string, string[]>();
+  for (const service of specificServices) {
+    const terms = map.get(service.categoryId) ?? [];
+    terms.push(foldSearchTerm(service.en), foldSearchTerm(service.ar), foldSearchTerm(service.fr));
+    map.set(service.categoryId, terms);
+  }
+  return map;
+})();
 
 export function matchServiceCategories(
   query: string,
@@ -190,5 +223,6 @@ export function matchServiceCategories(
   const folded = foldSearchTerm(query);
   if (folded.length < 2) return [];
   return SERVICE_DEMAND_ORDER.filter((id) =>
-    searchTermsFor(id).some((term) => termMatches(term, folded)));
+    searchTermsFor(id).some((term) => termMatches(term, folded))
+    || (specificTermsByCategory.get(id) ?? []).some((term) => termMatches(term, folded)));
 }

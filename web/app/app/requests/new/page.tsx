@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 
 import { AppShell } from '@/components/app-shell';
 import { appCopy } from '@/lib/app-copy';
@@ -20,6 +20,9 @@ import {
   type Service,
   type ServiceCategory,
 } from '@/lib/customer';
+import {
+  specificServiceLabel, specificServicesFor,
+} from '@/src/services/specific-services';
 import { customerNav } from '@/lib/nav';
 import { supabase } from '@/lib/supabase';
 import { useAppLocale } from '@/lib/use-app-locale';
@@ -85,6 +88,20 @@ export default function NewRequestPage() {
   const [categoryId, setCategoryId] = useState(query.categoryId);
   const [targetedProviderId] = useState(query.providerId);
   const [serviceId, setServiceId] = useState('');
+
+  // Scoped to the chosen category and ordered by the shared catalogue, so the
+  // dropdown reads the same way on every platform rather than in whatever order
+  // the server happened to return.
+  const orderedServices = useMemo(() => {
+    const forCategory = services.filter((service) => service.categoryId === categoryId);
+    const order = new Map(
+      specificServicesFor(categoryId).map((service, index) => [service.key, index]),
+    );
+    const rank = (service: Service) => service.translationKey
+      ? order.get(service.translationKey) ?? Number.MAX_SAFE_INTEGER
+      : Number.MAX_SAFE_INTEGER;
+    return forCategory.slice().sort((left, right) => rank(left) - rank(right));
+  }, [services, categoryId]);
   const [addressId, setAddressId] = useState('');
   const [issue, setIssue] = useState('');
   const [notes, setNotes] = useState('');
@@ -233,8 +250,15 @@ export default function NewRequestPage() {
             disabled={busy || !categoryId}
           >
             <option value="">{words.requestAnyService}</option>
-            {services.filter((service) => service.categoryId === categoryId).map((service) => (
-              <option key={service.id} value={service.id}>{service.name}</option>
+            {/* Ordered by the shared catalogue, and named in the reader's own
+                language. The row's English `name` is the fallback for anything
+                written before keys existed -- it is what an Arabic customer was
+                being shown for every service, which is the defect this fixes. */}
+            {orderedServices.map((service) => (
+              <option key={service.id} value={service.id}>
+                {(service.translationKey
+                  && specificServiceLabel(service.translationKey, locale)) || service.name}
+              </option>
             ))}
           </select>
         </label>
