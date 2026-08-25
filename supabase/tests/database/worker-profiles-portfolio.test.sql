@@ -58,7 +58,16 @@ insert into public.provider_services(provider_id,service_id,is_active)
 select provider_id,s.id,true from (values
 ('a5200000-0000-4000-8000-000000000001'::uuid),
 ('a5200000-0000-4000-8000-000000000002'::uuid)
-) p(provider_id) cross join lateral (select id from public.services where category_id='plumbing' order by id limit 1) s;
+-- A KEYED plumbing service. `order by id limit 1` picked
+-- `10000000-...-0001`, one of the two launch rows that predate translation
+-- keys and deliberately keep only their English name -- so the projection
+-- assertion below was reading a null key from a row that is supposed to have
+-- none, and failing for the one reason it must not: the fixture, not the code.
+) p(provider_id) cross join lateral (
+  select id from public.services
+  where category_id='plumbing' and translation_key is not null
+  order by translation_key limit 1
+) s;
 insert into public.provider_service_areas(provider_id,governorate,district,latitude,longitude,radius_km) values
 ('a5200000-0000-4000-8000-000000000001','Cairo','Maadi',30.01,31.20,15),
 ('a5200000-0000-4000-8000-000000000002','Giza','Dokki',30.04,31.19,10);

@@ -127,7 +127,13 @@ const impactRules = [
   // What a worker is asked in onboarding, and which work they may claim, is
   // documented behaviour. There was no rule for it, so the Step 3 rebuild could
   // have shipped with the getting-started article still describing a flat list.
-  { pattern: /(?:profession|worker-trade|trade-selection)/i, ids: ['worker-getting-started'] },
+  //
+  // Matched on the modules that DEFINE that behaviour rather than on the word
+  // "profession" anywhere in a path: a grants-only migration and a pgTAP
+  // fixture both carry the word and change nothing a worker could read about,
+  // and a gate that asks for a documentation review of a `revoke` statement
+  // gets answered with filler — the failure this file's own comment warns of.
+  { pattern: /^(?:src\/providers\/(?:profession-taxonomy|worker-trade-selection)|app\/onboarding\/worker|web\/components\/worker-profile-editor)/, ids: ['worker-getting-started'] },
   { pattern: /(?:address|location|map-provider|location-proxy)/i, ids: ['customer-addresses-location', 'worker-onboarding-verification'] },
   { pattern: /(?:verification|vetting)/i, ids: ['worker-onboarding-verification', 'admin-verification-enforcement'] },
   { pattern: /(?:marketplace|quote|request)/i, ids: ['customer-requests-quotes-jobs', 'worker-opportunities-jobs'] },
