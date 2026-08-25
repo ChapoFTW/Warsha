@@ -4,6 +4,7 @@ import Storage from 'expo-sqlite/kv-store';
 import { environment } from '@/src/config/environment';
 import { getSupabaseClient } from '@/src/lib/supabase';
 import { mockSyncProviderGates } from '@/src/onboarding/mock-onboarding-state';
+import type { CatalogueServiceRow } from '@/src/services/specific-services';
 
 import {
   emptyProviderDraft,
@@ -582,24 +583,43 @@ const supabaseRepository: ProviderRepository = {
 
 export const providerRepository = environment.dataMode === 'supabase' ? supabaseRepository : mockRepository;
 
-export async function listProviderServiceOptions() {
+/**
+ * The catalogue a worker chooses the jobs they offer from.
+ *
+ * `category_id` is selected because it is what makes the choice a choice: the
+ * rows are grouped under the worker's own trades by `worker-trade-selection`,
+ * and without a category every surface can do is render all 171 of them as one
+ * flat cloud -- which is exactly what Android, iOS and web each did.
+ *
+ * No `order by` either. The server's `order by name` is alphabetical in
+ * English, which is meaningless to an Arabic or French reader; the shared
+ * catalogue owns the order, per category, for every surface.
+ *
+ * Mock mode answers from the same shared catalogue rather than from whatever
+ * services the six mock providers happen to sell, so an offline build exercises
+ * the real grouping instead of five categories of it.
+ */
+export async function listProviderServiceOptions(): Promise<CatalogueServiceRow[]> {
   if (environment.dataMode === 'mock') {
-    const { providers } = await import('@/src/data/mock-data');
-    return [...new Map(providers.flatMap(provider => provider.services).map(service => [service.id, {
-      id: service.id, name: service.name, translationKey: service.translationKey ?? null,
-    }])).values()];
+    const { specificServices } = await import('@/src/services/specific-services');
+    return specificServices.map(service => ({
+      id: service.key,
+      name: service.en,
+      translationKey: service.key,
+      categoryId: service.categoryId,
+    }));
   }
   const { data, error } = await getSupabaseClient().from('services')
-    .select('id,name,translation_key,service_categories!inner(is_active,deleted_at)')
+    .select('id,name,translation_key,category_id,service_categories!inner(is_active,deleted_at)')
     .eq('is_active', true)
     .is('deleted_at', null)
     .eq('service_categories.is_active', true)
-    .is('service_categories.deleted_at', null)
-    .order('name');
+    .is('service_categories.deleted_at', null);
   if (error) throw error;
   return (data ?? []).map(row => ({
     id: String(row.id),
     name: String(row.name),
     translationKey: row.translation_key ? String(row.translation_key) : null,
+    categoryId: String(row.category_id),
   }));
 }

@@ -1,38 +1,53 @@
 import { router } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BrandButton, BrandCard, BrandLoadingState, BrandTextField, EmptyState } from '@/components/warsha/BrandUI';
 import { EgyptLocationSelector } from '@/components/warsha/EgyptLocationSelector';
+import { OfferedServicesSection } from '@/components/warsha/OfferedServicesSection';
 import { ProfessionSelector } from '@/components/warsha/ProfessionSelector';
 import { ScreenHeader } from '@/components/warsha/ScreenHeader';
 import { AppText } from '@/components/warsha/Typography';
 import { WorkerPhotoPicker } from '@/components/warsha/WorkerPhotoPicker';
-import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
+import { spacing, typography, type ThemeColors } from '@/constants/theme';
 import { useThemedStyles } from '@/src/appearance/appearance-context';
-import { useMarketplaceData } from '@/src/data/marketplace-context';
 import { useLocalization } from '@/src/i18n/localization';
 import { useProviderText } from '@/src/i18n/provider-translations';
 import { useWorkerProfileText } from '@/src/i18n/worker-profile-translations';
 import { useProviderFoundation } from '@/src/providers/provider-context';
 import { listProviderServiceOptions } from '@/src/providers/provider-repository';
-import { professionLabel, selectedProfessionKeys, withSelectedProfessions } from '@/src/providers/profession-taxonomy';
+import {
+  describeProviderSaveFailure,
+  logProviderSaveFailure,
+} from '@/src/providers/provider-save-errors';
+import {
+  professionLabel,
+  selectedProfessionKeys,
+  withdrawnProfessionSelections,
+} from '@/src/providers/profession-taxonomy';
+import {
+  historicalOfferedServices,
+  tradeSections,
+  tradeSelectionProblem,
+  withOfferedService,
+  withProfessionServices,
+  withTradeSelection,
+} from '@/src/providers/worker-trade-selection';
 import { MARKETPLACE_MANAGED_RADIUS_KM, type ProviderDraft, type ProviderMediaInput } from '@/src/providers/provider-types';
 import { useWorkerText } from '@/src/worker/worker-copy';
-import { catalogueServiceLabel } from '@/src/services/specific-services';
+import type { CatalogueServiceRow } from '@/src/services/specific-services';
 
 export default function WorkerProfileScreen() {
   const styles = useThemedStyles(makeStyles);
-  const { categories } = useMarketplaceData();
-  const { t, language } = useLocalization();
+  const { language } = useLocalization();
   const pt = useProviderText();
   const profileText = useWorkerProfileText();
   const wt = useWorkerText();
   const state = useProviderFoundation();
   const [draft, setDraft] = useState<ProviderDraft | null>(null);
   const [experienceInput, setExperienceInput] = useState('');
-  const [serviceOptions, setServiceOptions] = useState<{ id: string; name: string; translationKey?: string | null }[]>([]);
+  const [serviceOptions, setServiceOptions] = useState<CatalogueServiceRow[]>([]);
   const [optionsLoading, setOptionsLoading] = useState(true);
   const optionsRequest = useRef(0);
 
@@ -73,15 +88,32 @@ export default function WorkerProfileScreen() {
   };
 
   const save = async () => {
-    if (draft.displayName.trim().length < 2 || selectedProfessionKeys(draft).length === 0) {
+    if (draft.displayName.trim().length < 2) {
       Alert.alert(pt('providerProfile'), profileText('profileRequired'));
+      return;
+    }
+    const problem = tradeSelectionProblem(draft);
+    if (problem) {
+      Alert.alert(pt('providerProfile'), problem === 'profession_required'
+        ? wt.text('professionRequired')
+        : wt.text('serviceRequired'));
       return;
     }
     try {
       await state.save(draft, false);
       Alert.alert(profileText('saved'));
-    } catch {
-      Alert.alert(pt('providerProfile'), pt('retry'));
+    } catch (reason) {
+      const failure = describeProviderSaveFailure(reason);
+      logProviderSaveFailure('worker profile save', failure);
+      Alert.alert(pt('providerProfile'), failure.problem === 'profession_withdrawn'
+        ? wt.text('professionWithdrawn')
+        : failure.problem === 'service_outside_profession'
+          ? wt.text('serviceOutsideProfession')
+          : failure.problem === 'profile_incomplete'
+            ? wt.text('profileIncomplete')
+            : failure.problem === 'area_invalid'
+              ? wt.text('areaInvalid')
+              : pt('retry'));
     }
   };
 
@@ -104,7 +136,10 @@ export default function WorkerProfileScreen() {
           <WorkerPhotoPicker currentUri={draft.avatarUrl} uploading={state.saving} onUse={savePhoto} />
           <BrandTextField label={wt.text('fullName')} value={draft.displayName} maxLength={100} onChangeText={displayName => setDraft(current => current ? { ...current, displayName } : current)} />
           <AppText style={styles.title}>{wt.text('professionPlural')}</AppText>
-          <ProfessionSelector selected={selectedProfessionKeys(draft)} onChange={keys => setDraft(current => current ? withSelectedProfessions(current, keys) : current)} />
+          <ProfessionSelector selected={selectedProfessionKeys(draft)} onChange={keys => setDraft(current => current ? withTradeSelection(current, keys, serviceOptions) : current)} />
+          {withdrawnProfessionSelections(draft).length ? (
+            <AppText accessibilityRole="alert" style={styles.muted}>{wt.text('withdrawnProfessionNotice')}</AppText>
+          ) : null}
           <BrandTextField label={wt.text('about')} value={draft.about} multiline maxLength={500} helper={profileText('aboutCount')} onChangeText={about => setDraft(current => current ? { ...current, about } : current)} />
           <BrandTextField
             label={wt.text('experience')}
@@ -120,20 +155,28 @@ export default function WorkerProfileScreen() {
           />
         </BrandCard>
 
+        {/* The categories a worker is discoverable under are DERIVED from the
+            trades and jobs they chose, not a third chip cloud they could set to
+            disagree with both. A worker who ticked "Cleaning" here and offered
+            no cleaning job was discoverable for work they had not claimed. */}
         <BrandCard style={styles.card}>
           <AppText style={styles.title}>{wt.text('services')}</AppText>
-          <View style={styles.wrap}>
-            {categories.map(category => (
-              <Chip key={category.id} label={t(category.label)} selected={draft.categoryIds.includes(category.id)} onPress={() => setDraft(current => current ? { ...current, categoryIds: current.categoryIds.includes(category.id) ? current.categoryIds.filter(id => id !== category.id) : [...current.categoryIds, category.id] } : current)} />
-            ))}
-          </View>
-          {optionsLoading ? <AppText style={styles.muted}>{wt.text('continueJourney')}</AppText> : (
-            <View style={styles.wrap}>
-              {serviceOptions.map(option => (
-                <Chip key={option.id} label={catalogueServiceLabel(option, language)} selected={draft.services.some(item => item.serviceId === option.id)} onPress={() => setDraft(current => current ? { ...current, services: current.services.some(item => item.serviceId === option.id) ? current.services.filter(item => item.serviceId !== option.id) : [...current.services, { serviceId: option.id, translationKey: option.translationKey, name: option.name }] } : current)} />
-              ))}
-            </View>
-          )}
+          <AppText style={styles.muted}>{wt.text('servicesBody')}</AppText>
+          {optionsLoading ? <AppText style={styles.muted}>{wt.text('continueJourney')}</AppText> : null}
+          {!optionsLoading && selectedProfessionKeys(draft).length === 0 ? (
+            <AppText style={styles.muted}>{wt.text('chooseProfessionFirst')}</AppText>
+          ) : null}
+          {!optionsLoading && selectedProfessionKeys(draft).length > 0 ? (
+            <OfferedServicesSection
+              sections={tradeSections(draft, serviceOptions)}
+              historicalServices={historicalOfferedServices(draft, serviceOptions)}
+              disabled={state.saving}
+              onToggleService={(service, offered) =>
+                setDraft(current => current ? withOfferedService(current, service, offered, serviceOptions) : current)}
+              onToggleAll={(professionKey, offered) =>
+                setDraft(current => current ? withProfessionServices(current, professionKey, offered, serviceOptions) : current)}
+            />
+          ) : null}
         </BrandCard>
 
         <BrandCard style={styles.card}>
@@ -157,11 +200,6 @@ export default function WorkerProfileScreen() {
   );
 }
 
-function Chip({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) {
-  const styles = useThemedStyles(makeStyles);
-  return <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: selected }} onPress={onPress} style={[styles.chip, selected && styles.chipSelected]}><AppText style={selected && styles.chipSelectedText}>{label}</AppText></Pressable>;
-}
-
 function Page({ children }: { children: React.ReactNode }) {
   const styles = useThemedStyles(makeStyles);
   return <SafeAreaView style={styles.safe}><View style={styles.state}>{children}</View></SafeAreaView>;
@@ -174,8 +212,4 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   card: { gap: spacing.md },
   title: { fontSize: 18, fontWeight: typography.bold },
   muted: { color: colors.textMuted, lineHeight: 20 },
-  wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  chip: { minHeight: 44, justifyContent: 'center', paddingHorizontal: spacing.md, borderWidth: 1, borderColor: colors.border, borderRadius: radii.pill, backgroundColor: colors.surfaceElevated },
-  chipSelected: { backgroundColor: colors.textPrimary, borderColor: colors.textPrimary },
-  chipSelectedText: { color: colors.background, fontWeight: typography.semibold },
 });

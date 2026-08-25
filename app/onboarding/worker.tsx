@@ -1,11 +1,12 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BrandButton, BrandCard, BrandLoadingState, BrandTextField, StateBadge } from '@/components/warsha/BrandUI';
 import { EgyptLocationSelector } from '@/components/warsha/EgyptLocationSelector';
+import { OfferedServicesSection } from '@/components/warsha/OfferedServicesSection';
 import { OnboardingFieldMeta } from '@/components/warsha/OnboardingFieldMeta';
 import { ProfessionSelector } from '@/components/warsha/ProfessionSelector';
 import { AppText } from '@/components/warsha/Typography';
@@ -17,7 +18,23 @@ import { useOnboardingText } from '@/src/onboarding/onboarding-translations';
 import { canAppeal, isAwaitingReview } from '@/src/onboarding/onboarding-types';
 import { useProviderFoundation } from '@/src/providers/provider-context';
 import { listProviderServiceOptions } from '@/src/providers/provider-repository';
-import { selectedProfessionKeys, withSelectedProfessions } from '@/src/providers/profession-taxonomy';
+import {
+  describeProviderSaveFailure,
+  logProviderSaveFailure,
+  type ProviderSaveProblem,
+} from '@/src/providers/provider-save-errors';
+import {
+  selectedProfessionKeys,
+  withdrawnProfessionSelections,
+} from '@/src/providers/profession-taxonomy';
+import {
+  historicalOfferedServices,
+  tradeSections,
+  tradeSelectionProblem,
+  withOfferedService,
+  withProfessionServices,
+  withTradeSelection,
+} from '@/src/providers/worker-trade-selection';
 import {
   emptyProviderDraft,
   MARKETPLACE_MANAGED_RADIUS_KM,
@@ -26,8 +43,7 @@ import {
 } from '@/src/providers/provider-types';
 import { useWorkerText } from '@/src/worker/worker-copy';
 import { workerJourneyProgress } from '@/src/worker/worker-onboarding-policy';
-import { useLocalization } from '@/src/i18n/localization';
-import { catalogueServiceLabel } from '@/src/services/specific-services';
+import type { CatalogueServiceRow } from '@/src/services/specific-services';
 
 export default function WorkerOnboarding() {
   const styles = useThemedStyles(makeStyles);
@@ -35,10 +51,9 @@ export default function WorkerOnboarding() {
   const wt = useWorkerText();
   const onboarding = useOnboarding();
   const provider = useProviderFoundation();
-  const { language } = useLocalization();
   const [draft, setDraft] = useState<ProviderDraft>(provider.profile ?? emptyProviderDraft);
   const [experienceInput, setExperienceInput] = useState('');
-  const [options, setOptions] = useState<{ id: string; name: string; translationKey?: string | null }[]>([]);
+  const [options, setOptions] = useState<CatalogueServiceRow[]>([]);
   const [optionsLoading, setOptionsLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
@@ -86,6 +101,27 @@ export default function WorkerOnboarding() {
     if (!ok) setMessage(ot.text('genericError'));
   };
 
+  /**
+   * What a failed save tells the worker.
+   *
+   * A backend refusal a worker can act on gets the sentence that says how; only
+   * a genuine server fault falls through to the generic apology. The raw
+   * PostgREST error is preserved on the way past and logged in development, so
+   * the next reproduction of a save failure names its own cause instead of
+   * requiring one to be inferred from "Something went wrong."
+   */
+  const saveProblemMessage = (problem: ProviderSaveProblem): string => {
+    switch (problem) {
+      case 'profession_required': return wt.text('professionRequired');
+      case 'service_required': return wt.text('serviceRequired');
+      case 'profession_withdrawn': return wt.text('professionWithdrawn');
+      case 'service_outside_profession': return wt.text('serviceOutsideProfession');
+      case 'profile_incomplete': return wt.text('profileIncomplete');
+      case 'area_invalid': return wt.text('areaInvalid');
+      default: return ot.text('genericError');
+    }
+  };
+
   const saveDraft = async (next: ProviderDraft): Promise<boolean> => {
     setBusy(true);
     setMessage('');
@@ -94,8 +130,10 @@ export default function WorkerOnboarding() {
       setDraft(next);
       await onboarding.reload();
       return true;
-    } catch {
-      setMessage(ot.text('genericError'));
+    } catch (reason) {
+      const failure = describeProviderSaveFailure(reason);
+      logProviderSaveFailure('worker onboarding save', failure);
+      setMessage(saveProblemMessage(failure.problem));
       return false;
     } finally {
       setBusy(false);
@@ -127,8 +165,14 @@ export default function WorkerOnboarding() {
   };
 
   const saveTrade = () => {
-    if (selectedProfessionKeys(draft).length === 0 || draft.services.length === 0) {
-      setMessage(wt.text('requiredFields'));
+    // Two distinct failures got one sentence. A worker who has chosen a trade
+    // and no jobs was told "Please complete this step first", which does not
+    // say which half is missing.
+    const problem = tradeSelectionProblem(draft);
+    if (problem) {
+      setMessage(problem === 'profession_required'
+        ? wt.text('professionRequired')
+        : wt.text('serviceRequired'));
       return;
     }
     void saveDraft(draft);
@@ -203,30 +247,34 @@ export default function WorkerOnboarding() {
         {!onboarding.refreshing && progress.step === 'trade' ? (
           <JourneyCard icon="handyman" title={wt.text('tradeTitle')} body={wt.text('tradeBody')}>
             <OnboardingFieldMeta label={wt.text('professionPlural')} required purpose={wt.text('professionPurpose')} />
-            <ProfessionSelector selected={selectedProfessionKeys(draft)} onChange={keys => setDraft(current => withSelectedProfessions(current, keys))} />
-            <OnboardingFieldMeta label={wt.text('services')} required purpose={wt.text('servicesPurpose')} />
-            {optionsLoading ? <BrandLoadingState label={wt.text('services')} /> : (
-              <View style={styles.chips}>
-                {options.map(option => {
-                  const selected = draft.services.some(item => item.serviceId === option.id);
-                  return (
-                    <Pressable
-                      key={option.id}
-                      accessibilityRole="checkbox"
-                      accessibilityState={{ checked: selected }}
-                      onPress={() => setDraft(current => ({
-                        ...current,
-                        services: selected
-                          ? current.services.filter(item => item.serviceId !== option.id)
-                          : [...current.services, { serviceId: option.id, translationKey: option.translationKey, name: option.name }],
-                      }))}
-                      style={[styles.chip, selected && styles.chipSelected]}>
-                      <AppText>{catalogueServiceLabel(option, language)}</AppText>
-                    </Pressable>
-                  );
-                })}
-              </View>
-            )}
+            {/* One question at a time: the trade names the work, so the work
+                cannot be offered before the trade has been chosen. */}
+            <ProfessionSelector
+              selected={selectedProfessionKeys(draft)}
+              onChange={keys => setDraft(current => withTradeSelection(current, keys, options))}
+            />
+            {withdrawnProfessionSelections(draft).length ? (
+              <AppText accessibilityRole="alert" style={styles.note}>
+                {wt.text('withdrawnProfessionNotice')}
+              </AppText>
+            ) : null}
+
+            <OnboardingFieldMeta label={wt.text('services')} required purpose={wt.text('servicesBody')} />
+            {optionsLoading ? <BrandLoadingState label={wt.text('services')} /> : null}
+            {!optionsLoading && selectedProfessionKeys(draft).length === 0 ? (
+              <AppText style={styles.note}>{wt.text('chooseProfessionFirst')}</AppText>
+            ) : null}
+            {!optionsLoading && selectedProfessionKeys(draft).length > 0 ? (
+              <OfferedServicesSection
+                sections={tradeSections(draft, options)}
+                historicalServices={historicalOfferedServices(draft, options)}
+                disabled={busy}
+                onToggleService={(service, offered) =>
+                  setDraft(current => withOfferedService(current, service, offered, options))}
+                onToggleAll={(professionKey, offered) =>
+                  setDraft(current => withProfessionServices(current, professionKey, offered, options))}
+              />
+            ) : null}
             {!optionsLoading && options.length === 0 ? <BrandButton label={wt.text('retry')} variant="secondary" onPress={() => void loadOptions()} /> : null}
             <BrandButton label={wt.text('saveContinue')} loading={busy} onPress={saveTrade} />
           </JourneyCard>
@@ -314,8 +362,5 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   sectionTitle: { fontSize: 21, lineHeight: 28, fontWeight: typography.bold, color: colors.textPrimary },
   body: { color: colors.textSecondary, fontSize: 15, lineHeight: 23 },
   note: { color: colors.textMuted, fontSize: 13, lineHeight: 20 },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  chip: { minHeight: 48, justifyContent: 'center', paddingHorizontal: spacing.md, borderWidth: 1, borderColor: colors.border, borderRadius: radii.full },
-  chipSelected: { borderColor: colors.textPrimary, backgroundColor: colors.surfaceElevated },
   error: { color: colors.errorText },
 });

@@ -70,7 +70,7 @@ for (const entry of NEW) {
 const styling = professions.find((p) => p.key === 'personalStylist');
 check(styling !== undefined, 'the personal stylist profession exists');
 for (const language of LANGUAGES) {
-  const label = (styling as Record<string, string>)[language];
+  const label = styling?.[language] ?? '';
   check(!/hair|شعر|cheveu|coiffe/i.test(label),
     `THE ${language.toUpperCase()} PERSONAL STYLIST LABEL IS NOT A HAIRDRESSER`);
 }

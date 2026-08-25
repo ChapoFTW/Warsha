@@ -199,12 +199,18 @@ for (const file of referenceConsumers) {
   checks += 2;
 }
 
+// Whoever RENDERS a catalogue row must resolve its label through the shared
+// authority. Worker onboarding and the worker profile screen used to render the
+// rows themselves -- as one flat cloud of all 171 -- and so appeared here; the
+// rows now belong to `OfferedServicesSection`, which is the one native control
+// that draws them. The rule did not change, the renderer did, and moving the
+// entry is the point: this list must name the file that actually prints a
+// service name, or it stops defending anything.
 const serviceRowConsumers = [
   'app/booking/new/[providerId].tsx',
-  'app/onboarding/worker.tsx',
   'app/provider/[id].tsx',
   'app/provider-portfolio.tsx',
-  'app/worker/profile.tsx',
+  'components/warsha/OfferedServicesSection.tsx',
   'web/components/worker-profile-editor.tsx',
 ] as const;
 function assertServiceRowConsumer(source: string, file: string) {
@@ -215,6 +221,18 @@ function assertServiceRowConsumer(source: string, file: string) {
 }
 for (const file of serviceRowConsumers) {
   assertServiceRowConsumer(readFileSync(file, 'utf8'), file);
+  checks += 2;
+}
+
+// The two screens that handed their rows to that component keep the half of the
+// rule that still applies to them: neither may print a stored English name, and
+// neither may quietly grow its own flat list again.
+for (const file of ['app/onboarding/worker.tsx', 'app/worker/profile.tsx'] as const) {
+  const source = readFileSync(file, 'utf8');
+  assert.doesNotMatch(source, />\s*\{(?:service|item|option)\.name\}\s*</,
+    `${file} never presents the stored English row name directly`);
+  assert.match(source, /OfferedServicesSection/,
+    `${file} renders offered work through the shared grouped control`);
   checks += 2;
 }
 

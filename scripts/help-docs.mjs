@@ -119,7 +119,15 @@ function gitChangedFiles() {
 const changed = gitChangedFiles();
 const docsChanged = changed.some(path => sources.includes(path));
 const impactRules = [
-  { pattern: /(?:auth|sign-in|create-account|password|session)/i, ids: ['customer-account-security', 'worker-getting-started'] },
+  // `auth` must not match `authority`. `catalogue-consumer-authority.test.mts`
+  // and `worker-trade-authority.sql` are catalogue files; treating them as
+  // authentication changes demanded a security-article review for a profession
+  // list, and a gate that asks for the wrong document gets answered with filler.
+  { pattern: /(?:auth(?!orit)|sign-in|create-account|password|session)/i, ids: ['customer-account-security', 'worker-getting-started'] },
+  // What a worker is asked in onboarding, and which work they may claim, is
+  // documented behaviour. There was no rule for it, so the Step 3 rebuild could
+  // have shipped with the getting-started article still describing a flat list.
+  { pattern: /(?:profession|worker-trade|trade-selection)/i, ids: ['worker-getting-started'] },
   { pattern: /(?:address|location|map-provider|location-proxy)/i, ids: ['customer-addresses-location', 'worker-onboarding-verification'] },
   { pattern: /(?:verification|vetting)/i, ids: ['worker-onboarding-verification', 'admin-verification-enforcement'] },
   { pattern: /(?:marketplace|quote|request)/i, ids: ['customer-requests-quotes-jobs', 'worker-opportunities-jobs'] },

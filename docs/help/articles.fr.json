@@ -160,8 +160,8 @@
       "locale": "fr",
       "title": "Bien démarrer comme professionnel",
       "summary": "Créez votre compte sans e-mail, terminez votre profil et préparez-vous à recevoir des opportunités.",
-      "version": 2,
-      "lastReviewedDate": "2026-08-25",
+      "version": 3,
+      "lastReviewedDate": "2026-08-26",
       "features": [
         "worker_auth",
         "worker_onboarding",
@@ -180,7 +180,7 @@
         "profil",
         "démarrer"
       ],
-      "body": "1. Choisissez Professionnel lors de la création du compte.\n2. Saisissez votre nom complet, votre numéro de mobile égyptien et un mot de passe. Aucun e-mail ni code SMS n’est demandé.\n3. Connectez-vous ensuite avec ce numéro et ce mot de passe. La réponse d’inscription protège la confidentialité et ne révèle pas si le numéro est déjà associé à une identité. Si la configuration n’aboutit pas, utilisez la connexion ou la récupération du mot de passe, ou contactez l’assistance.\n4. Complétez votre profil, vos métiers, votre zone de service et votre position de travail privée.\n5. Envoyez les éléments de vérification demandés et attendez la décision.\n6. Une fois admissible, consultez les opportunités, envoyez des devis et gérez les interventions.\n\nUtiliser Demander un service ouvre temporairement l’expérience client. Après un redémarrage, le compte revient à l’accueil Professionnel."
+      "body": "1. Choisissez Professionnel lors de la création du compte.\n2. Saisissez votre nom complet, votre numéro de mobile égyptien et un mot de passe. Aucun e-mail ni code SMS n’est demandé.\n3. Connectez-vous ensuite avec ce numéro et ce mot de passe. La réponse d’inscription protège la confidentialité et ne révèle pas si le numéro est déjà associé à une identité. Si la configuration n’aboutit pas, utilisez la connexion ou la récupération du mot de passe, ou contactez l’assistance.\n4. Complétez votre profil, puis choisissez votre métier — le type de travail que vous faites. Warsha affiche alors les interventions qui lui appartiennent, regroupées sous chaque métier choisi, et vous sélectionnez celles que vous pouvez accepter. Retirer un métier retire aussi les interventions choisies sous ce métier. Définissez enfin votre zone de service et votre position de travail privée.\n5. Envoyez les éléments de vérification demandés et attendez la décision.\n6. Une fois admissible, consultez les opportunités, envoyez des devis et gérez les interventions.\n\nUtiliser Demander un service ouvre temporairement l’expérience client. Après un redémarrage, le compte revient à l’accueil Professionnel."
     },
     {
       "id": "worker-onboarding-verification",

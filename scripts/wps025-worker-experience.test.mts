@@ -1,4 +1,5 @@
 import { serviceDemandRank } from '../src/services/service-catalogue.ts';
+import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -21,11 +22,26 @@ import { emptyOnboardingState } from '../src/onboarding/onboarding-types.ts';
 import { emptyProviderDraft } from '../src/providers/provider-types.ts';
 import { currentWorkerJourneyStep } from '../src/worker/worker-onboarding-policy.ts';
 import {
+  isSelectableProfession,
+  isWithdrawnProfession,
   listProfessions,
+  professionLabel,
+  professionServiceKeys,
   professions,
   selectedProfessionKeys,
   withSelectedProfessions,
+  withdrawnProfessions,
 } from '../src/providers/profession-taxonomy.ts';
+import {
+  historicalOfferedServices,
+  professionCatalogueServices,
+  tradeSections,
+  tradeSelectionProblem,
+  withOfferedService,
+  withTradeSelection,
+} from '../src/providers/worker-trade-selection.ts';
+import { describeProviderSaveFailure } from '../src/providers/provider-save-errors.ts';
+import { specificServices } from '../src/services/specific-services.ts';
 import {
   EGYPT_LOCATION_DATASET,
   listEgyptAreas,
@@ -199,29 +215,185 @@ check(!providerMode.includes('value={String(draft.serviceRadiusKm)}'), 'worker p
 
 const selectedProfessions = withSelectedProfessions(emptyProviderDraft, ['plumbing', 'electrical']);
 check(selectedProfessionKeys(selectedProfessions).join(',') === 'plumbing,electrical', 'profession selection stores multiple stable canonical keys');
-// 34 -> 33: `handyman` and `generalMaintenance` were withdrawn with the
-// catch-all category that hid them. Neither is a trade a customer searches for;
-// they were the same drawer expressed at worker level.
-check(professions.length === 33, 'the canonical worker profession taxonomy contains all 33 required professions');
-const englishProfessionLabels = professions.map(item => item.en);
-check(JSON.stringify(englishProfessionLabels) === JSON.stringify([...englishProfessionLabels].sort((a, b) => a.localeCompare(b, 'en'))),
-  'the source English profession taxonomy is stable and alphabetized');
+// 34 -> 33 -> 34. `handyman` and `generalMaintenance` were withdrawn with the
+// catch-all category that hid them -- neither is a trade a customer searches
+// for. `satelliteTechnician` was then added because the catalogue expansion
+// left `satellite-tv-installation` the one category with no trade attached to
+// it, so nobody could ever offer its seven jobs.
+check(professions.length === 34, 'the canonical worker profession taxonomy contains all 34 selectable professions');
+// The source array IS the ranked order, and is asserted to be, because the
+// within-category tie-break is its own index. Sorting it alphabetically -- which
+// this file used to require -- is what made the chooser read differently in
+// every language.
+check(JSON.stringify(professions.map(item => item.key))
+  === JSON.stringify(listProfessions('en').map(item => item.key)),
+  'THE SOURCE PROFESSION ARRAY IS WRITTEN IN RANKED ORDER, NOT ALPHABETICALLY');
 check(professions.every(item => item.ar.trim().length > 0), 'every canonical profession has an Arabic label');
+check(professions.every(item => item.fr.trim().length > 0), 'every canonical profession has a French label');
 // Trade selection is ordered by the category's cold-start demand rank, not
 // alphabetically — so a worker meets the trades Egyptian households actually
 // call out for first, in the same order whichever language they read.
 const arabicRanks = listProfessions('ar').map(item => serviceDemandRank(item.categoryId));
 check(JSON.stringify(arabicRanks) === JSON.stringify([...arabicRanks].sort((a, b) => a - b)),
   'ARABIC PROFESSION OPTIONS ARE ORDERED BY DEMAND, NOT ALPHABETICALLY');
-// Professions inside one category tie on rank and fall back to the localized
-// label, so their order within a category is language-specific by design.
-const englishOrder = listProfessions('en').map(item => item.categoryId);
-const arabicOrder = listProfessions('ar').map(item => item.categoryId);
-check(JSON.stringify(englishOrder) === JSON.stringify(arabicOrder),
-  'and the trades appear by category in the same order in every language');
+// Professions inside one category tie on demand rank and are broken by the
+// source array's index, which is language-independent -- so the order is
+// identical KEY BY KEY, not merely category by category. Comparing category ids
+// alone used to pass while "Plumber, Pool technician" silently became "Pool
+// technician, Plumber" in Arabic.
+const englishKeyOrder = listProfessions('en').map(item => item.key);
+for (const language of ['ar', 'fr'] as const) {
+  check(JSON.stringify(listProfessions(language).map(item => item.key)) === JSON.stringify(englishKeyOrder),
+    `THE TRADE ORDER IS IDENTICAL IN ${language.toUpperCase()}, TRADE BY TRADE`);
+}
 check(listProfessions('en').length === professions.length
   && listProfessions('ar').length === professions.length,
   'NO TRADE IS HIDDEN BY THE ORDERING — EVERY PROFESSION REMAINS SELECTABLE');
+check(withdrawnProfessions.length === 2
+  && withdrawnProfessions.every(item => !isSelectableProfession(item.key) && isWithdrawnProfession(item.key)),
+  'WITHDRAWN CATCH-ALL TRADES REMAIN READABLE BUT CANNOT BE SELECTED');
+for (const withdrawn of withdrawnProfessions) {
+  check(['en', 'ar', 'fr'].every(language =>
+    professionLabel(withdrawn.key, language as 'en' | 'ar' | 'fr').trim().length > 0),
+  `${withdrawn.key} keeps a readable label in every locale`);
+}
+
+// The trade-to-job relationship is exact, not category-wide. Every stored key
+// must resolve to one canonical service and stay inside one of that trade's
+// mapped categories; otherwise the chooser and the database would enforce
+// different rules.
+const serviceByKey = new Map(specificServices.map(service => [service.key, service]));
+for (const profession of professions) {
+  const keys = professionServiceKeys(profession.key);
+  check(keys.length > 0, `${profession.key} offers at least one concrete service`);
+  check(new Set(keys).size === keys.length, `${profession.key} does not repeat a service`);
+  check(keys.every(key => serviceByKey.has(key)), `${profession.key} references only canonical service keys`);
+  check(keys.every(key => profession.serviceCategoryIds.some(categoryId =>
+    categoryId === serviceByKey.get(key)!.categoryId)),
+    `${profession.key} services stay inside its mapped categories`);
+}
+const servicesFor = (professionKey: string) => new Set(professionServiceKeys(professionKey));
+check(servicesFor('plumbing').has('plumbing-leak-repair')
+  && servicesFor('plumbing').has('plumbing-blocked-drain'),
+  'plumbers can offer both leak repair and blocked drains');
+check(!servicesFor('poolTechnician').has('plumbing-toilet-repair'),
+  'a pool technician is not widened to unrelated bathroom plumbing');
+check(!servicesFor('smartHomeTechnician').has('electrical-fan'),
+  'a smart-home technician is not widened to fan repair');
+check(!servicesFor('glassWorker').has('alumetal-kitchen'),
+  'a glass worker is not widened to aluminium kitchens');
+check(!servicesFor('welder').has('alumetal-glass-replace'),
+  'a welder is not widened to glass replacement');
+check(servicesFor('homeElectronicsTechnician').has('appliance-microwave')
+  && servicesFor('homeElectronicsTechnician').has('satellite-tv-mount')
+  && !servicesFor('homeElectronicsTechnician').has('appliance-washing-machine'),
+  'home electronics intentionally spans electronics and satellite work without all appliances');
+
+const catalogue = specificServices.map((service, index) => ({
+  id: `00000000-0000-4000-8000-${String(index + 1).padStart(12, '0')}`,
+  categoryId: service.categoryId,
+  name: service.en,
+  translationKey: service.key,
+}));
+const byCatalogueKey = (key: string) => catalogue.find(service => service.translationKey === key)!;
+const leak = byCatalogueKey('plumbing-leak-repair');
+const blocked = byCatalogueKey('plumbing-blocked-drain');
+const socket = byCatalogueKey('electrical-socket-repair');
+let structuredDraft = withTradeSelection(emptyProviderDraft, ['plumbing', 'electrical'], catalogue);
+check(tradeSections(structuredDraft, catalogue).map(section => section.professionKey).join(',')
+  === 'plumbing,electrical',
+  'multi-trade onboarding renders one ranked service section per selected profession');
+check(tradeSections(structuredDraft, catalogue)
+  .every(section => section.services.length < specificServices.length),
+  'NO TRADE SECTION FALLS BACK TO THE GLOBAL CATALOGUE');
+check(professionCatalogueServices('poolTechnician', catalogue).every(service =>
+  servicesFor('poolTechnician').has(service.translationKey ?? '')),
+  'the rendered pool-technician section applies the exact specialist allowlist');
+structuredDraft = withOfferedService(structuredDraft, leak, true, catalogue);
+structuredDraft = withOfferedService(structuredDraft, blocked, true, catalogue);
+structuredDraft = withOfferedService(structuredDraft, socket, true, catalogue);
+check(structuredDraft.services.map(service => service.serviceId).join(',')
+  === [leak.id, blocked.id, socket.id].join(','),
+  'service choices store the catalogue UUIDs, not labels or translation keys');
+const electricianOnly = withTradeSelection(structuredDraft, ['electrical'], catalogue);
+check(electricianOnly.services.length === 1 && electricianOnly.services[0]?.serviceId === socket.id,
+  'removing Plumber removes both stale plumbing services from the save payload');
+check(electricianOnly.categoryIds.join(',') === 'electrical',
+  'removing Plumber also removes stale plumbing discoverability');
+const noTrades = withTradeSelection(electricianOnly, [], catalogue);
+check(noTrades.profession === '' && noTrades.services.length === 0 && noTrades.categoryIds.length === 0,
+  'clearing every profession clears primary trade, services, and categories together');
+check(tradeSelectionProblem(emptyProviderDraft) === 'profession_required',
+  'Step 3 identifies a missing profession precisely');
+check(tradeSelectionProblem(withTradeSelection(emptyProviderDraft, ['plumbing'], catalogue)) === 'service_required',
+  'Step 3 identifies a missing offered service precisely');
+check(tradeSelectionProblem(structuredDraft) === null,
+  'a profession with at least one exact offered service is ready to save');
+const historicalDraft = {
+  ...structuredDraft,
+  profession: 'handyman',
+  specialties: [],
+  services: [{ serviceId: leak.id, translationKey: leak.translationKey, name: leak.name }],
+};
+check(historicalOfferedServices(historicalDraft, catalogue)[0]?.serviceId === leak.id,
+  'services on a withdrawn historical trade remain readable in the structured UI');
+check(listProfessions('en', 'plumb').some(item => item.key === 'plumbing')
+  && JSON.stringify(listProfessions('en', '')) === JSON.stringify(listProfessions('en')),
+  'profession search filters without changing ranked order after it is cleared');
+
+const tradeMigration = read('supabase', 'migrations', '202608260001_worker_trade_authority.sql');
+const generatedTradeSql = execFileSync(process.execPath, [
+  '--no-warnings',
+  '--experimental-strip-types',
+  join(root, 'scripts', 'generate-profession-taxonomy-migration.mjs'),
+], { encoding: 'utf8' });
+for (const generatedSection of generatedTradeSql.split(/^-- /m).slice(1)) {
+  const sqlBody = generatedSection.slice(generatedSection.indexOf('\n') + 1).trim();
+  check(sqlBody.length > 0 && tradeMigration.includes(sqlBody),
+    'the pending migration contains the exact rows emitted by shared profession authority');
+}
+check(/create table if not exists public\.profession_services/.test(tradeMigration),
+  'the backend has an exact profession-to-service authority');
+check(/Service required/.test(tradeMigration)
+  && /Withdrawn profession/.test(tradeMigration)
+  && /Service outside profession/.test(tradeMigration),
+  'the save RPC returns distinct worker-correctable Step 3 failures');
+check(/trade_selection_changed/.test(tradeMigration)
+  && /not trade_selection_changed/.test(tradeMigration),
+  'unchanged historical service rows remain compatible while edited trades are pruned');
+check(/profession_service_categories allowed/.test(tradeMigration)
+  && /stored_category_ids/.test(tradeMigration),
+  'the backend rejects unrelated discovery categories while preserving unchanged historical rows');
+check(/\^\[0-9a-f\][\s\S]*?Invalid service'/.test(tradeMigration),
+  'malformed non-UUID service identity receives an actionable validation refusal');
+for (const [message, problem] of [
+  ['Profession required', 'profession_required'],
+  ['Service required', 'service_required'],
+  ['Withdrawn profession', 'profession_withdrawn'],
+  ['Service outside profession', 'service_outside_profession'],
+] as const) {
+  check(describeProviderSaveFailure({ message }).problem === problem,
+    `the ${message} backend refusal maps to ${problem} copy`);
+}
+const offeredServicesSection = read('components', 'warsha', 'OfferedServicesSection.tsx');
+const webWorkerEditor = read('web', 'components', 'worker-profile-editor.tsx');
+check(onboardingScreen.includes('<OfferedServicesSection')
+  && read('app', 'worker', 'profile.tsx').includes('<OfferedServicesSection'),
+  'native onboarding and profile reuse the same structured service component');
+check(offeredServicesSection.includes('TradeSection<T>')
+  && offeredServicesSection.includes('historicalServices')
+  && onboardingScreen.includes('tradeSections(draft, options)')
+  && onboardingScreen.includes('withProfessionServices'),
+  'native presentation receives shared trade sections and its parent applies shared select-all policy');
+check(webWorkerEditor.includes('tradeSections(draft, services)')
+  && webWorkerEditor.includes('withTradeSelection')
+  && webWorkerEditor.includes('withOfferedService'),
+  'web profile editing applies the same trade, service, and stale-selection policy');
+check(onboardingScreen.includes('await provider.save(next, false)')
+  && onboardingScreen.includes('await onboarding.reload()')
+  && onboardingScreen.includes('return true'),
+  'a successful Step 3 save reloads onboarding authority so the journey can advance');
+
 const professionSelector = read('components', 'warsha', 'ProfessionSelector.tsx');
 check(professionSelector.includes('searchProfessions') && professionSelector.includes('pending'), 'profession selection is searchable and multi-select');
 check(professionSelector.includes('removeProfession') && professionSelector.includes("wt.text('done')"), 'selected professions are removable and the selector has an obvious Done action');

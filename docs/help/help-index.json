@@ -470,8 +470,8 @@
       "locale": "en",
       "title": "Getting started as a worker",
       "summary": "Register with phone and password, finish onboarding, and wait for governed approval.",
-      "version": 2,
-      "lastReviewedDate": "2026-08-25",
+      "version": 3,
+      "lastReviewedDate": "2026-08-26",
       "features": [
         "worker_auth",
         "worker_onboarding",
@@ -498,8 +498,8 @@
       "locale": "ar",
       "title": "ابدأ كصنايعي",
       "summary": "سجّل بالموبايل وكلمة السر، كمّل التقديم، واستنى الموافقة المنظمة.",
-      "version": 2,
-      "lastReviewedDate": "2026-08-25",
+      "version": 3,
+      "lastReviewedDate": "2026-08-26",
       "features": [
         "worker_auth",
         "worker_onboarding",
@@ -1288,8 +1288,8 @@
       "locale": "fr",
       "title": "Bien démarrer comme professionnel",
       "summary": "Créez votre compte sans e-mail, terminez votre profil et préparez-vous à recevoir des opportunités.",
-      "version": 2,
-      "lastReviewedDate": "2026-08-25",
+      "version": 3,
+      "lastReviewedDate": "2026-08-26",
       "features": [
         "worker_auth",
         "worker_onboarding",

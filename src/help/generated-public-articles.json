@@ -317,8 +317,8 @@
       "locale": "en",
       "title": "Getting started as a worker",
       "summary": "Register with phone and password, finish onboarding, and wait for governed approval.",
-      "version": 2,
-      "lastReviewedDate": "2026-08-25",
+      "version": 3,
+      "lastReviewedDate": "2026-08-26",
       "features": [
         "worker_auth",
         "worker_onboarding",
@@ -338,7 +338,7 @@
         "onboarding",
         "approval"
       ],
-      "body": "## Register\n\nChoose Worker and enter your full name, Egyptian mobile number, and password. There is no worker email field and no email or SMS confirmation step. Warsha creates a private internal Auth identity; it is not a contact address and is never shown as your email. You sign in with phone number and password.\n\nRegistration uses a privacy-preserving response and does not reveal whether the phone number is already tied to an identity. If setup does not complete, use sign-in or password recovery, or contact Support; retrying cannot overwrite an existing account.\n\n## Prepare your profile\n\nAdd your photo and profile details, choose your trades and services, select service areas, and save a private work location. Then complete identity and criminal-record steps shown by the app.\n\nApproval is a staff decision under the current vetting policy. You cannot quote or accept work until the backend says your worker capability is active."
+      "body": "## Register\n\nChoose Worker and enter your full name, Egyptian mobile number, and password. There is no worker email field and no email or SMS confirmation step. Warsha creates a private internal Auth identity; it is not a contact address and is never shown as your email. You sign in with phone number and password.\n\nRegistration uses a privacy-preserving response and does not reveal whether the phone number is already tied to an identity. If setup does not complete, use sign-in or password recovery, or contact Support; retrying cannot overwrite an existing account.\n\n## Prepare your profile\n\nAdd your photo and profile details. Then choose your profession — the kind of work you do — and Warsha shows the specific jobs that belong to it, grouped under each profession you pick, so you only choose from work your trade actually covers. Select the jobs you can take, then set your service areas and save a private work location. Finally, complete the identity and criminal-record steps shown by the app.\n\nIf you remove a profession, the jobs you chose under it are removed with it. Some trades cover more than one kind of work — an appliance technician is also offered water-heater jobs, for example — and those appear in the same list.\n\nApproval is a staff decision under the current vetting policy. You cannot quote or accept work until the backend says your worker capability is active."
     },
     {
       "id": "worker-getting-started",
@@ -346,8 +346,8 @@
       "locale": "ar",
       "title": "ابدأ كصنايعي",
       "summary": "سجّل بالموبايل وكلمة السر، كمّل التقديم، واستنى الموافقة المنظمة.",
-      "version": 2,
-      "lastReviewedDate": "2026-08-25",
+      "version": 3,
+      "lastReviewedDate": "2026-08-26",
       "features": [
         "worker_auth",
         "worker_onboarding",
@@ -367,7 +367,7 @@
         "تقديم",
         "موافقة"
       ],
-      "body": "## التسجيل\n\nاختار «صنايعي» واكتب اسمك الكامل ورقم موبايل مصري وكلمة السر. مفيش خانة بريد للصنايعي ومفيش تأكيد بريد أو SMS وقت التسجيل. ورشة بيعمل هوية دخول داخلية خاصة؛ دي مش وسيلة تواصل ومش هتظهر كبريدك. بعد كده بتدخل برقم الموبايل وكلمة السر.\n\nرد التسجيل بيحافظ على الخصوصية وما بيكشفش لو رقم الموبايل مرتبط بهوية موجودة. لو الإعداد ما كملش، جرب تسجل الدخول أو تسترجع كلمة السر، أو كلم الدعم؛ إعادة المحاولة ما بتغيرش حساب موجود.\n\n## جهّز ملفك\n\nضيف صورتك وبياناتك، اختار المهن والخدمات، حدد مناطق الشغل، واحفظ موقع شغلك الخاص. بعد كده كمّل خطوات الهوية والفيش اللي التطبيق بيطلبها.\n\nالموافقة قرار موظف حسب سياسة المراجعة الحالية. مش هتقدر تبعت عروض أو تقبل شغل قبل ما النظام يأكد إن صلاحية الشغل عندك نشطة."
+      "body": "## التسجيل\n\nاختار «صنايعي» واكتب اسمك الكامل ورقم موبايل مصري وكلمة السر. مفيش خانة بريد للصنايعي ومفيش تأكيد بريد أو SMS وقت التسجيل. ورشة بيعمل هوية دخول داخلية خاصة؛ دي مش وسيلة تواصل ومش هتظهر كبريدك. بعد كده بتدخل برقم الموبايل وكلمة السر.\n\nرد التسجيل بيحافظ على الخصوصية وما بيكشفش لو رقم الموبايل مرتبط بهوية موجودة. لو الإعداد ما كملش، جرب تسجل الدخول أو تسترجع كلمة السر، أو كلم الدعم؛ إعادة المحاولة ما بتغيرش حساب موجود.\n\n## جهّز ملفك\n\nضيف صورتك وبياناتك. بعدها اختار مهنتك — نوع الشغل اللي بتعمله — وورشة هتعرض عليك الشغلانات الخاصة بيها، متجمّعة تحت كل مهنة تختارها، علشان تختار بس من الشغل اللي مهنتك بتغطيه. اختار الشغلانات اللي تقدر تستلمها، وبعدين حدد مناطق شغلك واحفظ مكان شغلك الخاص. وفي الآخر كمّل خطوات إثبات الهوية والفيش والتشبيه اللي التطبيق بيطلبها.\n\nلو شلت مهنة، الشغلانات اللي اخترتها تحتها بتتشال معاها. وفي مهن بتغطي أكتر من نوع شغل — زي فني الأجهزة المنزلية اللي بيتعرض عليه شغل السخانات كمان — وده بيظهر في نفس القايمة.\n\nالموافقة قرار موظف حسب سياسة المراجعة الحالية. مش هتقدر تبعت عروض أو تقبل شغل قبل ما النظام يأكد إن صلاحية الشغل عندك نشطة."
     },
     {
       "id": "worker-onboarding-verification",
@@ -762,8 +762,8 @@
       "locale": "fr",
       "title": "Bien démarrer comme professionnel",
       "summary": "Créez votre compte sans e-mail, terminez votre profil et préparez-vous à recevoir des opportunités.",
-      "version": 2,
-      "lastReviewedDate": "2026-08-25",
+      "version": 3,
+      "lastReviewedDate": "2026-08-26",
       "features": [
         "worker_auth",
         "worker_onboarding",
@@ -782,7 +782,7 @@
         "profil",
         "démarrer"
       ],
-      "body": "1. Choisissez Professionnel lors de la création du compte.\n2. Saisissez votre nom complet, votre numéro de mobile égyptien et un mot de passe. Aucun e-mail ni code SMS n’est demandé.\n3. Connectez-vous ensuite avec ce numéro et ce mot de passe. La réponse d’inscription protège la confidentialité et ne révèle pas si le numéro est déjà associé à une identité. Si la configuration n’aboutit pas, utilisez la connexion ou la récupération du mot de passe, ou contactez l’assistance.\n4. Complétez votre profil, vos métiers, votre zone de service et votre position de travail privée.\n5. Envoyez les éléments de vérification demandés et attendez la décision.\n6. Une fois admissible, consultez les opportunités, envoyez des devis et gérez les interventions.\n\nUtiliser Demander un service ouvre temporairement l’expérience client. Après un redémarrage, le compte revient à l’accueil Professionnel."
+      "body": "1. Choisissez Professionnel lors de la création du compte.\n2. Saisissez votre nom complet, votre numéro de mobile égyptien et un mot de passe. Aucun e-mail ni code SMS n’est demandé.\n3. Connectez-vous ensuite avec ce numéro et ce mot de passe. La réponse d’inscription protège la confidentialité et ne révèle pas si le numéro est déjà associé à une identité. Si la configuration n’aboutit pas, utilisez la connexion ou la récupération du mot de passe, ou contactez l’assistance.\n4. Complétez votre profil, puis choisissez votre métier — le type de travail que vous faites. Warsha affiche alors les interventions qui lui appartiennent, regroupées sous chaque métier choisi, et vous sélectionnez celles que vous pouvez accepter. Retirer un métier retire aussi les interventions choisies sous ce métier. Définissez enfin votre zone de service et votre position de travail privée.\n5. Envoyez les éléments de vérification demandés et attendez la décision.\n6. Une fois admissible, consultez les opportunités, envoyez des devis et gérez les interventions.\n\nUtiliser Demander un service ouvre temporairement l’expérience client. Après un redémarrage, le compte revient à l’accueil Professionnel."
     },
     {
       "id": "worker-onboarding-verification",
