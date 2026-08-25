@@ -220,7 +220,7 @@ check(/inset-inline-end/.test(controlStyles) && /inset-block-start/.test(control
   'the menu is positioned with logical properties and flips correctly in Arabic');
 check(!/(^|[^-])\b(left|right):\s*\d/.test(controlStyles),
   'no physical left/right offset overrides the logical placement');
-// Wrapping was the defect, not the safeguard: five navigation labels breaking
+// Wrapping was the defect, not the safeguard: navigation labels breaking
 // onto second lines is what made the header 122px tall at 1440px. The header
 // now reorganises at explicit breakpoints and never reflows.
 //
@@ -234,7 +234,7 @@ check(chromeHeaderStyles.length > 0, 'the header half of the stylesheet is ident
 check(!/flex-wrap:\s*wrap/.test(chromeHeaderStyles),
   'THE HEADER NEVER WRAPS ONTO A SECOND ROW; IT COLLAPSES INSTEAD');
 check(/@media \(min-width: 720px\)/.test(chromeStyles)
-  && /@media \(min-width: 1140px\)/.test(chromeStyles),
+  && /@media \(min-width: 900px\)/.test(chromeStyles),
   'the header has explicit breakpoints for the menu and the auth actions');
 // There is nothing left in the header to overflow. The controls used to be
 // there and moved into the navigation panel below 720px; they are in the

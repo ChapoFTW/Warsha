@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import type { Route } from 'next';
+import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
 import { copy } from '@/lib/copy';
@@ -34,6 +35,7 @@ export function SiteNav({
   const panel = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const words = copy[locale];
+  const pathname = usePathname();
 
   // Escape closes and returns focus to the control that opened it, which is
   // what a keyboard user expects and what a pointer user never notices.
@@ -63,7 +65,8 @@ export function SiteNav({
     <>
       <nav className={styles.nav} aria-label={words.navPrimary}>
         {links.map((item) => (
-          <Link key={item.href} href={item.href} className={styles.navLink}>
+          <Link key={item.href} href={item.href} className={styles.navLink}
+            aria-current={pathname === item.href ? 'page' : undefined}>
             {item.label}
           </Link>
         ))}
@@ -106,6 +109,7 @@ export function SiteNav({
               key={item.href}
               href={item.href}
               className={styles.navPanelLink}
+              aria-current={pathname === item.href ? 'page' : undefined}
               onClick={() => setOpen(false)}
             >
               {item.label}

@@ -60,8 +60,20 @@ const navLink = /\.navLink \{[\s\S]*?\n\}/.exec(chromeCss)?.[0] ?? '';
 check(/white-space:\s*nowrap/.test(navLink), 'each navigation link is unbreakable');
 check(/flex-shrink:\s*0/.test(navLink), 'navigation links are not shrunk into wrapping');
 check(/min-height:\s*60px/.test(chromeCss), 'the header declares a compact fixed row height');
-check(/@media \(min-width: 1140px\)/.test(chromeCss),
-  'inline navigation appears only where the labels genuinely fit');
+// The breakpoint is a CONSEQUENCE of how many labels the header carries, so
+// pinning it to a number made this rule wrong the moment the public
+// information architecture narrowed from five primary links to two. What must
+// stay true is that inline navigation is gated behind a declared width at all,
+// that the width is stated once and agreed with by the comment above it, and
+// that it is high enough for the collapse to still happen on a phone.
+const navBreakpoint = /--+[\s\S]{0,400}?(\d{3,4})px is where[\s\S]*?@media \(min-width: (\d{3,4})px\) \{\s*\.nav \{\s*display: flex;/
+  .exec(chromeCss);
+check(navBreakpoint !== null,
+  'inline navigation appears only above one declared, explained width');
+check(navBreakpoint?.[1] === navBreakpoint?.[2],
+  'the declared breakpoint and the reason given for it are the same number');
+check(Number(navBreakpoint?.[2] ?? 0) >= 720,
+  'inline navigation still collapses on a phone rather than crowding the header');
 check(/menuButton/.test(chromeCss) && /navPanel/.test(chromeCss),
   'below that width the navigation collapses rather than growing the header');
 // Scoped to the header. The footer is *supposed* to wrap — it lays copyright

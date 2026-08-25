@@ -20,6 +20,7 @@ const baseCopy = {
     skipToContent: 'Skip to content',
 
     navFind: 'Find a professional',
+    navServices: 'Services',
     navHow: 'How Warsha works',
     navWorker: 'Work with Warsha',
     navTrust: 'Trust & safety',
@@ -48,6 +49,10 @@ const baseCopy = {
       + 'work begins.',
     heroPostJob: 'Post a job',
     heroWork: 'Work with Warsha',
+    servicesCardAction: 'Request help',
+    servicesCtaTitle: 'Not sure which service fits?',
+    servicesCtaBody: 'Describe the work in your own words. You can choose a broad category and let professionals quote the right approach.',
+    servicesCtaAction: 'Post a job',
     heroNote:
       'Warsha is in closed testing. Accounts created now are real accounts on the '
       + 'live service.',
@@ -169,6 +174,7 @@ const baseCopy = {
     skipToContent: 'تخطَّ إلى المحتوى',
 
     navFind: 'دوّر على صنايعي',
+    navServices: 'الخدمات',
     navHow: 'ورشة بتشتغل إزاي',
     navWorker: 'اشتغل مع ورشة',
     navTrust: 'الأمان والثقة',
@@ -196,6 +202,10 @@ const baseCopy = {
       + 'الشغل، وهما بيقدّموا سعر، وإنت اللي بتقرر قبل ما أي شغل يبدأ.',
     heroPostJob: 'اطلب صنايعي',
     heroWork: 'اشتغل مع ورشة',
+    servicesCardAction: 'اطلب مساعدة',
+    servicesCtaTitle: 'مش عارف تختار خدمة إيه؟',
+    servicesCtaBody: 'اوصف الشغل بطريقتك. اختار التصنيف الأقرب وسيب الصنايعية يقدّموا الحل المناسب.',
+    servicesCtaAction: 'اطلب صنايعي',
     heroNote:
       'ورشة لسه في مرحلة تجربة مغلقة. الحسابات اللي بتتعمل دلوقتي حسابات حقيقية على '
       + 'الخدمة الفعلية.',
@@ -307,9 +317,9 @@ export const copy = {
   fr: {
     ...baseCopy.en,
     brand: 'Warsha', skipToContent: 'Aller au contenu',
-    navFind: 'Trouver un professionnel', navHow: 'Comment fonctionne Warsha', navWorker: 'Travailler avec Warsha', navTrust: 'Confiance et sécurité', navHelp: 'Aide', navPrimary: 'Navigation principale', navMenu: 'Menu', signIn: 'Se connecter', createAccount: 'Créer un compte', homeAria: 'Accueil Warsha',
+    navFind: 'Trouver un professionnel', navServices: 'Services', navHow: 'Comment fonctionne Warsha', navWorker: 'Travailler avec Warsha', navTrust: 'Confiance et sécurité', navHelp: 'Aide', navPrimary: 'Navigation principale', navMenu: 'Menu', signIn: 'Se connecter', createAccount: 'Créer un compte', homeAria: 'Accueil Warsha',
     languageLabel: 'Langue', languageEnglish: 'English', languageArabic: 'العربية', languageFrench: 'Français', appearanceLabel: 'Apparence', appearanceSystem: 'Système', appearanceLight: 'Clair', appearanceDark: 'Sombre',
-    heroImageAlt: 'Un électricien installe une prise murale dans un logement.', heroEyebrow: 'Services à domicile en Égypte', heroTitle: "Faites réparer, au prix convenu d'abord.", heroBody: 'Warsha met en relation les personnes qui ont besoin de réparations ou d’entretien avec des professionnels qualifiés. Vous décrivez le travail, ils proposent un devis et vous décidez avant le début.', heroPostJob: 'Publier une demande', heroWork: 'Travailler avec Warsha', heroNote: 'Warsha est en phase de test fermé. Les comptes créés maintenant sont de vrais comptes sur le service actif.',
+    heroImageAlt: 'Un électricien installe une prise murale dans un logement.', heroEyebrow: 'Services à domicile en Égypte', heroTitle: "Faites réparer, au prix convenu d'abord.", heroBody: 'Warsha met en relation les personnes qui ont besoin de réparations ou d’entretien avec des professionnels qualifiés. Vous décrivez le travail, ils proposent un devis et vous décidez avant le début.', heroPostJob: 'Publier une demande', heroWork: 'Travailler avec Warsha', servicesCardAction: 'Demander de l’aide', servicesCtaTitle: 'Vous ne savez pas quel service choisir ?', servicesCtaBody: 'Décrivez le travail avec vos propres mots. Choisissez la catégorie la plus proche et laissez les professionnels proposer la bonne approche.', servicesCtaAction: 'Publier une demande', heroNote: 'Warsha est en phase de test fermé. Les comptes créés maintenant sont de vrais comptes sur le service actif.',
     howTitle: 'Comment ça marche', howLead: 'Quatre étapes, avec votre accord avant le début des travaux.', step1Title: 'Décrivez le travail', step1Body: 'Indiquez ce qui doit être fait et où. Les photos sont utiles, mais facultatives.', step2Title: 'Recevez des devis', step2Body: 'Les professionnels du métier qui couvrent votre zone vous proposent un prix.', step3Title: 'Acceptez avant le début', step3Body: 'Vous acceptez un devis avant la réservation du professionnel. Le prix convenu est enregistré.', step4Title: "Suivez jusqu'à la fin", step4Body: 'Suivez le travail jusqu’à son achèvement, avec toute la conversation au même endroit.',
     workerEyebrow: 'Pour les professionnels', workerTitle: 'Proposez votre prix pour les travaux qui vous intéressent.', workerLead: 'Warsha vous envoie les demandes qui correspondent à votre métier et aux zones que vous couvrez. Vous choisissez celles auxquelles répondre.', workerCta: 'Commencer ma demande', worker1Title: 'Des travaux adaptés à votre métier', worker1Body: 'Vous voyez les demandes correspondant aux métiers et aux zones enregistrés.', worker2Title: 'Vous fixez le prix', worker2Body: 'Vous établissez chaque devis. Aucun travail ne vous est attribué à un prix que vous n’avez pas choisi.', worker3Title: 'Une vérification à effectuer une fois', worker3Body: 'Les contrôles d’identité et de métier sont effectués une fois, puis examinés par une personne.',
     legalUntranslatedHeading: 'Pas encore publié en français', legalUntranslatedNote: 'Le titre et le résumé de ce document sont traduits. Le texte intégral ci-dessous est la version anglaise, qui est le texte qui fait foi. Warsha ne publie pas de traduction automatique d’un document qui vous engage.',

@@ -2,6 +2,13 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { categories as sharedCategoryPresentation } from '../src/data/mock-data.ts';
+import { serviceCategoryDescription, serviceCategoryLabel } from '../src/i18n/service-labels.ts';
+import {
+  SERVICE_DEMAND_ORDER,
+  serviceCategoryTranslationKey,
+} from '../src/services/service-catalogue.ts';
+
 /**
  * Navigation may not point at a route that does not exist.
  *
@@ -271,6 +278,79 @@ check(/https:\/\/app\.usewarsha\.com/.test(routes),
 const chrome = readFileSync(join(WEB, 'components', 'site-chrome.tsx'), 'utf8');
 check(/href=\{APP_SIGN_IN\}/.test(chrome),
   'THE PUBLIC SIGN-IN CONTROL LEADS INTO THE REAL APPLICATION, NOT A MARKETING PAGE');
+
+// ===========================================================================
+// PUBLIC INFORMATION ARCHITECTURE STAYS SMALL AND THE SERVICES PAGE DOES WORK
+// ===========================================================================
+const headerSource = chrome.slice(
+  chrome.indexOf('export function SiteHeader'),
+  chrome.indexOf('export function SiteFooter'),
+);
+const primarySource = headerSource.slice(
+  headerSource.indexOf('const primary'),
+  headerSource.indexOf('return ('),
+);
+check((primarySource.match(/\{ href:/g) ?? []).length === 2
+  && /words\.navServices/.test(primarySource)
+  && /words\.navWorker/.test(primarySource),
+  'THE PUBLIC HEADER HAS EXACTLY TWO PRIMARY DESTINATIONS: SERVICES AND WORK WITH WARSHA');
+check(!/navHow|navTrust|navHelp|\/about|\/contact/.test(primarySource),
+  'secondary information pages do not compete in the primary header');
+check(/APP_SIGN_IN/.test(headerSource) && /APP_CREATE_ACCOUNT/.test(headerSource),
+  'sign in and create account remain distinct account actions');
+
+const footerSource = chrome.slice(chrome.indexOf('export function SiteFooter'));
+for (const route of [
+  '/about', '/how-it-works', '/trust-and-safety', '/help', '/contact',
+  '/services', '/categories', '/become-a-worker', '/legal',
+]) {
+  check(footerSource.includes(`'${route}'`), `${route} remains reachable from the public footer`);
+}
+const siteNav = readFileSync(join(WEB, 'components', 'site-nav.tsx'), 'utf8');
+check((siteNav.match(/links\.map/g) ?? []).length === 2,
+  'desktop and mobile navigation render the same primary-link collection');
+check((siteNav.match(/aria-current=\{pathname === item\.href \? 'page' : undefined\}/g) ?? []).length === 2,
+  'desktop and mobile navigation both announce the active page');
+
+const servicesPage = readFileSync(join(APP_DIR, '[locale]', 'services', 'page.tsx'), 'utf8');
+const servicesStyles = readFileSync(join(APP_DIR, '[locale]', 'services', 'page.module.css'), 'utf8');
+check(/SERVICE_DEMAND_ORDER\.map/.test(servicesPage)
+  && /serviceCategoryLabel/.test(servicesPage)
+  && /serviceCategoryDescription/.test(servicesPage)
+  && /categoryPresentation/.test(servicesPage),
+  'the services page derives its catalogue and localized presentation from shared authorities');
+check(!/ContentPage/.test(servicesPage)
+  && !/Plumbing|Electrical|Cleaning|Air conditioning/.test(servicesPage),
+  'the services page is actionable and does not restore a short hard-coded marketing list');
+check(/<a[\s\S]*?href=\{category\.href\}[\s\S]*?data-category-id=\{category\.id\}/.test(servicesPage)
+  && /requests\/new\?category=/.test(servicesPage),
+  'every category card is one semantic link to a preselected request flow');
+check(/languages: \{ en: '\/en\/services', ar: '\/ar\/services', fr: '\/fr\/services' \}/.test(servicesPage),
+  'services metadata publishes English, Arabic, and French alternates');
+check(SERVICE_DEMAND_ORDER.length === 19
+  && new Set(SERVICE_DEMAND_ORDER).size === 19
+  && !SERVICE_DEMAND_ORDER.includes('general-maintenance' as never),
+  'the public catalogue has all 19 selectable categories and no withdrawn catch-all');
+const presentationById = new Map(sharedCategoryPresentation.map(category => [category.id, category]));
+check(SERVICE_DEMAND_ORDER.every(id => presentationById.has(id)),
+  'every selectable category has shared presentation metadata');
+for (const locale of ['en', 'ar', 'fr'] as const) {
+  check(SERVICE_DEMAND_ORDER.every(id => {
+    const presentation = presentationById.get(id)!;
+    return serviceCategoryLabel(serviceCategoryTranslationKey(id), locale, id).trim().length > 0
+      && (serviceCategoryDescription(presentation.description, locale)?.trim().length ?? 0) > 0;
+  }), `all 19 service cards have a label and description in ${locale}`);
+}
+check(serviceCategoryLabel(serviceCategoryTranslationKey('alumetal'), 'en', 'alumetal') === 'Alumetal',
+  'Alumetal keeps its existing customer-facing brand spelling');
+check(/grid-template-columns:\s*1fr/.test(servicesStyles)
+  && /repeat\(2, minmax\(0, 1fr\)\)/.test(servicesStyles)
+  && /repeat\(3, minmax\(0, 1fr\)\)/.test(servicesStyles),
+  'the catalogue uses intentional one, two, and three-column layouts');
+check(/overflow-wrap:\s*anywhere/.test(servicesStyles)
+  && /\.card:hover/.test(servicesStyles)
+  && /:focus-visible/.test(readFileSync(join(APP_DIR, 'globals.css'), 'utf8')),
+  'long localized card copy wraps and links have hover and keyboard-focus feedback');
 
 // The marketing site must not grow a second authentication implementation.
 for (const page of ['sign-in', 'create-account']) {

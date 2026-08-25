@@ -26,11 +26,8 @@ type Props = { locale: Locale };
 export function SiteHeader({ locale }: Props) {
   const words = copy[locale];
   const primary = [
-    { href: localeHref(locale, '/services'), label: words.navFind },
-    { href: localeHref(locale, '/how-it-works'), label: words.navHow },
+    { href: localeHref(locale, '/services'), label: words.navServices },
     { href: localeHref(locale, '/become-a-worker'), label: words.navWorker },
-    { href: localeHref(locale, '/trust-and-safety'), label: words.navTrust },
-    { href: localeHref(locale, '/help'), label: words.navHelp },
   ];
 
   return (
@@ -70,6 +67,8 @@ export function SiteFooter({ locale }: Props) {
       links: [
         { href: localeHref(locale, '/about'), label: words.footerAbout },
         { href: localeHref(locale, '/how-it-works'), label: words.footerHowItWorks },
+        { href: localeHref(locale, '/trust-and-safety'), label: words.navTrust },
+        { href: localeHref(locale, '/help'), label: words.navHelp },
         { href: localeHref(locale, '/contact'), label: words.footerContact },
       ],
     },

@@ -59,6 +59,11 @@
   border-bottom-color: var(--brand);
 }
 
+.navLink[aria-current='page'] {
+  color: var(--text-primary);
+  border-bottom-color: var(--brand);
+}
+
 /* --- The collapse ---------------------------------------------------------
    Shown exactly when the inline navigation is not. */
 .menuButton {
@@ -106,6 +111,11 @@
   background: var(--surface);
 }
 
+.navPanelLink[aria-current='page'] {
+  background: var(--surface);
+  font-weight: 700;
+}
+
 /* --- Actions --------------------------------------------------------------
    No wrapping. A header that reflows onto a second line is the same defect
    this file exists to fix, one element further along. */
@@ -150,10 +160,10 @@
   filter: brightness(1.08);
 }
 
-/* 1140px is where the five labels, both preference controls and both calls to
-   action measure comfortably inside the 1180px page width. Below it the
+/* 900px is where the two priority links and both account actions fit
+   comfortably inside the page width. Below it the
    navigation collapses; it never wraps. */
-@media (min-width: 1140px) {
+@media (min-width: 900px) {
   .nav {
     display: flex;
   }

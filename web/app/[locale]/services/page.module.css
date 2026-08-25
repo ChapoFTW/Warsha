@@ -1,0 +1,137 @@
+.page {
+  max-width: var(--page-max);
+  margin: 0 auto;
+  padding: clamp(36px, 5vw, 64px) var(--gutter) 0;
+}
+
+.header {
+  max-width: 70ch;
+}
+
+.title {
+  font-size: clamp(32px, 4.8vw, 52px);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+}
+
+.lead {
+  margin-top: 14px;
+  max-width: 62ch;
+  font-size: clamp(16px, 1.7vw, 19px);
+  color: var(--text-secondary);
+}
+
+.catalogue {
+  margin-top: clamp(28px, 4vw, 44px);
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.card {
+  min-width: 0;
+  min-height: 156px;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 22px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+.card:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-raised);
+  transform: translateY(-2px);
+}
+
+.cardCopy {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.cardTitle {
+  font-size: 18px;
+  line-height: 1.35;
+  font-weight: 750;
+  overflow-wrap: anywhere;
+}
+
+.cardBody {
+  font-size: 14.5px;
+  line-height: 1.65;
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.cardAction {
+  width: fit-content;
+  padding-bottom: 2px;
+  border-bottom: 1px solid var(--border-strong);
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+.cta {
+  margin-top: clamp(32px, 5vw, 52px);
+  padding: clamp(22px, 4vw, 34px);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 22px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+.ctaTitle {
+  font-size: clamp(21px, 2.6vw, 28px);
+}
+
+.ctaBody {
+  margin-top: 8px;
+  max-width: 62ch;
+  color: var(--text-secondary);
+}
+
+.ctaAction {
+  min-height: var(--control-h-md);
+  padding: var(--control-pad-md);
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--radius-sm);
+  background: var(--brand);
+  color: var(--brand-ink);
+  font-size: var(--control-font-md);
+  font-weight: var(--control-weight-strong);
+  white-space: nowrap;
+}
+
+.note {
+  margin-top: 22px;
+  max-width: 72ch;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+@media (min-width: 620px) {
+  .catalogue {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 920px) {
+  .catalogue {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .cta {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
