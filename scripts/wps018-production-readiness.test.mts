@@ -278,7 +278,7 @@ notMatch(read('src/launch/launch-types.ts'), /eyJ[A-Za-z0-9_-]{20,}/, 'no token 
 // ---------------------------------------------------------------------------
 for (const gate of ['npm ci', 'typecheck', 'lint', 'check:mojibake', 'git diff --check',
   'audit:secrets', 'audit:migrations', 'audit:environment', 'supabase test db',
-  'expo-doctor', '--platform android', '--platform ios', '--platform web']) {
+  'npm --prefix web ci', 'expo-doctor', '--platform android', '--platform ios', '--platform web']) {
   ok(validateWorkflow.includes(gate), `the validation workflow runs ${gate}`);
 }
 match(validateWorkflow, /concurrency:/, 'superseded validation runs are cancelled');

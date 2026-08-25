@@ -149,6 +149,8 @@ jobs:
           node-version: 22.x
           cache: npm
       - run: npm ci
+      - name: Install Next.js dependencies
+        run: npm --prefix web ci
 
       - name: Expo Doctor
         run: npx expo-doctor
