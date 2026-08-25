@@ -233,3 +233,49 @@ const categoryTranslationKeys: Record<string, string> = {
 export function serviceCategoryTranslationKey(categoryId: string): string {
   return categoryTranslationKeys[categoryId] ?? categoryId;
 }
+
+/**
+ * The translation key for a category's one-line description.
+ *
+ * Listed rather than derived from the label key, because the derivation is
+ * WRONG for exactly one category: `ac` is labelled `acRepair` and described by
+ * `acDescription`, not `acRepairDescription`. A convention with one exception
+ * is not a convention, and expressing it as one produced a blank description on
+ * the public services page for air conditioning while the other eighteen read
+ * correctly.
+ *
+ * This exists because the public site was reading descriptions out of
+ * `src/data/mock-data.ts` -- the MOBILE mock catalogue, whose module graph
+ * reaches `react` and `@expo/vector-icons`. That resolves locally, where the
+ * Expo dependencies sit in the repository root, and fails in the web
+ * deployment, which installs only `web/`. A marketing page had no business
+ * reading the mock catalogue; the authority is here.
+ *
+ * `service-catalogue.test.mts` asserts these agree with the seeded rows.
+ */
+const categoryDescriptionKeys: Record<string, string> = {
+  'plumbing': 'plumbingDescription',
+  'electrical': 'electricalDescription',
+  'cleaning': 'cleaningDescription',
+  'ac': 'acDescription',
+  'appliance-repair': 'applianceRepairDescription',
+  'carpentry': 'carpentryDescription',
+  'painting': 'paintingDescription',
+  'moving-help': 'movingHelpDescription',
+  'pest-control': 'pestControlDescription',
+  'water-heater-repair': 'waterHeaterRepairDescription',
+  'flooring-tiling': 'flooringTilingDescription',
+  'renovation-finishing': 'renovationFinishingDescription',
+  'alumetal': 'alumetalDescription',
+  'satellite-tv-installation': 'satelliteTvDescription',
+  'locksmithing': 'locksmithingDescription',
+  'gardening': 'gardeningDescription',
+  'barber': 'barberDescription',
+  'hairdressing': 'hairdressingDescription',
+  'personal-styling': 'personalStylingDescription',
+  'general-maintenance': 'generalMaintenanceDescription',
+};
+
+export function serviceCategoryDescriptionKey(categoryId: string): string | null {
+  return categoryDescriptionKeys[categoryId] ?? null;
+}

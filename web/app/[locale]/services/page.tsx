@@ -2,10 +2,10 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
 import { SiteFooter, SiteHeader } from '@/components/site-chrome';
-import { categories as categoryPresentation } from '@/src/data/mock-data.ts';
 import { serviceCategoryDescription, serviceCategoryLabel } from '@/src/i18n/service-labels.ts';
 import {
   SERVICE_DEMAND_ORDER,
+  serviceCategoryDescriptionKey,
   serviceCategoryTranslationKey,
 } from '@/src/services/service-catalogue.ts';
 import { copy } from '@/lib/copy';
@@ -15,22 +15,13 @@ import { appHref } from '@/lib/routes';
 
 import styles from './page.module.css';
 
-const presentationById = new Map(categoryPresentation.map(category => [category.id, category]));
-
 function categoriesFor(locale: Locale) {
-  return SERVICE_DEMAND_ORDER.map((id) => {
-    const presentation = presentationById.get(id);
-    if (!presentation) {
-      throw new Error(`Selectable service category ${id} has no shared presentation metadata.`);
-    }
-    const translationKey = serviceCategoryTranslationKey(id);
-    return {
-      id,
-      label: serviceCategoryLabel(translationKey, locale, id),
-      description: serviceCategoryDescription(presentation.description, locale),
-      href: appHref(`/requests/new?category=${encodeURIComponent(id)}`),
-    };
-  });
+  return SERVICE_DEMAND_ORDER.map((id) => ({
+    id,
+    label: serviceCategoryLabel(serviceCategoryTranslationKey(id), locale, id),
+    description: serviceCategoryDescription(serviceCategoryDescriptionKey(id), locale),
+    href: appHref(`/requests/new?category=${encodeURIComponent(id)}`),
+  }));
 }
 
 export async function generateMetadata(

@@ -20,7 +20,8 @@ import { categories as mockCategories } from '../src/data/mock-data.ts';
 import { listProfessions, professions } from '../src/providers/profession-taxonomy.ts';
 import {
   byServiceDemand, DEMAND_RANK_SOURCE, isLegacyCategory, isSelectableCategory,
-  selectableCategories, SERVICE_DEMAND_ORDER, serviceDemandRank,
+  selectableCategories, SERVICE_DEMAND_ORDER, serviceCategoryDescriptionKey,
+  serviceCategoryTranslationKey, serviceDemandRank,
 } from '../src/services/service-catalogue.ts';
 import {
   matchServiceCategories, SERVICE_SEARCH_ALIASES, searchTermsFor,
@@ -771,5 +772,37 @@ equal(matchServiceCategories('keratin'), ['hairdressing'],
   'and "keratin" is not a rodent problem because it contains "rat"');
 check(!matchServiceCategories('blocked drain').includes('locksmithing' as never),
   'nor is a blocked drain a locksmith job because it contains "lock"');
+
+// --- Description keys are the SEEDED ones, not a guessed convention ---------
+//
+// The public services page needs a description per category and used to read
+// it out of the mobile mock catalogue, dragging `react` and
+// `@expo/vector-icons` into a web deployment that installs neither. Moving the
+// fact into the shared authority is only safe if it matches the rows the
+// database actually holds -- and it nearly did not: eighteen categories store
+// `<labelKey>Description`, and `ac` stores `acDescription` against the label
+// key `acRepair`. Deriving it would have blanked exactly one card.
+// Whitespace-insensitive: the launch seed writes `('a','b','c'` and the
+// expansion migration writes `('a', 'b', 'c'`, and this rule is about the keys,
+// not about how either file is formatted.
+const catalogueSql = (read('supabase/seed.sql')
+  + read('supabase/migrations/202608240001_service_catalogue_expansion.sql'))
+  .replace(/\s+/g, '');
+for (const id of SERVICE_DEMAND_ORDER) {
+  const labelKey = serviceCategoryTranslationKey(id);
+  const descriptionKey = serviceCategoryDescriptionKey(id);
+  check(descriptionKey !== null, `${id} HAS A DESCRIPTION KEY IN THE SHARED AUTHORITY`);
+  check(catalogueSql.includes(`'${id}','${labelKey}','${descriptionKey}'`),
+    `${id} declares the same label and description keys the database seeds`);
+  for (const language of LANGUAGES) {
+    const text = (translations[language] as Record<string, unknown>)[descriptionKey!];
+    check(typeof text === 'string' && text.trim().length > 0,
+      `${id} has a ${language.toUpperCase()} description`);
+  }
+}
+check(serviceCategoryDescriptionKey('ac') === 'acDescription',
+  'AIR CONDITIONING KEEPS THE DESCRIPTION KEY IT IS SEEDED WITH, NOT A DERIVED ONE');
+check(serviceCategoryDescriptionKey('a-category-that-does-not-exist') === null,
+  'an unknown category yields no description key rather than a fabricated one');
 
 console.log(`Service catalogue: ${checks} checks passed.`);

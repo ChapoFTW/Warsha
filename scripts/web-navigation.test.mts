@@ -2,10 +2,10 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { categories as sharedCategoryPresentation } from '../src/data/mock-data.ts';
 import { serviceCategoryDescription, serviceCategoryLabel } from '../src/i18n/service-labels.ts';
 import {
   SERVICE_DEMAND_ORDER,
+  serviceCategoryDescriptionKey,
   serviceCategoryTranslationKey,
 } from '../src/services/service-catalogue.ts';
 
@@ -316,8 +316,11 @@ const servicesPage = readFileSync(join(APP_DIR, '[locale]', 'services', 'page.ts
 const servicesStyles = readFileSync(join(APP_DIR, '[locale]', 'services', 'page.module.css'), 'utf8');
 check(/SERVICE_DEMAND_ORDER\.map/.test(servicesPage)
   && /serviceCategoryLabel/.test(servicesPage)
-  && /serviceCategoryDescription/.test(servicesPage)
-  && /categoryPresentation/.test(servicesPage),
+  && /serviceCategoryDescription\(/.test(servicesPage)
+  && /serviceCategoryDescriptionKey/.test(servicesPage)
+  // The mobile mock catalogue is not a presentation authority for a public
+  // page, and reaching it is what broke the deployment build.
+  && !/mock-data/.test(servicesPage),
   'the services page derives its catalogue and localized presentation from shared authorities');
 check(!/ContentPage/.test(servicesPage)
   && !/Plumbing|Electrical|Cleaning|Air conditioning/.test(servicesPage),
@@ -331,15 +334,13 @@ check(SERVICE_DEMAND_ORDER.length === 19
   && new Set(SERVICE_DEMAND_ORDER).size === 19
   && !SERVICE_DEMAND_ORDER.includes('general-maintenance' as never),
   'the public catalogue has all 19 selectable categories and no withdrawn catch-all');
-const presentationById = new Map(sharedCategoryPresentation.map(category => [category.id, category]));
-check(SERVICE_DEMAND_ORDER.every(id => presentationById.has(id)),
-  'every selectable category has shared presentation metadata');
+check(SERVICE_DEMAND_ORDER.every(id => serviceCategoryDescriptionKey(id) !== null),
+  'every selectable category has a description key in the shared catalogue authority');
 for (const locale of ['en', 'ar', 'fr'] as const) {
-  check(SERVICE_DEMAND_ORDER.every(id => {
-    const presentation = presentationById.get(id)!;
-    return serviceCategoryLabel(serviceCategoryTranslationKey(id), locale, id).trim().length > 0
-      && (serviceCategoryDescription(presentation.description, locale)?.trim().length ?? 0) > 0;
-  }), `all 19 service cards have a label and description in ${locale}`);
+  check(SERVICE_DEMAND_ORDER.every(id =>
+    serviceCategoryLabel(serviceCategoryTranslationKey(id), locale, id).trim().length > 0
+    && (serviceCategoryDescription(serviceCategoryDescriptionKey(id), locale)?.trim().length ?? 0) > 0),
+    `all 19 service cards have a label and description in ${locale}`);
 }
 check(serviceCategoryLabel(serviceCategoryTranslationKey('alumetal'), 'en', 'alumetal') === 'Alumetal',
   'Alumetal keeps its existing customer-facing brand spelling');
@@ -419,3 +420,78 @@ check(/p_idempotency_key: idempotencyKey/.test(support),
   'and so is replying, so a double send cannot post the same paragraph twice');
 
 console.log(`Web navigation: ${checks} checks passed.`);
+
+// ===========================================================================
+// THE WEB BUNDLE MAY NOT REACH A MOBILE-ONLY MODULE
+// ===========================================================================
+//
+// `web/` deploys from its own workspace: the host runs `npm ci` inside it and
+// installs 35 packages. The repository root, where Expo and React Native live,
+// is not installed there. So a shared module that imports `react` or
+// `@expo/vector-icons` resolves perfectly on a developer's machine — the root
+// `node_modules` is one directory up — and fails the deployment build with
+// "Cannot find module 'react'".
+//
+// That is exactly how the public services page broke: it read category
+// descriptions out of `src/data/mock-data.ts`, the MOBILE mock catalogue, whose
+// graph reaches `@expo/vector-icons` through `marketplace-types.ts`. Both the
+// local `next build` and `web/tsconfig` passed; only the deployment disagreed,
+// after the push. A green local build is not evidence here, so the graph is
+// walked rather than trusted.
+const MOBILE_ONLY_PACKAGES = [
+  /^react-native(?:\/|$)/,
+  /^@expo\//,
+  /^expo(?:-[a-z-]+)?(?:\/|$)/,
+  /^@react-navigation\//,
+];
+
+function resolveWebImport(specifier: string, fromFile: string): string | null {
+  let base: string;
+  if (specifier.startsWith('@/src/')) base = specifier.slice('@/'.length);
+  else if (specifier.startsWith('@/')) base = join(WEB, specifier.slice('@/'.length));
+  else if (specifier.startsWith('.')) base = join(fromFile, '..', specifier);
+  else return null;
+  const stripped = base.replace(/\.(?:ts|tsx|js|jsx)$/, '');
+  for (const candidate of [`${stripped}.ts`, `${stripped}.tsx`, join(stripped, 'index.ts'), join(stripped, 'index.tsx')]) {
+    if (existsSync(candidate) && statSync(candidate).isFile()) return candidate;
+  }
+  return null;
+}
+
+const webSources: string[] = [];
+(function collectWebSources(directory: string) {
+  for (const entry of readdirSync(directory)) {
+    const full = join(directory, entry);
+    if (statSync(full).isDirectory()) {
+      if (entry === 'node_modules' || entry === '.next') continue;
+      collectWebSources(full);
+    } else if (/\.tsx?$/.test(entry) && !/\.d\.ts$/.test(entry)) {
+      webSources.push(full);
+    }
+  }
+})(WEB);
+
+const FROM_IMPORT = /(?:^|\n)\s*(?:import|export)\b[^;\n]*?from\s*['"]([^'"]+)['"]/g;
+const walked = new Set<string>();
+const mobileLeaks: string[] = [];
+const pending = [...webSources];
+while (pending.length > 0) {
+  const file = pending.pop()!;
+  if (walked.has(file)) continue;
+  walked.add(file);
+  const source = readFileSync(file, 'utf8');
+  for (const match of source.matchAll(FROM_IMPORT)) {
+    const specifier = match[1];
+    if (MOBILE_ONLY_PACKAGES.some((pattern) => pattern.test(specifier))) {
+      mobileLeaks.push(`${file.replaceAll('\\', '/')} imports ${specifier}`);
+      continue;
+    }
+    const resolved = resolveWebImport(specifier, file);
+    if (resolved && !walked.has(resolved)) pending.push(resolved);
+  }
+}
+check(mobileLeaks.length === 0,
+  `NO MODULE REACHABLE FROM THE WEB APP IMPORTS A MOBILE-ONLY PACKAGE${
+    mobileLeaks.length > 0 ? `\n  - ${mobileLeaks.slice(0, 8).join('\n  - ')}` : ''}`);
+check(walked.size > webSources.length,
+  'the import walk followed shared modules rather than stopping at web files');
