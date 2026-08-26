@@ -1,13 +1,14 @@
 /**
  * External provider activation, as an operator sees it.
  *
- * Every rule here already lives in the database. `staff_activate_external_provider`
- * refuses an environment mismatch, an unbound project, a provider that is not
- * ready, a missing feature flag, a flag that is *already* enabled, a missing
- * kill switch, and any attempt without a consumed dual-control approval. This
- * module does not re-implement those refusals and cannot relax them; it decides
- * what to *show*, so an operator is not invited to press something the server
- * will reject, and can see which step they are actually on.
+ * Every technical rule here already lives in the database.
+ * `staff_activate_external_provider` refuses an environment mismatch, an
+ * unbound project, a provider that is not ready, a missing feature flag, a flag
+ * that is *already* enabled, a missing kill switch, and any attempt without a
+ * consumed dual-control approval. Vision also has documented legal commitments
+ * which that activation RPC does not infer. This module observes them through
+ * the existing governance overview and keeps the console closed until they are
+ * ready. It cannot relax any server refusal.
  *
  * The sequence is the backend's, not a convenience ordering. The feature flag
  * comes after activation because the activation RPC refuses while the flag is
@@ -17,8 +18,182 @@
 
 export const MAPS_PROVIDER_KEY = 'google_maps_platform';
 export const MAPS_FEATURE_FLAG = 'location_provider';
+export const VISION_PROVIDER_KEY = 'google_cloud_vision';
+export const VISION_FEATURE_FLAG = 'identity_extraction';
 export const ACTIVATION_ACTION_KEY = 'activate_external_provider';
 export const ACTIVATION_CAPABILITY = 'manage_subprocessors';
+
+/**
+ * The providers this console can take through activation.
+ *
+ * The page used to name `MAPS_PROVIDER_KEY` in six places, which made the whole
+ * governed sequence — request, second approval, activate, feature flag —
+ * reachable for exactly one provider. Google Cloud Vision had a registry row, a
+ * credential, a deployed function and a feature flag, and no way for an
+ * operator to switch it on. That is not a governance boundary; it is a missing
+ * screen, and it is the only reason the OCR activation could not proceed.
+ *
+ * Everything that differs between providers is here, so the page renders one
+ * sequence and the database enforces one set of rules for both.
+ */
+export type GovernedProvider = {
+  providerKey: string;
+  featureFlag: string;
+  copySuffix: '' | '_vision';
+  choiceCopyKey: 'providerChooseMaps' | 'providerChooseVision';
+  /** Vision carries identity data and must satisfy its published legal gate. */
+  requiresIdentityPolicyGate: boolean;
+  /**
+   * How the console asks whether a server credential exists.
+   *
+   * A credential lives in an Edge Function's runtime, never in Postgres, so
+   * `staff_provider_registry` can report its NAME but not its presence. Each
+   * provider therefore answers a capability probe on its own function. Both
+   * probes return one boolean and have no path that could return a value.
+   */
+  credentialProbe: {
+    functionName: string;
+    body: Record<string, unknown>;
+    /** Reads the boolean out of that function's own response shape. */
+    read: (payload: unknown) => boolean;
+  };
+  /**
+   * Whether the console can prove the provider answers, by itself.
+   *
+   * Maps can: an autocomplete and a reverse geocode are harmless reads. Vision
+   * cannot — the only thing it does is read a document, so proving it works
+   * means a person photographing a synthetic card on a device. That step is
+   * therefore `waiting` rather than `ready` for Vision: correct, and needing
+   * somebody else. Pretending otherwise would put a button on screen that
+   * either does nothing or bills a real extraction against a real person.
+   */
+  automaticHealthProbe: boolean;
+};
+
+const readBool = (value: unknown, path: readonly string[]): boolean => {
+  let current: unknown = value;
+  for (const key of path) {
+    if (!current || typeof current !== 'object') return false;
+    current = (current as Record<string, unknown>)[key];
+  }
+  return current === true;
+};
+
+export const GOVERNED_PROVIDERS: readonly GovernedProvider[] = [
+  {
+    providerKey: MAPS_PROVIDER_KEY,
+    featureFlag: MAPS_FEATURE_FLAG,
+    copySuffix: '',
+    choiceCopyKey: 'providerChooseMaps',
+    requiresIdentityPolicyGate: false,
+    credentialProbe: {
+      functionName: 'location-proxy',
+      body: { operation: 'render_descriptor' },
+      read: (payload) => readBool(payload, ['descriptor', 'serverCredentialAvailable']),
+    },
+    automaticHealthProbe: true,
+  },
+  {
+    providerKey: VISION_PROVIDER_KEY,
+    featureFlag: VISION_FEATURE_FLAG,
+    copySuffix: '_vision',
+    choiceCopyKey: 'providerChooseVision',
+    requiresIdentityPolicyGate: true,
+    credentialProbe: {
+      functionName: 'vision-extract',
+      body: { operation: 'capability' },
+      read: (payload) => readBool(payload, ['credentialConfigured']),
+    },
+    automaticHealthProbe: false,
+  },
+];
+
+export function governedProvider(providerKey: string): GovernedProvider {
+  return GOVERNED_PROVIDERS.find((entry) => entry.providerKey === providerKey)
+    ?? GOVERNED_PROVIDERS[0];
+}
+
+/**
+ * The material documents named by the Google Vision register entry and legal
+ * corpus. A second version is not enough by itself: the current version has to
+ * be classified material (or urgent), so an editorial release cannot be used
+ * to make the activation screen appear legally ready.
+ */
+export const VISION_REQUIRED_LEGAL_DOCUMENTS = [
+  'ai_usage_policy',
+  'ocr_usage_policy',
+  'privacy_policy',
+  'subprocessor_register',
+  'worker_verification_policy',
+] as const;
+
+export type ProviderPolicyState = {
+  materialDocumentsPublished: boolean;
+  agreementSigned: boolean;
+  trainingProhibited: boolean;
+  processingBasisApproved: boolean;
+  aiUseApproved: boolean;
+  reconsentEnforced: boolean;
+  ready: boolean;
+};
+
+/** Read the counts and states returned by `staff_legal_governance_overview`. */
+export function providerPolicyState(
+  providerKey: string,
+  payload: unknown,
+): ProviderPolicyState {
+  if (providerKey !== VISION_PROVIDER_KEY) {
+    return {
+      materialDocumentsPublished: true,
+      agreementSigned: true,
+      trainingProhibited: true,
+      processingBasisApproved: true,
+      aiUseApproved: true,
+      reconsentEnforced: true,
+      ready: true,
+    };
+  }
+
+  const overview = record(payload);
+  const documents = Array.isArray(overview.documents) ? overview.documents : [];
+  const subprocessors = Array.isArray(overview.subprocessors) ? overview.subprocessors : [];
+  const activities = Array.isArray(overview.processingActivities)
+    ? overview.processingActivities : [];
+  const aiUses = Array.isArray(overview.aiUses) ? overview.aiUses : [];
+
+  const materialDocumentsPublished = VISION_REQUIRED_LEGAL_DOCUMENTS.every((documentKey) => {
+    const document = documents.map(record)
+      .find((entry) => str(entry.documentKey) === documentKey);
+    return Number(document?.versionCount ?? 0) >= 2
+      && ['material', 'urgent'].includes(str(document?.changeClass) ?? '');
+  });
+  const vision = subprocessors.map(record)
+    .find((entry) => str(entry.key) === VISION_PROVIDER_KEY);
+  const workerVerification = activities.map(record)
+    .find((entry) => str(entry.key) === 'worker_verification');
+  const identityExtraction = aiUses.map(record)
+    .find((entry) => str(entry.key) === 'identity_text_extraction');
+
+  const state: ProviderPolicyState = {
+    materialDocumentsPublished,
+    agreementSigned: str(vision?.agreementStatus) === 'signed',
+    trainingProhibited: vision?.trainingProhibited === true,
+    processingBasisApproved: str(workerVerification?.reviewStatus) === 'approved',
+    aiUseApproved: ['approved_not_integrated', 'in_use']
+      .includes(str(identityExtraction?.status) ?? '')
+      && identityExtraction?.coversIdentityData === true
+      && identityExtraction?.permittedForTraining === false,
+    reconsentEnforced: record(overview.configuration).reconsentEnforced === true,
+    ready: false,
+  };
+  state.ready = state.materialDocumentsPublished
+    && state.agreementSigned
+    && state.trainingProhibited
+    && state.processingBasisApproved
+    && state.aiUseApproved
+    && state.reconsentEnforced;
+  return state;
+}
 
 /** The subject a dual-control request is raised against. */
 export function activationSubject(providerKey: string, environment: string): string {
@@ -144,17 +319,28 @@ export type ActivationInput = {
   healthVerified: boolean;
   mayActivate: boolean;
   mayManageFlags: boolean;
+  /** A documented provider-specific legal gate, observed but never invented. */
+  policyReady?: boolean;
+  /**
+   * False for a provider the console cannot safely exercise on its own. The
+   * health step is then `waiting` — a real state meaning "correct, but needs
+   * somebody else" — rather than `ready`, which would offer a button that
+   * cannot honestly be pressed from a browser.
+   */
+  automaticHealthProbe?: boolean;
 };
 
 export function activationSteps(input: ActivationInput): Record<ActivationStepKey, StepState> {
   const bound = input.environment === 'development';
+  const policyReady = input.policyReady !== false;
   const readyStatus = input.provider
     && ['implemented_awaiting_credential', 'configured_not_enabled'].includes(input.provider.status);
   const activated = input.provider?.status === 'active';
   const environmentApproved = Boolean(
     input.provider && input.environment && input.provider.environments.includes(input.environment));
   const prerequisites = Boolean(readyStatus && environmentApproved
-    && input.provider?.featureFlag && input.provider?.killSwitch) || activated;
+    && input.provider?.featureFlag && input.provider?.killSwitch
+    && policyReady) || activated;
 
   const requested = Boolean(input.request);
   const approved = Boolean(input.request?.approvedAt);
@@ -186,10 +372,12 @@ export function activationSteps(input: ActivationInput): Record<ActivationStepKe
   }
 
   if (activated) {
-    state.feature = input.featureEnabled ? 'done'
-      : input.mayManageFlags ? 'ready' : 'waiting';
-    if (input.featureEnabled) {
-      state.health = input.healthVerified ? 'done' : 'ready';
+    state.feature = !policyReady ? 'blocked'
+      : input.featureEnabled ? 'done'
+        : input.mayManageFlags ? 'ready' : 'waiting';
+    if (input.featureEnabled && policyReady) {
+      const automatic = input.automaticHealthProbe !== false;
+      state.health = input.healthVerified ? 'done' : automatic ? 'ready' : 'waiting';
       state.operational = input.healthVerified ? 'done' : 'blocked';
     }
   }
@@ -274,5 +462,17 @@ export function featureFlagEnabled(
     return (str(row.flagKey) ?? str(row.flag_key)) === flagKey
       && str(row.environment) === environment
       && row.enabled === true;
+  });
+}
+
+/** Whether the staff-only provider rollup has ever observed a successful call. */
+export function providerHealthVerified(payload: unknown, providerKey: string): boolean {
+  const list = Array.isArray(payload) ? payload
+    : Array.isArray(record(payload).providers) ? record(payload).providers as unknown[] : [];
+  return list.some((entry) => {
+    const row = record(entry);
+    return str(row.providerKey) === providerKey
+      && typeof row.lastSuccessAt === 'string'
+      && row.lastSuccessAt.length > 0;
   });
 }

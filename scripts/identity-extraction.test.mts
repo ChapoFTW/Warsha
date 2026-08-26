@@ -443,6 +443,14 @@ check(/storagePath, documentType/.test(clients),
 // The function's own boundaries.
 check(/asCaller\.auth\.getUser\(\)/.test(visionFunction),
   'the caller is resolved from the verified token, never from the request body');
+const capabilityStart = visionFunction.indexOf("if (body.operation === 'capability')");
+const extractionStart = visionFunction.indexOf('const storagePath', capabilityStart);
+check(capabilityStart > visionFunction.indexOf('asCaller.auth.getUser()'),
+  'the credential-presence probe is available only after real user authentication');
+const capabilityBranch = strip(visionFunction.slice(capabilityStart, extractionStart));
+check(/credentialConfigured/.test(capabilityBranch)
+  && !/extractIdentity|storage\.from|\.download\(|open_ocr|record_provider_health/.test(capabilityBranch),
+  'THE CAPABILITY PROBE RETURNS ONE BOOLEAN WITHOUT READING A DOCUMENT, OPENING AN AUDIT OR CALLING GOOGLE');
 check(/storagePath\.startsWith\(`\$\{userId\}\/`\)/.test(visionFunction),
   'A WORKER CAN ONLY EXTRACT FROM A DOCUMENT UNDER THEIR OWN ACCOUNT PATH');
 check(/403/.test(visionFunction), 'and another account\'s document is refused');

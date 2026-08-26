@@ -128,11 +128,45 @@ Deno.serve(async (request) => {
   const userId = userData?.user?.id;
   if (userError || !userId) return json({ error: 'Authentication required' }, 401);
 
-  let body: { storagePath?: string; documentType?: string };
+  let body: { storagePath?: string; documentType?: string; operation?: string };
   try {
     body = await request.json();
   } catch {
     return json({ error: 'Invalid request' }, 400);
+  }
+
+  /*
+   * The capability probe.
+   *
+   * The staff console has to be able to answer "is the OCR credential
+   * configured for this environment?" before anybody requests activation, and
+   * it cannot ask the database: an Edge Function secret lives in the function's
+   * own runtime, not in Postgres. Google Maps already answers the same question
+   * through `location-proxy`'s render descriptor; this is the identical shape
+   * for the identity provider.
+   *
+   * It reads a boolean and nothing else. No document is fetched, no provider is
+   * called, no audit row is opened, nothing is billed, and there is no code
+   * path here that could return the credential itself — `isConfigured()` is a
+   * presence check by construction, and `provider-secrets.ts` states the rule
+   * it follows: existence is not sensitive, the value is.
+   */
+  if (body.operation === 'capability') {
+    const resolved = resolveOcrProvider(
+      (await asService.schema('private').rpc('provider_for_role', { p_role: OCR_ROLE })
+        .then((r) => r.data as string | null).catch(() => null)),
+    );
+    const { data: roleEnabled } = await asService
+      .schema('private').rpc('provider_enabled_for_role', { p_role: OCR_ROLE })
+      .then((r) => ({ data: r.data as boolean | null }))
+      .catch(() => ({ data: null }));
+    return json({
+      operation: 'capability',
+      providerKey: resolved?.providerKey ?? null,
+      credentialConfigured: resolved?.isConfigured() === true,
+      enabled: roleEnabled === true,
+      manualEntryAlwaysAvailable: true,
+    });
   }
 
   const storagePath = typeof body.storagePath === 'string' ? body.storagePath : '';

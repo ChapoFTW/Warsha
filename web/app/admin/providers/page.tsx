@@ -14,10 +14,11 @@ import {
   ACTIVATION_ACTION_KEY, ACTIVATION_CAPABILITY, ACTIVATION_STEPS, activationRequest,
   actionAvailability, activationSteps, activationSubject, currentStep,
   featureFlagEnabled,
-  MAPS_FEATURE_FLAG, MAPS_PROVIDER_KEY,
-  parseDualControlQueue, parseProviderRegistry,
+  governedProvider, GOVERNED_PROVIDERS,
+  MAPS_PROVIDER_KEY,
+  parseDualControlQueue, parseProviderRegistry, providerHealthVerified, providerPolicyState,
   type ActionAvailability, type ActivationStepKey, type DualControlRequest,
-  type ProviderEntry, type StepState,
+  type ProviderEntry, type ProviderPolicyState, type StepState,
 } from '@/lib/providers';
 import { isReauthRefusal } from '@/lib/reauth';
 import { hasCapability } from '@/lib/staff';
@@ -57,10 +58,27 @@ export default function ProvidersPage() {
   const mayActivate = hasCapability(session, ACTIVATION_CAPABILITY);
   const mayManageFlags = hasCapability(session, 'manage_feature_flags');
 
+  /*
+   * Which provider this page is driving.
+   *
+   * Maps stays the default so the surface an operator already knows opens
+   * unchanged. The sequence, the refusals and the dual-control rules are the
+   * database's and are identical for both; only the registry row, the feature
+   * flag and the credential probe differ, and all three come from
+   * `GOVERNED_PROVIDERS`.
+   */
+  const [providerKey, setProviderKey] = useState<string>(MAPS_PROVIDER_KEY);
+  const governed = governedProvider(providerKey);
+  const copySuffix = governed.copySuffix;
+
   const [provider, setProvider] = useState<ProviderEntry | null>(null);
   const [requests, setRequests] = useState<DualControlRequest[]>([]);
   const [credentialConfigured, setCredentialConfigured] = useState(false);
   const [featureEnabled, setFeatureEnabled] = useState(false);
+  const [policy, setPolicy] = useState<ProviderPolicyState>(
+    providerPolicyState(MAPS_PROVIDER_KEY, null),
+  );
+  const [observedHealthVerified, setObservedHealthVerified] = useState(false);
   const [health, setHealth] = useState<Health | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -101,11 +119,36 @@ export default function ProvidersPage() {
         } else setError(registry.error.message);
       } else {
         const entries = parseProviderRegistry(registry.data);
-        setProvider(entries.find((item) => item.providerKey === MAPS_PROVIDER_KEY) ?? null);
+        setProvider(entries.find((item) => item.providerKey === providerKey) ?? null);
       }
 
       const queue = await client.rpc('staff_dual_control_queue');
       if (!queue.error) setRequests(parseDualControlQueue(queue.data));
+
+      // The Vision register itself says that identity documents must not reach
+      // Google until the material policy versions, agreement, processing basis
+      // and renewed-consent control are ready. The activation RPC does not
+      // infer those legal facts, so the console reads the existing governance
+      // overview and keeps its own workflow closed until they are observable.
+      if (governed.requiresIdentityPolicyGate) {
+        const legal = await client.rpc('staff_legal_governance_overview');
+        if (legal.error) {
+          setPolicy(providerPolicyState(providerKey, null));
+          if (isReauthRefusal(legal.error)) {
+            rememberReauth('load-policy', 'review_legal_governance', () => { void load(); });
+          } else setError(legal.error.message);
+        } else setPolicy(providerPolicyState(providerKey, legal.data));
+      } else {
+        setPolicy(providerPolicyState(providerKey, null));
+      }
+
+      // Vision health is established by the synthetic device exercise, not by
+      // a browser button. The existing staff-only rollup lets this page observe
+      // that success later without processing another document just to prove it.
+      const providerHealth = await client.rpc('staff_provider_health');
+      if (!providerHealth.error) {
+        setObservedHealthVerified(providerHealthVerified(providerHealth.data, providerKey));
+      }
 
       // The flag is what tells the page whether the last action landed. A read
       // that fails or is not understood must not be reported as "off" — that is
@@ -114,17 +157,18 @@ export default function ProvidersPage() {
       if (flags.error) {
         if (!isReauthRefusal(flags.error)) setError(flags.error.message);
       } else {
-        setFeatureEnabled(featureFlagEnabled(flags.data, MAPS_FEATURE_FLAG, environment));
+        setFeatureEnabled(featureFlagEnabled(flags.data, governed.featureFlag, environment));
       }
 
-      // Capability metadata only. The proxy answers whether a credential is
-      // present; it has no path that could answer what it is.
-      const descriptor = await client.functions.invoke('location-proxy', {
-        body: { operation: 'render_descriptor' },
-      });
-      const value = descriptor.data as
-        { descriptor?: { serverCredentialAvailable?: boolean } } | null;
-      setCredentialConfigured(value?.descriptor?.serverCredentialAvailable === true);
+      // Capability metadata only. Each provider's own function answers whether
+      // a credential is present; neither has a path that could answer what it
+      // is. A credential lives in an Edge Function's runtime, which is why this
+      // cannot come from `staff_provider_registry` along with everything else.
+      const descriptor = await client.functions.invoke(
+        governed.credentialProbe.functionName, { body: governed.credentialProbe.body },
+      );
+      setCredentialConfigured(
+        !descriptor.error && governed.credentialProbe.read(descriptor.data));
     } catch {
       // A read that throws is reported, not swallowed into a page that looks
       // ready and answers nothing.
@@ -132,20 +176,23 @@ export default function ProvidersPage() {
     } finally {
       setRefreshing(false);
     }
-  }, [mayView, environment, words.providerLoadFailed, rememberReauth]);
+  }, [mayView, environment, providerKey, governed, words.providerLoadFailed, rememberReauth]);
 
   useEffect(() => { void load(); }, [load]);
 
-  const request = activationRequest(requests, MAPS_PROVIDER_KEY, environment ?? '');
+  const request = activationRequest(requests, providerKey, environment ?? '');
   const states = activationSteps({
     environment,
     credentialConfigured,
     provider,
     request,
     featureEnabled,
-    healthVerified: Boolean(health?.searched && health?.reverseGeocoded),
+    healthVerified: observedHealthVerified
+      || Boolean(health?.searched && health?.reverseGeocoded),
     mayActivate,
     mayManageFlags,
+    policyReady: policy.ready,
+    automaticHealthProbe: governed.automaticHealthProbe,
   });
   const next = currentStep(states);
 
@@ -171,7 +218,7 @@ export default function ProvidersPage() {
     supabase().rpc('staff_request_dual_control', {
       p_capability_key: ACTIVATION_CAPABILITY,
       p_action_key: ACTIVATION_ACTION_KEY,
-      p_subject_ref: activationSubject(MAPS_PROVIDER_KEY, environment ?? ''),
+      p_subject_ref: activationSubject(providerKey, environment ?? ''),
       p_reason: reason.trim(),
     }));
 
@@ -183,24 +230,28 @@ export default function ProvidersPage() {
 
   const activate = () => run('activate', ACTIVATION_CAPABILITY, async () =>
     supabase().rpc('staff_activate_external_provider', {
-      p_provider_key: MAPS_PROVIDER_KEY,
+      p_provider_key: providerKey,
       p_expected_environment: environment,
-      p_reason: reason.trim() || words.providerActivateDefaultReason,
+      p_reason: reason.trim() || providerWords('providerActivateDefaultReason'),
     }));
 
   const enableFeature = () => run('feature', 'manage_feature_flags', async () =>
     supabase().rpc('staff_set_feature_flag', {
-      p_flag_key: MAPS_FEATURE_FLAG,
+      p_flag_key: governed.featureFlag,
       p_environment: environment,
       p_enabled: true,
       p_audience: 'all',
       p_rollout_percentage: 100,
-      p_reason: reason.trim() || words.providerFeatureDefaultReason,
+      p_reason: reason.trim() || providerWords('providerFeatureDefaultReason'),
     }));
 
   // Two calls, both harmless reads at the provider, both billed once. Nothing
   // is written and no destructive operation exists on this path.
   const runHealth = async () => {
+    // Vision has no harmless probe: the only thing it does is read a document.
+    // The step is `waiting` for it and no button is offered, but the guard is
+    // here too rather than only in the markup.
+    if (!governed.automaticHealthProbe) return;
     if (inFlight.current) return;
     inFlight.current = true;
     setBusy('health');
@@ -230,6 +281,18 @@ export default function ProvidersPage() {
     }
   };
 
+  /*
+   * Copy, with a per-provider variant where one exists.
+   *
+   * Maps keeps every sentence it already had — an operator switching on address
+   * search should read "Turn on address search", not a neutral abstraction that
+   * serves neither provider well. Vision supplies its own variants under a
+   * `_vision` suffix and falls back to the shared string when it has nothing
+   * more specific to say.
+   */
+  const providerWords = (key: string) =>
+    words[`${key}${copySuffix}`] ?? words[key];
+
   const tone = (state: StepState) => state === 'done' ? 'plain' : 'strong';
   const stateWord = (state: StepState) => state === 'done' ? words.providerStepDone
     : state === 'ready' ? words.providerStepReady
@@ -248,6 +311,37 @@ export default function ProvidersPage() {
     <ConsoleShell title={words.providersTitle}>
       <p className={table.lead}>{words.providersLead}</p>
 
+      {/* Which provider this sequence is for. Two entries today; the list is
+          `GOVERNED_PROVIDERS`, so a third needs a registry entry rather than
+          another copy of this page. Changing it reloads the registry, the flag
+          and the credential probe together — a half-switched view would invite
+          somebody to act on the wrong provider's state. */}
+      <label className={page.providerChoice}>
+        <span>{words.providerChooseLabel}</span>
+        <select
+          value={providerKey}
+          disabled={busy !== null || refreshing}
+          onChange={(event) => {
+            const nextProviderKey = event.target.value;
+            setProviderKey(nextProviderKey);
+            setProvider(null);
+            setHealth(null);
+            setFeatureEnabled(false);
+            setCredentialConfigured(false);
+            setPolicy(providerPolicyState(nextProviderKey, null));
+            setObservedHealthVerified(false);
+            setError(null);
+            setDone(null);
+          }}
+        >
+          {GOVERNED_PROVIDERS.map((entry) => (
+            <option key={entry.providerKey} value={entry.providerKey}>
+              {words[entry.choiceCopyKey]}
+            </option>
+          ))}
+        </select>
+      </label>
+
       {reauth.capability ? (
         <ReauthDialog
           capability={reauth.capability}
@@ -261,8 +355,8 @@ export default function ProvidersPage() {
 
       {/* --- What this provider is ----------------------------------------- */}
       <section className={styles.block} aria-labelledby="provider">
-        <h2 id="provider" className={styles.title}>{words.providerMapsName}</h2>
-        <p className={styles.lead}>{words.providerMapsPurpose}</p>
+        <h2 id="provider" className={styles.title}>{providerWords('providerMapsName')}</h2>
+        <p className={styles.lead}>{providerWords('providerMapsPurpose')}</p>
 
         <dl className={page.facts}>
           <div>
@@ -294,7 +388,38 @@ export default function ProvidersPage() {
             <dt>{words.providerKillSwitch}</dt>
             <dd>{provider?.killSwitch ? words.providerKillSwitchReady : '—'}</dd>
           </div>
+          {governed.requiresIdentityPolicyGate ? (
+            <div>
+              <dt>{words.providerPolicy}</dt>
+              <dd>
+                <Badge tone={policy.ready ? 'plain' : 'strong'}>
+                  {policy.ready ? words.providerPolicyReady : words.providerPolicyBlocked}
+                </Badge>
+              </dd>
+            </div>
+          ) : null}
         </dl>
+        {governed.requiresIdentityPolicyGate ? (
+          <>
+            <p className={styles.hint} role={policy.ready ? undefined : 'status'}>
+              {providerWords('providerPolicyWhy')}
+            </p>
+            <ul className={styles.impactList}>
+              <li>{words.providerPolicyDocuments}: {
+                policy.materialDocumentsPublished ? words.consoleYes : words.consoleNo}</li>
+              <li>{words.providerPolicyAgreement}: {
+                policy.agreementSigned ? words.consoleYes : words.consoleNo}</li>
+              <li>{words.providerPolicyProcessingBasis}: {
+                policy.processingBasisApproved ? words.consoleYes : words.consoleNo}</li>
+              <li>{words.providerPolicyTraining}: {
+                policy.trainingProhibited ? words.consoleYes : words.consoleNo}</li>
+              <li>{words.providerPolicyAiUse}: {
+                policy.aiUseApproved ? words.consoleYes : words.consoleNo}</li>
+              <li>{words.providerPolicyReconsent}: {
+                policy.reconsentEnforced ? words.consoleYes : words.consoleNo}</li>
+            </ul>
+          </>
+        ) : null}
       </section>
 
       {/* --- The sequence --------------------------------------------------- */}
@@ -306,8 +431,8 @@ export default function ProvidersPage() {
             <li key={key} className={key === next ? page.stepCurrent : page.step}>
               <span className={page.stepIndex}>{index + 1}</span>
               <span className={page.stepBody}>
-                <strong>{words[`providerStep_${key}`]}</strong>
-                <span className={styles.hint}>{words[`providerStepWhy_${key}`]}</span>
+                <strong>{providerWords(`providerStep_${key}`)}</strong>
+                <span className={styles.hint}>{providerWords(`providerStepWhy_${key}`)}</span>
               </span>
               <Badge tone={tone(states[key])}>{stateWord(states[key])}</Badge>
             </li>
@@ -318,7 +443,7 @@ export default function ProvidersPage() {
       {/* --- Approval ------------------------------------------------------- */}
       <section className={styles.block} aria-labelledby="approval">
         <h2 id="approval" className={styles.title}>{words.providerApprovalTitle}</h2>
-        <p className={styles.lead}>{words.providerApprovalWhy}</p>
+        <p className={styles.lead}>{providerWords('providerApprovalWhy')}</p>
 
         {request ? (
           <div className={styles.impact}>
@@ -390,7 +515,7 @@ export default function ProvidersPage() {
         <GovernedAction
           words={words}
           title={words.providerActivateTitle}
-          body={words.providerActivateBody}
+          body={providerWords('providerActivateBody')}
           capability={words.capability_manage_subprocessors}
           mutates
           freshAuth
@@ -404,8 +529,8 @@ export default function ProvidersPage() {
 
         <GovernedAction
           words={words}
-          title={words.providerFeatureTitle}
-          body={words.providerFeatureBody}
+          title={providerWords('providerFeatureTitle')}
+          body={providerWords('providerFeatureBody')}
           capability={words.capability_manage_feature_flags}
           mutates
           freshAuth={false}
@@ -413,14 +538,14 @@ export default function ProvidersPage() {
           irreversible={false}
           audit="feature_flag_changed"
           availability={actionAvailability(states.feature, busy ?? reauth.pendingKey, refreshing)}
-          label={busy === 'feature' ? words.loading : words.providerFeatureAction}
+          label={busy === 'feature' ? words.loading : providerWords('providerFeatureAction')}
           onRun={enableFeature}
         />
 
         <GovernedAction
           words={words}
-          title={words.providerHealthTitle}
-          body={words.providerHealthBody}
+          title={providerWords('providerHealthTitle')}
+          body={providerWords('providerHealthBody')}
           capability={words.capability_review_legal_governance}
           mutates={false}
           freshAuth={false}
@@ -428,7 +553,7 @@ export default function ProvidersPage() {
           irreversible={false}
           audit="provider_health_observed"
           availability={actionAvailability(states.health, busy ?? reauth.pendingKey, refreshing)}
-          label={busy === 'health' ? words.loading : words.providerHealthAction}
+          label={busy === 'health' ? words.loading : providerWords('providerHealthAction')}
           onRun={runHealth}
         />
 
@@ -452,8 +577,8 @@ export default function ProvidersPage() {
         </button>
         {showTechnical ? (
           <dl className={page.facts}>
-            <div><dt>provider_key</dt><dd><Identifier value={MAPS_PROVIDER_KEY} /></dd></div>
-            <div><dt>feature_flag</dt><dd><Identifier value={MAPS_FEATURE_FLAG} /></dd></div>
+            <div><dt>provider_key</dt><dd><Identifier value={providerKey} /></dd></div>
+            <div><dt>feature_flag</dt><dd><Identifier value={governed.featureFlag} /></dd></div>
             <div><dt>kill_switch</dt><dd><Identifier value={provider?.killSwitch ?? null} /></dd></div>
             <div><dt>action_key</dt><dd><Identifier value={ACTIVATION_ACTION_KEY} /></dd></div>
             <div><dt>capability</dt><dd><Identifier value={ACTIVATION_CAPABILITY} /></dd></div>

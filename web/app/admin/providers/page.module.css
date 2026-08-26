@@ -54,3 +54,22 @@
   font-size: 14.5px;
   color: var(--text-primary);
 }
+
+/* The provider chooser. A labelled control rather than tabs: there are two
+   entries and adding a third must not redesign the page. */
+.providerChoice {
+  display: flex;
+  align-items: center;
+  gap: var(--space-field-gap);
+  margin-block-end: var(--space-section-gap);
+  flex-wrap: wrap;
+}
+
+.providerChoice select {
+  min-height: 44px;
+  padding-inline: var(--space-md);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text-primary);
+}

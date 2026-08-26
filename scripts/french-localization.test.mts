@@ -57,7 +57,7 @@ const acceptedFrenchCognates = new Set([
   // genuinely translated alongside it, so this is a cognate, not a fallback.
   'platformEnvProduction',
   // A vendor's product name, and a word French spells the same way.
-  'providerMapsName', 'providerActionsTitle',
+  'providerMapsName', 'providerMapsName_vision', 'providerActionsTitle',
 ]);
 const untranslatedAppKeys = Object.keys(appCopy.en).filter(key =>
   appCopy.en[key as keyof typeof appCopy.en] === appCopy.fr[key as keyof typeof appCopy.fr]

@@ -24,7 +24,8 @@ import {
 import { runGovernedAction, type InFlightLatch } from '../web/lib/governed-action.ts';
 import {
   actionAvailability, activationSteps, activationSubject, featureFlagEnabled,
-  MAPS_FEATURE_FLAG,
+  MAPS_FEATURE_FLAG, providerHealthVerified, providerPolicyState, VISION_PROVIDER_KEY,
+  VISION_REQUIRED_LEGAL_DOCUMENTS,
 } from '../web/lib/providers.ts';
 import { environmentBinding, parseStaffSession } from '../web/lib/staff.ts';
 
@@ -995,6 +996,90 @@ const noCredential = activationSteps({ ...ready, credentialConfigured: false });
 equal(noCredential.prerequisites, 'blocked',
   'a missing credential blocks the prerequisites step');
 
+// Identity extraction has a second kind of prerequisite. Its own register says
+// no identity document may reach the provider until the material legal changes,
+// provider agreement and processing-basis review are complete. The database
+// activation RPC does not infer those facts, so the console must not invite an
+// operator to request activation while the governance overview says otherwise.
+const visionPolicyPayload = ({ readyForIdentityData }: { readyForIdentityData: boolean }) => ({
+  documents: VISION_REQUIRED_LEGAL_DOCUMENTS.map((documentKey) => ({
+    documentKey,
+    versionCount: readyForIdentityData ? 2 : 1,
+    changeClass: readyForIdentityData ? 'material' : 'initial',
+  })),
+  subprocessors: [{
+    key: VISION_PROVIDER_KEY,
+    agreementStatus: readyForIdentityData ? 'signed' : 'not_started',
+    trainingProhibited: true,
+  }],
+  processingActivities: [{
+    key: 'worker_verification',
+    reviewStatus: readyForIdentityData ? 'approved' : 'pending',
+  }],
+  aiUses: [{
+    key: 'identity_text_extraction', status: 'approved_not_integrated',
+    coversIdentityData: true, permittedForTraining: false,
+  }],
+  configuration: { reconsentEnforced: readyForIdentityData },
+});
+const blockedVisionPolicy = providerPolicyState(
+  VISION_PROVIDER_KEY, visionPolicyPayload({ readyForIdentityData: false }));
+check(!blockedVisionPolicy.ready,
+  'VISION POLICY READINESS IS FALSE WHILE MATERIAL HUMAN GOVERNANCE IS PENDING');
+check(blockedVisionPolicy.trainingProhibited && blockedVisionPolicy.aiUseApproved,
+  'existing no-training and assistive-use controls are preserved independently');
+
+const visionReady = {
+  ...ready,
+  provider: {
+    ...ready.provider,
+    providerKey: VISION_PROVIDER_KEY,
+    displayName: 'Google Cloud Vision',
+    featureFlag: 'identity_extraction',
+    killSwitch: 'identity_extraction',
+  },
+  policyReady: blockedVisionPolicy.ready,
+  automaticHealthProbe: false,
+};
+const visionBlocked = activationSteps(visionReady);
+equal(visionBlocked.prerequisites, 'blocked',
+  'THE VISION ACTIVATION WORKFLOW STAYS CLOSED AT THE LEGAL GATE');
+equal(visionBlocked.approvalRequested, 'blocked',
+  'and cannot raise a technical approval request before that gate');
+equal(activationSteps({
+  ...visionReady,
+  provider: { ...visionReady.provider, status: 'active' },
+  featureEnabled: false,
+}).feature, 'blocked',
+  'AN OUT-OF-BAND REGISTRY ACTIVATION STILL CANNOT OPEN THE FEATURE ACTION');
+
+const approvedVisionPolicy = providerPolicyState(
+  VISION_PROVIDER_KEY, visionPolicyPayload({ readyForIdentityData: true }));
+check(approvedVisionPolicy.ready,
+  'Vision becomes policy-ready only when every observable commitment is ready');
+equal(activationSteps({ ...visionReady, policyReady: approvedVisionPolicy.ready })
+  .approvalRequested, 'ready',
+  'then the existing dual-control request is the next step, never bypassed');
+
+const liveVision = activationSteps({
+  ...visionReady,
+  policyReady: true,
+  provider: { ...visionReady.provider, status: 'active' },
+  featureEnabled: true,
+});
+equal(liveVision.health, 'waiting',
+  'VISION OFFERS NO BROWSER HEALTH ACTION THAT WOULD PROCESS OR BILL A DOCUMENT');
+check(providerHealthVerified([{
+  providerKey: VISION_PROVIDER_KEY,
+  lastSuccessAt: '2026-08-27T10:00:00Z',
+}], VISION_PROVIDER_KEY),
+  'a later synthetic device success is observable without making another OCR call');
+check(!providerHealthVerified([{
+  providerKey: VISION_PROVIDER_KEY,
+  lastSuccessAt: null,
+}], VISION_PROVIDER_KEY),
+  'an untested provider is never reported as verified');
+
 equal(activationSubject('google_maps_platform', 'development'),
   'google_maps_platform:development',
   'the dual-control subject matches what the activation RPC consumes');
@@ -1008,8 +1093,66 @@ check(!/service_role|SERVICE_ROLE/i.test(providersPage),
   'the provider page reaches for no service role');
 check(!/GOOGLE_MAPS_SERVER_KEY|GOOGLE_MAPS_SERVER_API_KEY|digest/i.test(providersRendered),
   'AND NAMES NO SECRET, NO ENVIRONMENT VARIABLE, AND NO DIGEST');
-check(/serverCredentialAvailable/.test(providersPage),
+// The probe moved into `lib/providers.ts` when the page stopped being
+// Maps-only: a credential lives in an Edge Function's runtime, so each provider
+// answers its own capability question. The rule is unchanged and now applies to
+// both — a boolean, never a value.
+const providersLib = readFileSync('web/lib/providers.ts', 'utf8');
+check(/serverCredentialAvailable/.test(providersLib)
+  && /credentialConfigured/.test(providersLib),
   'it asks only whether a credential is configured');
+// Secret NAMES, not provider keys: `google_cloud_vision` is a public
+// identifier the registry is supposed to carry, while
+// `GOOGLE_CLOUD_VISION_SERVICE_ACCOUNT` is the thing that must never appear.
+check(!/GOOGLE_CLOUD_VISION_SERVICE_ACCOUNT|GOOGLE_MAPS_SERVER_KEY|GOOGLE_MAPS_SERVER_API_KEY|private_key|digest/i
+  .test(strip(providersLib)),
+  'AND THE PROBE REGISTRY NAMES NO SECRET AND NO ENVIRONMENT VARIABLE');
+check(/credentialProbe/.test(providersPage),
+  'the page reads the probe through that registry rather than hardcoding one provider');
+
+// Both governed providers are reachable, or the OCR activation has no screen.
+for (const key of ['google_maps_platform', 'google_cloud_vision']) {
+  check(providersLib.includes(`'${key}'`), `${key} is a governed provider the console can drive`);
+}
+check(/automaticHealthProbe: false/.test(providersLib),
+  'A PROVIDER WITH NO HARMLESS TEST DOES NOT GET A TEST BUTTON');
+check(/if \(!governed\.automaticHealthProbe\) return;/.test(providersPage),
+  'and the health runner refuses it in code, not only in the markup');
+check(/rpc\('staff_legal_governance_overview'/.test(providersPage)
+  && /policyReady: policy\.ready/.test(providersPage),
+  'the Vision sequence reads the existing legal authority and feeds it into the gate');
+check(/rpc\('staff_provider_health'/.test(providersPage)
+  && /providerHealthVerified/.test(providersPage),
+  'device health is re-read from the staff-only rollup without another provider call');
+check(/providerWords\('providerMapsName'\)/.test(providersPage)
+  && /providerWords\('providerMapsPurpose'\)/.test(providersPage)
+  && /providerWords\('providerApprovalWhy'\)/.test(providersPage)
+  && /providerWords\('providerFeatureTitle'\)/.test(providersPage),
+  'provider-specific identity copy replaces Maps wording throughout the Vision view');
+
+for (const key of [
+  'providerMapsName_vision', 'providerMapsPurpose_vision',
+  'providerStepWhy_prerequisites_vision', 'providerApprovalWhy_vision',
+  'providerFeatureTitle_vision', 'providerFeatureBody_vision',
+  'providerFeatureAction_vision', 'providerHealthTitle_vision',
+  'providerHealthAction_vision', 'providerPolicyWhy_vision',
+  'providerPolicyDocuments', 'providerPolicyAgreement',
+  'providerPolicyProcessingBasis', 'providerPolicyTraining',
+  'providerPolicyAiUse', 'providerPolicyReconsent',
+]) {
+  check(key in appCopy.en, `${key} has English provider copy`);
+  check(key in appCopy.ar, `${key} has Arabic provider copy`);
+  check(key in appCopy.fr, `${key} has French provider copy`);
+}
+
+// Generalising the page must not have loosened the governance it renders.
+for (const rpc of ['staff_request_dual_control', 'staff_approve_dual_control',
+  'staff_activate_external_provider', 'staff_set_feature_flag']) {
+  check(providersPage.includes(rpc), `${rpc} is still the only way this page acts`);
+}
+check(/state\.approvalGranted = approved \? 'done' : requested \? 'waiting' : 'blocked';/
+  .test(providersLib),
+  'AND THE SECOND APPROVAL IS STILL NEVER READY FOR THE PERSON WHO REQUESTED IT');
 check(/staff_request_dual_control/.test(providersPage)
   && /staff_approve_dual_control/.test(providersPage)
   && /staff_activate_external_provider/.test(providersPage)
