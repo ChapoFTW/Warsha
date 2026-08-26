@@ -81,8 +81,14 @@ function row(key: string, categoryId: string, name: string, id = `uuid-${key}`):
   // The old form defaulted to a provider's first service, which nobody chose.
   check(!/provider\?\.services\[0\]\?\.id/.test(nativeForm),
     'AND NO SERVICE IS EVER SELECTED ON THE CUSTOMER\'S BEHALF');
-  check(/useState\(params\.serviceId\?\?''\)/.test(nativeForm),
+  // The composed request is a draft now, not screen state, so the deep link is
+  // read where the draft is seeded rather than in a `useState` initializer.
+  // What is being asserted is unchanged: the link's service is honoured, and
+  // nothing else is ever filled in on the customer's behalf.
+  check(/serviceId:params\.serviceId\?\?''/.test(nativeForm),
     'a deep link naming a service is still honoured, an arbitrary default is not');
+  check(/serviceId:''/.test(nativeForm),
+    'and a request started without one starts empty');
 }
 
 // --- Every category gets its own services, and never another's --------------
@@ -177,10 +183,12 @@ function row(key: string, categoryId: string, name: string, id = `uuid-${key}`):
 
 // --- Changing category clears the selection, in the code that does it -------
 {
-  check(/setCategoryId\(item\.id\);setServiceId\(''\)/.test(nativeForm),
+  // One atomic change to the composed request, rather than two setters a later
+  // edit could separate. The rule is the same: the two fields move together.
+  check(/patch\(\{categoryId:item\.id,serviceId:''\}\)/.test(nativeForm),
     'NATIVE CLEARS THE SERVICE WHEN THE CATEGORY CHANGES');
-  check(/setServiceId\(''\)/.test(webForm),
-    'and so does web');
+  check(/patch\(\{ categoryId: event\.target\.value, serviceId: '' \}\)/.test(webForm),
+    'and so does web, in the same single change');
   // Belt and braces: even if the state survived, the picker would not offer it.
   const catalogue = specificServices.map((s) => row(s.key, s.categoryId, s.en));
   const plumbingUuid = orderedCatalogueServices(catalogue, 'plumbing')[0].id;

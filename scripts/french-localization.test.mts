@@ -103,7 +103,12 @@ check(/legacyHelpAvailable = language !== 'fr'/.test(mobileHelp),
   'French Help uses the complete generated manual instead of English-only legacy knowledge-base content');
 
 const middleware = read('web/middleware.ts');
-check(middleware.includes("'fr'"), 'middleware accepts the /fr locale');
+// The middleware no longer restates the list of languages — it asks
+// `isLocale`, the shared authority, which is why French cannot be accepted in
+// one place and refused in another. What it still owns is the route shape.
+check(/\(en\|ar\|fr\)/.test(middleware), 'middleware accepts the /fr locale as a route');
+check(/isLocale\(explicit\)/.test(middleware),
+  'and validates a stored French preference through the shared language authority');
 const publicLayout = read('web/app/[locale]/layout.tsx');
 check(/directionOf\(typed\)/.test(publicLayout), 'public route direction is locale-derived');
 check(publicLayout.includes('Warsha — services à domicile en Égypte'),
@@ -111,8 +116,16 @@ check(publicLayout.includes('Warsha — services à domicile en Égypte'),
 check(publicLayout.includes("fr: 'fr_EG'"),
   'French Open Graph metadata uses the French Egyptian locale');
 const appStartup = read('web/app/app/layout.tsx');
-check(/lang === 'fr'/.test(appStartup) || /language === 'fr'/.test(appStartup) || /value === 'fr'/.test(appStartup),
-  'authenticated web startup accepts persisted French before first paint');
+// French before first paint is now the *server's* job rather than an inline
+// script's: the language is resolved from the shared preference cookie and
+// baked into the markup, so a French account never sees a frame of English.
+check(/await serverLocale\(\)/.test(appStartup),
+  'authenticated web startup resolves the persisted language before rendering');
+check(/<html lang=\{locale\} dir=\{directionOf\(locale\)\}/.test(appStartup),
+  'and renders French with its own direction rather than a default');
+const serverLocaleSource = read('web/lib/server-locale.ts');
+check(/resolveEffectiveLocale/.test(serverLocaleSource),
+  'through the one precedence rule, which accepts French everywhere it accepts Arabic');
 const htmlStartup = read('app/+html.tsx');
 check(htmlStartup.includes('Chargement de Warsha'), 'mobile/web export neutral startup has French copy');
 

@@ -237,11 +237,17 @@ check(/sessionStorage\.getItem\(PREFERRED_MODE_KEY\)/.test(readWeb('components',
   'a worker customer-mode choice is session- and identity-scoped, so cold start returns to worker home');
 
 // --- Direction and theme ------------------------------------------------------
-const locale = readWeb('lib', 'use-app-locale.ts');
+// `use-app-locale.ts` is now a re-export: the language lives in one store, so
+// that is where the key and the direction are read and applied.
+const locale = readWeb('lib', 'preferences-context.tsx');
 check(/languageStorageKey/.test(locale),
   'the application reads the same language key the mobile client writes');
-check(/directionOf\(current\)/.test(locale) && /setAttribute\('dir'/.test(locale),
+check(/directionOf\(locale\)/.test(locale) && /setAttribute\('dir'/.test(locale),
   'direction is applied at the document root, not per component');
+check(/useWarshaPreferences\(\)\.locale/.test(locale),
+  'AND EVERY SURFACE READS ONE VALUE, NOT ONE COPY PER COMPONENT');
+check(!/useState/.test(strip(readWeb('lib', 'use-app-locale.ts'))),
+  'the old per-component language state is gone');
 for (const css of ['components/app-shell.module.css', 'app/app/sign-in/page.module.css']) {
   const source = readFileSync(join('web', css), 'utf8');
   check(!/margin-left|margin-right|text-align:\s*left/.test(source),

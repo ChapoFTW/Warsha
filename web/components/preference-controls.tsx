@@ -4,15 +4,11 @@ import { usePathname } from 'next/navigation';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 
 import { copy } from '@/lib/copy';
-import { languageChangeEvent } from '@/lib/use-app-locale';
+import { useWarshaPreferences } from '@/lib/preferences-context';
 import {
-  appearanceExplicitKey,
   appearancePreferences,
-  appearanceStorageKey,
-  isAppearancePreference,
-  languageExplicitKey,
-  languageStorageKey,
   LOCALES,
+  pathWithoutLocale,
   type AppearancePreference,
   type Locale,
 } from '@/lib/preferences';
@@ -47,23 +43,6 @@ import styles from './preference-controls.module.css';
  * bookmarkable, openable in a new tab, and unchanged for anyone who reaches it
  * without JavaScript.
  */
-
-function rememberLanguage(locale: Locale) {
-  try {
-    window.localStorage.setItem(languageStorageKey, locale);
-    window.localStorage.setItem(languageExplicitKey, 'true');
-  } catch {
-    // Choosing a language must still work when storage is refused; it simply
-    // will not be remembered for the next visit.
-  }
-  // The middleware decides what `/` serves and cannot read localStorage, so
-  // the same choice is mirrored into a cookie it can see. One year, lax:
-  // a language preference is not a credential.
-  document.cookie = `warsha-locale=${locale};path=/;max-age=31536000;samesite=lax`;
-  // Tell this tab. localStorage only notifies other tabs, and the unprefixed
-  // surfaces have no navigation to re-render them.
-  window.dispatchEvent(new Event(languageChangeEvent));
-}
 
 type MenuOption = {
   value: string;
@@ -258,12 +237,16 @@ export function LanguageSwitch({
   placement?: MenuPlacement;
 }) {
   const pathname = usePathname();
+  const { setLocale } = useWarshaPreferences();
   const labels: Record<Locale, string> = {
     en: copy[locale].languageEnglish,
     ar: copy[locale].languageArabic,
     fr: copy[locale].languageFrench,
   };
-  const rest = pathname.replace(/^\/(en|ar|fr)(?=\/|$)/, '') || '';
+  // The page, not the home page. Switching language keeps somebody exactly
+  // where they were — same route, same query, same fragment — because being
+  // sent Home to change language is itself a way of losing your place.
+  const rest = pathWithoutLocale(pathname);
 
   const options: MenuOption[] = LOCALES.map((option) => ({
     value: option,
@@ -278,7 +261,13 @@ export function LanguageSwitch({
       triggerLabel={labels[locale]}
       options={options}
       selected={locale}
-      onChoose={(value) => rememberLanguage(value as Locale)}
+      /* One writer. `setLocale` records the choice in the device store and in
+         the cross-origin cookie, updates every consumer of the context at
+         once, and sets `lang`/`dir` on the document. In `path` mode it runs
+         synchronously on the anchor's click, before the browser leaves — so
+         the destination is already served in the chosen language and the
+         middleware has no stale cookie to send anybody back with. */
+      onChoose={(value) => setLocale(value as Locale)}
       placement={placement}
     />
   );
@@ -291,35 +280,10 @@ export function AppearanceSwitch({
   locale: Locale;
   placement?: MenuPlacement;
 }) {
-  const [preference, setPreference] = useState<AppearancePreference>('system');
-  const [mounted, setMounted] = useState(false);
-
-  // The stored preference is read after mount. The inline head script has
-  // already painted the correct theme, so this only syncs the control with
-  // what is on screen — it never causes the first paint.
-  useEffect(() => {
-    setMounted(true);
-    try {
-      const stored = window.localStorage.getItem(appearanceStorageKey);
-      const explicit = window.localStorage.getItem(appearanceExplicitKey) === 'true';
-      if (explicit && isAppearancePreference(stored)) setPreference(stored);
-    } catch {
-      // Fall through to `system`, which is the documented default.
-    }
-  }, []);
-
-  const choose = (next: AppearancePreference) => {
-    setPreference(next);
-    const root = document.documentElement;
-    try {
-      window.localStorage.setItem(appearanceStorageKey, next);
-      window.localStorage.setItem(appearanceExplicitKey, String(next !== 'system'));
-    } catch {
-      // Applying the choice matters more than remembering it.
-    }
-    if (next === 'system') root.removeAttribute('data-theme');
-    else root.setAttribute('data-theme', next);
-  };
+  // Same store as the language, for the same reason: appearance was also being
+  // read after mount by whichever control happened to be on screen, so two
+  // surfaces rendering the control could disagree about what was chosen.
+  const { appearance, setAppearance, hydrated } = useWarshaPreferences();
 
   const labels: Record<AppearancePreference, string> = {
     system: copy[locale].appearanceSystem,
@@ -330,15 +294,15 @@ export function AppearanceSwitch({
   return (
     <PreferenceMenu
       controlLabel={copy[locale].appearanceLabel}
-      triggerLabel={labels[preference]}
+      triggerLabel={labels[appearance]}
       options={appearancePreferences.map((option) => ({
         value: option,
         label: labels[option],
       }))}
-      // Before mount the stored value is unknown. Claiming `system` is chosen
-      // would be a guess, so nothing is claimed until it is known.
-      selected={mounted ? preference : null}
-      onChoose={(value) => choose(value as AppearancePreference)}
+      // Before the browser's stored value has been read it is unknown.
+      // Claiming `system` is chosen would be a guess, so nothing is claimed.
+      selected={hydrated ? appearance : null}
+      onChoose={(value) => setAppearance(value as AppearancePreference)}
       placement={placement}
     />
   );

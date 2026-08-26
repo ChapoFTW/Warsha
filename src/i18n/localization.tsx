@@ -8,8 +8,11 @@ import {
   resolveLanguage,
   supportedLanguages,
 } from './language-preference';
+import { accountLocalePrecedence } from '../preferences/preference-authority';
+import { languageRepository } from './language-repository';
 import { readLocalLanguage, writeLocalLanguage } from './language-storage';
 import { Language, TranslationKey, translations } from './translations';
+import { useAuth } from '../auth/auth-context';
 
 type LocalizationValue = {
   language: Language;
@@ -18,6 +21,8 @@ type LocalizationValue = {
   t: (key: TranslationKey) => string;
   setLanguage: (language: Language) => void;
   toggleLanguage: () => void;
+  /** Called by `LanguageAccountSync`; not part of the public surface. */
+  attachAccount: (mode: 'mock' | 'supabase', accountKey: string | null) => void;
 };
 const LocalizationContext = createContext<LocalizationValue | null>(null);
 
@@ -32,6 +37,13 @@ export function LocalizationProvider({ children }: PropsWithChildren) {
   });
   const explicitRef = useRef(explicit);
   explicitRef.current = explicit;
+  const languageRef = useRef(language);
+  languageRef.current = language;
+  const [account, setAccount] = useState<{ mode: 'mock' | 'supabase'; key: string | null }>(
+    { mode: 'mock', key: null },
+  );
+  const accountRef = useRef(account);
+  accountRef.current = account;
 
   useEffect(() => {
     I18nManager.allowRTL(true);
@@ -60,9 +72,45 @@ export function LocalizationProvider({ children }: PropsWithChildren) {
     document.querySelector('link[rel="manifest"]')?.setAttribute('href', metadata.manifest);
   }, [language]);
 
+  const attachAccount = useCallback((mode: 'mock' | 'supabase', key: string | null) => {
+    setAccount(current => (current.mode === mode && current.key === key ? current : { mode, key }));
+  }, []);
+
+  /*
+   * One reconciliation per account.
+   *
+   * `profiles.preferred_language` was being written by the profile screen and
+   * read by nobody, so an account that had chosen Arabic on a phone opened in
+   * English on a second device. The rule is `accountLocalePrecedence` and it is
+   * shared with the browser: an explicit choice on this device wins and is
+   * pushed up; otherwise the account's language is adopted.
+   */
+  useEffect(() => {
+    if (!account.key || account.mode === 'mock') return undefined;
+    const target = account.key;
+    let active = true;
+    void languageRepository.get().then(accountLanguage => {
+      if (!active || accountRef.current.key !== target) return;
+      const outcome = accountLocalePrecedence({
+        localLocale: languageRef.current,
+        localIsExplicit: explicitRef.current,
+        accountLocale: accountLanguage,
+      });
+      if (outcome.locale && outcome.locale !== languageRef.current) {
+        setPreference({ language: outcome.locale, explicit: true });
+        writeLocalLanguage(outcome.locale, true);
+      }
+      if (outcome.pushToAccount && outcome.locale) void languageRepository.set(outcome.locale);
+    });
+    return () => { active = false; };
+  }, [account.key, account.mode]);
+
   const selectLanguage = useCallback((next: Language) => {
+    // Device first and synchronously: the interface changes on this frame, and
+    // the account is told afterwards rather than being waited for.
     setPreference({ language: next, explicit: true });
     writeLocalLanguage(next, true);
+    void languageRepository.set(next);
   }, []);
 
   const value = useMemo(() => ({
@@ -74,9 +122,27 @@ export function LocalizationProvider({ children }: PropsWithChildren) {
     toggleLanguage: () => selectLanguage(
       supportedLanguages[(supportedLanguages.indexOf(language) + 1) % supportedLanguages.length],
     ),
-  }), [explicit, language, selectLanguage]);
+    attachAccount,
+  }), [attachAccount, explicit, language, selectLanguage]);
 
   return <LocalizationContext.Provider value={value}>{children}</LocalizationContext.Provider>;
+}
+
+/**
+ * Pushes the active account down to the localization provider.
+ *
+ * Same shape as `AppearanceAccountSync`, and for the same reason: the
+ * localization provider sits above `AuthProvider` so the first frame is in the
+ * right language long before there is a session, which means it cannot call
+ * `useAuth` from where it stands.
+ */
+export function LanguageAccountSync() {
+  const { mode, user } = useAuth();
+  const { attachAccount } = useLocalization();
+  useEffect(() => {
+    attachAccount(mode, user?.id ?? null);
+  }, [attachAccount, mode, user?.id]);
+  return null;
 }
 
 export function useLocalization() {

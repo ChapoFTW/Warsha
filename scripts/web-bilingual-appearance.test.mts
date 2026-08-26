@@ -40,13 +40,21 @@ check(/from '\.\.\/\.\.\/src\/appearance\/appearance-types\.ts'/.test(preference
 equal(languageStorageKey, 'warsha:language:v1', 'the language key is the mobile key');
 equal(appearanceStorageKey, 'warsha:appearance:v1', 'the appearance key is the mobile key');
 
+// The switchers no longer touch storage at all: there is one writer, and it is
+// the preference store. What must stay true is that the writer uses the shared
+// key constants rather than string literals of its own.
 const controls = readFileSync('web/components/preference-controls.tsx', 'utf8');
+const preferenceStore = readFileSync('web/lib/preferences-context.tsx', 'utf8');
+check(/useWarshaPreferences/.test(controls),
+  'the switchers write through the one preference store');
+check(!/localStorage\.(get|set|remove)Item/.test(controls),
+  'and never reach into storage themselves');
 for (const key of [languageStorageKey, languageExplicitKey,
   appearanceStorageKey, appearanceExplicitKey]) {
-  check(controls.includes(key.split(':')[1]) || /StorageKey|ExplicitKey/.test(controls),
-    'the switchers write through the shared key constants');
+  check(preferenceStore.includes(key.split(':')[1]) || /StorageKey|ExplicitKey/.test(preferenceStore),
+    'the store writes through the shared key constants');
 }
-check(/languageExplicitKey, 'true'/.test(controls) && /appearanceExplicitKey, String/.test(controls),
+check(/languageExplicitKey, 'true'/.test(preferenceStore) && /appearanceExplicitKey, String/.test(preferenceStore),
   'AN EXPLICIT CHOICE IS RECORDED SEPARATELY FROM THE VALUE, AS ON MOBILE');
 
 // --- System fallback and persisted override --------------------------------
@@ -86,8 +94,13 @@ check(/warsha-locale/.test(middleware) && /accept-language/.test(middleware),
   'the root route is resolved server-side from the cookie then the browser');
 check(/307/.test(middleware),
   'the language redirect is temporary, since it varies by visitor');
-check(/warsha-locale=/.test(controls),
+check(/localeCookieValue/.test(preferenceStore),
   'choosing a language writes the cookie the middleware can read');
+// Built in the shared authority rather than assembled at the call site, so the
+// three origins cannot disagree about its scope or its lifetime.
+const authority = readFileSync('src/preferences/preference-authority.ts', 'utf8');
+check(/warsha-locale/.test(authority) && /\.usewarsha\.com/.test(authority),
+  'and that cookie is scoped so all three web origins share one preference');
 
 // --- No first-paint flash ---------------------------------------------------
 const layout = readFileSync('web/app/[locale]/layout.tsx', 'utf8');
@@ -194,7 +207,10 @@ check(/case 'Escape'/.test(controls) && /close\(true\)/.test(controls),
   'Escape closes the menu and returns focus to the trigger');
 check(/pointerdown/.test(controls),
   'a pointer press outside the menu closes it');
-check(/selected=\{mounted \? preference : null\}/.test(controls),
+// `hydrated` rather than a per-control `mounted` flag: whether the browser's
+// stored preferences have been read is a fact about the store, not about each
+// control that happens to be on screen.
+check(/selected=\{hydrated \? appearance : null\}/.test(controls),
   'no appearance is claimed as chosen until the stored value is known');
 
 // --- Mobile is deliberately untouched ---------------------------------------
@@ -371,8 +387,13 @@ check(accountPage.indexOf('accountPreferencesBody') < accountPage.indexOf('<Pref
 // --- One definition, so the six placements cannot drift ---------------------
 check(/export function PreferenceFooter/.test(controls),
   'the pair is one component, not six arrangements');
-check((controls.match(/function rememberLanguage/g) ?? []).length === 1,
+// `rememberLanguage` used to live here, once. It now lives in the store, still
+// once, and the controls call it — which is a stronger form of the same rule,
+// because the store is what the server render and the other tabs read too.
+check((preferenceStore.match(/const setLocale = useCallback/g) ?? []).length === 1,
   'there is one implementation of remembering a language');
+check(!/function rememberLanguage/.test(controls),
+  'and the control no longer carries its own copy of it');
 check((controls.match(/role="menu"/g) ?? []).length === 1,
   'and one menu implementation');
 
@@ -408,16 +429,20 @@ check(!/mode="path"/.test(appShell) && !/mode="path"/.test(consoleShell),
 // --- Theme selection and persistence, unchanged by the move -----------------
 check(/appearancePreferences\.map/.test(controls),
   'the appearance options come from the shared preference list');
-check(/root\.removeAttribute\('data-theme'\)/.test(controls),
+// The behaviour is unchanged; it moved from the control into the store, which
+// is what lets a second tab and the server render agree with it.
+check(/root\.removeAttribute\('data-theme'\)/.test(preferenceStore),
   'CHOOSING SYSTEM REMOVES THE OVERRIDE, SO THE OS PREFERENCE APPLIES AGAIN');
-check(/root\.setAttribute\('data-theme', next\)/.test(controls),
+check(/root\.setAttribute\('data-theme', preference\)/.test(preferenceStore),
   'and an explicit choice sets the attribute the stylesheet reads');
-check((controls.match(/window\.localStorage\.setItem/g) ?? []).length >= 4,
+check((preferenceStore.match(/window\.localStorage\.setItem/g) ?? []).length >= 4,
   'both preferences persist their value and their explicitness');
-check(/warsha-locale=\$\{locale\}/.test(controls),
+check(/localeCookieValue\(next, window\.location\.hostname\)/.test(preferenceStore),
   'the language cookie the middleware reads is still written');
-check(/dispatchEvent\(new Event\(languageChangeEvent\)\)/.test(controls),
+check(/dispatchEvent\(new Event\(preferenceChangeEvent\)\)/.test(preferenceStore),
   'and the unprefixed surfaces are still told to re-render in place');
+check(/addEventListener\('storage'/.test(preferenceStore),
+  'AND A SECOND TAB IS TOLD TOO, RATHER THAN LEFT CONTRADICTING THE FIRST');
 
 // --- Keyboard and screen-reader behaviour -----------------------------------
 check(/role: 'menuitemradio'/.test(controls) && /'aria-checked': checked/.test(controls),
@@ -456,10 +481,15 @@ for (const path of ['web/components/console-shell.module.css', 'web/components/a
 }
 
 // --- No hydration flash regression ------------------------------------------
-check(/selected=\{mounted \? preference : null\}/.test(controls),
+check(/selected=\{hydrated \? appearance : null\}/.test(controls),
   'the appearance control still claims nothing before the stored value is known');
-check(/setMounted\(true\)/.test(controls) && /useEffect/.test(controls),
+check(/setHydrated\(true\)/.test(preferenceStore) && /useEffect/.test(preferenceStore),
   'the stored appearance is still read after mount, never during render');
+// The language is the opposite case and deliberately so: it IS knowable on the
+// server, from the cookie, so it is decided before rendering rather than
+// corrected afterwards. That is what removes the flash of English.
+check(/initialLocale/.test(preferenceStore),
+  'THE LANGUAGE IS DECIDED BEFORE THE FIRST RENDER, NOT CORRECTED AFTER IT');
 
 // --- Built output: the promise actually shipped -----------------------------
 if (hasBuild) {

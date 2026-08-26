@@ -1,9 +1,11 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useSession } from '@/components/session-provider';
 import { WarshaIcon } from '@/components/warsha-icon';
+import { announceDataChange } from '@/lib/data-events';
+import { useDraft } from '@/lib/draft-store';
 import { parseServices, type Service } from '@/lib/customer';
 import { supabase } from '@/lib/supabase';
 import { useAppLocale } from '@/lib/use-app-locale';
@@ -45,6 +47,39 @@ import styles from './product-surface.module.css';
 
 type Section = 'basic' | 'trade' | 'area' | 'all';
 
+/**
+ * A worker's unsaved trade choices, and the server state they were made against.
+ *
+ * This is a *delta*, not a copy of the profile, and the distinction is the
+ * whole design. Storing the profile and restoring it later would re-apply
+ * three-day-old values over whatever the account had since changed on the
+ * phone — a data-loss bug dressed as a convenience. Storing only what the
+ * person chose, together with the baseline they chose it against, means the
+ * restore is applied to *fresh* server data and is abandoned outright if that
+ * data moved on. It is the same optimistic-concurrency rule
+ * `select_worker_quote` uses for a different kind of stale picture.
+ *
+ * Only the trade selection is drafted. Step 3 is where a worker makes a long
+ * run of choices and where QA saw them lost; the free-text profile fields are
+ * an edit of a live record and are deliberately reloaded from the server.
+ */
+type TradeDraft = {
+  baselineProfessionKeys: string[];
+  baselineServiceIds: string[];
+  professionKeys: string[];
+  serviceIds: string[];
+};
+
+const sameSet = (left: readonly string[], right: readonly string[]) =>
+  left.length === right.length && [...left].sort().join('|') === [...right].sort().join('|');
+
+function tradeSnapshot(profile: WorkerProfile): { professionKeys: string[]; serviceIds: string[] } {
+  return {
+    professionKeys: selectedProfessionKeys(profile).map(String),
+    serviceIds: profile.services.map((item) => item.serviceId),
+  };
+}
+
 export function WorkerProfileEditor({
   section = 'all',
   onSaved,
@@ -63,6 +98,14 @@ export function WorkerProfileEditor({
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
   const [photoBusy, setPhotoBusy] = useState(false);
+  const {
+    value: tradeDraft,
+    setValue: setTradeDraft,
+    clear: clearTradeDraft,
+    restored: tradeDraftRestored,
+  } = useDraft<TradeDraft | null>('worker_trade', null);
+  const tradeDraftRef = useRef<TradeDraft | null>(null);
+  tradeDraftRef.current = tradeDraft;
 
   const load = useCallback(async () => {
     setFailed(false);
@@ -76,12 +119,40 @@ export function WorkerProfileEditor({
       setFailed(true);
       return;
     }
+    const catalogue = parseServices(catalogData);
     setProfile(next);
-    setDraft(next);
-    setServices(parseServices(catalogData));
-  }, []);
+    setServices(catalogue);
 
-  useEffect(() => { void load(); }, [load]);
+    /*
+     * Re-apply unsaved trade choices on top of the profile that has just come
+     * back from the server — but only if the server still shows what those
+     * choices were made against. If it does not, somebody changed their trades
+     * somewhere else and the older device draft is abandoned rather than
+     * quietly winning.
+     */
+    const stored = tradeDraftRef.current;
+    const server = tradeSnapshot(next);
+    if (stored
+      && sameSet(stored.baselineProfessionKeys, server.professionKeys)
+      && sameSet(stored.baselineServiceIds, server.serviceIds)
+      && !(sameSet(stored.professionKeys, server.professionKeys)
+        && sameSet(stored.serviceIds, server.serviceIds))) {
+      let restored = withTradeSelection(next, stored.professionKeys, catalogue);
+      for (const row of catalogue) {
+        if (stored.serviceIds.includes(row.id)) {
+          restored = withOfferedService(restored, row, true, catalogue);
+        }
+      }
+      setDraft(restored);
+      return;
+    }
+    if (stored) clearTradeDraft('discarded');
+    setDraft(next);
+  }, [clearTradeDraft]);
+
+  // The stored value has to be consulted before the profile is fetched, or the
+  // fetch would decide against a draft it had not yet read.
+  useEffect(() => { if (tradeDraftRestored) void load(); }, [load, tradeDraftRestored]);
 
   const selected = useMemo(() => draft ? selectedProfessionKeys(draft) : [], [draft]);
   const professionOptions = listProfessions(locale);
@@ -90,23 +161,54 @@ export function WorkerProfileEditor({
   const governorateOption = egyptGovernorateForStoredValue(governorate);
   const areas = governorateOption ? listEgyptAreas(governorateOption.id, locale) : [];
 
+  /**
+   * Record the unsaved trade selection against the server state it was made
+   * against, so navigating away and coming back keeps it — and so a profile
+   * that changed elsewhere in the meantime discards it instead.
+   */
+  const rememberTrade = useCallback((next: WorkerProfile) => {
+    if (!profile) return;
+    const baseline = tradeSnapshot(profile);
+    const chosen = tradeSnapshot(next);
+    if (sameSet(baseline.professionKeys, chosen.professionKeys)
+      && sameSet(baseline.serviceIds, chosen.serviceIds)) {
+      // Back to exactly what the server holds: there is nothing unsaved to keep.
+      clearTradeDraft('discarded');
+      return;
+    }
+    setTradeDraft({
+      baselineProfessionKeys: baseline.professionKeys,
+      baselineServiceIds: baseline.serviceIds,
+      professionKeys: chosen.professionKeys,
+      serviceIds: chosen.serviceIds,
+    });
+  }, [clearTradeDraft, profile, setTradeDraft]);
+
+  const applyTrade = (next: WorkerProfile) => {
+    setDraft(next);
+    rememberTrade(next);
+  };
+
   const toggleProfession = (key: ProfessionKey) => {
     if (!draft) return;
     const keys = selected.includes(key) ? selected.filter((item) => item !== key) : [...selected, key];
     // Removing a trade takes its jobs out of the payload with it. Web had no
     // rule for that at all, so a worker who changed their mind was saved as
-    // offering work they had just stopped claiming.
-    setDraft(withTradeSelection(draft, keys, services));
+    // offering work they had just stopped claiming. Persisting the selection
+    // does not change that: `withTradeSelection` still clears the work a
+    // deselected trade was offering, so a stale choice cannot survive in the
+    // draft any more than it could in memory.
+    applyTrade(withTradeSelection(draft, keys, services));
   };
 
   const toggleService = (service: Service, offered: boolean) => {
     if (!draft) return;
-    setDraft(withOfferedService(draft, service, offered, services));
+    applyTrade(withOfferedService(draft, service, offered, services));
   };
 
   const toggleProfessionServices = (professionKey: string, offered: boolean) => {
     if (!draft) return;
-    setDraft(withProfessionServices(draft, professionKey, offered, services));
+    applyTrade(withProfessionServices(draft, professionKey, offered, services));
   };
 
   /** The sentence a worker can act on, or `null` for a genuine server fault. */
@@ -175,6 +277,9 @@ export function WorkerProfileEditor({
       const next = parseWorkerProfile(data) ?? normalized;
       setProfile(next);
       setDraft(next);
+      // Saved: the selection is the server's, so the unsaved copy ends here.
+      clearTradeDraft('submitted');
+      announceDataChange('worker_profile');
       setSaved(true);
       await onSaved?.(next);
     }

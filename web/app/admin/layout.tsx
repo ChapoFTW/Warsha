@@ -1,6 +1,9 @@
 import type { Metadata, Viewport } from 'next';
 
 import { StaffGate } from '@/components/staff-gate';
+import { directionOf } from '@/lib/preferences';
+import { WarshaPreferencesProvider } from '@/lib/preferences-context';
+import { serverLocale } from '@/lib/server-locale';
 
 import '../globals.css';
 
@@ -32,19 +35,31 @@ const applyStoredAppearance = `
     var explicit = window.localStorage.getItem('warsha:appearance-explicit:v1') === 'true';
     if (explicit && (stored === 'light' || stored === 'dark')) {
       document.documentElement.setAttribute('data-theme', stored);
+      document.documentElement.style.colorScheme = stored;
     }
   } catch (error) {}
 })();
 `;
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+/**
+ * The console reads the same language as the rest of Warsha.
+ *
+ * It has no locale-prefixed routes - `/ar/users` has never existed here - so
+ * the language is decided on the server from the shared preference cookie, the
+ * same way the application decides it. An operator who set Arabic on the
+ * product does not have to set it again to read the console.
+ */
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  const locale = await serverLocale();
   return (
-    <html lang="en" dir="ltr" suppressHydrationWarning>
+    <html lang={locale} dir={directionOf(locale)} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: applyStoredAppearance }} />
       </head>
       <body>
-        <StaffGate>{children}</StaffGate>
+        <WarshaPreferencesProvider initialLocale={locale}>
+          <StaffGate>{children}</StaffGate>
+        </WarshaPreferencesProvider>
       </body>
     </html>
   );

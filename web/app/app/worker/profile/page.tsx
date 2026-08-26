@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Route } from 'next';
@@ -74,8 +75,8 @@ export default function WorkerProfilePage() {
         <p className={styles.muted}>{appWords.accountLegalBody}</p>
         <div className={styles.actions}>
           <a className={styles.secondary} href={`https://usewarsha.com/${locale}/legal`}>{appWords.viewAll}</a>
-          <a className={styles.secondary} href="/support">{appWords.navSupport}</a>
-          <a className={styles.secondary} href="/notifications">{appWords.navNotifications}</a>
+          <Link className={styles.secondary} href={'/support' as Route}>{appWords.navSupport}</Link>
+          <Link className={styles.secondary} href={'/notifications' as Route}>{appWords.navNotifications}</Link>
         </div>
       </section>
       <section className={styles.panel}>

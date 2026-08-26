@@ -71,7 +71,7 @@
       "locale": "en",
       "title": "Addresses and location",
       "summary": "Save a clear service address without losing the exact map pin.",
-      "version": 2,
+      "version": 3,
       "lastReviewedDate": "2026-08-26",
       "features": [
         "addresses",
@@ -91,7 +91,7 @@
         "home",
         "work"
       ],
-      "body": "## Add an address\n\nGive the address a familiar name such as Home or Work. Search for an address or use your current location when those options are available. Warsha keeps the exact coordinates separately from the editable address text.\n\nFill in the street and governorate. Building, floor, apartment, landmark, and worker directions are optional unless the screen says otherwise. Confirm the pin before booking.\n\n## If current location fails\n\nAllow location access in your browser or device settings, make sure location services are on, and try again. If Warsha gets coordinates but cannot find an address, it says so and lets you search or edit the address manually.\n\nChanging the words in the form does not silently move the saved pin.\n\nGovernorate and area are chosen from Egypt's official administrative list rather than typed, so the address you save matches the one workers and support see. Choosing a governorate shows only its own areas, and changing the governorate clears an area that no longer belongs to it.\n\nLocation is its own required step. Warsha needs the exact spot so the worker can reach you, so an address cannot be saved until the location is confirmed by searching for the address or using your current location. If saving is unavailable the form says which step is outstanding. If location permission is blocked, allow it for the site in your browser settings, or search for the address instead. Address name, building, floor, apartment, nearby landmark and notes for the worker are all optional and can be left empty."
+      "body": "## Add an address\n\nGive the address a familiar name such as Home or Work. Search for an address or use your current location when those options are available. Warsha keeps the exact coordinates separately from the editable address text.\n\nFill in the street and governorate. Building, floor, apartment, landmark, and worker directions are optional unless the screen says otherwise. Confirm the pin before booking.\n\n## If current location fails\n\nAllow location access in your browser or device settings, make sure location services are on, and try again. If Warsha gets coordinates but cannot find an address, it says so and lets you search or edit the address manually.\n\nChanging the words in the form does not silently move the saved pin.\n\nGovernorate and area are chosen from Egypt's official administrative list rather than typed, so the address you save matches the one workers and support see. Choosing a governorate shows only its own areas, and changing the governorate clears an area that no longer belongs to it.\n\nLocation is its own required step. Warsha needs the exact spot so the worker can reach you, so an address cannot be saved until the location is confirmed by searching for the address or using your current location. If saving is unavailable the form says which step is outstanding. If location permission is blocked, allow it for the site in your browser settings, or search for the address instead. Address name, building, floor, apartment, nearby landmark and notes for the worker are all optional and can be left empty.\n\nAn address you are part-way through entering is kept if you leave the page and come back, including the confirmed map pin. It is cleared when you save it, when you press Cancel, and when you press Add address to start a different one. Once an address is saved it belongs to your account: it appears in the address list and in the picker on the request form straight away, on this device and in any other tab you have open, without reloading anything. Editing an address you have already saved is deliberately not kept as a draft, so an old edit can never be re-applied over a change you made somewhere else."
     },
     {
       "id": "customer-addresses-location",
@@ -99,7 +99,7 @@
       "locale": "ar",
       "title": "العناوين والموقع",
       "summary": "احفظ عنوان خدمة واضح من غير ما تفقد مكان الدبوس الدقيق.",
-      "version": 2,
+      "version": 3,
       "lastReviewedDate": "2026-08-26",
       "features": [
         "addresses",
@@ -119,7 +119,7 @@
         "البيت",
         "الشغل"
       ],
-      "body": "## ضيف عنوان\n\nسمّي العنوان باسم مألوف زي «البيت» أو «الشغل». دور على عنوان أو استخدم موقعك الحالي لما الاختيارات دي تكون متاحة. ورشة بتحفظ الإحداثيات الدقيقة لوحدها بعيد عن كلام العنوان اللي تقدر تعدله.\n\nاكتب الشارع والمحافظة. المبنى والدور والشقة والعلامة المميزة وتعليمات الوصول اختيارية إلا لو الشاشة قالت غير كده. أكّد الدبوس قبل الحجز.\n\n## لو الموقع الحالي ما اشتغلش\n\nاسمح لورشة بالموقع من إعدادات المتصفح أو الجهاز، واتأكد إن خدمة الموقع شغالة، وجرّب تاني. لو ورشة جابت الإحداثيات بس ما عرفتش العنوان، هتقولك بوضوح وتقدر تدور أو تعدل العنوان بنفسك.\n\nتعديل كلام العنوان ما بيحرّكش الدبوس المحفوظ من غير ما تعرف.\n\nالمحافظة والمنطقة بتتختار من القائمة الإدارية الرسمية لمصر مش بتتكتب، عشان العنوان اللي بتحفظه يبقى مطابق للي الصنايعي والدعم بيشوفوه. لما تختار محافظة بتظهر مناطقها هي بس، ولو غيّرت المحافظة بتتشال المنطقة اللي مبقتش تابعة ليها.\n\nالموقع خطوة مطلوبة لوحدها. ورشة محتاجة المكان بالظبط عشان الصنايعي يوصلك، فمش هينفع تحفظ عنوان قبل ما تأكّد الموقع بالبحث عن العنوان أو باستخدام موقعك الحالي. لو الحفظ مش متاح، الفورم بيقول لك الخطوة الناقصة. ولو إذن الموقع متمنوع، اسمح بيه للموقع من إعدادات المتصفح، أو ابحث عن العنوان بدل كده. اسم العنوان والمبنى والدور والشقة والعلامة المميزة وملاحظات الصنايعي كلها اختيارية وممكن تسيبها فاضية."
+      "body": "## ضيف عنوان\n\nسمّي العنوان باسم مألوف زي «البيت» أو «الشغل». دور على عنوان أو استخدم موقعك الحالي لما الاختيارات دي تكون متاحة. ورشة بتحفظ الإحداثيات الدقيقة لوحدها بعيد عن كلام العنوان اللي تقدر تعدله.\n\nاكتب الشارع والمحافظة. المبنى والدور والشقة والعلامة المميزة وتعليمات الوصول اختيارية إلا لو الشاشة قالت غير كده. أكّد الدبوس قبل الحجز.\n\n## لو الموقع الحالي ما اشتغلش\n\nاسمح لورشة بالموقع من إعدادات المتصفح أو الجهاز، واتأكد إن خدمة الموقع شغالة، وجرّب تاني. لو ورشة جابت الإحداثيات بس ما عرفتش العنوان، هتقولك بوضوح وتقدر تدور أو تعدل العنوان بنفسك.\n\nتعديل كلام العنوان ما بيحرّكش الدبوس المحفوظ من غير ما تعرف.\n\nالمحافظة والمنطقة بتتختار من القائمة الإدارية الرسمية لمصر مش بتتكتب، عشان العنوان اللي بتحفظه يبقى مطابق للي الصنايعي والدعم بيشوفوه. لما تختار محافظة بتظهر مناطقها هي بس، ولو غيّرت المحافظة بتتشال المنطقة اللي مبقتش تابعة ليها.\n\nالموقع خطوة مطلوبة لوحدها. ورشة محتاجة المكان بالظبط عشان الصنايعي يوصلك، فمش هينفع تحفظ عنوان قبل ما تأكّد الموقع بالبحث عن العنوان أو باستخدام موقعك الحالي. لو الحفظ مش متاح، الفورم بيقول لك الخطوة الناقصة. ولو إذن الموقع متمنوع، اسمح بيه للموقع من إعدادات المتصفح، أو ابحث عن العنوان بدل كده. اسم العنوان والمبنى والدور والشقة والعلامة المميزة وملاحظات الصنايعي كلها اختيارية وممكن تسيبها فاضية.\n\nالعنوان اللي لسه بتكتبه بيفضل محفوظ لو سبت الصفحة ورجعت، وكمان الدبوس اللي أكدته على الخريطة. بيتمسح لما تحفظه، أو تضغط إلغاء، أو تضغط «إضافة عنوان» عشان تبدأ عنوان تاني. وأول ما العنوان يتحفظ يبقى بتاع حسابك: بيظهر في قائمة العناوين وفي اختيار العنوان في صفحة الطلب على طول، على الجهاز ده وفي أي تبويب تاني مفتوح، من غير ما تعمل تحديث لأي حاجة. تعديل عنوان محفوظ قبل كده مش بيتحفظ كمسودة عن قصد، عشان تعديل قديم عمره ما يرجع فوق تغيير عملته من مكان تاني."
     },
     {
       "id": "customer-requests-quotes-jobs",
@@ -127,7 +127,7 @@
       "locale": "en",
       "title": "Requests, quotes, and jobs",
       "summary": "Understand what happens from posting a request to completing or cancelling a job.",
-      "version": 5,
+      "version": 6,
       "lastReviewedDate": "2026-08-26",
       "features": [
         "marketplace",
@@ -150,7 +150,7 @@
         "cancel",
         "dispute"
       ],
-      "body": "## Request and quotes\n\nDescribe the problem, choose the approximate area and timing, and send the request. Matching workers can submit one quote and revise it while the request allows changes. Compare the amount, timing, message, materials, payment methods, rating, and verification information shown.\n\nLifecycle statuses use a semantic badge that remains labeled in your language. It is visually separate from the neutral trade and service label, so you can distinguish what the work is from what is happening. Cancelling a request updates the open screen immediately, ends quote countdowns, sorting, matching and new quote actions, and closes worker invitations. The request and any legitimate quote history remain available as read-only history.\n\n## Job\n\nAccepting a quote creates or advances the authoritative booking. Follow its status in My jobs. Schedule changes, extra work, completion, cancellation, and disputes use their own confirmation steps; a message alone does not change the booking.\n\nIf a worker cancels or does not arrive, use the actions shown on that job or contact Support. The job stays in history so both sides can understand what happened.\n\nService types are shown by their name in your language — Electrical, Plumbing, Satellite and TV installation — in English, Arabic and French. After choosing one you can narrow it further with a specific service, such as a blocked drain or a socket installation; that field is optional, and \"Any service in this category\" means you have not narrowed it and no professional is excluded. It works the same way on the website and in the Android and iOS apps. The names you see are display labels; the category and the specific service are recorded the same way whichever language you use, so switching language never changes what you requested. Active and historical request and job screens resolve those labels in your current language; only an old or withdrawn service that can no longer be found keeps the original recorded description as a historical fallback."
+      "body": "## Request and quotes\n\nDescribe the problem, choose the approximate area and timing, and send the request. Matching workers can submit one quote and revise it while the request allows changes. Compare the amount, timing, message, materials, payment methods, rating, and verification information shown.\n\nLifecycle statuses use a semantic badge that remains labeled in your language. It is visually separate from the neutral trade and service label, so you can distinguish what the work is from what is happening. Cancelling a request updates the open screen immediately, ends quote countdowns, sorting, matching and new quote actions, and closes worker invitations. The request and any legitimate quote history remain available as read-only history.\n\n## Job\n\nAccepting a quote creates or advances the authoritative booking. Follow its status in My jobs. Schedule changes, extra work, completion, cancellation, and disputes use their own confirmation steps; a message alone does not change the booking.\n\nIf a worker cancels or does not arrive, use the actions shown on that job or contact Support. The job stays in history so both sides can understand what happened.\n\nService types are shown by their name in your language — Electrical, Plumbing, Satellite and TV installation — in English, Arabic and French. After choosing one you can narrow it further with a specific service, such as a blocked drain or a socket installation; that field is optional, and \"Any service in this category\" means you have not narrowed it and no professional is excluded. It works the same way on the website and in the Android and iOS apps. The names you see are display labels; the category and the specific service are recorded the same way whichever language you use, so switching language never changes what you requested. Active and historical request and job screens resolve those labels in your current language; only an old or withdrawn service that can no longer be found keeps the original recorded description as a historical fallback.\n\nA request you have not sent yet is kept while you move around. Choose a trade, pick a specific service, describe the job, choose an address and a time, then go and look at something else — your addresses, Find help, another page entirely — and come back: it is all still there, including after refreshing the page or closing and reopening the app. It is cleared when you send the request, when you press Cancel, when you sign out, and when a different account signs in on the same device. Starting a request for a different trade from Find help starts a new one rather than resuming the old one."
     },
     {
       "id": "customer-requests-quotes-jobs",
@@ -158,7 +158,7 @@
       "locale": "ar",
       "title": "الطلبات والعروض والشغل",
       "summary": "افهم اللي بيحصل من نشر الطلب لحد اكتمال الشغل أو إلغائه.",
-      "version": 5,
+      "version": 6,
       "lastReviewedDate": "2026-08-26",
       "features": [
         "marketplace",
@@ -181,7 +181,7 @@
         "إلغاء",
         "خلاف"
       ],
-      "body": "## الطلب والعروض\n\nاشرح المشكلة، واختار المنطقة التقريبية والميعاد، وابعت الطلب. الصنايعية المطابقين يقدروا يبعتوا عرض واحد ويعدلوه طول ما الطلب بيسمح. قارن المبلغ والميعاد والرسالة والخامات وطرق الدفع والتقييم والتوثيق الظاهر.\n\nحالة الطلب بتظهر بشارة معناها واضح ومكتوبة بلغتك، وبتفضل منفصلة عن اسم المهنة والخدمة المحايد. لما تلغي طلب، الشاشة المفتوحة بتتحدث فورًا، وعداد العروض والفرز والمطابقة والعروض الجديدة بيقفوا. الطلب وسجل العروض الصحيح بيفضلوا موجودين للرجوع ليهم.\n\n## الشغل\n\nقبول العرض بيعمل أو يحدّث الحجز الرسمي. تابع حالته من «شغلي». تغيير الميعاد والشغل الإضافي والإكمال والإلغاء والخلافات ليهم خطوات تأكيد خاصة؛ الرسالة لوحدها ما بتغيرش الحجز.\n\nلو الصنايعي لغى أو ما وصلش، استخدم الاختيارات الظاهرة في الشغل أو كلم الدعم. الشغل بيفضل في السجل عشان الطرفين يعرفوا اللي حصل.\n\nأنواع الخدمة بتظهر باسمها بلغتك — كهرباء، سباكة، تركيب دش وتلفزيون — بالعربي والإنجليزي والفرنسي. بعد ما تختار النوع تقدر تحدّد أكتر بخدمة معيّنة، زي مواسير مسدودة أو تركيب بريزة؛ الخانة دي اختيارية، و«أي خدمة في الفئة دي» معناها إنك ماحددتش ومفيش صنايعي بيتستبعد. الاسم اللي بتشوفه للعرض بس؛ النوع والخدمة بيتسجلوا بنفس الشكل مهما كانت لغتك، فتغيير اللغة عمره ما بيغيّر طلبك. شاشات الطلبات والشغل الحالية والقديمة بتعرض الأسماء بلغتك الحالية؛ بس الخدمة القديمة أو المسحوبة اللي ما بقاش ممكن نلاقيها بتحتفظ بالوصف الأصلي المسجّل كمرجع تاريخي."
+      "body": "## الطلب والعروض\n\nاشرح المشكلة، واختار المنطقة التقريبية والميعاد، وابعت الطلب. الصنايعية المطابقين يقدروا يبعتوا عرض واحد ويعدلوه طول ما الطلب بيسمح. قارن المبلغ والميعاد والرسالة والخامات وطرق الدفع والتقييم والتوثيق الظاهر.\n\nحالة الطلب بتظهر بشارة معناها واضح ومكتوبة بلغتك، وبتفضل منفصلة عن اسم المهنة والخدمة المحايد. لما تلغي طلب، الشاشة المفتوحة بتتحدث فورًا، وعداد العروض والفرز والمطابقة والعروض الجديدة بيقفوا. الطلب وسجل العروض الصحيح بيفضلوا موجودين للرجوع ليهم.\n\n## الشغل\n\nقبول العرض بيعمل أو يحدّث الحجز الرسمي. تابع حالته من «شغلي». تغيير الميعاد والشغل الإضافي والإكمال والإلغاء والخلافات ليهم خطوات تأكيد خاصة؛ الرسالة لوحدها ما بتغيرش الحجز.\n\nلو الصنايعي لغى أو ما وصلش، استخدم الاختيارات الظاهرة في الشغل أو كلم الدعم. الشغل بيفضل في السجل عشان الطرفين يعرفوا اللي حصل.\n\nأنواع الخدمة بتظهر باسمها بلغتك — كهرباء، سباكة، تركيب دش وتلفزيون — بالعربي والإنجليزي والفرنسي. بعد ما تختار النوع تقدر تحدّد أكتر بخدمة معيّنة، زي مواسير مسدودة أو تركيب بريزة؛ الخانة دي اختيارية، و«أي خدمة في الفئة دي» معناها إنك ماحددتش ومفيش صنايعي بيتستبعد. الاسم اللي بتشوفه للعرض بس؛ النوع والخدمة بيتسجلوا بنفس الشكل مهما كانت لغتك، فتغيير اللغة عمره ما بيغيّر طلبك. شاشات الطلبات والشغل الحالية والقديمة بتعرض الأسماء بلغتك الحالية؛ بس الخدمة القديمة أو المسحوبة اللي ما بقاش ممكن نلاقيها بتحتفظ بالوصف الأصلي المسجّل كمرجع تاريخي.\n\nالطلب اللي لسه ما بعتوش بيفضل محفوظ وانت بتتنقل. اختار الشغلانة، وحدّد الخدمة، واكتب المشكلة، واختار العنوان والوقت، وبعدين روح لأي صفحة تانية — عناوينك، أو «دور على مساعدة»، أو أي حتة — وارجع: هتلاقي كل حاجة زي ما هي، حتى بعد تحديث الصفحة أو قفل التطبيق وفتحه تاني. بيتمسح لما تبعت الطلب، أو تضغط إلغاء، أو تخرج من حسابك، أو لما حساب تاني يدخل على نفس الجهاز. ولو بدأت طلب لشغلانة تانية من «دور على مساعدة»، ده طلب جديد مش استكمال للقديم."
     },
     {
       "id": "customer-account-security",
@@ -189,7 +189,7 @@
       "locale": "en",
       "title": "Account, security, and preferences",
       "summary": "Sign in, recover your password, choose language and appearance, and manage privacy.",
-      "version": 3,
+      "version": 4,
       "lastReviewedDate": "2026-08-26",
       "features": [
         "auth",
@@ -215,7 +215,7 @@
         "privacy",
         "delete"
       ],
-      "body": "Customers sign in with email and password. After account creation, Warsha may ask you to confirm your email. The confirmation screen reports success or a safe link problem, including expired or already-used links where the provider can distinguish them, and offers the relevant next action: continue, sign in, resend confirmation, recover the password, or contact Support.\n\nUse Forgot password to request a recovery link. Confirmation resend and password recovery give the same safe response whether or not an address is registered, and account creation does not reveal whether an existing identity uses the address. Never share a password, confirmation link, or recovery link.\n\nLanguage and Light, Dark, or System appearance follow your saved preference where available. On the web both sit at the foot of the page, under Preferences; in the admin console they are at the bottom of the sidebar, and on an account entry screen below the form. In the app they are in the header. On the web, Addresses, Notifications, Support, Help and Account settings are grouped under the account control at the top right of the signed-in pages, alongside Sign out. Arabic uses right-to-left layout.\n\nThe Privacy Center explains deactivation, data export, and governed deletion. Deactivation is reversible and does not delete history. A deletion request can be blocked by active work, financial retention, a dispute, or a legal hold; the screen reports the real state."
+      "body": "Customers sign in with email and password. After account creation, Warsha may ask you to confirm your email. The confirmation screen reports success or a safe link problem, including expired or already-used links where the provider can distinguish them, and offers the relevant next action: continue, sign in, resend confirmation, recover the password, or contact Support.\n\nUse Forgot password to request a recovery link. Confirmation resend and password recovery give the same safe response whether or not an address is registered, and account creation does not reveal whether an existing identity uses the address. Never share a password, confirmation link, or recovery link.\n\nLanguage and Light, Dark, or System appearance follow your saved preference where available. On the web both sit at the foot of the page, under Preferences; in the admin console they are at the bottom of the sidebar, and on an account entry screen below the form. In the app they are in the header. On the web, Addresses, Notifications, Support, Help and Account settings are grouped under the account control at the top right of the signed-in pages, alongside Sign out. Arabic uses right-to-left layout.\n\nThe Privacy Center explains deactivation, data export, and governed deletion. Deactivation is reversible and does not delete history. A deletion request can be blocked by active work, financial retention, a dispute, or a legal hold; the screen reports the real state.\n\nLanguage and appearance are settings that belong to you, not to the page you are looking at. Choosing English, Arabic or French changes every page at once — the one you are on, the next one you open, the ones you go back to, direct links, and after a refresh — and Arabic always brings right-to-left layout with it. The choice is remembered on this device and recorded on your account, so a new phone or a second browser opens in the language you already chose. The public website keeps a language in its address so an Arabic page can be shared as an Arabic page; if you have chosen a language, following a link in another one still shows you your own. Signing out clears anything you had half-written on that device, and a different account never sees it."
     },
     {
       "id": "customer-account-security",
@@ -223,7 +223,7 @@
       "locale": "ar",
       "title": "الحساب والأمان والتفضيلات",
       "summary": "سجّل الدخول، استرجع كلمة السر، واختار اللغة والمظهر وتحكم في الخصوصية.",
-      "version": 3,
+      "version": 4,
       "lastReviewedDate": "2026-08-26",
       "features": [
         "auth",
@@ -249,7 +249,7 @@
         "خصوصية",
         "حذف"
       ],
-      "body": "العميل بيسجل الدخول بالبريد الإلكتروني وكلمة السر. بعد إنشاء الحساب، ممكن ورشة يطلب تأكيد البريد. شاشة التأكيد بتوضح النجاح أو مشكلة الرابط بشكل آمن، زي رابط منتهي أو مستخدم قبل كده لما الخدمة تقدر تفرّق، وبتظهر الخطوة المناسبة: كمّل، سجّل الدخول، اطلب التأكيد تاني، استرجع كلمة السر، أو كلم الدعم. على الويب، هتلاقي العناوين والإشعارات والمساعدة والدعم وإعدادات الحساب كلها تحت زر الحساب في أعلى الصفحة بعد تسجيل الدخول، ومعاها تسجيل الخروج.\n\nاستخدم «نسيت كلمة السر» عشان تطلب رابط استرجاع. إعادة إرسال التأكيد واسترجاع كلمة السر بيدوا نفس الرد الآمن سواء البريد مسجل أو لأ، وإنشاء الحساب ما بيكشفش لو فيه هوية قديمة بنفس البريد. ما تشاركش كلمة السر أو روابط التأكيد والاسترجاع مع حد.\n\nاختيار اللغة والمظهر فاتح أو داكن أو حسب الجهاز بيتحفظ لما يكون متاح. على الويب الاتنين في آخر الصفحة تحت «التفضيلات»؛ وفي لوحة الإدارة في آخر القائمة الجانبية، وفي شاشات الدخول تحت النموذج. وفي التطبيق موجودين في أعلى الشاشة. العربي بيظهر من اليمين للشمال.\n\nمركز الخصوصية بيشرح إيقاف الحساب مؤقتًا وتنزيل البيانات وطلب الحذف المنظم. الإيقاف قابل للرجوع ومابيحذفش التاريخ. طلب الحذف ممكن يتوقف لو فيه شغل نشط أو حفظ مالي أو خلاف أو احتفاظ قانوني، والشاشة هتقول الحالة الحقيقية."
+      "body": "العميل بيسجل الدخول بالبريد الإلكتروني وكلمة السر. بعد إنشاء الحساب، ممكن ورشة يطلب تأكيد البريد. شاشة التأكيد بتوضح النجاح أو مشكلة الرابط بشكل آمن، زي رابط منتهي أو مستخدم قبل كده لما الخدمة تقدر تفرّق، وبتظهر الخطوة المناسبة: كمّل، سجّل الدخول، اطلب التأكيد تاني، استرجع كلمة السر، أو كلم الدعم. على الويب، هتلاقي العناوين والإشعارات والمساعدة والدعم وإعدادات الحساب كلها تحت زر الحساب في أعلى الصفحة بعد تسجيل الدخول، ومعاها تسجيل الخروج.\n\nاستخدم «نسيت كلمة السر» عشان تطلب رابط استرجاع. إعادة إرسال التأكيد واسترجاع كلمة السر بيدوا نفس الرد الآمن سواء البريد مسجل أو لأ، وإنشاء الحساب ما بيكشفش لو فيه هوية قديمة بنفس البريد. ما تشاركش كلمة السر أو روابط التأكيد والاسترجاع مع حد.\n\nاختيار اللغة والمظهر فاتح أو داكن أو حسب الجهاز بيتحفظ لما يكون متاح. على الويب الاتنين في آخر الصفحة تحت «التفضيلات»؛ وفي لوحة الإدارة في آخر القائمة الجانبية، وفي شاشات الدخول تحت النموذج. وفي التطبيق موجودين في أعلى الشاشة. العربي بيظهر من اليمين للشمال.\n\nمركز الخصوصية بيشرح إيقاف الحساب مؤقتًا وتنزيل البيانات وطلب الحذف المنظم. الإيقاف قابل للرجوع ومابيحذفش التاريخ. طلب الحذف ممكن يتوقف لو فيه شغل نشط أو حفظ مالي أو خلاف أو احتفاظ قانوني، والشاشة هتقول الحالة الحقيقية.\n\nاللغة والمظهر إعدادات بتاعتك انت، مش بتاعة الصفحة اللي قدامك. لما تختار عربي أو إنجليزي أو فرنساوي بيتغير كل حاجة مرة واحدة — الصفحة اللي انت فيها، واللي هتفتحها بعدها، واللي هترجعلها، والروابط المباشرة، وبعد التحديث — والعربي دايمًا بيجي معاه الاتجاه من اليمين لليسار. الاختيار بيتحفظ على الجهاز ده وبيتسجل على حسابك، فموبايل جديد أو متصفح تاني بيفتح باللغة اللي انت اخترتها. الموقع العام بيحط اللغة في العنوان عشان الصفحة العربي تتشارك عربي؛ ولو انت مختار لغة، فتح رابط بلغة تانية هيفضل يوريك لغتك انت. الخروج من الحساب بيمسح أي حاجة كنت كاتبها ونص على الجهاز ده، وحساب تاني عمره ما بيشوفها."
     },
     {
       "id": "customer-support-faq",
@@ -313,7 +313,7 @@
       "locale": "en",
       "title": "Getting started as a worker",
       "summary": "Register with phone and password, finish onboarding, and wait for governed approval.",
-      "version": 3,
+      "version": 4,
       "lastReviewedDate": "2026-08-26",
       "features": [
         "worker_auth",
@@ -334,7 +334,7 @@
         "onboarding",
         "approval"
       ],
-      "body": "## Register\n\nChoose Worker and enter your full name, Egyptian mobile number, and password. There is no worker email field and no email or SMS confirmation step. Warsha creates a private internal Auth identity; it is not a contact address and is never shown as your email. You sign in with phone number and password.\n\nRegistration uses a privacy-preserving response and does not reveal whether the phone number is already tied to an identity. If setup does not complete, use sign-in or password recovery, or contact Support; retrying cannot overwrite an existing account.\n\n## Prepare your profile\n\nAdd your photo and profile details. Then choose your profession — the kind of work you do — and Warsha shows the specific jobs that belong to it, grouped under each profession you pick, so you only choose from work your trade actually covers. Select the jobs you can take, then set your service areas and save a private work location. Finally, complete the identity and criminal-record steps shown by the app.\n\nIf you remove a profession, the jobs you chose under it are removed with it. Some trades cover more than one kind of work — an appliance technician is also offered water-heater jobs, for example — and those appear in the same list.\n\nApproval is a staff decision under the current vetting policy. You cannot quote or accept work until the backend says your worker capability is active."
+      "body": "## Register\n\nChoose Worker and enter your full name, Egyptian mobile number, and password. There is no worker email field and no email or SMS confirmation step. Warsha creates a private internal Auth identity; it is not a contact address and is never shown as your email. You sign in with phone number and password.\n\nRegistration uses a privacy-preserving response and does not reveal whether the phone number is already tied to an identity. If setup does not complete, use sign-in or password recovery, or contact Support; retrying cannot overwrite an existing account.\n\n## Prepare your profile\n\nAdd your photo and profile details. Then choose your profession — the kind of work you do — and Warsha shows the specific jobs that belong to it, grouped under each profession you pick, so you only choose from work your trade actually covers. Select the jobs you can take, then set your service areas and save a private work location. Finally, complete the identity and criminal-record steps shown by the app.\n\nIf you remove a profession, the jobs you chose under it are removed with it. Some trades cover more than one kind of work — an appliance technician is also offered water-heater jobs, for example — and those appear in the same list.\n\nApproval is a staff decision under the current vetting policy. You cannot quote or accept work until the backend says your worker capability is active.\n\nThe trades and jobs you pick in the trade step are kept if you leave the screen and come back, and after the app is closed and reopened. They are cleared once you save them. If the same account changed its trades somewhere else — another device, or the website — the unsaved selection on this device is dropped rather than allowed to overwrite it, and you are shown what the account actually holds. Removing a trade still removes the jobs that belonged to it; keeping your selection does not keep a job you have stopped claiming."
     },
     {
       "id": "worker-getting-started",
@@ -342,7 +342,7 @@
       "locale": "ar",
       "title": "ابدأ كصنايعي",
       "summary": "سجّل بالموبايل وكلمة السر، كمّل التقديم، واستنى الموافقة المنظمة.",
-      "version": 3,
+      "version": 4,
       "lastReviewedDate": "2026-08-26",
       "features": [
         "worker_auth",
@@ -363,7 +363,7 @@
         "تقديم",
         "موافقة"
       ],
-      "body": "## التسجيل\n\nاختار «صنايعي» واكتب اسمك الكامل ورقم موبايل مصري وكلمة السر. مفيش خانة بريد للصنايعي ومفيش تأكيد بريد أو SMS وقت التسجيل. ورشة بيعمل هوية دخول داخلية خاصة؛ دي مش وسيلة تواصل ومش هتظهر كبريدك. بعد كده بتدخل برقم الموبايل وكلمة السر.\n\nرد التسجيل بيحافظ على الخصوصية وما بيكشفش لو رقم الموبايل مرتبط بهوية موجودة. لو الإعداد ما كملش، جرب تسجل الدخول أو تسترجع كلمة السر، أو كلم الدعم؛ إعادة المحاولة ما بتغيرش حساب موجود.\n\n## جهّز ملفك\n\nضيف صورتك وبياناتك. بعدها اختار مهنتك — نوع الشغل اللي بتعمله — وورشة هتعرض عليك الشغلانات الخاصة بيها، متجمّعة تحت كل مهنة تختارها، علشان تختار بس من الشغل اللي مهنتك بتغطيه. اختار الشغلانات اللي تقدر تستلمها، وبعدين حدد مناطق شغلك واحفظ مكان شغلك الخاص. وفي الآخر كمّل خطوات إثبات الهوية والفيش والتشبيه اللي التطبيق بيطلبها.\n\nلو شلت مهنة، الشغلانات اللي اخترتها تحتها بتتشال معاها. وفي مهن بتغطي أكتر من نوع شغل — زي فني الأجهزة المنزلية اللي بيتعرض عليه شغل السخانات كمان — وده بيظهر في نفس القايمة.\n\nالموافقة قرار موظف حسب سياسة المراجعة الحالية. مش هتقدر تبعت عروض أو تقبل شغل قبل ما النظام يأكد إن صلاحية الشغل عندك نشطة."
+      "body": "## التسجيل\n\nاختار «صنايعي» واكتب اسمك الكامل ورقم موبايل مصري وكلمة السر. مفيش خانة بريد للصنايعي ومفيش تأكيد بريد أو SMS وقت التسجيل. ورشة بيعمل هوية دخول داخلية خاصة؛ دي مش وسيلة تواصل ومش هتظهر كبريدك. بعد كده بتدخل برقم الموبايل وكلمة السر.\n\nرد التسجيل بيحافظ على الخصوصية وما بيكشفش لو رقم الموبايل مرتبط بهوية موجودة. لو الإعداد ما كملش، جرب تسجل الدخول أو تسترجع كلمة السر، أو كلم الدعم؛ إعادة المحاولة ما بتغيرش حساب موجود.\n\n## جهّز ملفك\n\nضيف صورتك وبياناتك. بعدها اختار مهنتك — نوع الشغل اللي بتعمله — وورشة هتعرض عليك الشغلانات الخاصة بيها، متجمّعة تحت كل مهنة تختارها، علشان تختار بس من الشغل اللي مهنتك بتغطيه. اختار الشغلانات اللي تقدر تستلمها، وبعدين حدد مناطق شغلك واحفظ مكان شغلك الخاص. وفي الآخر كمّل خطوات إثبات الهوية والفيش والتشبيه اللي التطبيق بيطلبها.\n\nلو شلت مهنة، الشغلانات اللي اخترتها تحتها بتتشال معاها. وفي مهن بتغطي أكتر من نوع شغل — زي فني الأجهزة المنزلية اللي بيتعرض عليه شغل السخانات كمان — وده بيظهر في نفس القايمة.\n\nالموافقة قرار موظف حسب سياسة المراجعة الحالية. مش هتقدر تبعت عروض أو تقبل شغل قبل ما النظام يأكد إن صلاحية الشغل عندك نشطة.\n\nالشغلانات والخدمات اللي بتختارها في خطوة الشغلانة بتفضل محفوظة لو سبت الشاشة ورجعت، وكمان بعد ما تقفل التطبيق وتفتحه تاني. بتتمسح أول ما تحفظها. ولو نفس الحساب غيّر شغلانته من مكان تاني — جهاز تاني أو الموقع — الاختيار اللي لسه ما اتحفظش على الجهاز ده بيتلغي بدل ما يمسح اللي اتغير، وبيتعرضلك اللي الحساب فعلاً شايله. لما تشيل شغلانة بتشيل معاها الخدمات بتاعتها زي ما كانت؛ حفظ اختيارك مش معناه إنك تفضل شايل خدمة بطّلت تقولها."
     },
     {
       "id": "worker-onboarding-verification",
@@ -371,7 +371,7 @@
       "locale": "en",
       "title": "Onboarding, service areas, and verification",
       "summary": "Understand every application stage and what customers can see.",
-      "version": 2,
+      "version": 3,
       "lastReviewedDate": "2026-08-26",
       "features": [
         "worker_onboarding",
@@ -392,7 +392,7 @@
         "verification",
         "rejected"
       ],
-      "body": "Trades describe the work you offer. Services are the specific tasks customers can request. Service areas describe where you will travel. Your exact work/home location is private and is used for nearby matching; customers do not see it.\n\nVerification can be Not started, Draft, Submitted, Under review, Approved, More information required, Rejected, or Expired. The app shows the safe reason and next action. Identity documents and criminal-record evidence are private. A certificate upload is reviewed by a person and is not claimed to be checked with a government system.\n\nIf more information is required, correct only the requested step and submit again. If rejected, use the appeal path when the app offers it or contact Support.\n\nWhere a worker supplies a service area, the governorate and area come from the same official administrative list customers use, so coverage and requests are compared against identical values rather than two spellings of the same place."
+      "body": "Trades describe the work you offer. Services are the specific tasks customers can request. Service areas describe where you will travel. Your exact work/home location is private and is used for nearby matching; customers do not see it.\n\nVerification can be Not started, Draft, Submitted, Under review, Approved, More information required, Rejected, or Expired. The app shows the safe reason and next action. Identity documents and criminal-record evidence are private. A certificate upload is reviewed by a person and is not claimed to be checked with a government system.\n\nIf more information is required, correct only the requested step and submit again. If rejected, use the appeal path when the app offers it or contact Support.\n\nWhere a worker supplies a service area, the governorate and area come from the same official administrative list customers use, so coverage and requests are compared against identical values rather than two spellings of the same place.\n\nNothing you have entered in a step is lost by moving between steps, opening another screen, or having the app closed in the background. What is kept is what you chose and have not saved yet; what has been saved belongs to your account and is read back from it. Signing out clears anything unsaved on that device."
     },
     {
       "id": "worker-onboarding-verification",
@@ -400,7 +400,7 @@
       "locale": "ar",
       "title": "التقديم ومناطق الشغل والتوثيق",
       "summary": "افهم كل مرحلة في التقديم وإيه اللي العميل يقدر يشوفه.",
-      "version": 2,
+      "version": 3,
       "lastReviewedDate": "2026-08-26",
       "features": [
         "worker_onboarding",
@@ -421,7 +421,7 @@
         "توثيق",
         "رفض"
       ],
-      "body": "المهن بتوضح نوع الشغل اللي بتقدمه. الخدمات هي المهام المحددة اللي العميل يطلبها. مناطق الخدمة بتوضح هتتحرك فين. موقع شغلك أو بيتك الدقيق خاص وبيستخدم للمطابقة القريبة؛ العملاء مش بيشوفوه.\n\nحالة التوثيق ممكن تكون: لسه ما بدأش، مسودة، اتبعت، تحت المراجعة، اتوافق عليه، محتاج معلومات تانية، اترفض، أو انتهت صلاحيته. التطبيق بيعرض السبب الآمن والخطوة الجاية. مستندات الهوية والفيش خاصة. المستند بيراجعه شخص، وورشة ما بيدّعيش إنه اتراجع مع جهة حكومية.\n\nلو مطلوب معلومات تانية، صحح الخطوة المطلوبة بس وابعت من جديد. لو اترفضت، استخدم الاعتراض لما التطبيق يتيحه أو كلم الدعم.\n\nلما الصنايعي يحدد منطقة خدمة، المحافظة والمنطقة بييجوا من نفس القائمة الإدارية الرسمية اللي العملاء بيستخدموها، فالتغطية والطلبات بتتقارن بنفس القيم مش بكتابتين مختلفتين لنفس المكان."
+      "body": "المهن بتوضح نوع الشغل اللي بتقدمه. الخدمات هي المهام المحددة اللي العميل يطلبها. مناطق الخدمة بتوضح هتتحرك فين. موقع شغلك أو بيتك الدقيق خاص وبيستخدم للمطابقة القريبة؛ العملاء مش بيشوفوه.\n\nحالة التوثيق ممكن تكون: لسه ما بدأش، مسودة، اتبعت، تحت المراجعة، اتوافق عليه، محتاج معلومات تانية، اترفض، أو انتهت صلاحيته. التطبيق بيعرض السبب الآمن والخطوة الجاية. مستندات الهوية والفيش خاصة. المستند بيراجعه شخص، وورشة ما بيدّعيش إنه اتراجع مع جهة حكومية.\n\nلو مطلوب معلومات تانية، صحح الخطوة المطلوبة بس وابعت من جديد. لو اترفضت، استخدم الاعتراض لما التطبيق يتيحه أو كلم الدعم.\n\nلما الصنايعي يحدد منطقة خدمة، المحافظة والمنطقة بييجوا من نفس القائمة الإدارية الرسمية اللي العملاء بيستخدموها، فالتغطية والطلبات بتتقارن بنفس القيم مش بكتابتين مختلفتين لنفس المكان.\n\nمفيش حاجة كتبتها في أي خطوة بتضيع لما تتنقل بين الخطوات، أو تفتح شاشة تانية، أو التطبيق يتقفل وهو في الخلفية. اللي بيتحفظ هو اللي اخترته ولسه ما حفظتوش؛ واللي اتحفظ بقى بتاع حسابك وبيتقرا منه. الخروج من الحساب بيمسح أي حاجة لسه ما اتحفظتش على الجهاز ده."
     },
     {
       "id": "worker-opportunities-jobs",
@@ -429,7 +429,7 @@
       "locale": "en",
       "title": "Opportunities, quotes, and jobs",
       "summary": "Review matching requests, write clear quotes, and update real job progress.",
-      "version": 5,
+      "version": 6,
       "lastReviewedDate": "2026-08-26",
       "features": [
         "marketplace",
@@ -450,7 +450,7 @@
         "job",
         "cancel"
       ],
-      "body": "Opportunities appear only when your active worker capability, trades, service areas, availability, and the request match. Not seeing requests can be correct while onboarding or verification is incomplete. Active invitations are separated from opportunity history. If a customer cancels, the invitation leaves the active section immediately, becomes closed history, and no new or revised quote can be submitted.\n\nA quote should state the price, arrival estimate, expected duration, what labour/materials include, supported payment methods, and a useful message. Do not put contact details into the quote. A retry must not create a second quote.\n\nWhen selected, manage the job from Jobs. Use the provided progress actions—on the way, arrived, started, completion, reschedule, cancellation—because chat messages do not change job state. Give a truthful reason where required.\n\nService types appear under their name in your language rather than an internal code. The underlying service is the same record customers and staff see, so a job you accept in Arabic is the same job in English. Each invitation names the trade it is for and, when the customer narrowed their request, the specific service they asked for, so you know what you are quoting on before you open it. Opportunities and job history keep resolving those names in your current language; only an old or withdrawn service that can no longer be found uses its original recorded description as a historical fallback."
+      "body": "Opportunities appear only when your active worker capability, trades, service areas, availability, and the request match. Not seeing requests can be correct while onboarding or verification is incomplete. Active invitations are separated from opportunity history. If a customer cancels, the invitation leaves the active section immediately, becomes closed history, and no new or revised quote can be submitted.\n\nA quote should state the price, arrival estimate, expected duration, what labour/materials include, supported payment methods, and a useful message. Do not put contact details into the quote. A retry must not create a second quote.\n\nWhen selected, manage the job from Jobs. Use the provided progress actions—on the way, arrived, started, completion, reschedule, cancellation—because chat messages do not change job state. Give a truthful reason where required.\n\nService types appear under their name in your language rather than an internal code. The underlying service is the same record customers and staff see, so a job you accept in Arabic is the same job in English. Each invitation names the trade it is for and, when the customer narrowed their request, the specific service they asked for, so you know what you are quoting on before you open it. Opportunities and job history keep resolving those names in your current language; only an old or withdrawn service that can no longer be found uses its original recorded description as a historical fallback.\n\nMoving between opportunities, jobs and earnings does not reset what you were doing. A screen you come back to shows the same state you left, and anything you had chosen but not saved is still chosen."
     },
     {
       "id": "worker-opportunities-jobs",
@@ -458,7 +458,7 @@
       "locale": "ar",
       "title": "الفرص والعروض والشغل",
       "summary": "راجع الطلبات المناسبة، اكتب عرض واضح، وحدّث تقدم الشغل الحقيقي.",
-      "version": 5,
+      "version": 6,
       "lastReviewedDate": "2026-08-26",
       "features": [
         "marketplace",
@@ -479,7 +479,7 @@
         "شغل",
         "إلغاء"
       ],
-      "body": "الفرص بتظهر بس لما صلاحية الشغل تكون نشطة ومهنتك ومنطقة خدمتك وتوفرك مناسبين للطلب. طبيعي ما تشوفش طلبات لو التقديم أو التوثيق لسه ناقص. الدعوات المتاحة بتظهر لوحدها والنتائج المنتهية في السجل. لو العميل لغى، الدعوة بتخرج فورًا من القسم المتاح وتبقى سجل مقفول، وما ينفعش تبعت أو تعدّل عرض.\n\nالعرض الواضح فيه السعر ووقت الوصول والمدة المتوقعة والخامات أو المصنعية المشمولة وطرق الدفع ورسالة مفيدة. ما تحطش بيانات تواصل في العرض. إعادة المحاولة ما ينفعش تعمل عرض تاني لنفس الطلب.\n\nلما العميل يختارك، تابع من «الشغل». استخدم خطوات التقدم الموجودة—في الطريق، وصلت، بدأت، اكتمل، تغيير الموعد، إلغاء—لأن رسائل الشات ما بتغيرش حالة الشغل. اكتب سبب حقيقي لما يكون مطلوب.\n\nأنواع الخدمة بتظهر باسمها بلغتك مش بكود داخلي. الخدمة الأساسية هي نفس السجل اللي العملاء والفريق بيشوفوه، فالشغلانة اللي بتقبلها بالعربي هي نفسها بالإنجليزي. كل دعوة بتوضح نوع الشغل، ولو العميل حدد خدمة معينة بتظهر كمان، عشان تعرف بتسعّر على إيه قبل ما تفتحها. الفرص وسجل الشغل بيفضلوا يعرضوا الأسماء بلغتك الحالية؛ بس الخدمة القديمة أو المسحوبة اللي ما بقاش ممكن نلاقيها بتستخدم الوصف الأصلي المسجّل كمرجع تاريخي."
+      "body": "الفرص بتظهر بس لما صلاحية الشغل تكون نشطة ومهنتك ومنطقة خدمتك وتوفرك مناسبين للطلب. طبيعي ما تشوفش طلبات لو التقديم أو التوثيق لسه ناقص. الدعوات المتاحة بتظهر لوحدها والنتائج المنتهية في السجل. لو العميل لغى، الدعوة بتخرج فورًا من القسم المتاح وتبقى سجل مقفول، وما ينفعش تبعت أو تعدّل عرض.\n\nالعرض الواضح فيه السعر ووقت الوصول والمدة المتوقعة والخامات أو المصنعية المشمولة وطرق الدفع ورسالة مفيدة. ما تحطش بيانات تواصل في العرض. إعادة المحاولة ما ينفعش تعمل عرض تاني لنفس الطلب.\n\nلما العميل يختارك، تابع من «الشغل». استخدم خطوات التقدم الموجودة—في الطريق، وصلت، بدأت، اكتمل، تغيير الموعد، إلغاء—لأن رسائل الشات ما بتغيرش حالة الشغل. اكتب سبب حقيقي لما يكون مطلوب.\n\nأنواع الخدمة بتظهر باسمها بلغتك مش بكود داخلي. الخدمة الأساسية هي نفس السجل اللي العملاء والفريق بيشوفوه، فالشغلانة اللي بتقبلها بالعربي هي نفسها بالإنجليزي. كل دعوة بتوضح نوع الشغل، ولو العميل حدد خدمة معينة بتظهر كمان، عشان تعرف بتسعّر على إيه قبل ما تفتحها. الفرص وسجل الشغل بيفضلوا يعرضوا الأسماء بلغتك الحالية؛ بس الخدمة القديمة أو المسحوبة اللي ما بقاش ممكن نلاقيها بتستخدم الوصف الأصلي المسجّل كمرجع تاريخي.\n\nالتنقل بين الفرص والشغل والأرباح مش بيرجّع أي حاجة للبداية. الشاشة اللي بترجعلها بتوريك نفس الحالة اللي سبتها، وأي حاجة اخترتها وما حفظتهاش بتفضل مختارة."
     },
     {
       "id": "worker-earnings-profile",
@@ -669,7 +669,7 @@
       "locale": "en",
       "title": "Worker verification and enforcement",
       "summary": "Review evidence, record safe reasons, and understand approval, rejection, suspension, ban, and appeal boundaries.",
-      "version": 2,
+      "version": 3,
       "lastReviewedDate": "2026-08-26",
       "features": [
         "worker_vetting",
@@ -700,7 +700,7 @@
         "appeal",
         "evidence"
       ],
-      "body": "Review the submitted identity and criminal-record steps against the active policy. Record evidence only in the private evidence field and give the worker a separate safe, useful reason. Warsha does not claim an automated government check.\n\nApproval and activation are separate authorities. Rejection can require dual control. A temporary restriction or suspension is time/scope bounded when the policy says so. A permanent ban is high-risk, requires the specific capability, investigated evidence, fresh authentication, and the configured second-person approval.\n\nNever put offence detail, document contents, reviewer identity, or private notes into worker-visible text. Appeals do not erase the original decision; they add an auditable later decision.\n\nA decision that asks you to confirm who you are is not lost. If your session needs refreshing at the moment you submit a vetting decision or an enforcement action, Warsha holds the decision exactly as you composed it, asks you to confirm, and then submits that same decision. Previously the confirmation closed and the decision had to be re-entered — and because nothing had been recorded, the screen looked unchanged. Cancelling the confirmation, or failing it, submits nothing."
+      "body": "Review the submitted identity and criminal-record steps against the active policy. Record evidence only in the private evidence field and give the worker a separate safe, useful reason. Warsha does not claim an automated government check.\n\nApproval and activation are separate authorities. Rejection can require dual control. A temporary restriction or suspension is time/scope bounded when the policy says so. A permanent ban is high-risk, requires the specific capability, investigated evidence, fresh authentication, and the configured second-person approval.\n\nNever put offence detail, document contents, reviewer identity, or private notes into worker-visible text. Appeals do not erase the original decision; they add an auditable later decision.\n\nA decision that asks you to confirm who you are is not lost. If your session needs refreshing at the moment you submit a vetting decision or an enforcement action, Warsha holds the decision exactly as you composed it, asks you to confirm, and then submits that same decision. Previously the confirmation closed and the decision had to be re-entered — and because nothing had been recorded, the screen looked unchanged. Cancelling the confirmation, or failing it, submits nothing.\n\nThe console reads the same language preference as the rest of Warsha. Choosing a language anywhere — the product, the public site, or the console itself — applies to all of them, and Arabic brings right-to-left layout with it. The console has no language in its address; there has never been an /ar route here, and one is not needed."
     },
     {
       "id": "admin-verification-enforcement",
@@ -708,7 +708,7 @@
       "locale": "ar",
       "title": "مراجعة الصنايعي وإجراءات الأمان",
       "summary": "راجع الدليل وسجل سبب آمن وافهم حدود الموافقة والرفض والإيقاف والحظر والاعتراض.",
-      "version": 2,
+      "version": 3,
       "lastReviewedDate": "2026-08-26",
       "features": [
         "worker_vetting",
@@ -739,7 +739,7 @@
         "اعتراض",
         "دليل"
       ],
-      "body": "راجع خطوات الهوية والفيش المرسلة حسب السياسة النشطة. سجل الدليل في خانة الدليل الخاصة بس، واكتب للصنايعي سبب آمن ومفيد منفصل. ورشة ما بيدّعيش إن فيه كشف حكومي آلي.\n\nالموافقة والتفعيل صلاحيتين منفصلتين. الرفض ممكن يحتاج تحكم مزدوج. التقييد المؤقت أو الإيقاف بيكون بمدة ونطاق لما السياسة تقول كده. الحظر الدائم عالي الخطورة ومحتاج الصلاحية المحددة ودليل متحقق وتسجيل دخول حديث وموافقة الشخص الثاني حسب الإعداد.\n\nما تحطش تفاصيل مخالفة أو محتوى مستند أو اسم المراجع أو ملاحظات خاصة في الكلام اللي الصنايعي هيشوفه. الاعتراض ما بيمسحش القرار الأول؛ بيضيف قرار جديد قابل للمراجعة.\n\nالقرار اللي بيطلب منك تأكيد شخصيتك مش بيضيع. لو جلستك محتاجة تجديد في اللحظة اللي بتبعت فيها قرار توثيق أو إجراء إنفاذ، ورشة بتحتفظ بالقرار زي ما كتبته بالظبط، وبتطلب منك التأكيد، وبعدين بتبعت نفس القرار. قبل كده كان التأكيد بيتقفل والقرار لازم يتكتب تاني — وعشان مفيش حاجة كانت اتسجّلت، الشاشة كانت مبيّنة كأن مفيش حاجة حصلت. ولو لغيت التأكيد أو فشل، مفيش حاجة بتتبعت."
+      "body": "راجع خطوات الهوية والفيش المرسلة حسب السياسة النشطة. سجل الدليل في خانة الدليل الخاصة بس، واكتب للصنايعي سبب آمن ومفيد منفصل. ورشة ما بيدّعيش إن فيه كشف حكومي آلي.\n\nالموافقة والتفعيل صلاحيتين منفصلتين. الرفض ممكن يحتاج تحكم مزدوج. التقييد المؤقت أو الإيقاف بيكون بمدة ونطاق لما السياسة تقول كده. الحظر الدائم عالي الخطورة ومحتاج الصلاحية المحددة ودليل متحقق وتسجيل دخول حديث وموافقة الشخص الثاني حسب الإعداد.\n\nما تحطش تفاصيل مخالفة أو محتوى مستند أو اسم المراجع أو ملاحظات خاصة في الكلام اللي الصنايعي هيشوفه. الاعتراض ما بيمسحش القرار الأول؛ بيضيف قرار جديد قابل للمراجعة.\n\nالقرار اللي بيطلب منك تأكيد شخصيتك مش بيضيع. لو جلستك محتاجة تجديد في اللحظة اللي بتبعت فيها قرار توثيق أو إجراء إنفاذ، ورشة بتحتفظ بالقرار زي ما كتبته بالظبط، وبتطلب منك التأكيد، وبعدين بتبعت نفس القرار. قبل كده كان التأكيد بيتقفل والقرار لازم يتكتب تاني — وعشان مفيش حاجة كانت اتسجّلت، الشاشة كانت مبيّنة كأن مفيش حاجة حصلت. ولو لغيت التأكيد أو فشل، مفيش حاجة بتتبعت.\n\nلوحة التحكم بتقرا نفس اختيار اللغة اللي باقي ورشة بيقراه. اختيار اللغة من أي مكان — المنتج، أو الموقع العام، أو اللوحة نفسها — بيطبّق على الكل، والعربي بيجي معاه الاتجاه من اليمين لليسار. اللوحة مفيهاش لغة في العنوان؛ ما كانش فيه أصلاً مسار ‎/ar هنا، ومش محتاجينه."
     },
     {
       "id": "admin-staff-security",

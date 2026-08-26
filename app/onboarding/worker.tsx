@@ -41,9 +41,34 @@ import {
   type ProviderDraft,
   type ProviderMediaInput,
 } from '@/src/providers/provider-types';
+import { useDraftState } from '@/src/drafts/draft-context';
 import { useWorkerText } from '@/src/worker/worker-copy';
 import { workerJourneyProgress } from '@/src/worker/worker-onboarding-policy';
 import type { CatalogueServiceRow } from '@/src/services/specific-services';
+
+const sameTradeSet = (left: readonly string[], right: readonly string[]) =>
+  left.length === right.length && [...left].sort().join('|') === [...right].sort().join('|');
+
+function tradeSnapshot(profile: ProviderDraft) {
+  return {
+    professionKeys: selectedProfessionKeys(profile).map(String),
+    serviceIds: profile.services.map(item => item.serviceId),
+  };
+}
+
+/** Re-apply a stored trade delta on top of a freshly loaded profile. */
+function applyTradeDelta(
+  profile: ProviderDraft,
+  professionKeys: readonly string[],
+  serviceIds: readonly string[],
+  catalogue: readonly CatalogueServiceRow[],
+): ProviderDraft {
+  let next = withTradeSelection(profile, professionKeys, catalogue);
+  for (const row of catalogue) {
+    if (serviceIds.includes(row.id)) next = withOfferedService(next, row, true, catalogue);
+  }
+  return next;
+}
 
 export default function WorkerOnboarding() {
   const styles = useThemedStyles(makeStyles);
@@ -60,15 +85,88 @@ export default function WorkerOnboarding() {
   const [appeal, setAppeal] = useState('');
   const hydratedProfile = useRef<string | null>(null);
 
+  /*
+   * Step 3's unsaved choices, and the server state they were made against.
+   *
+   * A *delta*, never a copy of the profile. Restoring a whole stored profile
+   * later would re-apply values the account may have changed elsewhere; storing
+   * only what the worker chose, together with the baseline they chose it
+   * against, means it is re-applied to fresh server data and abandoned outright
+   * if that data moved on. Web applies the identical rule — see
+   * `web/components/worker-profile-editor.tsx`.
+   */
+  const [tradeDraft, setTradeDraft, resetTradeDraft] = useDraftState<{
+    baselineProfessionKeys: string[];
+    baselineServiceIds: string[];
+    professionKeys: string[];
+    serviceIds: string[];
+  } | null>('worker_trade', null);
+  const tradeDraftRef = useRef(tradeDraft);
+  tradeDraftRef.current = tradeDraft;
+  const serverTrade = useRef<{ professionKeys: string[]; serviceIds: string[] } | null>(null);
+
   useEffect(() => {
     const profile = provider.profile;
     if (!profile) return;
     const key = profile.id ?? onboarding.accountKey ?? 'profile';
     if (hydratedProfile.current === key) return;
     hydratedProfile.current = key;
-    setDraft(profile);
     setExperienceInput(profile.experienceYears > 0 ? String(profile.experienceYears) : '');
+    serverTrade.current = tradeSnapshot(profile);
+    setDraft(profile);
   }, [onboarding.accountKey, provider.profile]);
+
+  /*
+   * Re-apply the unsaved trade delta, once — and only once the catalogue has
+   * arrived, because `withTradeSelection` filters a selection against it and
+   * would silently drop every offered service if handed an empty list. If the
+   * server's trades have moved on since the delta was written, it is abandoned
+   * rather than allowed to win.
+   */
+  const tradeRestored = useRef(false);
+  useEffect(() => {
+    if (tradeRestored.current) return;
+    const profile = provider.profile;
+    const server = serverTrade.current;
+    if (!profile || !server || options.length === 0) return;
+    tradeRestored.current = true;
+    const stored = tradeDraftRef.current;
+    if (!stored) return;
+    if (!sameTradeSet(stored.baselineProfessionKeys, server.professionKeys)
+      || !sameTradeSet(stored.baselineServiceIds, server.serviceIds)) {
+      resetTradeDraft('discarded');
+      return;
+    }
+    if (sameTradeSet(stored.professionKeys, server.professionKeys)
+      && sameTradeSet(stored.serviceIds, server.serviceIds)) return;
+    setDraft(applyTradeDelta(profile, stored.professionKeys, stored.serviceIds, options));
+  }, [options, provider.profile, resetTradeDraft]);
+
+  /**
+   * Record the unsaved trade selection, or drop it once it matches the server
+   * again. Every trade control goes through here rather than calling `setDraft`
+   * directly, so there is one place that decides what is unsaved.
+   */
+  const applyTrade = (next: (current: ProviderDraft) => ProviderDraft) => {
+    setDraft(current => {
+      const updated = next(current);
+      const server = serverTrade.current;
+      const chosen = tradeSnapshot(updated);
+      if (!server) return updated;
+      if (sameTradeSet(server.professionKeys, chosen.professionKeys)
+        && sameTradeSet(server.serviceIds, chosen.serviceIds)) {
+        resetTradeDraft('discarded');
+      } else {
+        setTradeDraft({
+          baselineProfessionKeys: server.professionKeys,
+          baselineServiceIds: server.serviceIds,
+          professionKeys: chosen.professionKeys,
+          serviceIds: chosen.serviceIds,
+        });
+      }
+      return updated;
+    });
+  };
 
   const loadOptions = useCallback(async () => {
     setOptionsLoading(true);
@@ -175,7 +273,13 @@ export default function WorkerOnboarding() {
         : wt.text('serviceRequired'));
       return;
     }
-    void saveDraft(draft);
+    // Saved: the selection is the server's, so the unsaved copy ends and the
+    // baseline moves with it.
+    void saveDraft(draft).then(saved => {
+      if (!saved) return;
+      serverTrade.current = tradeSnapshot(draft);
+      resetTradeDraft('submitted');
+    });
   };
 
   const saveArea = async () => {
@@ -251,7 +355,7 @@ export default function WorkerOnboarding() {
                 cannot be offered before the trade has been chosen. */}
             <ProfessionSelector
               selected={selectedProfessionKeys(draft)}
-              onChange={keys => setDraft(current => withTradeSelection(current, keys, options))}
+              onChange={keys => applyTrade(current => withTradeSelection(current, keys, options))}
             />
             {withdrawnProfessionSelections(draft).length ? (
               <AppText accessibilityRole="alert" style={styles.note}>
@@ -270,9 +374,9 @@ export default function WorkerOnboarding() {
                 historicalServices={historicalOfferedServices(draft, options)}
                 disabled={busy}
                 onToggleService={(service, offered) =>
-                  setDraft(current => withOfferedService(current, service, offered, options))}
+                  applyTrade(current => withOfferedService(current, service, offered, options))}
                 onToggleAll={(professionKey, offered) =>
-                  setDraft(current => withProfessionServices(current, professionKey, offered, options))}
+                  applyTrade(current => withProfessionServices(current, professionKey, offered, options))}
               />
             ) : null}
             {!optionsLoading && options.length === 0 ? <BrandButton label={wt.text('retry')} variant="secondary" onPress={() => void loadOptions()} /> : null}

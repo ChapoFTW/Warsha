@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 
 import { AuthScreen, AuthStateCard, SecretField, authPanelStyles as styles } from '@/components/auth-panel';
@@ -229,7 +230,7 @@ export default function ResetPasswordPage() {
       </form>
 
       <p className={styles.foot}>
-        <a className={styles.link} href={'/sign-in' as Route}>{words.backToSignIn}</a>
+        <Link className={styles.link} href={'/sign-in' as Route}>{words.backToSignIn}</Link>
       </p>
     </AuthScreen>
   );

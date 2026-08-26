@@ -1,5 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
+
+import { useDraftState } from '@/src/drafts/draft-context';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -170,15 +172,33 @@ function CustomerDestinationAddressFlow() {
   const ot = useOnboardingText();
   const onboarding = useOnboarding();
   const addresses = useAddresses();
-  const [governorate, setGovernorate] = useState('');
-  const [district, setDistrict] = useState('');
-  const [street, setStreet] = useState('');
-  const [building, setBuilding] = useState('');
-  const [floor, setFloor] = useState('');
-  const [apartment, setApartment] = useState('');
-  const [landmark, setLandmark] = useState('');
-  const [pin, setPin] = useState<PinPosition | null>(null);
-  const [pinSource, setPinSource] = useState<PinSource | null>(null);
+  /*
+   * The address a customer is entering for the first time, kept above the
+   * navigator so backing out of onboarding — or Android reclaiming the app
+   * while somebody walks outside to get a GPS fix — does not cost them the
+   * whole form. It is not the server's yet, so nothing can be overwritten by
+   * keeping it; it is erased the moment it is saved.
+   */
+  const [form, setForm, resetForm] = useDraftState('address_editor', {
+    governorate: '', district: '', street: '', building: '',
+    floor: '', apartment: '', landmark: '',
+    pin: null as PinPosition | null,
+    pinSource: null as PinSource | null,
+  });
+  const { governorate, district, street, building, floor, apartment, landmark, pin, pinSource } = form;
+  // An updater, not a spread of the render's `form`: the picker's handler calls
+  // five setters in a row, and with a stale closure each would discard the one
+  // before it.
+  const patch = (change: Partial<typeof form>) => setForm((current) => ({ ...current, ...change }));
+  const setPin = (value: PinPosition | null) => patch({ pin: value });
+  const setPinSource = (value: PinSource | null) => patch({ pinSource: value });
+  const setGovernorate = (value: string) => patch({ governorate: value });
+  const setDistrict = (value: string) => patch({ district: value });
+  const setStreet = (value: string) => patch({ street: value });
+  const setBuilding = (value: string) => patch({ building: value });
+  const setFloor = (value: string) => patch({ floor: value });
+  const setApartment = (value: string) => patch({ apartment: value });
+  const setLandmark = (value: string) => patch({ landmark: value });
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -242,7 +262,11 @@ function CustomerDestinationAddressFlow() {
         serviceNotes: null,
       });
       if (!confirmed) setMessage(ot.text('genericError'));
-      else router.replace('/');
+      else {
+        // Saved and confirmed: the address is the server's now.
+        resetForm('submitted');
+        router.replace('/');
+      }
     } catch {
       setMessage(ot.text('genericError'));
     } finally {

@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
 
 import { AuthScreen, authPanelStyles as styles } from '@/components/auth-panel';
@@ -67,7 +68,7 @@ export default function ForgotPasswordPage() {
         <h1 className={styles.title}>{authWords.forgotSentTitle}</h1>
         <p className={styles.lead}>{authWords.forgotSentBody}</p>
         <p className={styles.note}>{words.forgotSentAgain}</p>
-        <a className={styles.submit} href={'/sign-in' as Route}>{authWords.backToSignInAction}</a>
+        <Link className={styles.submit} href={'/sign-in' as Route}>{authWords.backToSignInAction}</Link>
       </AuthScreen>
     );
   }
@@ -104,7 +105,7 @@ export default function ForgotPasswordPage() {
       </form>
 
       <p className={styles.foot}>
-        <a className={styles.link} href={'/sign-in' as Route}>{authWords.backToSignInAction}</a>
+        <Link className={styles.link} href={'/sign-in' as Route}>{authWords.backToSignInAction}</Link>
       </p>
       <p className={styles.note}>{words.forgotWorkerNote}</p>
     </AuthScreen>

@@ -10,6 +10,18 @@
  * correctly rather than fighting two different definitions of a default.
  */
 
+// Re-exporting does not bring a name into this module's own scope, and the
+// wrappers below genuinely call these.
+import {
+  directionFor,
+  intlTagFor,
+  isSupportedLocale,
+  localeFromPreferredList,
+  preferredListFromAcceptLanguage,
+  supportedLocales,
+  type SupportedLocale,
+} from '../../src/preferences/preference-authority.ts';
+
 export {
   languageStorageKey,
   languageExplicitKey,
@@ -31,40 +43,59 @@ export {
   type ResolvedAppearance,
 } from '../../src/appearance/appearance-types.ts';
 
-export const LOCALES = ['en', 'ar', 'fr'] as const;
-export type Locale = (typeof LOCALES)[number];
+export {
+  accountLocalePrecedence,
+  directionFor,
+  intlTagFor,
+  isSupportedLocale,
+  localeCookieDomain,
+  localeCookieMaxAgeSeconds,
+  localeCookieName,
+  localeCookieValue,
+  localeDirectionAgrees,
+  localeFromCookieHeader,
+  localeFromPath,
+  localeFromPreferredList,
+  pathWithLocale,
+  pathWithoutLocale,
+  preferredListFromAcceptLanguage,
+  resolveEffectiveLocale,
+  supportedLocales,
+  type EffectiveLocale,
+  type LocaleDirection,
+  type LocaleInputs,
+  type LocaleSource,
+  type SupportedLocale,
+} from '../../src/preferences/preference-authority.ts';
 
+export const LOCALES = supportedLocales;
+export type Locale = SupportedLocale;
+
+/**
+ * These four were four small reimplementations of rules that now live in
+ * `src/preferences/preference-authority.ts`. They stay as names because the
+ * whole web surface calls them; they no longer stay as *logic*, because a
+ * second copy of "which locales exist" and "which way does Arabic run" is
+ * exactly the kind of duplication that lets one surface disagree with another.
+ */
 export function isLocale(value: unknown): value is Locale {
-  return value === 'en' || value === 'ar' || value === 'fr';
+  return isSupportedLocale(value);
 }
 
 export function directionOf(locale: Locale): 'ltr' | 'rtl' {
-  return locale === 'ar' ? 'rtl' : 'ltr';
+  return directionFor(locale);
 }
 
 export function intlLocale(locale: Locale): 'en-EG' | 'ar-EG' | 'fr-EG' {
-  return locale === 'ar' ? 'ar-EG' : locale === 'fr' ? 'fr-EG' : 'en-EG';
+  return intlTagFor(locale);
 }
 
 /**
  * Map a request's Accept-Language header onto a supported language using the
- * same rule the mobile client applies to device locales: Arabic wins only when
- * it is the first preferred supported language.
+ * same rule the mobile client applies to device locales: the first preferred
+ * supported language wins, and an unsupported first preference falls back to
+ * English rather than hunting down the list.
  */
 export function localeFromAcceptLanguage(header: string | null): Locale {
-  if (!header) return 'en';
-  const tags = header
-    .split(',')
-    .map((part) => {
-      const [tag, ...parameters] = part.trim().split(';');
-      const quality = parameters
-        .map((parameter) => /^q=([0-9.]+)$/.exec(parameter.trim()))
-        .find(Boolean);
-      return { tag: tag.trim(), quality: quality ? Number(quality[1]) : 1 };
-    })
-    .filter((entry) => entry.tag)
-    .sort((a, b) => b.quality - a.quality)
-    .map((entry) => entry.tag);
-  const preferred = tags[0]?.toLowerCase().split(/[-_]/, 1)[0];
-  return isLocale(preferred) ? preferred : 'en';
+  return localeFromPreferredList(preferredListFromAcceptLanguage(header)) ?? 'en';
 }

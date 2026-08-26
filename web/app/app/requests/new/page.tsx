@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback, useEffect, useState, useMemo } from 'react';
 
 import { AppShell } from '@/components/app-shell';
@@ -23,6 +24,8 @@ import {
 import {
   catalogueServiceLabel, orderedCatalogueServices,
 } from '@/src/services/specific-services';
+import { announceDataChange, useDataChange } from '@/lib/data-events';
+import { useDraft } from '@/lib/draft-store';
 import { customerNavigation } from '@/lib/nav';
 import { supabase } from '@/lib/supabase';
 import { useAppLocale } from '@/lib/use-app-locale';
@@ -51,7 +54,15 @@ import styles from '@/components/product-surface.module.css';
  * The key is minted once per composed request and not per press, because
  * `create_marketplace_request` takes an advisory lock on it and returns the
  * existing request rather than opening a second one. A double-click is
- * therefore free.
+ * therefore free — and because the key now lives in the draft rather than in
+ * `useState`, so is coming back tomorrow and pressing Send on the request you
+ * had already sent before the connection dropped.
+ *
+ * **Everything the customer composes is a draft, not page state.** It survives
+ * navigating away, following the Addresses link and coming back, a refresh, and
+ * closing the tab. It does not survive submitting, discarding, signing out, or
+ * a different account signing in. The rules are in
+ * `src/drafts/draft-contract.ts` and are the same ones Android and iOS apply.
  *
  * `flowKind` is `get_quotes`: this form asks the marketplace. Booking a
  * specific worker is `browse_worker` and needs a provider chosen first, which
@@ -79,6 +90,27 @@ function initialQuery(): { categoryId: string; providerId: string } {
   };
 }
 
+/** Everything the customer composes. Nothing here is sensitive; see `forbiddenDraftFields`. */
+type RequestDraft = {
+  categoryId: string;
+  serviceId: string;
+  targetedProviderId: string;
+  addressId: string;
+  issue: string;
+  notes: string;
+  scheduleKind: ScheduleKind;
+  startAt: string;
+  endAt: string;
+  /** Minted with the draft, so a resumed draft cannot open a second request. */
+  idempotencyKey: string;
+};
+
+const EMPTY_DRAFT: RequestDraft = {
+  categoryId: '', serviceId: '', targetedProviderId: '', addressId: '',
+  issue: '', notes: '', scheduleKind: 'asap', startAt: '', endAt: '',
+  idempotencyKey: '',
+};
+
 export default function NewRequestPage() {
   const locale = useAppLocale();
   const words = appCopy[locale] as Record<string, string>;
@@ -86,10 +118,48 @@ export default function NewRequestPage() {
   const [categories, setCategories] = useState<ServiceCategory[] | null>(null);
   const [services, setServices] = useState<Service[]>([]);
   const [addresses, setAddresses] = useState<Address[] | null>(null);
+  const { value: draft, setValue: setDraft, clear: clearDraft, restored } = useDraft<RequestDraft>(
+    'request_create', EMPTY_DRAFT,
+  );
   const [query] = useState(initialQuery);
-  const [categoryId, setCategoryId] = useState(query.categoryId);
-  const [targetedProviderId] = useState(query.providerId);
-  const [serviceId, setServiceId] = useState('');
+
+  /*
+   * A deep link naming a *different* trade is somebody starting a different
+   * request, not resuming the one they abandoned. Find help sends
+   * `?category=plumbing`; arriving there having previously half-written an
+   * electrical job and being shown the electrical text would be worse than
+   * losing it. Arriving with no query, or with the trade the draft already
+   * holds, resumes.
+   */
+  useEffect(() => {
+    if (!restored) return;
+    if (!query.categoryId && !query.providerId) return;
+    if (query.categoryId && query.categoryId === draft.categoryId
+      && query.providerId === draft.targetedProviderId) return;
+    setDraft({
+      ...EMPTY_DRAFT,
+      categoryId: query.categoryId,
+      targetedProviderId: query.providerId,
+      idempotencyKey: newRequestKey(),
+    });
+    // Deliberately keyed on the arrival, not on the draft: this decides once,
+    // when the page is entered with a query, and must not re-fire as the person
+    // then edits the very fields it seeded.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [restored, query.categoryId, query.providerId]);
+
+  const categoryId = draft.categoryId;
+  const targetedProviderId = draft.targetedProviderId;
+  const serviceId = draft.serviceId;
+  const patch = useCallback((change: Partial<RequestDraft>) => {
+    setDraft((current) => ({
+      ...current,
+      ...change,
+      // The key is minted the first time anything is typed, so an untouched
+      // form leaves no draft behind at all.
+      idempotencyKey: current.idempotencyKey || newRequestKey(),
+    }));
+  }, [setDraft]);
 
   // Scoped to the chosen category and ordered by the shared catalogue, so the
   // dropdown reads the same way on every platform rather than in whatever order
@@ -100,18 +170,16 @@ export default function NewRequestPage() {
   // gets fixed on one surface and not the other.
   const orderedServices = useMemo(
     () => orderedCatalogueServices(services, categoryId), [services, categoryId]);
-  const [addressId, setAddressId] = useState('');
-  const [issue, setIssue] = useState('');
-  const [notes, setNotes] = useState('');
-  const [scheduleKind, setScheduleKind] = useState<ScheduleKind>('asap');
-  const [startAt, setStartAt] = useState('');
-  const [endAt, setEndAt] = useState('');
+  const { issue, notes, scheduleKind, startAt, endAt } = draft;
+  const [defaultAddressId, setDefaultAddressId] = useState('');
+  // A chosen address wins; otherwise the account's default stands in, and is
+  // dropped if that address is no longer among the ones on file.
+  const addressId = draft.addressId
+    || (addresses?.some((entry) => entry.id === defaultAddressId) ? defaultAddressId : '');
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<CustomerFailure | null>(null);
   const [createdId, setCreatedId] = useState<string | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
-  // One key per composed request, not per press.
-  const [idempotencyKey] = useState(newRequestKey);
 
   const load = useCallback(async () => {
     setLoadFailed(false);
@@ -131,12 +199,19 @@ export default function NewRequestPage() {
         .filter((entry) => entry.latitude !== null && entry.longitude !== null);
       setAddresses(parsed);
       const preferred = parsed.find((entry) => entry.isDefault) ?? parsed[0];
-      if (preferred) setAddressId((current) => current || preferred.id);
+      // The default address is *not* written into the draft. A draft holds what
+      // somebody chose; defaulting a value they never touched would leave a
+      // stored draft behind for a form nobody filled in, and "start a new
+      // request" would then restore an empty shell over a deep link's trade.
+      setDefaultAddressId(preferred?.id ?? '');
     }
     if (catalog.error || addressRows.error) setLoadFailed(true);
   }, []);
 
   useEffect(() => { void load(); }, [load]);
+  // An address saved on another route — or in another tab — appears in this
+  // picker without anybody reloading the page.
+  useDataChange('addresses', useCallback(() => { void load(); }, [load]));
 
   const needsStart = scheduleKind === 'scheduled' || scheduleKind === 'flexible';
   const needsEnd = scheduleKind === 'flexible';
@@ -171,7 +246,7 @@ export default function NewRequestPage() {
         ...(needsStart && startAt ? { requestedStartAt: new Date(startAt).toISOString() } : {}),
         ...(needsEnd && endAt ? { requestedEndAt: new Date(endAt).toISOString() } : {}),
       },
-      p_idempotency_key: idempotencyKey,
+      p_idempotency_key: draft.idempotencyKey || newRequestKey(),
     });
     if (error) {
       setFailure(classifyCustomerError(error.message));
@@ -179,6 +254,11 @@ export default function NewRequestPage() {
       return;
     }
     setCreatedId(typeof data === 'string' ? data : null);
+    // Submitted successfully: the work is the server's now, and a draft that
+    // outlived its request would re-offer somebody a job they had already
+    // asked for.
+    clearDraft('submitted');
+    announceDataChange('requests');
     setBusy(false);
   };
 
@@ -191,7 +271,7 @@ export default function NewRequestPage() {
         <section className={styles.panel}>
           <p className={styles.lead}>{words.requestSentBody}</p>
           <div className={styles.actions}>
-            <a className={styles.action} href={'/requests' as Route}>{words.requestsSeeAll}</a>
+            <Link className={styles.action} href={'/requests' as Route}>{words.requestsSeeAll}</Link>
           </div>
         </section>
       </AppShell>
@@ -234,10 +314,7 @@ export default function NewRequestPage() {
           <select
             className={styles.select}
             value={categoryId}
-            onChange={(event) => {
-              setCategoryId(event.target.value);
-              setServiceId('');
-            }}
+            onChange={(event) => patch({ categoryId: event.target.value, serviceId: '' })}
             disabled={busy || categories === null}
           >
             <option value="">{words.requestChooseCategory}</option>
@@ -254,7 +331,7 @@ export default function NewRequestPage() {
           <select
             className={styles.select}
             value={serviceId}
-            onChange={(event) => setServiceId(event.target.value)}
+            onChange={(event) => patch({ serviceId: event.target.value })}
             disabled={busy || !categoryId}
           >
             <option value="">{words.requestAnyService}</option>
@@ -277,7 +354,7 @@ export default function NewRequestPage() {
             rows={5}
             maxLength={ISSUE_MAX}
             value={issue}
-            onChange={(event) => setIssue(event.target.value)}
+            onChange={(event) => patch({ issue: event.target.value })}
             disabled={busy}
           />
           <span className={styles.hint}>{words.requestIssueHint}</span>
@@ -290,7 +367,7 @@ export default function NewRequestPage() {
             rows={3}
             maxLength={NOTES_MAX}
             value={notes}
-            onChange={(event) => setNotes(event.target.value)}
+            onChange={(event) => patch({ notes: event.target.value })}
             disabled={busy}
           />
           <span className={styles.hint}>{words.requestNotesHint}</span>
@@ -301,7 +378,7 @@ export default function NewRequestPage() {
           <select
             className={styles.select}
             value={addressId}
-            onChange={(event) => setAddressId(event.target.value)}
+            onChange={(event) => patch({ addressId: event.target.value })}
             disabled={busy || addresses === null || addresses.length === 0}
           >
             <option value="">{words.requestChooseAddress}</option>
@@ -315,10 +392,13 @@ export default function NewRequestPage() {
               request stores an approximate governorate and district; the exact
               address is not part of what quoting workers are shown. */}
           <span className={styles.hint}>{words.requestAddressHint}</span>
+          {/* A real client-side link. As a plain anchor this tore the whole
+              application down and rebuilt it, which is how somebody left to
+              add an address and came back to an empty form. */}
           {addresses?.length === 0 ? (
-            <a className={styles.inlineLink} href={'/addresses' as Route}>
+            <Link className={styles.inlineLink} href={'/addresses' as Route}>
               {words.requestAddVerifiedAddress}
-            </a>
+            </Link>
           ) : null}
         </label>
 
@@ -327,7 +407,7 @@ export default function NewRequestPage() {
           <select
             className={styles.select}
             value={scheduleKind}
-            onChange={(event) => setScheduleKind(event.target.value as ScheduleKind)}
+            onChange={(event) => patch({ scheduleKind: event.target.value as ScheduleKind })}
             disabled={busy}
           >
             {SCHEDULE_KINDS.map((kind) => (
@@ -344,7 +424,7 @@ export default function NewRequestPage() {
               type="datetime-local"
               dir="ltr"
               value={startAt}
-              onChange={(event) => setStartAt(event.target.value)}
+              onChange={(event) => patch({ startAt: event.target.value })}
               disabled={busy}
             />
             {startAt && !startInFuture ? (
@@ -361,7 +441,7 @@ export default function NewRequestPage() {
               type="datetime-local"
               dir="ltr"
               value={endAt}
-              onChange={(event) => setEndAt(event.target.value)}
+              onChange={(event) => patch({ endAt: event.target.value })}
               disabled={busy}
             />
             {endAt && !endAfterStart ? (
@@ -375,7 +455,15 @@ export default function NewRequestPage() {
         ) : null}
 
         <div className={styles.actions}>
-          <a className={styles.secondary} href={'/requests' as Route}>{words.cancel}</a>
+          {/* Cancel is the explicit discard. Leaving by any other route keeps
+              the draft, because leaving is not the same as changing your mind. */}
+          <Link
+            className={styles.secondary}
+            href={'/requests' as Route}
+            onClick={() => clearDraft('discarded')}
+          >
+            {words.cancel}
+          </Link>
           <button type="submit" className={styles.action} disabled={!complete || busy}>
             {busy ? words.loading : words.requestSend}
           </button>

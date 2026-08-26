@@ -165,11 +165,18 @@ const readiness = readFileSync(
 // --- A stale service must never survive a category change -------------------
 {
   const nativeForm = readFileSync('app/marketplace-request/new.tsx', 'utf8');
-  check(/setCategoryId\(item\.id\);setServiceId\(''\)/.test(nativeForm),
+  // Both forms now compose the request as one draft object rather than seven
+  // separate pieces of screen state, so the rule is expressed as a single
+  // atomic change — which is stronger than two setters that a future edit could
+  // separate. What must not change is that the two fields move together.
+  check(/patch\(\{categoryId:item\.id,serviceId:''\}\)/.test(nativeForm),
     'NATIVE CLEARS THE SELECTED SERVICE WHEN THE CATEGORY CHANGES');
   const web = readFileSync('web/app/app/requests/new/page.tsx', 'utf8');
-  check(/setServiceId\(''\)/.test(web),
-    'and web clears it too');
+  check(/patch\(\{ categoryId: event\.target\.value, serviceId: '' \}\)/.test(web),
+    'and web clears it too, in the same single change');
+  // A persisted draft must not be a way for a stale service to come back.
+  check(/serviceId: ''/.test(web) && /serviceId:''/.test(nativeForm),
+    'and neither surface can restore a service without the category that owns it');
   // Every service belongs to exactly one category, so a stale id is always
   // rejectable rather than ambiguous.
   const parents = new Map<string, string>();

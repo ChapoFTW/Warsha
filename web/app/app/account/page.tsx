@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 
 import { PreferenceFooter } from '@/components/preference-controls';
@@ -89,7 +90,7 @@ export default function AccountPage() {
         <section className={styles.panel}>
           <h2 className={styles.sectionTitle}>{words.accountWorkMode}</h2>
           <p className={styles.muted}>{words.accountWorkModeBody}</p>
-          <a className={styles.secondary} href={'/choose-mode' as Route}>{words.accountSwitchMode}</a>
+          <Link className={styles.secondary} href={'/choose-mode' as Route}>{words.accountSwitchMode}</Link>
         </section>
       ) : null}
 

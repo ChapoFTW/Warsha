@@ -131,7 +131,7 @@
       "locale": "en",
       "title": "Worker verification and enforcement",
       "summary": "Review evidence, record safe reasons, and understand approval, rejection, suspension, ban, and appeal boundaries.",
-      "version": 2,
+      "version": 3,
       "lastReviewedDate": "2026-08-26",
       "features": [
         "worker_vetting",
@@ -162,7 +162,7 @@
         "appeal",
         "evidence"
       ],
-      "body": "Review the submitted identity and criminal-record steps against the active policy. Record evidence only in the private evidence field and give the worker a separate safe, useful reason. Warsha does not claim an automated government check.\n\nApproval and activation are separate authorities. Rejection can require dual control. A temporary restriction or suspension is time/scope bounded when the policy says so. A permanent ban is high-risk, requires the specific capability, investigated evidence, fresh authentication, and the configured second-person approval.\n\nNever put offence detail, document contents, reviewer identity, or private notes into worker-visible text. Appeals do not erase the original decision; they add an auditable later decision.\n\nA decision that asks you to confirm who you are is not lost. If your session needs refreshing at the moment you submit a vetting decision or an enforcement action, Warsha holds the decision exactly as you composed it, asks you to confirm, and then submits that same decision. Previously the confirmation closed and the decision had to be re-entered — and because nothing had been recorded, the screen looked unchanged. Cancelling the confirmation, or failing it, submits nothing."
+      "body": "Review the submitted identity and criminal-record steps against the active policy. Record evidence only in the private evidence field and give the worker a separate safe, useful reason. Warsha does not claim an automated government check.\n\nApproval and activation are separate authorities. Rejection can require dual control. A temporary restriction or suspension is time/scope bounded when the policy says so. A permanent ban is high-risk, requires the specific capability, investigated evidence, fresh authentication, and the configured second-person approval.\n\nNever put offence detail, document contents, reviewer identity, or private notes into worker-visible text. Appeals do not erase the original decision; they add an auditable later decision.\n\nA decision that asks you to confirm who you are is not lost. If your session needs refreshing at the moment you submit a vetting decision or an enforcement action, Warsha holds the decision exactly as you composed it, asks you to confirm, and then submits that same decision. Previously the confirmation closed and the decision had to be re-entered — and because nothing had been recorded, the screen looked unchanged. Cancelling the confirmation, or failing it, submits nothing.\n\nThe console reads the same language preference as the rest of Warsha. Choosing a language anywhere — the product, the public site, or the console itself — applies to all of them, and Arabic brings right-to-left layout with it. The console has no language in its address; there has never been an /ar route here, and one is not needed."
     },
     {
       "id": "admin-verification-enforcement",
@@ -170,7 +170,7 @@
       "locale": "ar",
       "title": "مراجعة الصنايعي وإجراءات الأمان",
       "summary": "راجع الدليل وسجل سبب آمن وافهم حدود الموافقة والرفض والإيقاف والحظر والاعتراض.",
-      "version": 2,
+      "version": 3,
       "lastReviewedDate": "2026-08-26",
       "features": [
         "worker_vetting",
@@ -201,7 +201,7 @@
         "اعتراض",
         "دليل"
       ],
-      "body": "راجع خطوات الهوية والفيش المرسلة حسب السياسة النشطة. سجل الدليل في خانة الدليل الخاصة بس، واكتب للصنايعي سبب آمن ومفيد منفصل. ورشة ما بيدّعيش إن فيه كشف حكومي آلي.\n\nالموافقة والتفعيل صلاحيتين منفصلتين. الرفض ممكن يحتاج تحكم مزدوج. التقييد المؤقت أو الإيقاف بيكون بمدة ونطاق لما السياسة تقول كده. الحظر الدائم عالي الخطورة ومحتاج الصلاحية المحددة ودليل متحقق وتسجيل دخول حديث وموافقة الشخص الثاني حسب الإعداد.\n\nما تحطش تفاصيل مخالفة أو محتوى مستند أو اسم المراجع أو ملاحظات خاصة في الكلام اللي الصنايعي هيشوفه. الاعتراض ما بيمسحش القرار الأول؛ بيضيف قرار جديد قابل للمراجعة.\n\nالقرار اللي بيطلب منك تأكيد شخصيتك مش بيضيع. لو جلستك محتاجة تجديد في اللحظة اللي بتبعت فيها قرار توثيق أو إجراء إنفاذ، ورشة بتحتفظ بالقرار زي ما كتبته بالظبط، وبتطلب منك التأكيد، وبعدين بتبعت نفس القرار. قبل كده كان التأكيد بيتقفل والقرار لازم يتكتب تاني — وعشان مفيش حاجة كانت اتسجّلت، الشاشة كانت مبيّنة كأن مفيش حاجة حصلت. ولو لغيت التأكيد أو فشل، مفيش حاجة بتتبعت."
+      "body": "راجع خطوات الهوية والفيش المرسلة حسب السياسة النشطة. سجل الدليل في خانة الدليل الخاصة بس، واكتب للصنايعي سبب آمن ومفيد منفصل. ورشة ما بيدّعيش إن فيه كشف حكومي آلي.\n\nالموافقة والتفعيل صلاحيتين منفصلتين. الرفض ممكن يحتاج تحكم مزدوج. التقييد المؤقت أو الإيقاف بيكون بمدة ونطاق لما السياسة تقول كده. الحظر الدائم عالي الخطورة ومحتاج الصلاحية المحددة ودليل متحقق وتسجيل دخول حديث وموافقة الشخص الثاني حسب الإعداد.\n\nما تحطش تفاصيل مخالفة أو محتوى مستند أو اسم المراجع أو ملاحظات خاصة في الكلام اللي الصنايعي هيشوفه. الاعتراض ما بيمسحش القرار الأول؛ بيضيف قرار جديد قابل للمراجعة.\n\nالقرار اللي بيطلب منك تأكيد شخصيتك مش بيضيع. لو جلستك محتاجة تجديد في اللحظة اللي بتبعت فيها قرار توثيق أو إجراء إنفاذ، ورشة بتحتفظ بالقرار زي ما كتبته بالظبط، وبتطلب منك التأكيد، وبعدين بتبعت نفس القرار. قبل كده كان التأكيد بيتقفل والقرار لازم يتكتب تاني — وعشان مفيش حاجة كانت اتسجّلت، الشاشة كانت مبيّنة كأن مفيش حاجة حصلت. ولو لغيت التأكيد أو فشل، مفيش حاجة بتتبعت.\n\nلوحة التحكم بتقرا نفس اختيار اللغة اللي باقي ورشة بيقراه. اختيار اللغة من أي مكان — المنتج، أو الموقع العام، أو اللوحة نفسها — بيطبّق على الكل، والعربي بيجي معاه الاتجاه من اليمين لليسار. اللوحة مفيهاش لغة في العنوان؛ ما كانش فيه أصلاً مسار ‎/ar هنا، ومش محتاجينه."
     },
     {
       "id": "admin-staff-security",
@@ -525,7 +525,7 @@
       "locale": "fr",
       "title": "Vérification, suspension et mesures de sécurité",
       "summary": "Examinez les preuves et appliquez une mesure proportionnée avec une raison claire.",
-      "version": 2,
+      "version": 3,
       "lastReviewedDate": "2026-08-26",
       "features": [
         "worker_vetting",
@@ -550,7 +550,7 @@
         "bannir",
         "preuve"
       ],
-      "body": "Comparez les informations soumises avec les preuves disponibles. Approuver rend la décision effective selon les règles d’admissibilité ; demander de nouvelles informations renvoie le dossier au professionnel ; refuser conserve l’historique et doit expliquer ce qui manque.\n\nUne suspension arrête temporairement le périmètre indiqué et peut être levée par le parcours gouverné. Un bannissement est une mesure permanente à haut risque. L’interface doit afficher le périmètre, la réversibilité, la raison, les exigences d’authentification récente ou de double contrôle et l’événement d’audit avant confirmation. Ne choisissez jamais une mesure plus large pour gagner du temps.\n\nUne décision qui vous demande de confirmer votre identité n’est pas perdue. Si votre session doit être rafraîchie au moment où vous soumettez une décision de vérification ou une mesure d’application, Warsha conserve la décision telle que vous l’avez rédigée, vous demande de confirmer, puis soumet cette même décision. Auparavant, la confirmation se fermait et la décision devait être ressaisie — et comme rien n’avait été enregistré, l’écran semblait inchangé. Annuler la confirmation, ou échouer à la valider, ne soumet rien."
+      "body": "Comparez les informations soumises avec les preuves disponibles. Approuver rend la décision effective selon les règles d’admissibilité ; demander de nouvelles informations renvoie le dossier au professionnel ; refuser conserve l’historique et doit expliquer ce qui manque.\n\nUne suspension arrête temporairement le périmètre indiqué et peut être levée par le parcours gouverné. Un bannissement est une mesure permanente à haut risque. L’interface doit afficher le périmètre, la réversibilité, la raison, les exigences d’authentification récente ou de double contrôle et l’événement d’audit avant confirmation. Ne choisissez jamais une mesure plus large pour gagner du temps.\n\nUne décision qui vous demande de confirmer votre identité n’est pas perdue. Si votre session doit être rafraîchie au moment où vous soumettez une décision de vérification ou une mesure d’application, Warsha conserve la décision telle que vous l’avez rédigée, vous demande de confirmer, puis soumet cette même décision. Auparavant, la confirmation se fermait et la décision devait être ressaisie — et comme rien n’avait été enregistré, l’écran semblait inchangé. Annuler la confirmation, ou échouer à la valider, ne soumet rien.\n\nLa console lit la même préférence de langue que le reste de Warsha. Choisir une langue n’importe où — le produit, le site public, ou la console elle-même — s’applique à tout, et l’arabe amène la mise en page de droite à gauche avec lui. La console n’a pas de langue dans son adresse ; il n’y a jamais eu de route /ar ici, et il n’en faut pas."
     },
     {
       "id": "admin-staff-security",

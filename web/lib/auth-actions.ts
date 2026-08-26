@@ -18,6 +18,7 @@ import {
   type SignupLegalAcceptance,
   type SignUpResult,
 } from './signup.ts';
+import { clearAllDrafts } from './draft-store.ts';
 import { supabase } from './supabase.ts';
 
 /**
@@ -120,7 +121,18 @@ export async function signIn(identifier: string, password: string): Promise<Sign
   return sessionError ? { ok: false, failure: 'server' } : { ok: true };
 }
 
+/**
+ * Signing out clears the drafts as well as the session.
+ *
+ * A half-written request is not account data and does not belong to the
+ * device once the person who wrote it has left it. Drafts are erased *before*
+ * the sign-out call, so a network failure mid-sign-out cannot leave the work
+ * of one account sitting on a machine somebody else is about to use. The
+ * stored envelope also records whose draft it is and is refused on read when
+ * that does not match, so this is the tidy path rather than the guarantee.
+ */
 export async function signOut(): Promise<void> {
+  clearAllDrafts();
   await supabase().auth.signOut();
 }
 

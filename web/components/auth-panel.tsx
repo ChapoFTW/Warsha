@@ -76,6 +76,12 @@ export function AuthStateCard({
     <AuthScreen locale={locale} centred>
       <h1 className={styles.title}>{title}</h1>
       {body ? <p className={styles.lead}>{body}</p> : null}
+      {/* Deliberately a plain anchor, and the one place in the product where
+          that is still right. These are session boundaries — signed out, just
+          signed up, just signed in — and a full document load is exactly what
+          they want: the session provider re-resolves from scratch and nothing
+          composed under the previous identity is carried across. Everywhere
+          *inside* the product uses `Link`, because there a reload is a reset. */}
       {!busy ? (actions ?? (action && href ? [{ label: action, href }] : [])).map((item, index) => (
         <a key={`${item.href}:${item.label}`} className={index === 0 ? styles.submit : styles.link} href={item.href}>
           {item.label}

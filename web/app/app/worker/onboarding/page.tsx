@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 import { AppShell, useAccount } from '@/components/app-shell';
@@ -12,6 +13,8 @@ import { useAppLocale } from '@/lib/use-app-locale';
 import { workerCopy } from '@/lib/worker-copy';
 import { workerOnboardingNavigation } from '@/lib/nav';
 import { workerJourneyProgress } from '@/src/worker/worker-onboarding-policy.ts';
+
+import type { Route } from 'next';
 
 import styles from '@/components/product-surface.module.css';
 
@@ -99,7 +102,7 @@ export default function WorkerOnboardingPage() {
         <section className={styles.panel}>
           <h2 className={styles.sectionTitle}>{words.onboardingIdentityTitle}</h2>
           <p className={styles.muted}>{words.onboardingIdentityBody}</p>
-          <a className={styles.action} href="/worker/verification">{appWords.navVerification}</a>
+          <Link className={styles.action} href={'/worker/verification' as Route}>{appWords.navVerification}</Link>
         </section>
       ) : null}
 

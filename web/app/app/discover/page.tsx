@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { AppShell } from '@/components/app-shell';
@@ -13,6 +14,7 @@ import {
   type ProviderCard,
   type ServiceCategory,
 } from '@/lib/customer';
+import { useDraft } from '@/lib/draft-store';
 import { supabase } from '@/lib/supabase';
 import { useAppLocale } from '@/lib/use-app-locale';
 import { matchServiceCategories } from '@/src/services/service-search-aliases';
@@ -46,13 +48,25 @@ import styles from '@/components/product-surface.module.css';
  * search RPC on every keystroke: the catalog is small, complete and already in
  * hand, and `get_search_suggestions` is a different surface with its own
  * rate limit.
+ *
+ * **What was typed here is browsing state and is kept.** Choosing a trade used
+ * to be a full document load out of this page, so coming back — by the browser's
+ * own Back button — landed on an empty search and the whole catalogue again,
+ * with whatever had been typed to narrow it gone. The cards are real client-side
+ * links now, and the query is a draft with a one-day life: long enough to
+ * survive going and coming back, short enough that yesterday's search is not
+ * still sitting there tomorrow.
  */
 export default function DiscoverPage() {
   const locale = useAppLocale();
   const words = appCopy[locale] as Record<string, string>;
   const [categories, setCategories] = useState<ServiceCategory[] | null>(null);
   const [home, setHome] = useState<DiscoveryHome | null>(null);
-  const [query, setQuery] = useState('');
+  const { value: browsing, setValue: setBrowsing } = useDraft<{ query: string }>(
+    'discovery', { query: '' },
+  );
+  const query = browsing.query;
+  const setQuery = useCallback((next: string) => setBrowsing({ query: next }), [setBrowsing]);
   const [failed, setFailed] = useState(false);
   const [searching, setSearching] = useState(false);
   const [searchFailed, setSearchFailed] = useState(false);
@@ -166,10 +180,10 @@ export default function DiscoverPage() {
         ) : (
           <div className={styles.grid}>
             {shown.map((category) => (
-              <a
+              <Link
                 key={category.id}
                 className={`${styles.card} ${styles.categoryCard}`}
-                href={`/requests/new?category=${encodeURIComponent(category.id)}`}
+                href={`/requests/new?category=${encodeURIComponent(category.id)}` as Route}
               >
                 {/* Decorative: the localized name is the next element, and the
                     mark carries no information the name does not. */}
@@ -184,7 +198,7 @@ export default function DiscoverPage() {
                     {serviceCategoryDescription(category.descriptionKey, locale) ?? ''}
                   </span>
                 ) : null}
-              </a>
+              </Link>
             ))}
           </div>
         )}
@@ -297,12 +311,12 @@ function ProviderCards({
                 ) : null}
               </ul>
           {provider.primaryCategoryId ? (
-            <a
+            <Link
               className={styles.secondary}
               href={`/requests/new?provider=${encodeURIComponent(provider.id)}&category=${encodeURIComponent(provider.primaryCategoryId)}` as Route}
             >
               {words.discoverAskWorker}
-            </a>
+            </Link>
           ) : null}
         </div>
       ))}

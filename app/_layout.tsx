@@ -35,10 +35,11 @@ import { BookingProvider } from '@/src/bookings/booking-context';
 import { ChatProvider } from '@/src/chat/chat-context';
 import { supabaseConfigurationMissing } from '@/src/config/environment';
 import { LocalPreferencesProvider } from '@/src/data/local-preferences';
+import { DraftProvider } from '@/src/drafts/draft-context';
 import { MarketplaceDataProvider } from '@/src/data/marketplace-context';
 import { DiscoveryProvider } from '@/src/discovery/discovery-context';
 import { GrowthProvider } from '@/src/growth/growth-context';
-import { LocalizationProvider, useLocalization } from '@/src/i18n/localization';
+import { LanguageAccountSync, LocalizationProvider, useLocalization } from '@/src/i18n/localization';
 import { LegalProvider } from '@/src/legal/legal-context';
 import { MarketplaceIntelligenceProvider } from '@/src/marketplace-intelligence/marketplace-context';
 import { NotificationProvider } from '@/src/notifications/notification-context';
@@ -203,6 +204,18 @@ export default function RootLayout() {
         {supabaseConfigurationMissing ? <ConfigurationError /> : (
           <AuthProvider>
             <AppearanceAccountSync />
+            {/* The account's language reaches the device the same way its
+                appearance does. `profiles.preferred_language` was written by
+                the profile screen and read by nothing; now a second device
+                opens in the language this account already chose. */}
+            <LanguageAccountSync />
+            {/* Above the navigator on purpose. Work in progress that lives
+                inside a screen dies when that screen is popped, replaced, or
+                reclaimed by Android in the background — which is why an
+                accidental back gesture used to cost a worker their whole
+                onboarding step. Here it outlives every one of those, and is
+                erased the moment the account changes. */}
+            <DraftProvider>
             <LocalDataMigrationGate>
               <MarketplaceDataProvider>
                 <MarketplaceIntelligenceProvider>
@@ -242,6 +255,7 @@ export default function RootLayout() {
                 </MarketplaceIntelligenceProvider>
               </MarketplaceDataProvider>
             </LocalDataMigrationGate>
+            </DraftProvider>
           </AuthProvider>
         )}
       </LocalizationProvider>

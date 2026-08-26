@@ -1,5 +1,7 @@
 'use client';
 
+import Link from 'next/link';
+import type { Route } from 'next';
 import { ConsoleShell } from '@/components/console-shell';
 import { useStaff } from '@/components/staff-gate';
 import { appCopy } from '@/lib/app-copy';
@@ -57,7 +59,7 @@ export default function ConsoleDashboard() {
               return (
                 <li key={capability} className={styles.chipQuiet} title={capability}>
                   {help ? (
-                    <a href={`/admin/help#${help.id}`}>{capabilityLabel(capability)}</a>
+                    <Link href={`/admin/help#${help.id}` as Route}>{capabilityLabel(capability)}</Link>
                   ) : (
                     capabilityLabel(capability)
                   )}

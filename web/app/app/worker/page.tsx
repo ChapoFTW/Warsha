@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Route } from 'next';
@@ -101,13 +102,13 @@ export default function WorkerHome() {
         <section className={styles.card} aria-labelledby="verification">
           <h2 id="verification" className={styles.cardTitle}>{words.navOpportunities}</h2>
           <p className={styles.muted}>{opportunityCount === null ? words.loading : workerWords.opportunitiesCount.replace('{count}', String(opportunityCount))}</p>
-          <a className={styles.link} href="/worker/opportunities">{words.viewAll}</a>
+          <Link className={styles.link} href={'/worker/opportunities' as Route}>{words.viewAll}</Link>
         </section>
 
         <section className={styles.card} aria-labelledby="jobs-worker">
           <h2 id="jobs-worker" className={styles.cardTitle}>{words.navJobs}</h2>
           <p className={styles.muted}>{activeJobCount === null ? words.loading : workerWords.workerJobsCount.replace('{count}', String(activeJobCount))}</p>
-          <a className={styles.link} href="/worker/jobs">{words.viewAll}</a>
+          <Link className={styles.link} href={'/worker/jobs' as Route}>{words.viewAll}</Link>
         </section>
 
         <section className={styles.card} aria-labelledby="customer-worker">

@@ -12,6 +12,7 @@ import {
   type OnboardingState,
   type ProductMode,
 } from '@/lib/account';
+import { clearAllDrafts } from '@/lib/draft-store';
 import { supabase } from '@/lib/supabase';
 import { customerSetupRecoveryEligible } from '../../src/auth/signup-machine.ts';
 
@@ -93,6 +94,8 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [customerRecoveryError, setCustomerRecoveryError] = useState(false);
   const accountGeneration = useRef(0);
   const customerRecoveryInFlight = useRef(false);
+  /** `undefined` until the first resolution, so first mount is not a switch. */
+  const identityRef = useRef<string | undefined>(undefined);
 
   const loadAccountState = useCallback(async (
     generation: number,
@@ -148,6 +151,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         }
 
         if (!active) return;
+        identityRef.current = verified?.user.id;
         setSession(verified);
         setAccountStateError(false);
         setCustomerRecoveryEligible(false);
@@ -172,6 +176,15 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       const generation = ++accountGeneration.current;
       customerRecoveryInFlight.current = false;
       setCustomerRecoveryBusy(false);
+      // A change of identity ends every draft on this device. `useDraft`
+      // already refuses an envelope belonging to somebody else, so this is the
+      // second of two independent guards rather than the only one — one
+      // account seeing another's half-written address is not a defect worth
+      // relying on a single check for.
+      if (next?.user.id !== identityRef.current) {
+        if (identityRef.current !== undefined) clearAllDrafts();
+        identityRef.current = next?.user.id;
+      }
       setSession(next);
       setCustomerRecoveryEligible(false);
       setCustomerRecoveryError(false);

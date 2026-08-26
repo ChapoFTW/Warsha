@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
-import { localeFromAcceptLanguage } from './lib/preferences.ts';
+import { isLocale, localeFromAcceptLanguage, pathWithoutLocale } from './lib/preferences.ts';
 
 /** The canonical host. Everything else redirects here. */
 const CANONICAL_HOST = 'usewarsha.com';
@@ -79,16 +79,45 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(home, 307);
   }
 
-  // Already addressed in a language: nothing left to decide. The matcher lets
-  // these through so the host redirect above can see them, so the guard has to
-  // be here rather than in the matcher — without it `/en` would be rewritten
-  // to `/en/en`, forever.
-  if (/^\/(en|ar|fr)(\/|$)/.test(pathname)) return NextResponse.next();
-
   const explicit = request.cookies.get('warsha-locale')?.value;
-  const locale = explicit === 'ar' || explicit === 'en' || explicit === 'fr'
-    ? explicit
-    : localeFromAcceptLanguage(request.headers.get('accept-language'));
+  const chosen = isLocale(explicit) ? explicit : null;
+
+  const addressed = /^\/(en|ar|fr)(\/|$)/.exec(pathname);
+  if (addressed) {
+    /*
+     * Already addressed in a language — but that is not the end of the
+     * decision any more.
+     *
+     * `warsha-locale` is written by one control and nothing else, so its
+     * presence means a person opened the language menu and chose. Warsha's
+     * precedence puts that choice above the address, and this is the only
+     * place that can honour it without rendering Arabic content at an English
+     * URL: the visitor is moved to the same page in their own language,
+     * keeping the path, the query and the fragment.
+     *
+     * Without this, language really was per-page on the public site. Somebody
+     * who chose Arabic and then followed a shared `/en/...` link — or pressed
+     * Back past the switch — was reading English again with no indication that
+     * anything had changed, which is the second half of what QA reported.
+     *
+     * A crawler sends no cookie, so all three languages stay independently
+     * reachable and indexable. And the language control writes the cookie
+     * before it navigates, so choosing Arabic never bounces back.
+     */
+    if (chosen && addressed[1] !== chosen) {
+      const preferred = request.nextUrl.clone();
+      preferred.pathname = `/${chosen}${pathWithoutLocale(pathname)}`;
+      // 307: which language this address serves depends on who is asking, and
+      // must never be cached as a permanent property of the URL.
+      return NextResponse.redirect(preferred, 307);
+    }
+    // The matcher lets these through so the host redirect above can see them,
+    // so the guard has to be here rather than in the matcher — without it
+    // `/en` would be rewritten to `/en/en`, forever.
+    return NextResponse.next();
+  }
+
+  const locale = chosen ?? localeFromAcceptLanguage(request.headers.get('accept-language'));
 
   const url = request.nextUrl.clone();
   url.pathname = pathname === '/' ? `/${locale}` : `/${locale}${pathname}`;

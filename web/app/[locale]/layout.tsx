@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 
 import { copy } from '@/lib/copy';
 import { directionOf, isLocale, LOCALES, type Locale } from '@/lib/preferences';
+import { WarshaPreferencesProvider } from '@/lib/preferences-context';
 
 import '../globals.css';
 
@@ -121,8 +122,17 @@ export default async function LocaleLayout({
         <script dangerouslySetInnerHTML={{ __html: applyStoredAppearance }} />
       </head>
       <body>
-        <a className="skip-link" href="#main">{copy[typed].skipToContent}</a>
-        {children}
+        {/* `localeIsRouted`: on the public site the address *is* the language.
+            The middleware has already sent anybody with an explicit preference
+            to their own locale, so route and preference agree by the time this
+            renders - and the switch here navigates rather than re-rendering,
+            because a real URL is what makes an Arabic page shareable. The
+            provider is still present so appearance, and the preference writes
+            the language control performs, go through the one store. */}
+        <WarshaPreferencesProvider initialLocale={typed} localeIsRouted>
+          <a className="skip-link" href="#main">{copy[typed].skipToContent}</a>
+          {children}
+        </WarshaPreferencesProvider>
       </body>
     </html>
   );

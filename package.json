@@ -99,7 +99,8 @@
     "test:warsha-icons": "node --no-warnings --experimental-strip-types scripts/warsha-icons.test.mts",
     "test:authenticated-navigation": "node --no-warnings --experimental-strip-types scripts/authenticated-navigation.test.mts",
     "test:request-creation": "node --no-warnings --experimental-strip-types scripts/request-creation-contract.test.mts",
-    "test:native-specific-service": "node --no-warnings --experimental-strip-types scripts/native-specific-service-parity.test.mts"
+    "test:native-specific-service": "node --no-warnings --experimental-strip-types scripts/native-specific-service-parity.test.mts",
+    "test:state-persistence": "node --no-warnings --experimental-strip-types scripts/state-persistence.test.mts"
   },
   "dependencies": {
     "@expo-google-fonts/cairo": "^0.4.2",

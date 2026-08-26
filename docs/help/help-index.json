@@ -236,7 +236,7 @@
       "locale": "en",
       "title": "Addresses and location",
       "summary": "Save a clear service address without losing the exact map pin.",
-      "version": 2,
+      "version": 3,
       "lastReviewedDate": "2026-08-26",
       "features": [
         "addresses",
@@ -263,7 +263,7 @@
       "locale": "ar",
       "title": "العناوين والموقع",
       "summary": "احفظ عنوان خدمة واضح من غير ما تفقد مكان الدبوس الدقيق.",
-      "version": 2,
+      "version": 3,
       "lastReviewedDate": "2026-08-26",
       "features": [
         "addresses",
@@ -290,7 +290,7 @@
       "locale": "en",
       "title": "Requests, quotes, and jobs",
       "summary": "Understand what happens from posting a request to completing or cancelling a job.",
-      "version": 5,
+      "version": 6,
       "lastReviewedDate": "2026-08-26",
       "features": [
         "marketplace",
@@ -320,7 +320,7 @@
       "locale": "ar",
       "title": "الطلبات والعروض والشغل",
       "summary": "افهم اللي بيحصل من نشر الطلب لحد اكتمال الشغل أو إلغائه.",
-      "version": 5,
+      "version": 6,
       "lastReviewedDate": "2026-08-26",
       "features": [
         "marketplace",
@@ -350,7 +350,7 @@
       "locale": "en",
       "title": "Account, security, and preferences",
       "summary": "Sign in, recover your password, choose language and appearance, and manage privacy.",
-      "version": 3,
+      "version": 4,
       "lastReviewedDate": "2026-08-26",
       "features": [
         "auth",
@@ -383,7 +383,7 @@
       "locale": "ar",
       "title": "الحساب والأمان والتفضيلات",
       "summary": "سجّل الدخول، استرجع كلمة السر، واختار اللغة والمظهر وتحكم في الخصوصية.",
-      "version": 3,
+      "version": 4,
       "lastReviewedDate": "2026-08-26",
       "features": [
         "auth",
@@ -470,7 +470,7 @@
       "locale": "en",
       "title": "Getting started as a worker",
       "summary": "Register with phone and password, finish onboarding, and wait for governed approval.",
-      "version": 3,
+      "version": 4,
       "lastReviewedDate": "2026-08-26",
       "features": [
         "worker_auth",
@@ -498,7 +498,7 @@
       "locale": "ar",
       "title": "ابدأ كصنايعي",
       "summary": "سجّل بالموبايل وكلمة السر، كمّل التقديم، واستنى الموافقة المنظمة.",
-      "version": 3,
+      "version": 4,
       "lastReviewedDate": "2026-08-26",
       "features": [
         "worker_auth",
@@ -526,7 +526,7 @@
       "locale": "en",
       "title": "Onboarding, service areas, and verification",
       "summary": "Understand every application stage and what customers can see.",
-      "version": 2,
+      "version": 3,
       "lastReviewedDate": "2026-08-26",
       "features": [
         "worker_onboarding",
@@ -554,7 +554,7 @@
       "locale": "ar",
       "title": "التقديم ومناطق الشغل والتوثيق",
       "summary": "افهم كل مرحلة في التقديم وإيه اللي العميل يقدر يشوفه.",
-      "version": 2,
+      "version": 3,
       "lastReviewedDate": "2026-08-26",
       "features": [
         "worker_onboarding",
@@ -582,7 +582,7 @@
       "locale": "en",
       "title": "Opportunities, quotes, and jobs",
       "summary": "Review matching requests, write clear quotes, and update real job progress.",
-      "version": 5,
+      "version": 6,
       "lastReviewedDate": "2026-08-26",
       "features": [
         "marketplace",
@@ -610,7 +610,7 @@
       "locale": "ar",
       "title": "الفرص والعروض والشغل",
       "summary": "راجع الطلبات المناسبة، اكتب عرض واضح، وحدّث تقدم الشغل الحقيقي.",
-      "version": 5,
+      "version": 6,
       "lastReviewedDate": "2026-08-26",
       "features": [
         "marketplace",
@@ -814,7 +814,7 @@
       "locale": "en",
       "title": "Worker verification and enforcement",
       "summary": "Review evidence, record safe reasons, and understand approval, rejection, suspension, ban, and appeal boundaries.",
-      "version": 2,
+      "version": 3,
       "lastReviewedDate": "2026-08-26",
       "features": [
         "worker_vetting",
@@ -852,7 +852,7 @@
       "locale": "ar",
       "title": "مراجعة الصنايعي وإجراءات الأمان",
       "summary": "راجع الدليل وسجل سبب آمن وافهم حدود الموافقة والرفض والإيقاف والحظر والاعتراض.",
-      "version": 2,
+      "version": 3,
       "lastReviewedDate": "2026-08-26",
       "features": [
         "worker_vetting",
@@ -1171,7 +1171,7 @@
       "locale": "fr",
       "title": "Adresses et localisation",
       "summary": "Enregistrez une adresse claire tout en conservant la position exacte.",
-      "version": 2,
+      "version": 3,
       "lastReviewedDate": "2026-08-26",
       "features": [
         "addresses",
@@ -1198,7 +1198,7 @@
       "locale": "fr",
       "title": "Demandes, devis et interventions",
       "summary": "Comprenez le parcours d’une demande jusqu’à la fin ou l’annulation de l’intervention.",
-      "version": 5,
+      "version": 6,
       "lastReviewedDate": "2026-08-26",
       "features": [
         "marketplace",
@@ -1228,7 +1228,7 @@
       "locale": "fr",
       "title": "Compte, sécurité et préférences",
       "summary": "Connectez-vous, récupérez votre mot de passe et gérez langue, apparence et confidentialité.",
-      "version": 3,
+      "version": 4,
       "lastReviewedDate": "2026-08-26",
       "features": [
         "auth",
@@ -1288,7 +1288,7 @@
       "locale": "fr",
       "title": "Bien démarrer comme professionnel",
       "summary": "Créez votre compte sans e-mail, terminez votre profil et préparez-vous à recevoir des opportunités.",
-      "version": 3,
+      "version": 4,
       "lastReviewedDate": "2026-08-26",
       "features": [
         "worker_auth",
@@ -1315,7 +1315,7 @@
       "locale": "fr",
       "title": "Profil, métiers, zone de service et vérification",
       "summary": "Comprenez les étapes nécessaires avant de pouvoir recevoir des interventions.",
-      "version": 2,
+      "version": 3,
       "lastReviewedDate": "2026-08-26",
       "features": [
         "worker_onboarding",
@@ -1344,7 +1344,7 @@
       "locale": "fr",
       "title": "Opportunités, devis et interventions",
       "summary": "Répondez aux demandes admissibles et mettez à jour le déroulement réel du travail.",
-      "version": 5,
+      "version": 6,
       "lastReviewedDate": "2026-08-26",
       "features": [
         "marketplace",
@@ -1458,7 +1458,7 @@
       "locale": "fr",
       "title": "Vérification, suspension et mesures de sécurité",
       "summary": "Examinez les preuves et appliquez une mesure proportionnée avec une raison claire.",
-      "version": 2,
+      "version": 3,
       "lastReviewedDate": "2026-08-26",
       "features": [
         "worker_vetting",

@@ -12,6 +12,8 @@ import {
   describeCoordinates,
   getLocationCapability,
 } from '@/lib/location';
+import { announceDataChange } from '@/lib/data-events';
+import { useDraft } from '@/lib/draft-store';
 import { customerNavigation } from '@/lib/nav';
 import { supabase } from '@/lib/supabase';
 import type { Locale } from '@/lib/preferences';
@@ -54,6 +56,31 @@ type Coordinate = {
 
 type LocationStatus = 'idle' | 'locating' | 'resolving' | AddressResolutionState;
 
+/**
+ * What a half-entered *new* address looks like on the device.
+ *
+ * **Only the new-address editor is drafted, and that boundary is deliberate.**
+ * Editing an existing address is a modification of a server-owned record: a
+ * stale restored edit could quietly re-apply values the account had since
+ * changed elsewhere, which is a data-loss bug wearing the costume of a
+ * convenience. A new address is not the server's yet, so nothing can be
+ * overwritten by keeping it.
+ *
+ * `locationStatus` is normalised before it is stored — `locating` and
+ * `resolving` describe a request that is no longer in flight, and restoring
+ * one would show a spinner nothing is going to finish.
+ */
+type AddressEditorDraft = {
+  fields: Draft;
+  coordinate: Coordinate | null;
+  coordinateChanged: boolean;
+  locationStatus: LocationStatus;
+};
+
+function settledStatus(status: LocationStatus): LocationStatus {
+  return status === 'locating' || status === 'resolving' ? 'idle' : status;
+}
+
 /** Customer service addresses, through the same RLS and pin-confirmation RPC as mobile. */
 export default function AddressesPage() {
   const locale = useAppLocale();
@@ -71,6 +98,13 @@ export default function AddressesPage() {
   const [locationStatus, setLocationStatus] = useState<LocationStatus>('idle');
   const [editorFailure, setEditorFailure] = useState<string | null>(null);
   const saveInFlight = useRef(false);
+  const {
+    value: storedEditor,
+    setValue: setStoredEditor,
+    clear: clearStoredEditor,
+    restored: draftRestored,
+  } = useDraft<AddressEditorDraft | null>('address_editor', null);
+  const editorHydrated = useRef(false);
 
   const load = useCallback(async () => {
     setFailed(false);
@@ -92,16 +126,45 @@ export default function AddressesPage() {
     });
   }, []);
 
+  // Reopen an address somebody was part-way through entering. Once, on the
+  // first render after the stored value has been consulted — never again, or
+  // it would fight the person as they edited the fields it had just filled in.
+  useEffect(() => {
+    if (!draftRestored || editorHydrated.current) return;
+    editorHydrated.current = true;
+    if (!storedEditor) return;
+    setEditorId('new');
+    setDraft(storedEditor.fields);
+    setCoordinate(storedEditor.coordinate);
+    setCoordinateChanged(storedEditor.coordinateChanged);
+    setLocationStatus(storedEditor.locationStatus);
+  }, [draftRestored, storedEditor]);
+
+  // Keep the stored copy in step while a new address is open.
+  useEffect(() => {
+    if (!editorHydrated.current || editorId !== 'new') return;
+    setStoredEditor({
+      fields: draft,
+      coordinate,
+      coordinateChanged,
+      locationStatus: settledStatus(locationStatus),
+    });
+  }, [coordinate, coordinateChanged, draft, editorId, locationStatus, setStoredEditor]);
+
   const makeDefault = async (id: string) => {
     if (busyId) return;
     setBusyId(id);
     const { error } = await supabase().rpc('set_default_address', { address_id: id });
     if (error) setFailed(true);
-    else await load();
+    else { await load(); announceDataChange('addresses'); }
     setBusyId(null);
   };
 
   const openNew = () => {
+    // "Add address" starts a new one. Anything previously left half-entered is
+    // deliberately ended here rather than silently resumed under a button that
+    // says Add.
+    clearStoredEditor('started_new');
     setEditorId('new');
     setDraft(EMPTY);
     setCoordinate(null);
@@ -256,6 +319,11 @@ export default function AddressesPage() {
     await load();
     await refreshAccount();
     setEditorId(null);
+    // Saved: it is the server's now. The draft ends, and every other surface
+    // reading addresses — the request form's picker, another open tab — is
+    // told to look again rather than left showing the set from before.
+    clearStoredEditor('submitted');
+    announceDataChange('addresses');
     saveInFlight.current = false;
     setBusyId(null);
   };
@@ -267,7 +335,7 @@ export default function AddressesPage() {
       deleted_at: new Date().toISOString(), is_default: false,
     }).eq('id', address.id);
     if (error) setFailed(true);
-    else await load();
+    else { await load(); announceDataChange('addresses'); }
     setBusyId(null);
   };
 
@@ -341,7 +409,15 @@ export default function AddressesPage() {
                 || !draft.addressLine.trim() || !draft.governorate.trim()}>
               {busyId === 'save' ? words.loading : words.saveChanges}
             </button>
-            <button type="button" className={styles.secondary} onClick={() => setEditorId(null)}>
+            <button
+              type="button"
+              className={styles.secondary}
+              onClick={() => {
+                // Cancel is the explicit discard; navigating away is not.
+                if (editorId === 'new') clearStoredEditor('discarded');
+                setEditorId(null);
+              }}
+            >
               {words.cancel}
             </button>
           </div>

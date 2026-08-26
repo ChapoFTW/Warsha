@@ -52,6 +52,7 @@ export const DETERMINISTIC_TEST_SCRIPTS = [
   'test:authenticated-navigation',
   'test:request-creation',
   'test:native-specific-service',
+  'test:state-persistence',
   'test:address-contract',
   'test:spacing-system',
   'test:help-docs',

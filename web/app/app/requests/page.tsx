@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 
 import { AppShell } from '@/components/app-shell';
@@ -102,7 +103,7 @@ export default function RequestsPage() {
     <AppShell navigation={customerNavigation(words)} mode={words.modeCustomer}>
       <div className={styles.head}>
         <h1 className={styles.title}>{words.requestsTitle}</h1>
-        <a className={styles.action} href={'/requests/new' as Route}>{words.requestsNew}</a>
+        <Link className={styles.action} href={'/requests/new' as Route}>{words.requestsNew}</Link>
       </div>
       <p className={styles.lead}>{words.requestsLead}</p>
 

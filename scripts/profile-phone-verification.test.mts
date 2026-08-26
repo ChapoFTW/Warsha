@@ -29,7 +29,12 @@ ok(translations.en.nameSaved.length > 0 && translations.ar.nameSaved.length > 0,
 ok(profileSource.includes("t('saveName')"), 'profile save button uses the saveName key');
 ok(!profileSource.includes("t('saveAddress')"), 'profile no longer borrows the booking saveAddress key');
 equal(translations.en.saveAddress, 'Save address', 'booking address action keeps its own key');
-ok(profileSource.includes("supabaseCustomerProfileRepository.update({ displayName: name.trim(), preferredLanguage: preferred })"), 'saving the name updates only display name and language');
+// `language` rather than a copy loaded into this screen when it mounted: the
+// account's language is now synchronised by `LanguageAccountSync`, and saving a
+// stale local copy would let a name change quietly revert a language somebody
+// had just chosen on this device.
+ok(profileSource.includes("supabaseCustomerProfileRepository.update({ displayName: name.trim(), preferredLanguage: language })"), 'saving the name updates only display name and the language in effect');
+ok(!/preferredLanguage: preferred/.test(profileSource), 'and never writes a stale copy of the language back over a newer choice');
 ok(!/save = async[\s\S]{0,400}?address/i.test(profileSource), 'name save path never references address data');
 ok(profileSource.includes("setNotice(t('nameSaved'))"), 'a visible success state follows a saved name');
 ok(/disabled=\{busy \|\| name\.trim\(\)\.length < 2\}/.test(profileSource), 'save button blocks duplicate submissions while busy');

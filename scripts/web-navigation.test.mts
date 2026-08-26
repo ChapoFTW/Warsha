@@ -265,9 +265,15 @@ for (const surface of ['app', 'admin']) {
   }
 }
 // Switching in place must actually re-render, or the control would look broken.
-const localeHook = readFileSync(join(WEB, 'lib', 'use-app-locale.ts'), 'utf8');
-check(/languageChangeEvent/.test(localeHook) && /languageChangeEvent/.test(controls),
+// The announcement now happens inside the store, which is both the writer and
+// the thing every consumer reads — so a same-tab change re-renders every
+// surface at once rather than whichever component happened to be listening.
+const preferenceStore = readFileSync(join(WEB, 'lib', 'preferences-context.tsx'), 'utf8');
+check(/dispatchEvent\(new Event\(preferenceChangeEvent\)\)/.test(preferenceStore)
+  && /addEventListener\(preferenceChangeEvent/.test(preferenceStore),
   'a same-tab language change is announced and observed, so the page updates without navigating');
+check(/useWarshaPreferences/.test(controls),
+  'and the control goes through that store rather than announcing on its own');
 
 // ===========================================================================
 // PUBLIC AUTH ENTRY POINTS REACH THE REAL APPLICATION
