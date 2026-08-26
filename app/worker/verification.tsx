@@ -25,6 +25,8 @@ import {
   isValidNationalId,
   MAX_DOCUMENT_BYTES,
 } from '@/src/onboarding/onboarding-types';
+import { candidateFillsField, offersRetake } from '@/src/verification/identity-extraction-flow';
+import { useIdentityExtraction } from '@/src/verification/use-identity-extraction';
 import { useVerification } from '@/src/verification/verification-context';
 import {
   editableVerificationStatuses,
@@ -49,7 +51,7 @@ const statusCopy = {
 export default function WorkerVerificationJourney() {
   const colors = useThemeColors();
   const styles = useThemedStyles(makeStyles);
-  const { isRTL } = useLocalization();
+  const { t, isRTL } = useLocalization();
   const params = useLocalSearchParams<{ step?: string }>();
   const vt = useVerificationText();
   const ot = useOnboardingText();
@@ -73,12 +75,33 @@ export default function WorkerVerificationJourney() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
 
+  /**
+   * Read a document after it is uploaded, and tell the worker what happened.
+   *
+   * This is the caller the extraction backend never had. It is not on the
+   * critical path: `phase` is a message and two optional buttons, and no value
+   * it can take stops somebody typing their details in by hand.
+   */
+  const extraction = useIdentityExtraction({ onCandidates: () => onboarding.reload() });
+
+  /*
+   * A candidate SUGGESTS; the worker confirms or corrects. `candidateFillsField`
+   * holds the whole rule — never over something already typed, never a masked
+   * value, never one the server marked as needing manual entry — so a change to
+   * what may be pre-filled is one edit in a tested module rather than three
+   * conditions in an effect.
+   */
   useEffect(() => {
     for (const candidate of onboarding.candidates) {
-      if (!candidate.candidateValue || candidate.masked) continue;
-      if (candidate.fieldKey === 'legal_name_ar' && !legalName) setLegalName(candidate.candidateValue);
-      if (candidate.fieldKey === 'date_of_birth' && !dateOfBirth) setDateOfBirth(candidate.candidateValue);
-      if (candidate.fieldKey === 'id_expiry_date' && !expiryDate) setExpiryDate(candidate.candidateValue);
+      const fills = (current: string) => candidateFillsField({
+        candidateValue: candidate.candidateValue,
+        masked: candidate.masked,
+        requiresManualEntry: candidate.requiresManualEntry,
+        currentValue: current,
+      });
+      if (candidate.fieldKey === 'legal_name_ar' && fills(legalName)) setLegalName(candidate.candidateValue!);
+      if (candidate.fieldKey === 'date_of_birth' && fills(dateOfBirth)) setDateOfBirth(candidate.candidateValue!);
+      if (candidate.fieldKey === 'id_expiry_date' && fills(expiryDate)) setExpiryDate(candidate.candidateValue!);
     }
   }, [dateOfBirth, expiryDate, legalName, onboarding.candidates]);
 
@@ -132,6 +155,11 @@ export default function WorkerVerificationJourney() {
       if (!recorded) throw new Error('Capture metadata was not recorded');
       onboarding.reload();
       setStep(type === 'national_id_front' ? 1 : 2);
+      // Reading the card is a convenience that runs after the upload has
+      // already succeeded. It is deliberately not awaited into the upload's
+      // failure path: a provider that cannot read the photograph must never
+      // make the worker think the upload did not work.
+      void extraction.request(type, document.storagePath);
     } catch {
       setMessage(ot.text('identityUploadFailed'));
     } finally {
@@ -356,6 +384,37 @@ export default function WorkerVerificationJourney() {
           <BrandCard style={styles.card}>
             <AppText style={styles.title}>{ot.text('identityFieldsTitle')}</AppText>
             <AppText style={styles.body}>{ot.text('identityFieldsIntro')}</AppText>
+
+            {/* What automatic reading did, said plainly and never as a verdict.
+                `unavailable` and `unreadable` are both ordinary: the fields
+                below work identically in every phase, which is why none of
+                these sentences contains the word "failed". */}
+            {extraction.phase !== 'idle' ? (
+              <View style={styles.extraction}>
+                <AppText accessibilityRole={extraction.phase === 'reading' ? undefined : 'alert'} style={styles.body}>
+                  {extraction.phase === 'reading' ? t('identityExtractionReading')
+                    : extraction.phase === 'complete' ? t('identityExtractionComplete')
+                      : extraction.phase === 'unreadable' ? t('identityExtractionUnreadable')
+                        : t('identityExtractionUnavailable')}
+                </AppText>
+                {offersRetake(extraction.phase) ? (
+                  <BrandButton
+                    label={t('identityExtractionReadAgain')}
+                    variant="secondary"
+                    onPress={() => void extraction.request(
+                      'national_id_front',
+                      documents.get('national_id_front')?.storagePath,
+                      { requestedByWorker: true },
+                    )}
+                  />
+                ) : null}
+                {/* Stated in every phase, including success. A worker who is
+                    told a machine read their card should be told in the same
+                    breath that a person decides. */}
+                <AppText style={styles.note}>{t('identityExtractionAssistiveNote')}</AppText>
+              </View>
+            ) : null}
+
             <OnboardingFieldMeta label={ot.text('identityLegalName')} required privateField purpose={wt.text('identityPurpose')} />
             <BrandTextField label={ot.text('identityLegalName')} value={legalName} onChangeText={setLegalName} />
             <OnboardingFieldMeta label={ot.text('identityNumber')} required privateField purpose={wt.text('identityPurpose')} />
@@ -408,6 +467,7 @@ export default function WorkerVerificationJourney() {
 }
 
 const makeStyles = (colors: ThemeColors) => StyleSheet.create({
+  extraction: { gap: spacing.sm, paddingVertical: spacing.sm },
   safe: { flex: 1, backgroundColor: colors.canvas },
   page: { width: '100%', maxWidth: 600, alignSelf: 'center', padding: spacing.lg, paddingBottom: spacing.xxxl, gap: spacing.lg },
   rtl: { direction: 'rtl' },

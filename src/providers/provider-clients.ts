@@ -71,7 +71,16 @@ export type ExtractionResult =
         requiresManualEntry: boolean;
       }[];
     }
-  | { outcome: 'unavailable' | 'no_text_found' | 'unreadable' | 'provider_error'; reason: string };
+  // Every outcome `vision-extract` can return, not a subset. The client used to
+  // name four of seven and cast the rest, which typechecked while quietly
+  // hiding the two states a worker is most likely to meet on a development
+  // backend: the provider switched off, and no credential configured.
+  | {
+      outcome: 'unavailable' | 'no_text_found' | 'unreadable' | 'provider_error'
+        | 'timed_out' | 'refused_disabled' | 'refused_no_credential'
+        | 'refused_rate_limited';
+      reason: string;
+    };
 
 export type { PlaceSuggestion, ResolvedPlace } from '@/src/providers/location-address';
 

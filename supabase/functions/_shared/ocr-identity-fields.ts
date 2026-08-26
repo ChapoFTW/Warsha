@@ -32,7 +32,38 @@ import { clampProbability, type IdentityCandidate } from './ocr-provider.ts';
  * file did — and a baseline that cannot tell them apart cannot direct any
  * effort.
  */
-export const IDENTITY_PARSER_VERSION = 'eg-nid/1';
+export const IDENTITY_PARSER_VERSION = 'eg-nid/2';
+
+/**
+ * Words printed on every Egyptian National ID, and on nobody.
+ *
+ * Splitting the text into lines was supposed to stop the card's own heading
+ * being offered as somebody's legal name, and it stops the heading being run
+ * TOGETHER with the name. It does not stop the heading winning on its own:
+ * `بطاقة تحقيق الشخصية` is three words and nineteen characters, which is
+ * longer than a great many real two-part Egyptian names, and "longest Arabic
+ * run" therefore picked the words "Personal Identification Card" as a person.
+ *
+ * That is the confident-and-wrong outcome this file exists to avoid — a worker
+ * skimming a pre-filled form would very plausibly have accepted it — and it is
+ * fixed the deterministic way: a run containing any of these is not a name.
+ *
+ * Chosen so that nothing here can appear inside an Egyptian personal name.
+ * Notably absent: `عبد`, `الدين`, `مصر` and every other token that legitimately
+ * forms part of one. This list refuses printed furniture; it never corrects,
+ * rewrites, or second-guesses a name.
+ */
+const CARD_FURNITURE = [
+  'بطاقة', 'تحقيق', 'الشخصية', 'جمهورية', 'العربية',
+  'الرقم', 'القومي', 'محل', 'الإقامة', 'الاقامة',
+  'الميلاد', 'النوع', 'الديانة', 'الحالة', 'الاجتماعية',
+  'المهنة', 'الوظيفة', 'صالحة', 'تاريخ', 'الاصدار', 'الإصدار',
+];
+
+function isCardFurniture(run: string): boolean {
+  const words = run.split(/\s+/);
+  return words.some((word) => CARD_FURNITURE.includes(word));
+}
 
 export type IdentityParseResult = {
   candidates: IdentityCandidate[];
@@ -117,6 +148,8 @@ export function parseIdentityCandidates(
   const longest = arabicRuns
     .map((run) => run.trim())
     .filter((run) => run.split(/\s+/).length >= 2)
+    // The card's own printed labels are never a person. See CARD_FURNITURE.
+    .filter((run) => !isCardFurniture(run))
     .sort((a, b) => b.length - a.length)[0];
   if (longest) {
     candidates.push({

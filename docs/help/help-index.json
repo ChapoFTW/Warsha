@@ -526,7 +526,7 @@
       "locale": "en",
       "title": "Onboarding, service areas, and verification",
       "summary": "Understand every application stage and what customers can see.",
-      "version": 3,
+      "version": 4,
       "lastReviewedDate": "2026-08-26",
       "features": [
         "worker_onboarding",
@@ -554,7 +554,7 @@
       "locale": "ar",
       "title": "التقديم ومناطق الشغل والتوثيق",
       "summary": "افهم كل مرحلة في التقديم وإيه اللي العميل يقدر يشوفه.",
-      "version": 3,
+      "version": 4,
       "lastReviewedDate": "2026-08-26",
       "features": [
         "worker_onboarding",
@@ -814,7 +814,7 @@
       "locale": "en",
       "title": "Worker verification and enforcement",
       "summary": "Review evidence, record safe reasons, and understand approval, rejection, suspension, ban, and appeal boundaries.",
-      "version": 3,
+      "version": 4,
       "lastReviewedDate": "2026-08-26",
       "features": [
         "worker_vetting",
@@ -852,7 +852,7 @@
       "locale": "ar",
       "title": "مراجعة الصنايعي وإجراءات الأمان",
       "summary": "راجع الدليل وسجل سبب آمن وافهم حدود الموافقة والرفض والإيقاف والحظر والاعتراض.",
-      "version": 3,
+      "version": 4,
       "lastReviewedDate": "2026-08-26",
       "features": [
         "worker_vetting",
@@ -1315,7 +1315,7 @@
       "locale": "fr",
       "title": "Profil, métiers, zone de service et vérification",
       "summary": "Comprenez les étapes nécessaires avant de pouvoir recevoir des interventions.",
-      "version": 3,
+      "version": 4,
       "lastReviewedDate": "2026-08-26",
       "features": [
         "worker_onboarding",
@@ -1458,7 +1458,7 @@
       "locale": "fr",
       "title": "Vérification, suspension et mesures de sécurité",
       "summary": "Examinez les preuves et appliquez une mesure proportionnée avec une raison claire.",
-      "version": 3,
+      "version": 4,
       "lastReviewedDate": "2026-08-26",
       "features": [
         "worker_vetting",

@@ -22,9 +22,14 @@
  *   3. The role is resolved to a provider, and the provider is checked for
  *      being enabled. Registry, feature flag and kill switch, all read from the
  *      database, none decided here.
- *   4. An audit row is opened BEFORE the provider is called, so a request that
- *      crashes mid-flight still leaves a trace.
- *   5. The document is fetched with the service role and sent.
+ *   4. The document is fetched with the service role and hashed, and the hash
+ *      is checked against this worker's recent requests. Bytes that have
+ *      already been read successfully are answered from the stored candidates
+ *      without a provider call; a document retried too often, or a worker over
+ *      the hourly ceiling, is refused. OCR is billed per call, and the table
+ *      has accepted `refused_rate_limited` since it was created.
+ *   5. An audit row is opened BEFORE the provider is called, so a request that
+ *      crashes mid-flight still leaves a trace, and the document is sent.
  *   6. The audit row is closed with the outcome, latency, mean confidence and
  *      field count, and a health sample is recorded whatever happened.
  *   7. Candidates are written to `private.worker_identity_extractions`, and
@@ -39,6 +44,11 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 import { readSecret } from '../_shared/provider-secrets.ts';
 import { resolveOcrProvider } from '../_shared/ocr-providers.ts';
+import {
+  decideOcrRequest,
+  OCR_HISTORY_WINDOW_MS,
+  type OcrRequestRecord,
+} from '../_shared/ocr-throttle.ts';
 import type { IdentityCandidate, OcrRequest } from '../_shared/ocr-provider.ts';
 
 const CORS = {
@@ -166,6 +176,25 @@ Deno.serve(async (request) => {
     .maybeSingle();
   if (!workerProfile?.id) return json({ error: 'Worker profile not found' }, 403);
 
+  /**
+   * A health sample for a decision made before any provider call.
+   *
+   * Declared here rather than beside `recordHealth` below because the throttle
+   * decision happens earlier, and a `const` used above its declaration is a
+   * temporal-dead-zone crash rather than a type error — which would have shown
+   * up only once somebody actually hit the limit.
+   */
+  const recordHealthEarly = (outcomeKind: string) =>
+    asService.schema('private').rpc('record_provider_health', {
+      p_provider_key: provider.providerKey,
+      p_operation: OCR_OPERATION,
+      p_provider_version: provider.providerVersion,
+      p_outcome: outcomeKind,
+      p_latency_ms: null,
+      p_attempts: 0,
+      p_timed_out: false,
+    }).then(() => undefined).catch(() => undefined);
+
   const { data: file, error: downloadError } = await asService
     .storage.from('verification-documents').download(storagePath);
   if (downloadError || !file) {
@@ -180,6 +209,96 @@ Deno.serve(async (request) => {
     documentType: documentType as OcrRequest['documentType'],
     documentHash,
   };
+
+  /*
+   * Is this request worth making at all?
+   *
+   * OCR is billed per call, and the two ways to make many of them are a worker
+   * tapping retry and a client looping. `private.ocr_requests` has accepted the
+   * outcome `refused_rate_limited` since it was created and nothing ever
+   * produced one — the rules live in `ocr-throttle.ts`, are pure, and are
+   * exercised directly by the regression suite.
+   *
+   * Read under the service role because `private` is not reachable by a
+   * caller-scoped client; scoped to this worker's own provider id, which was
+   * resolved from the verified JWT above and never from the request body.
+   */
+  const { data: historyRows } = await asService.schema('private')
+    .from('ocr_requests')
+    .select('document_type,document_hash,outcome,requested_at')
+    .eq('provider_id', workerProfile.id)
+    .gte('requested_at', new Date(Date.now() - OCR_HISTORY_WINDOW_MS).toISOString())
+    .order('requested_at', { ascending: false })
+    .limit(200);
+
+  const history: OcrRequestRecord[] = (historyRows ?? []).map((row) => ({
+    documentType: String((row as Record<string, unknown>).document_type ?? ''),
+    documentHash: String((row as Record<string, unknown>).document_hash ?? ''),
+    outcome: String((row as Record<string, unknown>).outcome ?? ''),
+    requestedAt: String((row as Record<string, unknown>).requested_at ?? ''),
+  }));
+
+  const decision = decideOcrRequest({
+    documentType, documentHash, recent: history, now: Date.now(),
+  });
+
+  if (decision.kind === 'reuse') {
+    /*
+     * These exact bytes have already been read. The candidates are still
+     * current for this hash, so they are returned without a provider call and
+     * without a new audit row: nothing happened this time, and an audit trail
+     * that claimed otherwise would overstate how often a document was sent.
+     */
+    const { data: stored } = await asService.schema('private')
+      .from('worker_identity_extractions')
+      .select('field_key,candidate_value,confidence')
+      .eq('provider_id', workerProfile.id)
+      .eq('document_type', documentType)
+      .eq('document_hash', documentHash)
+      .eq('is_current', true);
+
+    const reused: IdentityCandidate[] = (stored ?? []).map((row) => ({
+      fieldKey: String((row as Record<string, unknown>).field_key ?? '') as IdentityCandidate['fieldKey'],
+      value: String((row as Record<string, unknown>).candidate_value ?? ''),
+      confidence: Number((row as Record<string, unknown>).confidence ?? 0),
+    }));
+
+    if (reused.length > 0) {
+      return json({
+        available: true,
+        outcome: 'succeeded',
+        candidates: reused.map(toClientCandidate),
+        confirmationRequired: true,
+        reused: true,
+      });
+    }
+    // The audit says it succeeded but the candidates are gone — superseded by
+    // a later document, or removed. Fall through and read it properly rather
+    // than returning an empty success.
+  }
+
+  if (decision.kind === 'refuse') {
+    // Recorded as a refusal, which the table's completion constraint requires
+    // to have no `completed_at`: no provider was called, and the audit trail
+    // must not imply one was.
+    await asService.schema('private').rpc('open_ocr_request', {
+      p_provider_id: workerProfile.id,
+      p_document_type: documentType,
+      p_document_hash: documentHash,
+      p_provider_key: provider.providerKey,
+      p_provider_version: provider.providerVersion,
+    });
+    await recordHealthEarly('refused_rate_limited');
+    return json({
+      available: false,
+      outcome: 'refused_rate_limited',
+      // Deliberately the same sentence as every other unavailable state. A
+      // worker does not need to know which internal ceiling they met, and
+      // "you have tried too many times" reads as an accusation for something
+      // that is usually a bad photograph.
+      reason: 'Automatic reading is not available. Please enter the details yourself.',
+    }, 200);
+  }
 
   // Opened before the call, so a crash still leaves a trace.
   const { data: requestId } = await asService.schema('private').rpc('open_ocr_request', {
