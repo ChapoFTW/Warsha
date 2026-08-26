@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { AppShell, useAccount } from '@/components/app-shell';
 import { appCopy } from '@/lib/app-copy';
 import { parseCounts, type NotificationCounts } from '@/lib/notifications';
-import { customerNav } from '@/lib/nav';
+import { customerNavigation } from '@/lib/nav';
 import { supabase } from '@/lib/supabase';
 import { useAppLocale } from '@/lib/use-app-locale';
 
@@ -46,7 +46,7 @@ export default function CustomerHome() {
   }, []);
 
   return (
-    <AppShell nav={customerNav(words)} mode={words.modeCustomer}>
+    <AppShell navigation={customerNavigation(words)} mode={words.modeCustomer}>
       <h1 className={styles.title}>{words.dashboardGreeting}</h1>
 
       <div className={styles.grid}>

@@ -8,7 +8,7 @@ import { AppShell } from '@/components/app-shell';
 import { WorkerProfileEditor } from '@/components/worker-profile-editor';
 import { useSession } from '@/components/session-provider';
 import { appCopy } from '@/lib/app-copy';
-import { workerNav } from '@/lib/nav';
+import { workerNavigation } from '@/lib/nav';
 import { supabase } from '@/lib/supabase';
 import { useAppLocale } from '@/lib/use-app-locale';
 import { parseWorkerProfile, type WorkerProfile } from '@/lib/worker';
@@ -44,7 +44,7 @@ export default function WorkerProfilePage() {
   };
 
   return (
-    <AppShell nav={workerNav(appWords)} mode={appWords.modeWorker}>
+    <AppShell navigation={workerNavigation(appWords)} mode={appWords.modeWorker}>
       <div className={styles.head}><h1 className={styles.title}>{words.workerProfileTitle}</h1></div>
       <p className={styles.lead}>{words.workerProfileLead}</p>
 

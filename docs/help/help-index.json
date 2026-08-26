@@ -237,7 +237,7 @@
       "title": "Addresses and location",
       "summary": "Save a clear service address without losing the exact map pin.",
       "version": 2,
-      "lastReviewedDate": "2026-08-21",
+      "lastReviewedDate": "2026-08-26",
       "features": [
         "addresses",
         "location"
@@ -264,7 +264,7 @@
       "title": "العناوين والموقع",
       "summary": "احفظ عنوان خدمة واضح من غير ما تفقد مكان الدبوس الدقيق.",
       "version": 2,
-      "lastReviewedDate": "2026-08-21",
+      "lastReviewedDate": "2026-08-26",
       "features": [
         "addresses",
         "location"
@@ -350,8 +350,8 @@
       "locale": "en",
       "title": "Account, security, and preferences",
       "summary": "Sign in, recover your password, choose language and appearance, and manage privacy.",
-      "version": 2,
-      "lastReviewedDate": "2026-08-25",
+      "version": 3,
+      "lastReviewedDate": "2026-08-26",
       "features": [
         "auth",
         "password_recovery",
@@ -383,8 +383,8 @@
       "locale": "ar",
       "title": "الحساب والأمان والتفضيلات",
       "summary": "سجّل الدخول، استرجع كلمة السر، واختار اللغة والمظهر وتحكم في الخصوصية.",
-      "version": 2,
-      "lastReviewedDate": "2026-08-25",
+      "version": 3,
+      "lastReviewedDate": "2026-08-26",
       "features": [
         "auth",
         "password_recovery",
@@ -527,7 +527,7 @@
       "title": "Onboarding, service areas, and verification",
       "summary": "Understand every application stage and what customers can see.",
       "version": 2,
-      "lastReviewedDate": "2026-08-21",
+      "lastReviewedDate": "2026-08-26",
       "features": [
         "worker_onboarding",
         "location",
@@ -555,7 +555,7 @@
       "title": "التقديم ومناطق الشغل والتوثيق",
       "summary": "افهم كل مرحلة في التقديم وإيه اللي العميل يقدر يشوفه.",
       "version": 2,
-      "lastReviewedDate": "2026-08-21",
+      "lastReviewedDate": "2026-08-26",
       "features": [
         "worker_onboarding",
         "location",
@@ -815,7 +815,7 @@
       "title": "Worker verification and enforcement",
       "summary": "Review evidence, record safe reasons, and understand approval, rejection, suspension, ban, and appeal boundaries.",
       "version": 2,
-      "lastReviewedDate": "2026-08-21",
+      "lastReviewedDate": "2026-08-26",
       "features": [
         "worker_vetting",
         "trust",
@@ -853,7 +853,7 @@
       "title": "مراجعة الصنايعي وإجراءات الأمان",
       "summary": "راجع الدليل وسجل سبب آمن وافهم حدود الموافقة والرفض والإيقاف والحظر والاعتراض.",
       "version": 2,
-      "lastReviewedDate": "2026-08-21",
+      "lastReviewedDate": "2026-08-26",
       "features": [
         "worker_vetting",
         "trust",
@@ -1172,7 +1172,7 @@
       "title": "Adresses et localisation",
       "summary": "Enregistrez une adresse claire tout en conservant la position exacte.",
       "version": 2,
-      "lastReviewedDate": "2026-08-21",
+      "lastReviewedDate": "2026-08-26",
       "features": [
         "addresses",
         "location"
@@ -1228,8 +1228,8 @@
       "locale": "fr",
       "title": "Compte, sécurité et préférences",
       "summary": "Connectez-vous, récupérez votre mot de passe et gérez langue, apparence et confidentialité.",
-      "version": 2,
-      "lastReviewedDate": "2026-08-25",
+      "version": 3,
+      "lastReviewedDate": "2026-08-26",
       "features": [
         "auth",
         "password_recovery",
@@ -1316,7 +1316,7 @@
       "title": "Profil, métiers, zone de service et vérification",
       "summary": "Comprenez les étapes nécessaires avant de pouvoir recevoir des interventions.",
       "version": 2,
-      "lastReviewedDate": "2026-08-21",
+      "lastReviewedDate": "2026-08-26",
       "features": [
         "worker_onboarding",
         "location",
@@ -1459,7 +1459,7 @@
       "title": "Vérification, suspension et mesures de sécurité",
       "summary": "Examinez les preuves et appliquez une mesure proportionnée avec une raison claire.",
       "version": 2,
-      "lastReviewedDate": "2026-08-21",
+      "lastReviewedDate": "2026-08-26",
       "features": [
         "worker_vetting",
         "trust",

@@ -10,6 +10,7 @@ import { appCopy } from '@/lib/app-copy';
 import { supabase } from '@/lib/supabase';
 import { useAppLocale } from '@/lib/use-app-locale';
 import { workerCopy } from '@/lib/worker-copy';
+import { workerOnboardingNavigation } from '@/lib/nav';
 import { workerJourneyProgress } from '@/src/worker/worker-onboarding-policy.ts';
 
 import styles from '@/components/product-surface.module.css';
@@ -26,7 +27,7 @@ export default function WorkerOnboardingPage() {
   const state = account?.state;
 
   if (!state) {
-    return <AppShell nav={[]} mode={appWords.modeWorker}><p className={styles.muted}>{appWords.loading}</p></AppShell>;
+    return <AppShell navigation={workerOnboardingNavigation(appWords)} mode={appWords.modeWorker}><p className={styles.muted}>{appWords.loading}</p></AppShell>;
   }
   const progress = workerJourneyProgress(state);
   const accept = async () => {
@@ -43,12 +44,7 @@ export default function WorkerOnboardingPage() {
   };
 
   return (
-    <AppShell nav={[
-      { href: '/worker/onboarding', label: words.onboardingTitle },
-      { href: '/worker/verification', label: appWords.navVerification },
-      { href: '/notifications', label: appWords.navNotifications },
-      { href: '/support', label: appWords.navSupport },
-    ]} mode={appWords.modeWorker}>
+    <AppShell navigation={workerOnboardingNavigation(appWords)} mode={appWords.modeWorker}>
       <div className={styles.head}><h1 className={styles.title}>{words.onboardingTitle}</h1></div>
       <p className={styles.lead}>{words.onboardingLead}</p>
       <p className={styles.note} role="progressbar" aria-valuemin={1} aria-valuemax={progress.total} aria-valuenow={progress.current}>

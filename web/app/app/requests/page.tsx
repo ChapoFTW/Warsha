@@ -18,7 +18,7 @@ import {
   parseServices,
   type Service,
 } from '@/lib/customer';
-import { customerNav } from '@/lib/nav';
+import { customerNavigation } from '@/lib/nav';
 import { intlLocale, type Locale } from '@/lib/preferences';
 import { supabase } from '@/lib/supabase';
 import { useAppLocale } from '@/lib/use-app-locale';
@@ -99,7 +99,7 @@ export default function RequestsPage() {
   useEffect(() => { void load(); }, [load]);
 
   return (
-    <AppShell nav={customerNav(words)} mode={words.modeCustomer}>
+    <AppShell navigation={customerNavigation(words)} mode={words.modeCustomer}>
       <div className={styles.head}>
         <h1 className={styles.title}>{words.requestsTitle}</h1>
         <a className={styles.action} href={'/requests/new' as Route}>{words.requestsNew}</a>

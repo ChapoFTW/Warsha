@@ -132,7 +132,7 @@
       "title": "Worker verification and enforcement",
       "summary": "Review evidence, record safe reasons, and understand approval, rejection, suspension, ban, and appeal boundaries.",
       "version": 2,
-      "lastReviewedDate": "2026-08-21",
+      "lastReviewedDate": "2026-08-26",
       "features": [
         "worker_vetting",
         "trust",
@@ -171,7 +171,7 @@
       "title": "مراجعة الصنايعي وإجراءات الأمان",
       "summary": "راجع الدليل وسجل سبب آمن وافهم حدود الموافقة والرفض والإيقاف والحظر والاعتراض.",
       "version": 2,
-      "lastReviewedDate": "2026-08-21",
+      "lastReviewedDate": "2026-08-26",
       "features": [
         "worker_vetting",
         "trust",
@@ -526,7 +526,7 @@
       "title": "Vérification, suspension et mesures de sécurité",
       "summary": "Examinez les preuves et appliquez une mesure proportionnée avec une raison claire.",
       "version": 2,
-      "lastReviewedDate": "2026-08-21",
+      "lastReviewedDate": "2026-08-26",
       "features": [
         "worker_vetting",
         "trust",

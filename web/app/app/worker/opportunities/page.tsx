@@ -6,7 +6,7 @@ import { AppShell } from '@/components/app-shell';
 import { LifecycleBadge } from '@/components/lifecycle-badge';
 import { appCopy } from '@/lib/app-copy';
 import { parseServices, type Service } from '@/lib/customer';
-import { workerNav } from '@/lib/nav';
+import { workerNavigation } from '@/lib/nav';
 import { intlLocale, type Locale } from '@/lib/preferences';
 import { supabase } from '@/lib/supabase';
 import { useAppLocale } from '@/lib/use-app-locale';
@@ -75,7 +75,7 @@ export default function WorkerOpportunitiesPage() {
   const { active: activeInvitations, history: historicalInvitations } = partitionInvitationLifecycle(invitations ?? []);
 
   return (
-    <AppShell nav={workerNav(appWords)} mode={appWords.modeWorker}>
+    <AppShell navigation={workerNavigation(appWords)} mode={appWords.modeWorker}>
       <div className={styles.head}><h1 className={styles.title}>{words.opportunitiesTitle}</h1></div>
       <p className={styles.lead}>{words.opportunitiesLead}</p>
 

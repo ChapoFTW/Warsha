@@ -2,14 +2,15 @@
 
 import Link from 'next/link';
 import type { Route } from 'next';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 
+import { AccountMenu } from '@/components/account-menu';
 import { BrandLockup } from '@/components/brand-mark';
 import { PreferenceFooter } from '@/components/preference-controls';
 import { useSession } from '@/components/session-provider';
 import { appCopy } from '@/lib/app-copy';
-import { signOut } from '@/lib/auth-actions';
 import { useAppLocale } from '@/lib/use-app-locale';
+import type { RoleNavigation } from '@/lib/nav';
 
 import styles from './app-shell.module.css';
 
@@ -20,20 +21,25 @@ import styles from './app-shell.module.css';
  * thumb; on a pointer surface they waste the axis the content needs and read
  * as a phone screenshot. Navigation is URL-driven so a job can be linked,
  * bookmarked and opened in a new tab.
+ *
+ * It takes a `RoleNavigation`, not a list. The old signature accepted one flat
+ * array and rendered every element of it as a persistent link, which is how the
+ * customer header came to carry nine destinations: the shell had no way to be
+ * told that Addresses and Home are not the same kind of thing. The tiers are a
+ * product decision and live in `lib/nav.ts`; this only renders them.
  */
 export function AppShell({
   children,
-  nav,
+  navigation,
   mode,
 }: {
   children: React.ReactNode;
-  nav: readonly { href: string; label: string }[];
+  navigation: RoleNavigation;
   mode?: string;
 }) {
   const locale = useAppLocale();
   const words = appCopy[locale];
   const pathname = usePathname().replace(/^\/app/, '') || '/';
-  const router = useRouter();
 
   return (
     <div className={styles.shell}>
@@ -44,7 +50,7 @@ export function AppShell({
           </Link>
 
           <nav className={styles.nav} aria-label={words.navPrimary}>
-            {nav.map((item) => {
+            {navigation.primary.map((item) => {
               const active = item.href === '/'
                 ? pathname === '/'
                 : pathname.startsWith(item.href);
@@ -63,16 +69,12 @@ export function AppShell({
           <span className={styles.spacer} />
 
           <div className={styles.actions}>
-            {mode ? <span className={styles.modeBadge}>{mode}</span> : null}
-            <button
-              type="button"
-              className={styles.signOut}
-              onClick={() => {
-                void signOut().then(() => router.replace('/sign-in' as Route));
-              }}
-            >
-              {words.signOut}
-            </button>
+            <AccountMenu
+              links={navigation.account}
+              label={words.navAccount}
+              mode={mode}
+              signOutLabel={words.signOut}
+            />
           </div>
         </div>
       </header>

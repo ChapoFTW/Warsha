@@ -4,7 +4,7 @@ import { useState } from 'react';
 
 import { AppShell, useAccount } from '@/components/app-shell';
 import { appCopy } from '@/lib/app-copy';
-import { workerNav } from '@/lib/nav';
+import { workerNavigation } from '@/lib/nav';
 import {
   actionableGates,
   canAppeal,
@@ -63,7 +63,7 @@ export default function WorkerVerificationPage() {
   };
 
   return (
-    <AppShell nav={workerNav(words)} mode={words.modeWorker}>
+    <AppShell navigation={workerNavigation(words)} mode={words.modeWorker}>
       <h1 className={styles.title}>{words.workerVerificationTitle}</h1>
 
       {state === null ? (

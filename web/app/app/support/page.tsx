@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { AppShell, useAccount } from '@/components/app-shell';
 import { appCopy } from '@/lib/app-copy';
-import { customerNav, workerNav } from '@/lib/nav';
+import { customerNavigation, workerNavigation } from '@/lib/nav';
 import { intlLocale, type Locale } from '@/lib/preferences';
 import {
   classifySupportError,
@@ -89,7 +89,7 @@ export default function SupportPage() {
   }, [loadCases]);
 
   return (
-    <AppShell nav={mode === 'worker' ? workerNav(words) : customerNav(words)} mode={mode === 'worker' ? words.modeWorker : words.modeCustomer}>
+    <AppShell navigation={mode === 'worker' ? workerNavigation(words) : customerNavigation(words)} mode={mode === 'worker' ? words.modeWorker : words.modeCustomer}>
       <div className={styles.head}>
         <h1 className={styles.title}>{words.supportTitle}</h1>
         <button

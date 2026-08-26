@@ -23,9 +23,11 @@ import {
 import {
   catalogueServiceLabel, orderedCatalogueServices,
 } from '@/src/services/specific-services';
-import { customerNav } from '@/lib/nav';
+import { customerNavigation } from '@/lib/nav';
 import { supabase } from '@/lib/supabase';
 import { useAppLocale } from '@/lib/use-app-locale';
+import { WarshaIcon } from '@/components/warsha-icon';
+import { categoryIconName } from '@/src/brand/warsha-icons';
 import { serviceCategoryLabel } from '@/src/i18n/service-labels';
 
 import type { Route } from 'next';
@@ -182,7 +184,7 @@ export default function NewRequestPage() {
 
   if (createdId) {
     return (
-      <AppShell nav={customerNav(words)} mode={words.modeCustomer}>
+      <AppShell navigation={customerNavigation(words)} mode={words.modeCustomer}>
         <div className={styles.head}>
           <h1 className={styles.title}>{words.requestSentTitle}</h1>
         </div>
@@ -197,7 +199,7 @@ export default function NewRequestPage() {
   }
 
   return (
-    <AppShell nav={customerNav(words)} mode={words.modeCustomer}>
+    <AppShell navigation={customerNavigation(words)} mode={words.modeCustomer}>
       <div className={styles.head}>
         <h1 className={styles.title}>{words.requestNewTitle}</h1>
       </div>
@@ -218,7 +220,17 @@ export default function NewRequestPage() {
 
       <form className={styles.panel} onSubmit={submit}>
         <label className={styles.field}>
-          <span className={styles.label}>{words.requestCategory}</span>
+          {/* An <option> cannot contain an SVG, so the chosen category's mark
+              sits beside the control rather than inside the list. It confirms
+              the choice at a glance; it is not a second way to make one. */}
+          <span className={styles.labelRow}>
+            <span className={styles.label}>{words.requestCategory}</span>
+            {categoryId ? (
+              <span className={styles.inlineIcon}>
+                <WarshaIcon name={categoryIconName(categoryId)} size="md" />
+              </span>
+            ) : null}
+          </span>
           <select
             className={styles.select}
             value={categoryId}

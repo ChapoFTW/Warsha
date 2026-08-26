@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AppShell } from '@/components/app-shell';
 import { LifecycleBadge } from '@/components/lifecycle-badge';
 import { appCopy } from '@/lib/app-copy';
-import { workerNav } from '@/lib/nav';
+import { workerNavigation } from '@/lib/nav';
 import { intlLocale, type Locale } from '@/lib/preferences';
 import { supabase } from '@/lib/supabase';
 import { useAppLocale } from '@/lib/use-app-locale';
@@ -62,7 +62,7 @@ export default function WorkerJobsPage() {
   const opened = bookings?.find((item) => item.id === openId) ?? null;
 
   return (
-    <AppShell nav={workerNav(appWords)} mode={appWords.modeWorker}>
+    <AppShell navigation={workerNavigation(appWords)} mode={appWords.modeWorker}>
       <div className={styles.head}><h1 className={styles.title}>{words.workerJobsTitle}</h1></div>
       <p className={styles.lead}>{words.workerJobsLead}</p>
       {failed ? <section className={styles.panel}><p className={styles.error}>{appWords.loadFailed}</p>

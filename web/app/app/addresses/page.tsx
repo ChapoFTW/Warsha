@@ -12,7 +12,7 @@ import {
   describeCoordinates,
   getLocationCapability,
 } from '@/lib/location';
-import { customerNav } from '@/lib/nav';
+import { customerNavigation } from '@/lib/nav';
 import { supabase } from '@/lib/supabase';
 import type { Locale } from '@/lib/preferences';
 import { useAppLocale } from '@/lib/use-app-locale';
@@ -272,7 +272,7 @@ export default function AddressesPage() {
   };
 
   return (
-    <AppShell nav={customerNav(words)} mode={words.modeCustomer}>
+    <AppShell navigation={customerNavigation(words)} mode={words.modeCustomer}>
       <div className={styles.head}>
         <h1 className={styles.title}>{words.addressesTitle}</h1>
         <button type="button" className={styles.action} onClick={openNew}>{words.addressAdd}</button>

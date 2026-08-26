@@ -72,7 +72,7 @@
       "title": "Addresses and location",
       "summary": "Save a clear service address without losing the exact map pin.",
       "version": 2,
-      "lastReviewedDate": "2026-08-21",
+      "lastReviewedDate": "2026-08-26",
       "features": [
         "addresses",
         "location"
@@ -100,7 +100,7 @@
       "title": "العناوين والموقع",
       "summary": "احفظ عنوان خدمة واضح من غير ما تفقد مكان الدبوس الدقيق.",
       "version": 2,
-      "lastReviewedDate": "2026-08-21",
+      "lastReviewedDate": "2026-08-26",
       "features": [
         "addresses",
         "location"
@@ -189,8 +189,8 @@
       "locale": "en",
       "title": "Account, security, and preferences",
       "summary": "Sign in, recover your password, choose language and appearance, and manage privacy.",
-      "version": 2,
-      "lastReviewedDate": "2026-08-25",
+      "version": 3,
+      "lastReviewedDate": "2026-08-26",
       "features": [
         "auth",
         "password_recovery",
@@ -215,7 +215,7 @@
         "privacy",
         "delete"
       ],
-      "body": "Customers sign in with email and password. After account creation, Warsha may ask you to confirm your email. The confirmation screen reports success or a safe link problem, including expired or already-used links where the provider can distinguish them, and offers the relevant next action: continue, sign in, resend confirmation, recover the password, or contact Support.\n\nUse Forgot password to request a recovery link. Confirmation resend and password recovery give the same safe response whether or not an address is registered, and account creation does not reveal whether an existing identity uses the address. Never share a password, confirmation link, or recovery link.\n\nLanguage and Light, Dark, or System appearance follow your saved preference where available. On the web both sit at the foot of the page, under Preferences; in the admin console they are at the bottom of the sidebar, and on an account entry screen below the form. In the app they are in the header. Arabic uses right-to-left layout.\n\nThe Privacy Center explains deactivation, data export, and governed deletion. Deactivation is reversible and does not delete history. A deletion request can be blocked by active work, financial retention, a dispute, or a legal hold; the screen reports the real state."
+      "body": "Customers sign in with email and password. After account creation, Warsha may ask you to confirm your email. The confirmation screen reports success or a safe link problem, including expired or already-used links where the provider can distinguish them, and offers the relevant next action: continue, sign in, resend confirmation, recover the password, or contact Support.\n\nUse Forgot password to request a recovery link. Confirmation resend and password recovery give the same safe response whether or not an address is registered, and account creation does not reveal whether an existing identity uses the address. Never share a password, confirmation link, or recovery link.\n\nLanguage and Light, Dark, or System appearance follow your saved preference where available. On the web both sit at the foot of the page, under Preferences; in the admin console they are at the bottom of the sidebar, and on an account entry screen below the form. In the app they are in the header. On the web, Addresses, Notifications, Support, Help and Account settings are grouped under the account control at the top right of the signed-in pages, alongside Sign out. Arabic uses right-to-left layout.\n\nThe Privacy Center explains deactivation, data export, and governed deletion. Deactivation is reversible and does not delete history. A deletion request can be blocked by active work, financial retention, a dispute, or a legal hold; the screen reports the real state."
     },
     {
       "id": "customer-account-security",
@@ -223,8 +223,8 @@
       "locale": "ar",
       "title": "الحساب والأمان والتفضيلات",
       "summary": "سجّل الدخول، استرجع كلمة السر، واختار اللغة والمظهر وتحكم في الخصوصية.",
-      "version": 2,
-      "lastReviewedDate": "2026-08-25",
+      "version": 3,
+      "lastReviewedDate": "2026-08-26",
       "features": [
         "auth",
         "password_recovery",
@@ -249,7 +249,7 @@
         "خصوصية",
         "حذف"
       ],
-      "body": "العميل بيسجل الدخول بالبريد الإلكتروني وكلمة السر. بعد إنشاء الحساب، ممكن ورشة يطلب تأكيد البريد. شاشة التأكيد بتوضح النجاح أو مشكلة الرابط بشكل آمن، زي رابط منتهي أو مستخدم قبل كده لما الخدمة تقدر تفرّق، وبتظهر الخطوة المناسبة: كمّل، سجّل الدخول، اطلب التأكيد تاني، استرجع كلمة السر، أو كلم الدعم.\n\nاستخدم «نسيت كلمة السر» عشان تطلب رابط استرجاع. إعادة إرسال التأكيد واسترجاع كلمة السر بيدوا نفس الرد الآمن سواء البريد مسجل أو لأ، وإنشاء الحساب ما بيكشفش لو فيه هوية قديمة بنفس البريد. ما تشاركش كلمة السر أو روابط التأكيد والاسترجاع مع حد.\n\nاختيار اللغة والمظهر فاتح أو داكن أو حسب الجهاز بيتحفظ لما يكون متاح. على الويب الاتنين في آخر الصفحة تحت «التفضيلات»؛ وفي لوحة الإدارة في آخر القائمة الجانبية، وفي شاشات الدخول تحت النموذج. وفي التطبيق موجودين في أعلى الشاشة. العربي بيظهر من اليمين للشمال.\n\nمركز الخصوصية بيشرح إيقاف الحساب مؤقتًا وتنزيل البيانات وطلب الحذف المنظم. الإيقاف قابل للرجوع ومابيحذفش التاريخ. طلب الحذف ممكن يتوقف لو فيه شغل نشط أو حفظ مالي أو خلاف أو احتفاظ قانوني، والشاشة هتقول الحالة الحقيقية."
+      "body": "العميل بيسجل الدخول بالبريد الإلكتروني وكلمة السر. بعد إنشاء الحساب، ممكن ورشة يطلب تأكيد البريد. شاشة التأكيد بتوضح النجاح أو مشكلة الرابط بشكل آمن، زي رابط منتهي أو مستخدم قبل كده لما الخدمة تقدر تفرّق، وبتظهر الخطوة المناسبة: كمّل، سجّل الدخول، اطلب التأكيد تاني، استرجع كلمة السر، أو كلم الدعم. على الويب، هتلاقي العناوين والإشعارات والمساعدة والدعم وإعدادات الحساب كلها تحت زر الحساب في أعلى الصفحة بعد تسجيل الدخول، ومعاها تسجيل الخروج.\n\nاستخدم «نسيت كلمة السر» عشان تطلب رابط استرجاع. إعادة إرسال التأكيد واسترجاع كلمة السر بيدوا نفس الرد الآمن سواء البريد مسجل أو لأ، وإنشاء الحساب ما بيكشفش لو فيه هوية قديمة بنفس البريد. ما تشاركش كلمة السر أو روابط التأكيد والاسترجاع مع حد.\n\nاختيار اللغة والمظهر فاتح أو داكن أو حسب الجهاز بيتحفظ لما يكون متاح. على الويب الاتنين في آخر الصفحة تحت «التفضيلات»؛ وفي لوحة الإدارة في آخر القائمة الجانبية، وفي شاشات الدخول تحت النموذج. وفي التطبيق موجودين في أعلى الشاشة. العربي بيظهر من اليمين للشمال.\n\nمركز الخصوصية بيشرح إيقاف الحساب مؤقتًا وتنزيل البيانات وطلب الحذف المنظم. الإيقاف قابل للرجوع ومابيحذفش التاريخ. طلب الحذف ممكن يتوقف لو فيه شغل نشط أو حفظ مالي أو خلاف أو احتفاظ قانوني، والشاشة هتقول الحالة الحقيقية."
     },
     {
       "id": "customer-support-faq",
@@ -372,7 +372,7 @@
       "title": "Onboarding, service areas, and verification",
       "summary": "Understand every application stage and what customers can see.",
       "version": 2,
-      "lastReviewedDate": "2026-08-21",
+      "lastReviewedDate": "2026-08-26",
       "features": [
         "worker_onboarding",
         "location",
@@ -401,7 +401,7 @@
       "title": "التقديم ومناطق الشغل والتوثيق",
       "summary": "افهم كل مرحلة في التقديم وإيه اللي العميل يقدر يشوفه.",
       "version": 2,
-      "lastReviewedDate": "2026-08-21",
+      "lastReviewedDate": "2026-08-26",
       "features": [
         "worker_onboarding",
         "location",
@@ -670,7 +670,7 @@
       "title": "Worker verification and enforcement",
       "summary": "Review evidence, record safe reasons, and understand approval, rejection, suspension, ban, and appeal boundaries.",
       "version": 2,
-      "lastReviewedDate": "2026-08-21",
+      "lastReviewedDate": "2026-08-26",
       "features": [
         "worker_vetting",
         "trust",
@@ -709,7 +709,7 @@
       "title": "مراجعة الصنايعي وإجراءات الأمان",
       "summary": "راجع الدليل وسجل سبب آمن وافهم حدود الموافقة والرفض والإيقاف والحظر والاعتراض.",
       "version": 2,
-      "lastReviewedDate": "2026-08-21",
+      "lastReviewedDate": "2026-08-26",
       "features": [
         "worker_vetting",
         "trust",

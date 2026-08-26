@@ -7,7 +7,7 @@ import type { Route } from 'next';
 import { AppShell, useAccount } from '@/components/app-shell';
 import { useSession } from '@/components/session-provider';
 import { appCopy } from '@/lib/app-copy';
-import { workerNav } from '@/lib/nav';
+import { workerNavigation } from '@/lib/nav';
 import { supabase } from '@/lib/supabase';
 import { useAppLocale } from '@/lib/use-app-locale';
 import { parseInvitations, parseWorkerBookings, parseWorkerProfile } from '@/lib/worker';
@@ -81,7 +81,7 @@ export default function WorkerHome() {
   };
 
   return (
-    <AppShell nav={workerNav(words)} mode={words.modeWorker}>
+    <AppShell navigation={workerNavigation(words)} mode={words.modeWorker}>
       <h1 className={styles.title}>{words.dashboardGreeting}</h1>
 
       <section className={styles.next} aria-labelledby="next">

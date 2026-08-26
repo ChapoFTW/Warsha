@@ -6,7 +6,7 @@ import { AppShell } from '@/components/app-shell';
 import { LifecycleBadge } from '@/components/lifecycle-badge';
 import { appCopy } from '@/lib/app-copy';
 import { isFinished, parseBookings, type Booking } from '@/lib/customer';
-import { customerNav } from '@/lib/nav';
+import { customerNavigation } from '@/lib/nav';
 import { intlLocale, type Locale } from '@/lib/preferences';
 import { supabase } from '@/lib/supabase';
 import { useAppLocale } from '@/lib/use-app-locale';
@@ -73,7 +73,7 @@ export default function JobsPage() {
   const opened = bookings?.find((booking) => booking.id === openId) ?? null;
 
   return (
-    <AppShell nav={customerNav(words)} mode={words.modeCustomer}>
+    <AppShell navigation={customerNavigation(words)} mode={words.modeCustomer}>
       <div className={styles.head}><h1 className={styles.title}>{words.jobsTitle}</h1></div>
       <p className={styles.lead}>{words.jobsLead}</p>
 

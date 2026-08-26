@@ -346,3 +346,43 @@
 .accountPreferences {
   margin-block-start: var(--space-md);
 }
+
+/*
+ * A category as a browsing affordance.
+ *
+ * Denser than the public marketing card: 40px ground, 20px mark. The public
+ * /services page is a landing surface where a 48px squircle carries the page;
+ * this grid puts nineteen of them in front of somebody who already knows what
+ * they came for, and the mark is there to make the row scannable rather than to
+ * be the subject.
+ *
+ * The icon takes its own column so a wrapping French name or a long Arabic
+ * description flows beside it instead of underneath, and the row stays aligned
+ * across the grid whatever the label length.
+ */
+.categoryCard {
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  column-gap: 12px;
+}
+
+.categoryCard .cardName,
+.categoryCard .cardMeta { grid-column: 2; }
+
+.categoryIcon {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  flex: 0 0 auto;
+}
+
+/* A field label with the chosen category's mark beside it. */
+.labelRow { display: flex; align-items: center; gap: 8px; }
+.inlineIcon { display: inline-flex; color: var(--text-secondary); }

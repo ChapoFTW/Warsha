@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { AppShell } from '@/components/app-shell';
-import { customerNav } from '@/lib/nav';
+import { customerNavigation } from '@/lib/nav';
 import { appCopy } from '@/lib/app-copy';
 import {
   parseCategories,
@@ -16,6 +16,8 @@ import {
 import { supabase } from '@/lib/supabase';
 import { useAppLocale } from '@/lib/use-app-locale';
 import { matchServiceCategories } from '@/src/services/service-search-aliases';
+import { WarshaIcon } from '@/components/warsha-icon';
+import { categoryIconName } from '@/src/brand/warsha-icons';
 import { serviceCategoryDescription, serviceCategoryLabel } from '@/src/i18n/service-labels';
 
 import type { Route } from 'next';
@@ -112,7 +114,7 @@ export default function DiscoverPage() {
   }, [categories, query, words]);
 
   return (
-    <AppShell nav={customerNav(words)} mode={words.modeCustomer}>
+    <AppShell navigation={customerNavigation(words)} mode={words.modeCustomer}>
       <div className={styles.head}>
         <h1 className={styles.title}>{words.discoverTitle}</h1>
       </div>
@@ -166,9 +168,14 @@ export default function DiscoverPage() {
             {shown.map((category) => (
               <a
                 key={category.id}
-                className={styles.card}
+                className={`${styles.card} ${styles.categoryCard}`}
                 href={`/requests/new?category=${encodeURIComponent(category.id)}`}
               >
+                {/* Decorative: the localized name is the next element, and the
+                    mark carries no information the name does not. */}
+                <span className={styles.categoryIcon}>
+                  <WarshaIcon name={categoryIconName(category.id)} size="md" />
+                </span>
                 <span className={styles.cardName}>
                   {serviceCategoryLabel(category.translationKey, locale, category.id)}
                 </span>

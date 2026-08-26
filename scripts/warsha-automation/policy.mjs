@@ -49,6 +49,7 @@ export const DETERMINISTIC_TEST_SCRIPTS = [
   'test:specific-service-rendering',
   'test:catalogue-consumers',
   'test:warsha-icons',
+  'test:authenticated-navigation',
   'test:request-creation',
   'test:native-specific-service',
   'test:address-contract',

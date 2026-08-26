@@ -6,7 +6,7 @@ import { PreferenceFooter } from '@/components/preference-controls';
 import { AppShell } from '@/components/app-shell';
 import { useSession } from '@/components/session-provider';
 import { appCopy } from '@/lib/app-copy';
-import { customerNav } from '@/lib/nav';
+import { customerNavigation } from '@/lib/nav';
 import { supabase } from '@/lib/supabase';
 import { useAppLocale } from '@/lib/use-app-locale';
 
@@ -60,7 +60,7 @@ export default function AccountPage() {
   };
 
   return (
-    <AppShell nav={customerNav(words)} mode={words.modeCustomer}>
+    <AppShell navigation={customerNavigation(words)} mode={words.modeCustomer}>
       <div className={styles.head}><h1 className={styles.title}>{words.accountTitle}</h1></div>
       <p className={styles.lead}>{words.accountLead}</p>
 

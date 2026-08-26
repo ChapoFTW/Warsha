@@ -175,3 +175,80 @@
   display: flex;
   justify-content: flex-start;
 }
+
+/*
+ * The account control, and the second tier behind it.
+ *
+ * Everything that is not one of the four destinations a person navigates
+ * between lives in here. The trigger carries the role badge, so CUSTOMER is a
+ * statement attached to the account rather than a chip floating beside a
+ * button; the panel carries the destinations and Sign out.
+ *
+ * Anchored to the end of the bar and positioned from `inset-inline-end`, so it
+ * opens toward the middle of the screen in both directions rather than off the
+ * edge in Arabic.
+ */
+.accountMenu { position: relative; flex-shrink: 0; }
+
+.accountTrigger {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: var(--control-font-sm);
+  font-weight: var(--control-weight-quiet);
+  padding: var(--control-pad-sm);
+  min-height: var(--control-h-sm);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.accountTrigger:hover { border-color: var(--border-strong); }
+
+.accountPanel {
+  position: absolute;
+  top: calc(100% + 8px);
+  inset-inline-end: 0;
+  min-width: 216px;
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 28%);
+  z-index: 30;
+}
+
+.accountLink,
+.accountSignOut {
+  appearance: none;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 14px;
+  color: var(--text-secondary);
+  text-align: start;
+  padding: 9px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.accountLink:hover,
+.accountSignOut:hover { background: var(--surface-raised); color: var(--text-primary); }
+.accountLinkActive { color: var(--text-primary); font-weight: var(--control-weight-strong); }
+
+/* Session control, not a destination: a rule separates it from the places you
+   can go, so leaving is never mistaken for navigating. */
+.accountSignOut {
+  margin-top: 6px;
+  border-top: 1px solid var(--border);
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  padding-top: 12px;
+}

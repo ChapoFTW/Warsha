@@ -208,6 +208,87 @@ for (const [file, resolver] of Object.entries(consumers)) {
     `${file} NO LONGER DRAWS A CATEGORY OR TRADE WITH A MATERIAL GLYPH`);
 }
 
+// --- Any surface that OFFERS a category must draw its mark ------------------
+//
+// The guard that was missing. The consumer list below used to be a hand-written
+// set of files, so it recorded the surfaces somebody remembered to wire and was
+// silent about the ones they did not: the authenticated `Find help` grid --
+// nineteen category cards, the core of customer discovery -- shipped text-only
+// and no test objected, because no test was looking for it.
+//
+// So the surfaces are DERIVED. Any file that maps over categories and renders a
+// localized category name is offering the customer a category to choose, and
+// must draw the approved mark beside it. A surface that deliberately shows a
+// category name WITHOUT a mark has to say so here, which turns an oversight
+// into a decision somebody wrote down.
+const NAME_ONLY_BY_DESIGN: Record<string, string> = {
+  // An <option> cannot contain an SVG. This page renders the chosen category's
+  // mark beside the control instead, which is asserted separately below.
+  'web/app/app/requests/new/page.tsx': 'native select; mark sits beside the control',
+  // A staff reporting filter, not a browsing affordance. Same <option>
+  // limitation, and the console is deliberately dense: a mark per row here
+  // would be decoration in a tool people use to read numbers.
+  'web/app/admin/analytics/page.tsx': 'staff reporting filter, not customer discovery',
+};
+
+function categoryOfferingSurfaces(): string[] {
+  const roots = ['web/app', 'web/components', 'app', 'components'];
+  const found: string[] = [];
+  const walk = (directory: string) => {
+    for (const entry of readdirSync(directory, { withFileTypes: true })) {
+      const full = join(directory, entry.name).replaceAll('\\', '/');
+      if (entry.isDirectory()) {
+        if (entry.name === 'node_modules' || entry.name === '.next') continue;
+        walk(full);
+      } else if (/\.tsx$/.test(entry.name)) {
+        const source = readFileSync(full, 'utf8');
+        const namesCategories = /serviceCategoryLabel\(/.test(source)
+          || /categoryServiceLabel\(/.test(source);
+        const rendersAList = /\.map\(/.test(source);
+        const isChooser = /requests\/new\?category=|categories\.map\(|shown\.map\(|categoryId===item\.id|setCategoryId/.test(source);
+        if (namesCategories && rendersAList && isChooser) found.push(full);
+      }
+    }
+  };
+  for (const root of roots) walk(root);
+  return found.sort();
+}
+
+const offering = categoryOfferingSurfaces();
+check(offering.length >= 3,
+  `the derivation finds the category choosers rather than an empty set (${offering.length})`);
+for (const surface of offering) {
+  const source = read(surface);
+  if (NAME_ONLY_BY_DESIGN[surface]) {
+    check(NAME_ONLY_BY_DESIGN[surface].length > 10,
+      `${surface} states WHY it shows a category name without a mark`);
+    continue;
+  }
+  // Either resolver is the authority: a page names the category directly, the
+  // contact sheet enumerates the whole coverage. What is forbidden is drawing a
+  // mark from anywhere else, or drawing none at all.
+  check(/categoryIconName|warshaIconCoverage/.test(source),
+    `${surface} OFFERS CATEGORIES AND MUST DRAW THE APPROVED MARK`);
+  check(/WarshaIcon/.test(source), `${surface} renders the approved family`);
+  check(!/MaterialIcons/.test(source) || !/MaterialIcons name=\{(?:category|item)\./.test(source),
+    `${surface} draws no category with a Material glyph`);
+}
+check(offering.includes('web/app/app/discover/page.tsx'),
+  'THE AUTHENTICATED FIND HELP GRID IS ONE OF THE DERIVED SURFACES');
+// The one allowlisted customer surface still has to show the mark somewhere:
+// the limitation is the <option> element, not the recognition value.
+check(/categoryIconName/.test(read('web/app/app/requests/new/page.tsx'))
+  && /WarshaIcon/.test(read('web/app/app/requests/new/page.tsx')),
+  'request creation shows the chosen category mark beside its select');
+
+// The grid keeps the canonical order. Adding icons must not become an excuse to
+// re-sort, and the page must not build its own ordering.
+const discover = read('web/app/app/discover/page.tsx');
+check(!/\.sort\(/.test(discover),
+  'THE FIND HELP GRID DOES NOT SORT — IT RENDERS THE ORDER THE CATALOGUE GIVES IT');
+check(!/service-[a-z-]+\.svg|assets\/icons/.test(discover),
+  'and names no raw asset filename');
+
 // --- The database column agrees with the assets ---------------------------
 //
 // The guard the old arrangement never had: `icon_name` could name a glyph that
