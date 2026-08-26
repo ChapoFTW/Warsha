@@ -192,8 +192,12 @@ export function StartupGate({ children }: { children: React.ReactNode }) {
   }
 
   if (status !== 'render') {
+    // The label is localized like every other one. The console's gate has
+    // always used `words.loading`; this was the last hardcoded English string
+    // on an authenticated surface, announced to a screen reader in a language
+    // its reader may not have.
     return (
-      <div className={styles.startup} role="progressbar" aria-label="Loading Warsha">
+      <div className={styles.startup} role="progressbar" aria-label={words.loading}>
         <BrandMark size={56} />
       </div>
     );
