@@ -101,6 +101,10 @@
     "test:request-creation": "node --no-warnings --experimental-strip-types scripts/request-creation-contract.test.mts",
     "test:native-specific-service": "node --no-warnings --experimental-strip-types scripts/native-specific-service-parity.test.mts",
     "test:state-persistence": "node --no-warnings --experimental-strip-types scripts/state-persistence.test.mts",
+    "test:synthetic-ocr": "node --no-warnings --experimental-strip-types scripts/synthetic-ocr-check.mts",
+    "automation:provision": "node scripts/warsha-automation-governance.mjs provision",
+    "automation:govern": "node scripts/warsha-automation-governance.mjs",
+    "test:automation-authority": "node --no-warnings --experimental-strip-types scripts/automation-authority.test.mts",
     "test:identity-extraction": "node --no-warnings --experimental-strip-types scripts/identity-extraction.test.mts"
   },
   "dependencies": {

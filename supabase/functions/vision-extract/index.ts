@@ -40,6 +40,18 @@
  * depends on it.
  */
 
+/*
+ * A note on why the service-role reads below call `warsha_ocr_*` in `public`
+ * rather than the `private` functions they forward to.
+ *
+ * PostgREST serves `public` and `graphql_public` and refuses anything else with
+ * "Invalid schema: private" before a grant is consulted. This function used to
+ * call `private` directly, which worked in a Docker reset and failed silently on
+ * a hosted project: the registry read returned null and the whole function
+ * reported `refused_disabled`, which is indistinguishable from OCR being
+ * switched off. The wrappers hold no logic and are executable by `service_role`
+ * alone, so nothing new can reach them.
+ */
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 import { readSecret } from '../_shared/provider-secrets.ts';
@@ -153,17 +165,31 @@ Deno.serve(async (request) => {
    */
   if (body.operation === 'capability') {
     const resolved = resolveOcrProvider(
-      (await asService.schema('private').rpc('provider_for_role', { p_role: OCR_ROLE })
+      (await asService.rpc('warsha_ocr_provider_for_role', { p_role: OCR_ROLE })
         .then((r) => r.data as string | null).catch(() => null)),
     );
     const { data: roleEnabled } = await asService
-      .schema('private').rpc('provider_enabled_for_role', { p_role: OCR_ROLE })
+      .rpc('warsha_ocr_provider_enabled_for_role', { p_role: OCR_ROLE })
       .then((r) => ({ data: r.data as boolean | null }))
       .catch(() => ({ data: null }));
+    // Two different questions, and conflating them cost a day. `isConfigured`
+    // says a secret is present. `verifyCredential` exchanges an auth token —
+    // no image, nothing billed — and says whether the provider will accept it.
+    // A key that is present but revoked, wrongly scoped, or attached to a
+    // project with the API switched off passes the first and fails the second,
+    // and used to surface as `refused_no_credential`, which reads as "nobody
+    // configured anything" and sends an operator to the wrong place entirely.
+    const credential = resolved?.verifyCredential
+      ? await resolved.verifyCredential()
+      : null;
     return json({
       operation: 'capability',
       providerKey: resolved?.providerKey ?? null,
       credentialConfigured: resolved?.isConfigured() === true,
+      credentialUsable: credential?.usable ?? null,
+      credentialFailure: credential && !credential.usable
+        ? { reason: credential.reason, status: credential.status, code: credential.code }
+        : null,
       enabled: roleEnabled === true,
       manualEntryAlwaysAvailable: true,
     });
@@ -186,11 +212,11 @@ Deno.serve(async (request) => {
   // a refusal still has to record WHICH provider was refused, or the audit
   // trail says a document was processed by nobody.
   const { data: providerKey } = await asService
-    .schema('private').rpc('provider_for_role', { p_role: OCR_ROLE })
+    .rpc('warsha_ocr_provider_for_role', { p_role: OCR_ROLE })
     .then((r) => ({ data: r.data as string | null }))
     .catch(() => ({ data: null }));
   const { data: enabled } = await asService
-    .schema('private').rpc('provider_enabled_for_role', { p_role: OCR_ROLE })
+    .rpc('warsha_ocr_provider_enabled_for_role', { p_role: OCR_ROLE })
     .then((r) => ({ data: r.data as boolean | null }))
     .catch(() => ({ data: null }));
 
@@ -219,7 +245,7 @@ Deno.serve(async (request) => {
    * up only once somebody actually hit the limit.
    */
   const recordHealthEarly = (outcomeKind: string) =>
-    asService.schema('private').rpc('record_provider_health', {
+    asService.rpc('warsha_ocr_record_provider_health', {
       p_provider_key: provider.providerKey,
       p_operation: OCR_OPERATION,
       p_provider_version: provider.providerVersion,
@@ -257,19 +283,20 @@ Deno.serve(async (request) => {
    * caller-scoped client; scoped to this worker's own provider id, which was
    * resolved from the verified JWT above and never from the request body.
    */
-  const { data: historyRows } = await asService.schema('private')
-    .from('ocr_requests')
-    .select('document_type,document_hash,outcome,requested_at')
-    .eq('provider_id', workerProfile.id)
-    .gte('requested_at', new Date(Date.now() - OCR_HISTORY_WINDOW_MS).toISOString())
-    .order('requested_at', { ascending: false })
-    .limit(200);
+  const { data: historyRows } = await asService
+    .rpc('warsha_ocr_request_history', {
+      p_provider_id: workerProfile.id,
+      p_since: new Date(Date.now() - OCR_HISTORY_WINDOW_MS).toISOString(),
+      p_limit: 200,
+    });
 
-  const history: OcrRequestRecord[] = (historyRows ?? []).map((row) => ({
-    documentType: String((row as Record<string, unknown>).document_type ?? ''),
-    documentHash: String((row as Record<string, unknown>).document_hash ?? ''),
+  const history: OcrRequestRecord[] = (
+    Array.isArray(historyRows) ? historyRows : []
+  ).map((row) => ({
+    documentType: String((row as Record<string, unknown>).documentType ?? ''),
+    documentHash: String((row as Record<string, unknown>).documentHash ?? ''),
     outcome: String((row as Record<string, unknown>).outcome ?? ''),
-    requestedAt: String((row as Record<string, unknown>).requested_at ?? ''),
+    requestedAt: String((row as Record<string, unknown>).requestedAt ?? ''),
   }));
 
   const decision = decideOcrRequest({
@@ -283,17 +310,18 @@ Deno.serve(async (request) => {
      * without a new audit row: nothing happened this time, and an audit trail
      * that claimed otherwise would overstate how often a document was sent.
      */
-    const { data: stored } = await asService.schema('private')
-      .from('worker_identity_extractions')
-      .select('field_key,candidate_value,confidence')
-      .eq('provider_id', workerProfile.id)
-      .eq('document_type', documentType)
-      .eq('document_hash', documentHash)
-      .eq('is_current', true);
+    const { data: stored } = await asService
+      .rpc('warsha_ocr_stored_candidates', {
+        p_provider_id: workerProfile.id,
+        p_document_type: documentType,
+        p_document_hash: documentHash,
+      });
 
-    const reused: IdentityCandidate[] = (stored ?? []).map((row) => ({
-      fieldKey: String((row as Record<string, unknown>).field_key ?? '') as IdentityCandidate['fieldKey'],
-      value: String((row as Record<string, unknown>).candidate_value ?? ''),
+    const reused: IdentityCandidate[] = (
+      Array.isArray(stored) ? stored : []
+    ).map((row) => ({
+      fieldKey: String((row as Record<string, unknown>).fieldKey ?? '') as IdentityCandidate['fieldKey'],
+      value: String((row as Record<string, unknown>).value ?? ''),
       confidence: Number((row as Record<string, unknown>).confidence ?? 0),
     }));
 
@@ -315,7 +343,7 @@ Deno.serve(async (request) => {
     // Recorded as a refusal, which the table's completion constraint requires
     // to have no `completed_at`: no provider was called, and the audit trail
     // must not imply one was.
-    await asService.schema('private').rpc('open_ocr_request', {
+    await asService.rpc('warsha_ocr_open_request', {
       p_provider_id: workerProfile.id,
       p_document_type: documentType,
       p_document_hash: documentHash,
@@ -335,7 +363,7 @@ Deno.serve(async (request) => {
   }
 
   // Opened before the call, so a crash still leaves a trace.
-  const { data: requestId } = await asService.schema('private').rpc('open_ocr_request', {
+  const { data: requestId } = await asService.rpc('warsha_ocr_open_request', {
     p_provider_id: workerProfile.id,
     p_document_type: documentType,
     p_document_hash: documentHash,
@@ -348,7 +376,7 @@ Deno.serve(async (request) => {
     latencyMs: number | null,
     attempts: number,
     timedOut: boolean,
-  ) => asService.schema('private').rpc('record_provider_health', {
+  ) => asService.rpc('warsha_ocr_record_provider_health', {
     p_provider_key: provider.providerKey,
     p_operation: OCR_OPERATION,
     p_provider_version: provider.providerVersion,
@@ -391,7 +419,7 @@ Deno.serve(async (request) => {
     ? outcome.safeReason
     : null;
 
-  await asService.schema('private').rpc('complete_ocr_request', {
+  await asService.rpc('warsha_ocr_complete_request', {
     p_request_id: requestId,
     // `timed_out` is not a value `private.ocr_requests.outcome` accepts, and
     // should not be: from the audit's point of view a timeout is the provider
@@ -415,29 +443,26 @@ Deno.serve(async (request) => {
   // Candidates are superseded rather than accumulated: a retake replaces the
   // previous attempt, so a worker cannot confirm a field extracted from a
   // photograph they already discarded.
-  await asService.schema('private').from('worker_identity_extractions')
-    .update({ is_current: false })
-    .eq('provider_id', workerProfile.id)
-    .eq('document_type', documentType);
-
-  await asService.schema('private').from('worker_identity_extractions').insert(
-    candidates.map((candidate) => ({
-      provider_id: workerProfile.id,
-      document_type: documentType,
-      field_key: candidate.fieldKey,
-      candidate_value: candidate.value,
+  // Superseding the previous attempt and writing this one happen inside one
+  // function, so a crash between them cannot leave a worker with two current
+  // sets of candidates for the same document. WPS-024 requires every result to
+  // record the provider version, the extraction timestamp, the confidence and
+  // the document hash; all four come from `extractMetadata`, so no call site
+  // has to remember them.
+  await asService.rpc('warsha_ocr_store_candidates', {
+    p_provider_id: workerProfile.id,
+    p_document_type: documentType,
+    p_candidates: candidates.map((candidate) => ({
+      fieldKey: candidate.fieldKey,
+      value: candidate.value,
       confidence: candidate.confidence,
-      // WPS-024 requires every result to record the provider version, the
-      // extraction timestamp, the confidence and the document hash. All four
-      // come from `extractMetadata`, so no call site has to remember them.
-      provider_key: metadata.providerKey,
-      provider_version: metadata.providerVersion,
-      extracted_at: metadata.extractedAt,
-      document_hash: metadata.documentHash,
-      ocr_request_id: requestId,
-      is_current: true,
     })),
-  );
+    p_provider_key: metadata.providerKey,
+    p_provider_version: metadata.providerVersion,
+    p_extracted_at: metadata.extractedAt,
+    p_document_hash: metadata.documentHash,
+    p_request_id: requestId,
+  });
 
   return json({
     available: true,

@@ -118,11 +118,39 @@ export type OcrRequest = {
   documentHash: string;
 };
 
+
+/**
+ * The result of asking a provider whether it accepts our credential.
+ *
+ * `reason` is a short machine code, never the provider's prose: an error body
+ * can echo parts of the request, and this value is returned to a console.
+ */
+export type CredentialCheck = {
+  usable: boolean;
+  reason: 'ok' | 'absent' | 'malformed' | 'rejected' | 'unreachable';
+  status: number | null;
+  code: string | null;
+};
+
 export interface OcrProvider {
   readonly providerKey: string;
   readonly providerVersion: string;
   /** True when a credential is present. Never reveals what it is. */
   isConfigured(): boolean;
+  /**
+   * Whether the provider will actually accept the credential.
+   *
+   * `isConfigured` answers "is a secret present", which is a different question
+   * and was the only one anything asked. A key that is present but revoked,
+   * scoped to the wrong API, or attached to a project with the API disabled
+   * passes `isConfigured` and fails every real call — and, before this existed,
+   * failed it as `refused_no_credential`, which reads as "nobody configured
+   * anything" and sends an operator to look in the wrong place.
+   *
+   * Optional because it costs a round trip, and free because it exchanges an
+   * auth token without submitting a document. Nothing here is billed.
+   */
+  verifyCredential?(): Promise<CredentialCheck>;
   extractDocument(request: OcrRequest): Promise<OcrOutcome<OcrDocumentText>>;
   extractIdentity(request: OcrRequest): Promise<OcrOutcome<IdentityCandidate[]>>;
   extractConfidence(candidates: IdentityCandidate[]): OcrConfidence;

@@ -38,25 +38,70 @@ import {
   type OcrOutcome,
   type OcrProvider,
   type OcrRequest,
+  type CredentialCheck,
 } from './ocr-provider.ts';
 
 export const VISION_PROVIDER_KEY = 'google_cloud_vision';
 export const VISION_PROVIDER_VERSION = 'images:annotate/v1';
 
 /** A JWT for the Vision API, signed with the service-account key. */
-async function accessToken(signal: AbortSignal): Promise<string | null> {
+/**
+ * What happened when we tried to get an access token.
+ *
+ * This used to be `string | null`, and null meant all of: no secret, malformed
+ * secret, and Google refusing the assertion. Those are three different faults
+ * with three different fixes, and collapsing them sent every one of them to an
+ * operator as "no credential is configured" — including the case where a
+ * perfectly good credential belonged to a project with the Vision API switched
+ * off. Every caller still takes the manual path; only the diagnosis changes.
+ */
+type TokenAttempt =
+  | { token: string; failure: null }
+  | { token: null; failure: { reason: 'absent' | 'malformed' | 'rejected' | 'unreachable';
+      status: number | null; code: string | null } };
+
+/**
+ * Which fields a service-account JSON actually has.
+ *
+ * Key NAMES only. "the secret is not JSON" and "the JSON has no private_key"
+ * are different faults with different fixes, and an operator told only
+ * "malformed" has to start printing the secret to find out which — which is
+ * precisely the thing this file exists to make unnecessary.
+ */
+function credentialShape(raw: string): string {
+  try {
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    if (!parsed || typeof parsed !== 'object') return 'not_an_object';
+    const present = ['type', 'client_email', 'private_key', 'project_id', 'token_uri']
+      .filter((key) => typeof parsed[key] === 'string' && (parsed[key] as string).length > 0);
+    return present.length ? `missing_fields:has=${present.join('+')}` : 'missing_fields:has=none';
+  } catch {
+    return 'not_json';
+  }
+}
+
+async function accessToken(signal: AbortSignal): Promise<TokenAttempt> {
   const raw = readSecret('visionServiceAccount');
-  if (!raw) return null;
+  if (!raw) {
+    return { token: null, failure: { reason: 'absent', status: null, code: null } };
+  }
 
   let account: { client_email?: string; private_key?: string; token_uri?: string };
   try {
     account = JSON.parse(raw);
   } catch {
     // A malformed credential is an operations fault, not a worker's problem.
-    // It is reported as "no credential" so the caller takes the manual path.
-    return null;
+    return {
+      token: null,
+      failure: { reason: 'malformed', status: null, code: credentialShape(raw) },
+    };
   }
-  if (!account.client_email || !account.private_key) return null;
+  if (!account.client_email || !account.private_key) {
+    return {
+      token: null,
+      failure: { reason: 'malformed', status: null, code: credentialShape(raw) },
+    };
+  }
 
   const now = Math.floor(Date.now() / 1000);
   const tokenUri = account.token_uri ?? 'https://oauth2.googleapis.com/token';
@@ -99,9 +144,23 @@ async function accessToken(signal: AbortSignal): Promise<string | null> {
       assertion,
     }),
   });
-  if (!response.ok) return null;
+  if (!response.ok) {
+    // Google's short error code only. `error_description` can quote parts of
+    // the assertion, and this value reaches a console.
+    let code: string | null = null;
+    try {
+      code = ((await response.json()) as { error?: string }).error ?? null;
+    } catch { code = null; }
+    return {
+      token: null,
+      failure: { reason: 'rejected', status: response.status, code },
+    };
+  }
   const json = await response.json() as { access_token?: string };
-  return json.access_token ?? null;
+  const token = json.access_token ?? null;
+  return token
+    ? { token, failure: null }
+    : { token: null, failure: { reason: 'rejected', status: response.status, code: 'no_access_token' } };
 }
 
 /**
@@ -143,8 +202,21 @@ async function annotateOnce(
   bytes: Uint8Array,
   signal: AbortSignal,
 ): Promise<{ status: number | null; payload: AnnotateResponse | null; safeReason: string | null }> {
-  const token = await accessToken(signal);
-  if (!token) return { status: null, payload: null, safeReason: 'no_credential' };
+  const attempt = await accessToken(signal);
+  if (attempt.failure !== null) {
+    // Absent or malformed is genuinely "no credential". Rejected is not: the
+    // credential exists and the provider will not take it, which is an
+    // operations fault with a different fix and a different place to look.
+    const reason = attempt.failure.reason;
+    return {
+      status: attempt.failure.status,
+      payload: null,
+      safeReason: reason === 'absent' || reason === 'malformed'
+        ? 'no_credential'
+        : `credential_rejected:${attempt.failure.code ?? attempt.failure.status ?? 'unknown'}`,
+    };
+  }
+  const token = attempt.token;
 
   let response: Response;
   try {
@@ -188,6 +260,34 @@ export const googleVisionProvider: OcrProvider = {
     return readSecret('visionServiceAccount') !== null;
   },
 
+  /**
+   * Exchange an auth token and nothing else.
+   *
+   * No image is submitted, so nothing is billed. This is the check that tells
+   * an operator whether the key in the secret store is one Google will accept,
+   * which is the question "is a secret present" never answered.
+   */
+  async verifyCredential(): Promise<CredentialCheck> {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), OCR_TIMEOUT_MS);
+    try {
+      const attempt = await accessToken(controller.signal);
+      if (attempt.failure === null) {
+        return { usable: true, reason: 'ok', status: 200, code: null };
+      }
+      return {
+        usable: false,
+        reason: attempt.failure.reason,
+        status: attempt.failure.status,
+        code: attempt.failure.code,
+      };
+    } catch {
+      return { usable: false, reason: 'unreachable', status: null, code: null };
+    } finally {
+      clearTimeout(timer);
+    }
+  },
+
   async extractDocument(request: OcrRequest): Promise<OcrOutcome<OcrDocumentText>> {
     if (!this.isConfigured()) return { kind: 'refused_no_credential' };
 
@@ -215,6 +315,19 @@ export const googleVisionProvider: OcrProvider = {
       const { status, payload, safeReason } = attempt.value;
 
       if (safeReason === 'no_credential') return { kind: 'refused_no_credential' };
+      // A credential the provider refuses is a provider error, and is retried
+      // like one: a token endpoint can fail transiently, and a worker should
+      // not be told the service is unconfigured because of a blip.
+      if (safeReason?.startsWith('credential_rejected')) {
+        lastReason = safeReason;
+        if (attempts < OCR_MAX_ATTEMPTS) continue;
+        return {
+          kind: 'provider_error',
+          latencyMs: Date.now() - started,
+          attempts,
+          safeReason: lastReason,
+        };
+      }
 
       if (payload === null) {
         lastReason = safeReason ?? lastReason;

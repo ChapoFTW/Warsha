@@ -1,0 +1,40 @@
+{
+  "note": "Synthetic identity cards for OCR testing. These are NOT identity documents. Every number is invented and identifies nobody, no government layout, emblem, seal or security feature is reproduced, and each card says on its face that it is a test card. They exist so an OCR provider has real text to read: a stubbed response would prove the plumbing and nothing about the provider.",
+  "cards": [
+    {
+      "file": "arabic-national-id.png",
+      "purpose": "Arabic script and a 14-digit number",
+      "lines": [
+        { "text": "بطاقة اختبار - غير رسمية", "family": "Arial", "size": 34, "x": 60, "y": 50 },
+        { "text": "الاسم: محمد أحمد إبراهيم", "family": "Arial", "size": 46, "x": 60, "y": 140 },
+        { "text": "الرقم القومي", "family": "Arial", "size": 34, "x": 60, "y": 250 },
+        { "text": "29801012345678", "family": "Consolas", "size": 64, "x": 60, "y": 300 },
+        { "text": "تاريخ الميلاد: 1998/01/01", "family": "Arial", "size": 34, "x": 60, "y": 400 },
+        { "text": "تاريخ الانتهاء: 2030/12/31", "family": "Arial", "size": 34, "x": 60, "y": 460 },
+        { "text": "SYNTHETIC TEST CARD - NOT A REAL DOCUMENT", "family": "Arial", "size": 24, "x": 60, "y": 560 }
+      ]
+    },
+    {
+      "file": "mixed-national-id.png",
+      "purpose": "Both scripts on one card",
+      "lines": [
+        { "text": "TEST CARD / بطاقة اختبار", "family": "Arial", "size": 34, "x": 60, "y": 50 },
+        { "text": "Name: Mohamed Ahmed Ibrahim", "family": "Arial", "size": 40, "x": 60, "y": 130 },
+        { "text": "الاسم: محمد أحمد إبراهيم", "family": "Arial", "size": 40, "x": 60, "y": 190 },
+        { "text": "National ID / الرقم القومي", "family": "Arial", "size": 30, "x": 60, "y": 265 },
+        { "text": "29801012345678", "family": "Consolas", "size": 64, "x": 60, "y": 310 },
+        { "text": "Date of birth: 1998-01-01", "family": "Arial", "size": 30, "x": 60, "y": 410 },
+        { "text": "Expiry: 2030-12-31", "family": "Arial", "size": 30, "x": 60, "y": 460 },
+        { "text": "SYNTHETIC TEST CARD - NOT A REAL DOCUMENT", "family": "Arial", "size": 24, "x": 60, "y": 560 }
+      ]
+    }
+  ],
+  "unreadable": {
+    "file": "unreadable-national-id.png",
+    "purpose": "A card that cannot be read, so the graceful-failure path is exercised on something a worker would actually produce with a bad photograph",
+    "lines": [
+      { "text": "الاسم محمد", "family": "Arial", "size": 6, "x": 4, "y": 8 },
+      { "text": "29801012345678", "family": "Arial", "size": 6, "x": 4, "y": 24 }
+    ]
+  }
+}

@@ -44,5 +44,10 @@ api_key = "local-test-only-no-real-sms"
 sender = "WarshaLocal"
 [functions.worker-auth]
 verify_jwt = false
+# The automation caller is a machine with no Supabase user, so it has no user
+# JWT to verify. The function authenticates the bearer token itself, in constant
+# time, against a secret that exists only in its own Edge secrets.
+[functions.warsha-automation]
+verify_jwt = false
 [storage]
 enabled = true

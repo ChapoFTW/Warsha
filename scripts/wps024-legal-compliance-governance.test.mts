@@ -1112,7 +1112,8 @@ check(/auth\.getUser\(\)/.test(visionFunction),
   'the caller is resolved from the token, never from the request body');
 check(visionFunction.indexOf('open_ocr_request') < visionFunction.indexOf('extractIdentity('),
   'THE AUDIT ROW IS OPENED BEFORE THE PROVIDER IS CALLED');
-check(/complete_ocr_request/.test(visionFunction), 'the audit row is closed with the outcome');
+check(/complete_ocr_request|warsha_ocr_complete_request/.test(visionFunction),
+  'the audit row is closed with the outcome');
 
 // ---------------------------------------------------------------------------
 // The Maps boundary
@@ -1542,12 +1543,23 @@ check(/external_providers_singular_role_idx/.test(healthMigrationCode),
   'at most one live provider may fill a singular role');
 
 // The columns the extraction writer actually writes.
+//
+// The write itself moved out of the Edge Function and into
+// `warsha_ocr_store_candidates`, because PostgREST does not serve the `private`
+// schema and the direct table write had never once succeeded on a hosted
+// project. The question is unchanged — does the extraction path write these
+// columns — so it is asked of the path rather than of one file in it.
+const extractionWriter = visionFunction
+  + readFileSync('supabase/migrations/202608280003_ocr_runtime_public_surface.sql', 'utf8');
 for (const column of ['document_type', 'document_hash', 'is_current']) {
   check(new RegExp(`add column if not exists ${column}`).test(healthMigrationCode),
     `worker_identity_extractions gains ${column}, which the extraction path writes`);
-  check(new RegExp(`\\b${column}\\b`).test(visionFunction),
-    `the extraction function writes ${column}`);
+  check(new RegExp(`\\b${column}\\b`).test(extractionWriter),
+    `the extraction path writes ${column}`);
 }
+check(/insert into private\.worker_identity_extractions/.test(extractionWriter)
+  && /update private\.worker_identity_extractions/.test(extractionWriter),
+  'AND SUPERSEDES THE PREVIOUS ATTEMPT IN THE SAME FUNCTION THAT WRITES THE NEW ONE');
 
 // ---------------------------------------------------------------------------
 // Hosted development environment and governed provider activation
