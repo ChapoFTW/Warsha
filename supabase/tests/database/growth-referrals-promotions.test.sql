@@ -79,7 +79,7 @@ select has_function('private','create_booking_price_snapshot',array['uuid','bigi
   'the WPS-007 snapshot authority is preserved');
 select has_function('private','record_trust_fraud_signal',array['uuid','text','text','integer','jsonb'],
   'the WPS-016 advisory signal sink is preserved');
-select has_function('private','consume_dual_control',array['text','text','text'],
+select has_function('private','consume_dual_control',array['text','text','text','text'],
   'the WPS-018 dual control primitive is preserved');
 select has_function('private','enforce_rate_limit',array['text','text'],
   'the WPS-018 rate limiter is preserved');

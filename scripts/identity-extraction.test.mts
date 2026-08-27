@@ -491,4 +491,57 @@ check(/identityExtractionAssistiveNote/.test(screen),
 check(screen.includes('void extraction.request(type, document.storagePath)'),
   'reading is fire-and-forget, so a provider fault cannot fail the upload');
 
+
+// --- OCR is not an authority over anything --------------------------------
+//
+// The single most important property in this feature, and the one most easily
+// lost by accident: extraction proposes, a person decides. It is asserted here
+// against the source rather than left to the design documents, because a
+// document cannot fail a build.
+{
+  const wps023 = readFileSync(
+    'supabase/migrations/202608080001_wps023_authentication_role_onboarding_worker_vetting.sql',
+    'utf8');
+
+  // Two tables, not one. A candidate and a confirmed value are different kinds
+  // of fact about a person and are never stored in the same place.
+  check(/create table if not exists private\.worker_identity_extractions/.test(wps023),
+    'candidates have a table of their own');
+  check(/private\.provider_verification_identities/.test(wps023),
+    'and confirmed identity fields have a different one');
+
+  // The confirmed row can only be written by the worker confirming it. The
+  // extraction path has no route into it at all.
+  const confirm = wps023.slice(
+    wps023.indexOf('create or replace function public.confirm_my_identity_fields'),
+    wps023.indexOf('create or replace function public.confirm_my_identity_fields') + 4000);
+  check(/v_user uuid := \(select auth\.uid\(\)\)/.test(confirm)
+    && /Authentication required/.test(confirm),
+    'CONFIRMATION IS THE WORKERS OWN ACT, NOT THE EXTRACTIONS');
+  check(/p_legal_name|p_national_id/.test(confirm),
+    'and it takes the values from the worker, never reads them back out of a candidate');
+  check(!/worker_identity_extractions/.test(confirm),
+    'THE CONFIRMATION PATH NEVER READS A CANDIDATE, SO RERUNNING OCR CANNOT OVERWRITE IT');
+
+  // Nothing in the extraction function decides anything about a person.
+  const visionSource = readFileSync('supabase/functions/vision-extract/index.ts', 'utf8');
+  for (const verdict of [
+    'verification_status', 'approve', 'reject', 'is_authentic', 'authenticity',
+    'trust_score', 'forgery', 'eligible',
+  ]) {
+    check(!new RegExp(`${verdict}\\s*[:=]`, 'i').test(visionSource),
+      'THE EXTRACTION FUNCTION ASSIGNS NO VERDICT ABOUT A PERSON OR A DOCUMENT');
+  }
+  check(!/provider_verification_identities|verification_decisions|worker_vetting/
+    .test(visionSource),
+    'AND WRITES TO NO TABLE THAT HOLDS A DECISION');
+
+  // The register says the same thing, in a row a reviewer can read.
+  const wps024 = readFileSync(
+    'supabase/migrations/202608090001_wps024_legal_compliance_governance.sql', 'utf8');
+  check(/human_confirmation_required/.test(wps024)
+    && /prohibited_decisions/.test(wps024),
+    'the AI use register records both the prohibition and the confirmation requirement');
+}
+
 console.log(`identity extraction: ${checks} checks passed`);

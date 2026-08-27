@@ -24,7 +24,8 @@ import {
 import { runGovernedAction, type InFlightLatch } from '../web/lib/governed-action.ts';
 import {
   actionAvailability, activationSteps, activationSubject, featureFlagEnabled,
-  MAPS_FEATURE_FLAG, providerHealthVerified, providerPolicyState, VISION_PROVIDER_KEY,
+  MAPS_FEATURE_FLAG, activationStepsFor, governanceMode, parseGovernancePolicy,
+  providerHealthVerified, providerPolicyState, requiredApprovalCount, VISION_PROVIDER_KEY,
   VISION_REQUIRED_LEGAL_DOCUMENTS,
 } from '../web/lib/providers.ts';
 import { environmentBinding, parseStaffSession } from '../web/lib/staff.ts';
@@ -927,25 +928,74 @@ const ready = {
   mayManageFlags: true,
 };
 
+// --- The policy decides how many people, and one function decides the policy --
+//
+// Development is deliberately one authorised administrator: Warsha is under
+// active development, has one operator, and a control nobody can satisfy
+// honestly gets routed around rather than obeyed. Production is deliberately
+// unchanged. Both answers come from the same function, so they cannot drift
+// into two rules that each believe they are the real one.
+equal(requiredApprovalCount('development'), 1,
+  'DEVELOPMENT NEEDS ONE AUTHORISED ADMINISTRATOR');
+equal(requiredApprovalCount('local'), 2,
+  'A LOCAL RESET DOES NOT: IT IS THE REHEARSAL OF THE STRICTER CONFIGURATION');
+equal(requiredApprovalCount('production'), 2,
+  'PRODUCTION STILL NEEDS TWO DISTINCT STAFF IDENTITIES');
+equal(requiredApprovalCount('staging'), 2, 'and so does staging');
+equal(requiredApprovalCount(null), 2,
+  'AN UNKNOWN ENVIRONMENT RESOLVES TO THE STRICTER POLICY, NEVER THE SHORTER ONE');
+equal(governanceMode('development'), 'single_admin', 'the mode is named, not inferred');
+equal(governanceMode('production'), 'dual_control', 'and production keeps its name');
+for (const environment of ['production', 'staging', null]) {
+  check(activationStepsFor(requiredApprovalCount(environment)).includes('approvalGranted'),
+    'A PUBLIC ENVIRONMENT STILL DRAWS THE SECOND-APPROVER STEP');
+}
+check(!activationStepsFor(1).includes('approvalRequested')
+  && !activationStepsFor(1).includes('approvalGranted'),
+  'SINGLE-ADMIN DRAWS NO STEP DESCRIBING AN APPROVER WHO IS NOT COMING');
+check(activationStepsFor(1).includes('activate')
+  && activationStepsFor(1).includes('feature'),
+  'while every other step of the sequence survives untouched');
+
+// The backend is the authority; the mirror above is only the first paint. A
+// queue reporting two approvals wins over an environment suggesting one.
+equal(parseGovernancePolicy({ requiredApprovals: 2 }, 'development').requiredApprovals, 2,
+  'the reported policy overrides the environment mirror');
+equal(parseGovernancePolicy({}, 'development').requiredApprovals, 1,
+  'and an unreported policy falls back to it');
+equal(parseGovernancePolicy({ requiredApprovals: 7 }, null).requiredApprovals, 2,
+  'a count that is neither one nor two is refused rather than trusted');
+
 const pending = activationSteps(ready);
 equal(pending.environment, 'done', 'a bound development environment satisfies step one');
 equal(pending.credential, 'done', 'a configured credential satisfies step two');
 equal(pending.prerequisites, 'done', 'a registered provider with both switches is ready');
-equal(pending.approvalRequested, 'ready', 'the operator may raise the approval request');
-equal(pending.activate, 'blocked', 'BUT ACTIVATION IS BLOCKED UNTIL SOMEBODY ELSE APPROVES');
+equal(pending.activate, 'ready',
+  'ONE ADMINISTRATOR MAY ACTIVATE IN DEVELOPMENT WITHOUT WAITING FOR ANYBODY');
 equal(pending.feature, 'blocked',
   'AND THE FEATURE CANNOT BE SWITCHED ON BEFORE ACTIVATION');
+equal(activationSteps({ ...ready, mayActivate: false }).activate, 'blocked',
+  'AUTHENTICATION AND CAPABILITY STILL DECIDE; ONE PERSON IS NOT ANY PERSON');
 
-const raised = activationSteps({
-  ...ready,
-  request: {
-    id: 'r1', capabilityKey: 'manage_subprocessors', actionKey: 'activate_external_provider',
-    subjectRef: 'google_maps_platform:development', reason: 'x', environment: 'development',
-    requestedAt: null, requestedByName: 'Me', requestedByMe: true,
-    approvedAt: null, approvedByName: null, approvalNote: null,
-    expiresAt: null, expired: false, canApprove: false,
-  },
-});
+// Everything below runs under the stricter policy, which development no longer
+// applies. The count is passed explicitly because the console renders what the
+// backend reported, and this is what a public backend reports.
+const dual = { ...ready, requiredApprovals: 2 };
+const dualPending = activationSteps(dual);
+equal(dualPending.approvalRequested, 'ready', 'the operator may raise the approval request');
+equal(dualPending.activate, 'blocked',
+  'BUT ACTIVATION IS BLOCKED UNTIL SOMEBODY ELSE APPROVES');
+
+const dualRequest = {
+  id: 'r1', capabilityKey: 'manage_subprocessors', actionKey: 'activate_external_provider',
+  subjectRef: 'google_maps_platform:development', reason: 'x', environment: 'development',
+  governanceMode: 'dual_control' as const, requiredApprovals: 2,
+  requestedAt: null, requestedByName: 'Me', requestedByMe: true,
+  approvedAt: null, approvedByName: null, approvalNote: null,
+  expiresAt: null, expired: false, canApprove: false,
+};
+
+const raised = activationSteps({ ...dual, request: dualRequest });
 equal(raised.approvalRequested, 'done', 'the raised request is recorded');
 equal(raised.approvalGranted, 'waiting',
   'A REQUESTER IS NEVER OFFERED THEIR OWN APPROVAL; IT WAITS FOR SOMEONE ELSE');
@@ -955,27 +1005,21 @@ equal(raised.activate, 'blocked', 'and activation stays blocked while it waits')
 // approval step actionable for the person who raised it.
 for (const mayActivate of [true, false]) {
   for (const mayManageFlags of [true, false]) {
-    const states = activationSteps({ ...raised === raised ? ready : ready, mayActivate, mayManageFlags,
-      request: {
-        id: 'r1', capabilityKey: 'manage_subprocessors', actionKey: 'activate_external_provider',
-        subjectRef: 'google_maps_platform:development', reason: 'x', environment: 'development',
-        requestedAt: null, requestedByName: 'Me', requestedByMe: true,
-        approvedAt: null, approvedByName: null, approvalNote: null,
-        expiresAt: null, expired: false, canApprove: false,
-      } });
+    const states = activationSteps({
+      ...dual, mayActivate, mayManageFlags, request: dualRequest });
     check(states.approvalGranted !== 'ready',
       'NO CAPABILITY COMBINATION LETS A REQUESTER APPROVE THEIR OWN REQUEST');
+    check(states.activate !== 'ready',
+      'AND NONE ACTIVATES ON A SINGLE SIGNATURE WHILE DUAL CONTROL APPLIES');
   }
 }
 
 const approved = activationSteps({
-  ...ready,
+  ...dual,
   request: {
-    id: 'r1', capabilityKey: 'manage_subprocessors', actionKey: 'activate_external_provider',
-    subjectRef: 'google_maps_platform:development', reason: 'x', environment: 'development',
-    requestedAt: null, requestedByName: 'Colleague', requestedByMe: false,
+    ...dualRequest,
+    requestedByName: 'Colleague', requestedByMe: false,
     approvedAt: '2026-08-23T00:00:00Z', approvedByName: 'Second', approvalNote: 'ok',
-    expiresAt: null, expired: false, canApprove: false,
   },
 });
 equal(approved.activate, 'ready', 'once a second person approves, activation may proceed');
@@ -1028,6 +1072,84 @@ check(!blockedVisionPolicy.ready,
   'VISION POLICY READINESS IS FALSE WHILE MATERIAL HUMAN GOVERNANCE IS PENDING');
 check(blockedVisionPolicy.trainingProhibited && blockedVisionPolicy.aiUseApproved,
   'existing no-training and assistive-use controls are preserved independently');
+check(blockedVisionPolicy.publicCommitmentsRequired,
+  'AN UNSTATED ENVIRONMENT IS TREATED AS ONE REAL WORKERS READ');
+
+// Two of the six commitments are promises to the people reading the published
+// corpus: a material version telling them their document is now read, and
+// renewed acceptance of it. A pre-production backend has no such readers, and
+// publishing that version while the live service does not read documents would
+// be a false statement about a worker's personal data rather than a stricter
+// one. The other four are about what may be done with a document at all, and
+// they hold everywhere — most of all the supplier contract, which is the whole
+// reason this gate exists.
+const preProductionVision = providerPolicyState(
+  VISION_PROVIDER_KEY,
+  { ...visionPolicyPayload({ readyForIdentityData: true }),
+    documents: VISION_REQUIRED_LEGAL_DOCUMENTS.map((documentKey) => ({
+      documentKey, versionCount: 1, changeClass: 'initial' })),
+    configuration: { reconsentEnforced: false } },
+  'development');
+check(!preProductionVision.publicCommitmentsRequired,
+  'development is not an environment the published corpus addresses');
+check(preProductionVision.ready,
+  'SO DEVELOPMENT IS READY ON THE FOUR COMMITMENTS THAT APPLY TO IT');
+
+for (const environment of ['staging', 'production', null]) {
+  const publicVision = providerPolicyState(
+    VISION_PROVIDER_KEY,
+    { ...visionPolicyPayload({ readyForIdentityData: true }),
+      documents: VISION_REQUIRED_LEGAL_DOCUMENTS.map((documentKey) => ({
+        documentKey, versionCount: 1, changeClass: 'initial' })) },
+    environment);
+  check(!publicVision.ready,
+    'A PUBLIC ENVIRONMENT IS STILL REFUSED WITHOUT THE MATERIAL PUBLISHED VERSIONS');
+  check(!providerPolicyState(
+    VISION_PROVIDER_KEY,
+    { ...visionPolicyPayload({ readyForIdentityData: true }),
+      configuration: { reconsentEnforced: false } },
+    environment).ready,
+    'AND WITHOUT RENEWED WORKER ACCEPTANCE BEING ENFORCED');
+}
+
+// The four commitments that apply everywhere are not weakened anywhere.
+for (const environment of ['development', 'production']) {
+  for (const broken of [
+    { subprocessors: [{ key: VISION_PROVIDER_KEY, agreementStatus: 'not_started',
+      trainingProhibited: true }] },
+    { subprocessors: [{ key: VISION_PROVIDER_KEY, agreementStatus: 'signed',
+      trainingProhibited: false }] },
+    { processingActivities: [{ key: 'worker_verification', reviewStatus: 'pending' }] },
+    { aiUses: [{ key: 'identity_text_extraction', status: 'approved_not_integrated',
+      coversIdentityData: true, permittedForTraining: true }] },
+  ]) {
+    check(!providerPolicyState(
+      VISION_PROVIDER_KEY,
+      { ...visionPolicyPayload({ readyForIdentityData: true }), ...broken },
+      environment).ready,
+      'NO ENVIRONMENT READS AN IDENTITY DOCUMENT WITHOUT ALL FOUR UNIVERSAL COMMITMENTS');
+  }
+}
+
+// A cloud supplier's data-processing terms are commonly incorporated into the
+// service terms accepted when the account was opened, with nothing to sign.
+// `incorporated` records that; the register refuses either value without a
+// reference, so accepting it here reads a recorded contract rather than
+// assuming one.
+check(providerPolicyState(
+  VISION_PROVIDER_KEY,
+  { ...visionPolicyPayload({ readyForIdentityData: true }),
+    subprocessors: [{ key: VISION_PROVIDER_KEY, agreementStatus: 'incorporated',
+      agreementReference: 'Google Cloud Data Processing Addendum', trainingProhibited: true }] },
+  'production').ready,
+  'an incorporated supplier agreement is a contract in force, not a missing one');
+check(!providerPolicyState(
+  VISION_PROVIDER_KEY,
+  { ...visionPolicyPayload({ readyForIdentityData: true }),
+    subprocessors: [{ key: VISION_PROVIDER_KEY, agreementStatus: 'pending',
+      trainingProhibited: true }] },
+  'production').ready,
+  'while a pending one is still an absence');
 
 const visionReady = {
   ...ready,
@@ -1044,8 +1166,10 @@ const visionReady = {
 const visionBlocked = activationSteps(visionReady);
 equal(visionBlocked.prerequisites, 'blocked',
   'THE VISION ACTIVATION WORKFLOW STAYS CLOSED AT THE LEGAL GATE');
-equal(visionBlocked.approvalRequested, 'blocked',
-  'and cannot raise a technical approval request before that gate');
+equal(visionBlocked.activate, 'blocked',
+  'and cannot be activated before that gate, by one administrator or two');
+equal(activationSteps({ ...visionReady, requiredApprovals: 2 }).approvalRequested, 'blocked',
+  'nor can a technical approval request be raised ahead of it');
 equal(activationSteps({
   ...visionReady,
   provider: { ...visionReady.provider, status: 'active' },
@@ -1058,8 +1182,11 @@ const approvedVisionPolicy = providerPolicyState(
 check(approvedVisionPolicy.ready,
   'Vision becomes policy-ready only when every observable commitment is ready');
 equal(activationSteps({ ...visionReady, policyReady: approvedVisionPolicy.ready })
-  .approvalRequested, 'ready',
-  'then the existing dual-control request is the next step, never bypassed');
+  .activate, 'ready',
+  'and only then is activation the next step, never bypassed');
+equal(activationSteps({ ...visionReady, policyReady: approvedVisionPolicy.ready,
+  requiredApprovals: 2 }).approvalRequested, 'ready',
+  'which under dual control is still the second-approver request first');
 
 const liveVision = activationSteps({
   ...visionReady,
@@ -1167,6 +1294,104 @@ check(/r\.capability_key = any\(v_capabilities\)/.test(queueMigration),
   'THE QUEUE SHOWS ONLY REQUESTS THE VIEWER ALREADY HOLDS THE CAPABILITY FOR');
 check(/r\.requested_by <> v_actor/.test(queueMigration),
   'and never marks a requester able to approve their own request');
+
+
+// --- One function decides how many people, and the record says which ---------
+//
+// The count used to be a constant compiled into every consumer. It is now a
+// policy, and the policy lives in exactly one place. What matters most in this
+// block is the second half: nothing about the change may let a development
+// decision reach production, and nothing may put a name in the audit trail that
+// belongs to nobody.
+const governance = readFileSync(
+  'supabase/migrations/202608270001_environment_governance_policy.sql', 'utf8');
+check(/create or replace function private\.required_approval_count/.test(governance),
+  'ONE FUNCTION ANSWERS HOW MANY DISTINCT IDENTITIES AN ACTION NEEDS');
+check(/when p_environment = 'development' then 1/.test(governance)
+  && /else 2/.test(governance),
+  'development is one administrator and everything else is two');
+// Read the decision itself rather than the file around it: the migration names
+// production in prose several times, and prose is not a branch.
+const countBody = governance.slice(
+  governance.indexOf('function private.required_approval_count'),
+  governance.indexOf('comment on function private.required_approval_count'));
+equal((countBody.match(/then 1\b/g) ?? []).length, 1,
+  'exactly one branch returns the shorter count');
+check(!/production|staging|local/.test(countBody),
+  'AND NO BRANCH NAMES PRODUCTION, STAGING OR LOCAL AS THE SHORTER ONE');
+check(/private\.required_approval_count\(v_environment, p_action_key\)/.test(governance),
+  'consumption asks the policy rather than deciding for itself');
+
+// The refusals that make two people mean two people are still present and still
+// unconditional inside the dual-control branch.
+check(/This action requires a second approver/.test(governance)
+  && /This action is waiting for a second approver/.test(governance),
+  'DUAL CONTROL KEEPS EVERY REFUSAL IT ALWAYS HAD');
+check(/v_row\.approved_by = v_row\.requested_by/.test(governance),
+  'including a fresh check that the two identities actually differ');
+check(/staff_dual_control_single_admin_check/.test(governance)
+  && /governance_mode <> 'single_admin' or approved_by is null/.test(governance),
+  'A SINGLE-ADMIN RECORD CAN NEVER ACQUIRE AN APPROVER, SO NO NAME IS INVENTED');
+check(/'secondApprover', null/.test(governance),
+  'and the audit row says so in as many words');
+check(/'governanceMode', 'single_admin'/.test(governance)
+  && /'approverCount', 1/.test(governance),
+  'the trail records the policy applied, not just the outcome');
+check(/new\.governance_mode is distinct from old\.governance_mode/.test(governance),
+  'THE POLICY STAMPED ON A RECORD CANNOT BE REWRITTEN AFTERWARDS');
+check(/This authorisation needs no second approver/.test(governance),
+  'and a single-admin record refuses a second signature rather than absorbing one');
+check(/require_staff_capability\('manage_subprocessors'\)/.test(governance),
+  'ACTIVATION STILL BEGINS AT AN AUTHENTICATED STAFF CAPABILITY');
+check(/if not coalesce\(v_enabled, false\) then\s*return false;/.test(governance),
+  'and dual control switched off still fails closed rather than open');
+
+// Every prerequisite the activation RPC had before it is still there. A
+// governance change that quietly dropped one would be indistinguishable from
+// this one at the level of "did activation get easier".
+for (const refusal of [
+  'Provider activation environment mismatch',
+  'The hosted platform project is not bound',
+  'Provider is not approved for this environment',
+  'Provider has no declared server credential authority',
+  'Provider activation requires an independent feature flag',
+  'Disable the provider feature flag before activation',
+  'Provider activation requires an independent kill switch',
+  'Subprocessor governance is not ready for provider activation',
+  'Provider processing activity is not registered',
+]) {
+  check(governance.includes(refusal),
+    'EVERY EXISTING ACTIVATION PREREQUISITE SURVIVES THE GOVERNANCE CHANGE');
+}
+
+const reviewAuthority = readFileSync(
+  'supabase/migrations/202608270002_internal_legal_review_authority.sql', 'utf8');
+check(/require_staff_capability\('review_legal_governance'\)/.test(reviewAuthority),
+  'recording an internal legal review is a governed staff action');
+check(/private\.consume_dual_control\(\s*'review_legal_governance'/.test(reviewAuthority),
+  'AND APPROVING A LAWFUL BASIS GOES THROUGH THE SAME APPROVAL POLICY');
+check(/p_status = 'approved' and v_activity\.legal_review_status <> 'approved'/
+  .test(reviewAuthority),
+  'while recording a review as pending or rejected stays immediately available');
+check(/'signed', 'incorporated', 'pending', 'not_required', 'not_started'/
+  .test(reviewAuthority),
+  'the register can say a contract is incorporated rather than signed');
+check(/subprocessors_agreement_reference_check/.test(reviewAuthority)
+  && /agreement_status not in \('signed', 'incorporated'\)/.test(reviewAuthority),
+  'BUT NEITHER CLAIM IS ACCEPTED WITHOUT A REFERENCE NAMING ITS EVIDENCE');
+check(/An agreement reference is required to record a contract in force/
+  .test(reviewAuthority),
+  'and the refusal is a sentence an operator reads, not a constraint violation');
+// The overview counts acceptances, which is a read. What must not exist is a
+// write: an internal review that could record somebody having agreed to
+// something is the exact fabrication these registers are for.
+check(!/(insert\s+into|update|delete\s+from)\s+(public\.)?(legal_acceptances|privacy_consent_records)/i
+  .test(reviewAuthority),
+  'NO INTERNAL REVIEW WRITES A CONSENT OR ACCEPTANCE ROW ON ANYBODY\'S BEHALF');
+check(!/staff_publish_legal_version|legal_document_versions\s*\(/i.test(reviewAuthority),
+  'and none of it publishes a legal version either');
+check(!/integration_status\s*=/.test(reviewAuthority),
+  'and none of it moves a supplier into use');
 
 
 // --- Staff role grants: choosing an account, never transcribing one ----------

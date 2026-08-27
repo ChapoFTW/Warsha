@@ -14,6 +14,12 @@
  * comes after activation because the activation RPC refuses while the flag is
  * enabled — turning the feature on first does not shortcut the process, it
  * blocks it.
+ *
+ * How many people the sequence needs is also the backend's. `required_approval
+ * _count` answers it there and `requiredApprovalCount` mirrors it here, so a
+ * pre-production backend draws a sequence one administrator can finish and a
+ * public one draws the sequence that waits for a second identity. Neither
+ * number is chosen by this module.
  */
 
 export const MAPS_PROVIDER_KEY = 'google_maps_platform';
@@ -22,6 +28,30 @@ export const VISION_PROVIDER_KEY = 'google_cloud_vision';
 export const VISION_FEATURE_FLAG = 'identity_extraction';
 export const ACTIVATION_ACTION_KEY = 'activate_external_provider';
 export const ACTIVATION_CAPABILITY = 'manage_subprocessors';
+
+/**
+ * How many distinct staff identities a governed action needs here.
+ *
+ * This mirrors `private.required_approval_count` and must keep mirroring it.
+ * The database is the authority — every RPC re-derives the count and refuses on
+ * its own terms — so the worst a drifting copy can do is draw the wrong number
+ * of steps. It is duplicated rather than fetched-and-only-fetched because the
+ * page has to lay out a sequence before any RPC has answered, and a sequence
+ * that rearranges itself after the first response reads as a bug.
+ *
+ * `null` is unknown, and unknown resolves to the stricter policy. A console
+ * that has not yet learned which backend it is on must not offer the shorter
+ * path on the assumption that it is the safe one.
+ */
+export function requiredApprovalCount(environment: string | null): number {
+  return environment === 'development' ? 1 : 2;
+}
+
+export type GovernanceMode = 'single_admin' | 'dual_control';
+
+export function governanceMode(environment: string | null): GovernanceMode {
+  return requiredApprovalCount(environment) >= 2 ? 'dual_control' : 'single_admin';
+}
 
 /**
  * The providers this console can take through activation.
@@ -134,14 +164,41 @@ export type ProviderPolicyState = {
   processingBasisApproved: boolean;
   aiUseApproved: boolean;
   reconsentEnforced: boolean;
+  /**
+   * Whether this environment serves people who read the published corpus.
+   *
+   * The two document gates above — a material version published, and renewed
+   * acceptance enforced — are commitments Warsha makes to the workers using the
+   * service. A pre-production backend has no such readers, and publishing a
+   * material version saying identity documents are now read by a provider,
+   * while the service those workers actually use does not read them, would be a
+   * false statement about their personal data rather than a stricter one. So
+   * those two gates apply where the corpus is addressed and not where it is
+   * not. Every other commitment — the supplier contract, the no-training rule,
+   * the approved lawful basis, the assistive-only AI declaration — is about
+   * what may be done with a document at all, and applies everywhere.
+   */
+  publicCommitmentsRequired: boolean;
   ready: boolean;
 };
+
+/**
+ * Whether the published-corpus commitments apply to this backend.
+ *
+ * Deliberately the same split as `requiredApprovalCount`, and deliberately
+ * strict when the environment is unknown.
+ */
+export function publicCommitmentsRequired(environment: string | null): boolean {
+  return !(environment === 'development' || environment === 'local');
+}
 
 /** Read the counts and states returned by `staff_legal_governance_overview`. */
 export function providerPolicyState(
   providerKey: string,
   payload: unknown,
+  environment: string | null = null,
 ): ProviderPolicyState {
+  const publicCommitments = publicCommitmentsRequired(environment);
   if (providerKey !== VISION_PROVIDER_KEY) {
     return {
       materialDocumentsPublished: true,
@@ -150,6 +207,7 @@ export function providerPolicyState(
       processingBasisApproved: true,
       aiUseApproved: true,
       reconsentEnforced: true,
+      publicCommitmentsRequired: publicCommitments,
       ready: true,
     };
   }
@@ -176,7 +234,13 @@ export function providerPolicyState(
 
   const state: ProviderPolicyState = {
     materialDocumentsPublished,
-    agreementSigned: str(vision?.agreementStatus) === 'signed',
+    // A supplier's data-processing terms are not always a document somebody
+    // signs; a cloud supplier's are commonly incorporated into the service
+    // terms accepted when the account was opened. `incorporated` is that case
+    // recorded honestly, and the register refuses either value without a
+    // reference naming what evidences it — so accepting it here is reading a
+    // contract that was recorded, not assuming one exists.
+    agreementSigned: ['signed', 'incorporated'].includes(str(vision?.agreementStatus) ?? ''),
     trainingProhibited: vision?.trainingProhibited === true,
     processingBasisApproved: str(workerVerification?.reviewStatus) === 'approved',
     aiUseApproved: ['approved_not_integrated', 'in_use']
@@ -184,14 +248,15 @@ export function providerPolicyState(
       && identityExtraction?.coversIdentityData === true
       && identityExtraction?.permittedForTraining === false,
     reconsentEnforced: record(overview.configuration).reconsentEnforced === true,
+    publicCommitmentsRequired: publicCommitments,
     ready: false,
   };
-  state.ready = state.materialDocumentsPublished
-    && state.agreementSigned
+  state.ready = state.agreementSigned
     && state.trainingProhibited
     && state.processingBasisApproved
     && state.aiUseApproved
-    && state.reconsentEnforced;
+    && (!publicCommitments
+      || (state.materialDocumentsPublished && state.reconsentEnforced));
   return state;
 }
 
@@ -246,6 +311,8 @@ export type DualControlRequest = {
   subjectRef: string;
   reason: string;
   environment: string;
+  governanceMode: GovernanceMode;
+  requiredApprovals: number;
   requestedAt: string | null;
   requestedByName: string;
   requestedByMe: boolean;
@@ -270,6 +337,12 @@ export function parseDualControlQueue(value: unknown): DualControlRequest[] {
       subjectRef: str(row.subjectRef) ?? '',
       reason: str(row.reason) ?? '',
       environment: str(row.environment) ?? '',
+      // An older row predates the policy stamp. It reads as dual control,
+      // which is what every row written before the stamp existed actually was.
+      governanceMode: str(row.governanceMode) === 'single_admin'
+        ? 'single_admin' : 'dual_control',
+      requiredApprovals: typeof row.requiredApprovals === 'number'
+        ? row.requiredApprovals : 2,
       requestedAt: str(row.requestedAt),
       requestedByName: str(row.requestedByName) ?? '',
       requestedByMe: row.requestedByMe === true,
@@ -304,6 +377,50 @@ export const ACTIVATION_STEPS = [
 ] as const;
 export type ActivationStepKey = (typeof ACTIVATION_STEPS)[number];
 
+/** The two steps that exist only because a second person has to be found. */
+const SECOND_PERSON_STEPS: readonly ActivationStepKey[] = [
+  'approvalRequested', 'approvalGranted',
+];
+
+/**
+ * The steps this environment actually has.
+ *
+ * Where one administrator is the whole control, "request approval from a second
+ * colleague" and "a second colleague approves" are not steps that are skipped —
+ * they are steps that do not exist. Rendering them greyed out would describe a
+ * person who is not coming and make the operator wait for them, which is the
+ * exact failure the single-admin policy was introduced to remove.
+ */
+export function activationStepsFor(
+  requiredApprovals: number,
+): readonly ActivationStepKey[] {
+  return requiredApprovals >= 2
+    ? ACTIVATION_STEPS
+    : ACTIVATION_STEPS.filter((key) => !SECOND_PERSON_STEPS.includes(key));
+}
+
+/**
+ * The policy the backend says it is applying.
+ *
+ * `staff_dual_control_queue` and `staff_governance_policy` both report it, so
+ * the console can render the real answer rather than its own mirror of the
+ * rule. The mirror stays as the fallback for the first paint and for a read
+ * that failed, and it is the strict answer when the environment is unknown.
+ */
+export function parseGovernancePolicy(
+  payload: unknown,
+  environment: string | null,
+): { requiredApprovals: number; governanceMode: GovernanceMode } {
+  const raw = record(payload);
+  const reported = raw.requiredApprovals;
+  const requiredApprovals = reported === 1 || reported === 2
+    ? reported : requiredApprovalCount(environment);
+  return {
+    requiredApprovals,
+    governanceMode: requiredApprovals >= 2 ? 'dual_control' : 'single_admin',
+  };
+}
+
 /**
  * `done` — already true. `ready` — the operator can do it now.
  * `waiting` — correct, but needs somebody else. `blocked` — an earlier step first.
@@ -328,6 +445,12 @@ export type ActivationInput = {
    * cannot honestly be pressed from a browser.
    */
   automaticHealthProbe?: boolean;
+  /**
+   * How many distinct staff identities this backend requires, as the backend
+   * itself reported it. Omitted before any RPC has answered, and then the
+   * environment mirror stands in.
+   */
+  requiredApprovals?: number;
 };
 
 export function activationSteps(input: ActivationInput): Record<ActivationStepKey, StepState> {
@@ -342,13 +465,22 @@ export function activationSteps(input: ActivationInput): Record<ActivationStepKe
     && input.provider?.featureFlag && input.provider?.killSwitch
     && policyReady) || activated;
 
+  const required = input.requiredApprovals ?? requiredApprovalCount(input.environment);
   const requested = Boolean(input.request);
-  const approved = Boolean(input.request?.approvedAt);
+  // Under single-admin policy the authorisation is created and spent inside the
+  // activation RPC, so "approved" is a property of the policy rather than of a
+  // second signature that will never arrive.
+  const approved = required <= 1 ? true : Boolean(input.request?.approvedAt);
 
   const state: Record<ActivationStepKey, StepState> = {
     environment: bound ? 'done' : 'blocked',
     credential: !bound ? 'blocked' : input.credentialConfigured ? 'done' : 'blocked',
-    prerequisites: !input.credentialConfigured ? 'blocked' : prerequisites ? 'done' : 'blocked',
+    // Gated on the environment as well as the credential. Reading only the
+    // credential let an unbound backend report its prerequisites complete,
+    // because a provider approved for local really is approved for local — the
+    // step was answering a question nobody had asked yet.
+    prerequisites: !bound || !input.credentialConfigured ? 'blocked'
+      : prerequisites ? 'done' : 'blocked',
     approvalRequested: 'blocked',
     approvalGranted: 'blocked',
     activate: 'blocked',
@@ -359,10 +491,12 @@ export function activationSteps(input: ActivationInput): Record<ActivationStepKe
   };
 
   if (state.prerequisites === 'done' && !activated) {
-    state.approvalRequested = requested ? 'done'
-      : input.mayActivate ? 'ready' : 'waiting';
-    // The second identity is the whole point: this step is never `ready` for
-    // the person who raised the request, however many capabilities they hold.
+    state.approvalRequested = required <= 1 ? 'done'
+      : requested ? 'done'
+        : input.mayActivate ? 'ready' : 'waiting';
+    // Where two identities are required, the second one is the whole point:
+    // this step is never `ready` for the person who raised the request, however
+    // many capabilities they hold.
     state.approvalGranted = approved ? 'done' : requested ? 'waiting' : 'blocked';
     state.activate = approved && input.mayActivate ? 'ready' : 'blocked';
   } else if (activated) {

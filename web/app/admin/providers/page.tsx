@@ -11,12 +11,13 @@ import { useStaff } from '@/components/staff-gate';
 import { appCopy } from '@/lib/app-copy';
 import { runGovernedAction } from '@/lib/governed-action';
 import {
-  ACTIVATION_ACTION_KEY, ACTIVATION_CAPABILITY, ACTIVATION_STEPS, activationRequest,
-  actionAvailability, activationSteps, activationSubject, currentStep,
+  ACTIVATION_ACTION_KEY, ACTIVATION_CAPABILITY, activationRequest,
+  actionAvailability, activationSteps, activationStepsFor, activationSubject, currentStep,
   featureFlagEnabled,
   governedProvider, GOVERNED_PROVIDERS,
   MAPS_PROVIDER_KEY,
-  parseDualControlQueue, parseProviderRegistry, providerHealthVerified, providerPolicyState,
+  parseDualControlQueue, parseGovernancePolicy, parseProviderRegistry,
+  providerHealthVerified, providerPolicyState, requiredApprovalCount,
   type ActionAvailability, type ActivationStepKey, type DualControlRequest,
   type ProviderEntry, type ProviderPolicyState, type StepState,
 } from '@/lib/providers';
@@ -38,9 +39,14 @@ import page from './page.module.css';
  * `staff_activate_external_provider` refuses while the flag is already enabled;
  * doing it the intuitive way round does not shortcut the process, it blocks it.
  *
- * Nothing here can approve its own request. That refusal lives in a table
- * constraint and in `staff_approve_dual_control`, and this page does not get a
- * say — it only declines to offer a button that would be refused anyway.
+ * How many people the order needs is also the database's. Where the policy is
+ * two distinct identities, this page draws the request-and-second-approval
+ * steps and cannot approve its own request: that refusal lives in a table
+ * constraint and in `staff_approve_dual_control`, and this page only declines
+ * to offer a button that would be refused anyway. Where the policy is one
+ * authorised administrator, those two steps are not drawn greyed out — they are
+ * not drawn at all, because describing an approver who is not coming is how an
+ * operator ends up waiting for nobody.
  *
  * No credential value, digest, or environment-variable name is displayed. The
  * page asks the proxy whether a credential is configured and shows that one
@@ -73,10 +79,14 @@ export default function ProvidersPage() {
 
   const [provider, setProvider] = useState<ProviderEntry | null>(null);
   const [requests, setRequests] = useState<DualControlRequest[]>([]);
+  // What the backend says its own policy is. Null until it has answered, and
+  // then the environment mirror stands in rather than a guess at two.
+  const [reportedApprovals, setReportedApprovals] = useState<number | null>(null);
+  const [agreementReference, setAgreementReference] = useState('');
   const [credentialConfigured, setCredentialConfigured] = useState(false);
   const [featureEnabled, setFeatureEnabled] = useState(false);
   const [policy, setPolicy] = useState<ProviderPolicyState>(
-    providerPolicyState(MAPS_PROVIDER_KEY, null),
+    providerPolicyState(MAPS_PROVIDER_KEY, null, null),
   );
   const [observedHealthVerified, setObservedHealthVerified] = useState(false);
   const [health, setHealth] = useState<Health | null>(null);
@@ -123,7 +133,10 @@ export default function ProvidersPage() {
       }
 
       const queue = await client.rpc('staff_dual_control_queue');
-      if (!queue.error) setRequests(parseDualControlQueue(queue.data));
+      if (!queue.error) {
+        setRequests(parseDualControlQueue(queue.data));
+        setReportedApprovals(parseGovernancePolicy(queue.data, environment).requiredApprovals);
+      }
 
       // The Vision register itself says that identity documents must not reach
       // Google until the material policy versions, agreement, processing basis
@@ -133,13 +146,13 @@ export default function ProvidersPage() {
       if (governed.requiresIdentityPolicyGate) {
         const legal = await client.rpc('staff_legal_governance_overview');
         if (legal.error) {
-          setPolicy(providerPolicyState(providerKey, null));
+          setPolicy(providerPolicyState(providerKey, null, environment));
           if (isReauthRefusal(legal.error)) {
             rememberReauth('load-policy', 'review_legal_governance', () => { void load(); });
           } else setError(legal.error.message);
-        } else setPolicy(providerPolicyState(providerKey, legal.data));
+        } else setPolicy(providerPolicyState(providerKey, legal.data, environment));
       } else {
-        setPolicy(providerPolicyState(providerKey, null));
+        setPolicy(providerPolicyState(providerKey, null, environment));
       }
 
       // Vision health is established by the synthetic device exercise, not by
@@ -181,6 +194,10 @@ export default function ProvidersPage() {
   useEffect(() => { void load(); }, [load]);
 
   const request = activationRequest(requests, providerKey, environment ?? '');
+  // The policy this backend is governed by, and therefore the steps that exist.
+  const approvals = reportedApprovals ?? requiredApprovalCount(environment);
+  const mode = approvals >= 2 ? 'dual_control' : 'single_admin';
+  const stepKeys = activationStepsFor(approvals);
   const states = activationSteps({
     environment,
     credentialConfigured,
@@ -193,6 +210,7 @@ export default function ProvidersPage() {
     mayManageFlags,
     policyReady: policy.ready,
     automaticHealthProbe: governed.automaticHealthProbe,
+    requiredApprovals: approvals,
   });
   const next = currentStep(states);
 
@@ -233,6 +251,37 @@ export default function ProvidersPage() {
       p_provider_key: providerKey,
       p_expected_environment: environment,
       p_reason: reason.trim() || providerWords('providerActivateDefaultReason'),
+    }));
+
+  // The two internal decisions that had no button.
+  //
+  // WPS-024 registered a lawful basis as `pending` and a supplier agreement as
+  // `not_started`, and never built a way to record either one having been
+  // settled. So both said the same thing for months whether or not anybody had
+  // looked at them, and the activation gate above blocked on states nobody
+  // could clear. These are Warsha's own decisions about Warsha's own registers:
+  // they publish nothing, tell nobody, and record no acceptance on anyone's
+  // behalf.
+  const approveProcessingBasis = () => run('basis', 'review_legal_governance', async () =>
+    supabase().rpc('staff_record_processing_basis_review', {
+      p_activity_key: 'worker_verification',
+      p_status: 'approved',
+      p_basis: '',
+      p_note: reason.trim() || words.providerBasisDefaultNote,
+    }));
+
+  // `incorporated`, not `signed`. A cloud supplier's data-processing terms are
+  // ordinarily incorporated into the service terms accepted when the account
+  // was opened; there is no countersigned document, and recording one would be
+  // a claim about an external party that nothing supports. The reference names
+  // what puts the terms in force, and the database refuses the status without
+  // one.
+  const recordAgreement = () => run('agreement', ACTIVATION_CAPABILITY, async () =>
+    supabase().rpc('staff_record_subprocessor_agreement', {
+      p_subprocessor_key: providerKey,
+      p_status: 'incorporated',
+      p_reference: agreementReference.trim(),
+      p_reason: reason.trim() || words.providerAgreementDefaultReason,
     }));
 
   const enableFeature = () => run('feature', 'manage_feature_flags', async () =>
@@ -328,7 +377,7 @@ export default function ProvidersPage() {
             setHealth(null);
             setFeatureEnabled(false);
             setCredentialConfigured(false);
-            setPolicy(providerPolicyState(nextProviderKey, null));
+            setPolicy(providerPolicyState(nextProviderKey, null, environment));
             setObservedHealthVerified(false);
             setError(null);
             setDone(null);
@@ -362,6 +411,16 @@ export default function ProvidersPage() {
           <div>
             <dt>{words.providerEnvironment}</dt>
             <dd>{environment === 'development' ? words.platformEnvDevelopment : environment ?? '—'}</dd>
+          </div>
+          <div>
+            <dt>{words.providerGovernanceMode}</dt>
+            <dd>
+              <Badge tone="plain">
+                {mode === 'single_admin'
+                  ? words.providerGovernanceModeSingle
+                  : words.providerGovernanceModeDual}
+              </Badge>
+            </dd>
           </div>
           <div>
             <dt>{words.providerCredential}</dt>
@@ -405,8 +464,10 @@ export default function ProvidersPage() {
               {providerWords('providerPolicyWhy')}
             </p>
             <ul className={styles.impactList}>
-              <li>{words.providerPolicyDocuments}: {
-                policy.materialDocumentsPublished ? words.consoleYes : words.consoleNo}</li>
+              {policy.publicCommitmentsRequired ? (
+                <li>{words.providerPolicyDocuments}: {
+                  policy.materialDocumentsPublished ? words.consoleYes : words.consoleNo}</li>
+              ) : null}
               <li>{words.providerPolicyAgreement}: {
                 policy.agreementSigned ? words.consoleYes : words.consoleNo}</li>
               <li>{words.providerPolicyProcessingBasis}: {
@@ -415,8 +476,12 @@ export default function ProvidersPage() {
                 policy.trainingProhibited ? words.consoleYes : words.consoleNo}</li>
               <li>{words.providerPolicyAiUse}: {
                 policy.aiUseApproved ? words.consoleYes : words.consoleNo}</li>
-              <li>{words.providerPolicyReconsent}: {
-                policy.reconsentEnforced ? words.consoleYes : words.consoleNo}</li>
+              {policy.publicCommitmentsRequired ? (
+                <li>{words.providerPolicyReconsent}: {
+                  policy.reconsentEnforced ? words.consoleYes : words.consoleNo}</li>
+              ) : (
+                <li>{words.providerPolicyPreProduction}</li>
+              )}
             </ul>
           </>
         ) : null}
@@ -427,7 +492,7 @@ export default function ProvidersPage() {
         <h2 id="sequence" className={styles.title}>{words.providerSequenceTitle}</h2>
         <p className={styles.lead}>{words.providerSequenceLead}</p>
         <ol className={page.steps}>
-          {ACTIVATION_STEPS.map((key: ActivationStepKey, index) => (
+          {stepKeys.map((key: ActivationStepKey, index) => (
             <li key={key} className={key === next ? page.stepCurrent : page.step}>
               <span className={page.stepIndex}>{index + 1}</span>
               <span className={page.stepBody}>
@@ -441,6 +506,7 @@ export default function ProvidersPage() {
       </section>
 
       {/* --- Approval ------------------------------------------------------- */}
+      {approvals >= 2 ? (
       <section className={styles.block} aria-labelledby="approval">
         <h2 id="approval" className={styles.title}>{words.providerApprovalTitle}</h2>
         <p className={styles.lead}>{providerWords('providerApprovalWhy')}</p>
@@ -507,6 +573,28 @@ export default function ProvidersPage() {
           <Empty>{words.providerApprovalUnavailable}</Empty>
         )}
       </section>
+      ) : (
+        <section className={styles.block} aria-labelledby="approval">
+          <h2 id="approval" className={styles.title}>{words.providerGovernanceTitle}</h2>
+          {/* Said plainly rather than left to be inferred from an absence. An
+              operator who has seen the two-approver sequence before needs to
+              know it is gone by policy, not broken. */}
+          <p className={styles.lead}>{words.providerGovernanceSingleAdmin}</p>
+          <ul className={styles.impactList}>
+            <li>{words.providerGovernanceMode}: {words.providerGovernanceModeSingle}</li>
+            <li>{words.providerGovernanceApprovals}: {approvals}</li>
+            <li>{words.providerGovernanceRecorded}</li>
+          </ul>
+          <div className={styles.form}>
+            <div className={styles.field}>
+              <label className={styles.label} htmlFor="reason">{words.providerReason}</label>
+              <textarea id="reason" className={styles.textarea} value={reason}
+                onChange={(event) => setReason(event.target.value)} />
+              <p className={styles.hint}>{words.providerReasonHint}</p>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* --- Activation and switch-on --------------------------------------- */}
       <section className={styles.block} aria-labelledby="actions">
@@ -519,7 +607,7 @@ export default function ProvidersPage() {
           capability={words.capability_manage_subprocessors}
           mutates
           freshAuth
-          secondPerson
+          secondPerson={approvals >= 2}
           irreversible
           audit="external_provider_activated"
           availability={actionAvailability(states.activate, busy ?? reauth.pendingKey, refreshing)}
@@ -568,6 +656,64 @@ export default function ProvidersPage() {
           </div>
         ) : null}
       </section>
+
+      {/* --- The internal decisions the gate is waiting on -------------------- */}
+      {governed.requiresIdentityPolicyGate
+        && (!policy.processingBasisApproved || !policy.agreementSigned) ? (
+        <section className={styles.block} aria-labelledby="review">
+          <h2 id="review" className={styles.title}>{words.providerReviewTitle}</h2>
+          <p className={styles.lead}>{words.providerReviewLead}</p>
+
+          {!policy.processingBasisApproved ? (
+            <GovernedAction
+              words={words}
+              title={words.providerBasisTitle}
+              body={words.providerBasisBody}
+              capability={words.capability_review_legal_governance}
+              mutates
+              freshAuth
+              secondPerson={approvals >= 2}
+              irreversible={false}
+              audit="processing_basis_reviewed"
+              availability={actionAvailability(
+                mayView ? 'ready' : 'waiting', busy ?? reauth.pendingKey, refreshing)}
+              label={busy === 'basis' ? words.loading : words.providerBasisAction}
+              onRun={approveProcessingBasis}
+            />
+          ) : null}
+
+          {!policy.agreementSigned ? (
+            <>
+              <div className={styles.form}>
+                <div className={styles.field}>
+                  <label className={styles.label} htmlFor="agreement">
+                    {words.providerAgreementReference}
+                  </label>
+                  <input id="agreement" className={styles.input} value={agreementReference}
+                    onChange={(event) => setAgreementReference(event.target.value)} />
+                  <p className={styles.hint}>{words.providerAgreementReferenceHint}</p>
+                </div>
+              </div>
+              <GovernedAction
+                words={words}
+                title={words.providerAgreementTitle}
+                body={words.providerAgreementBody}
+                capability={words.capability_manage_subprocessors}
+                mutates
+                freshAuth
+                secondPerson={approvals >= 2}
+                irreversible={false}
+                audit="subprocessor_agreement_recorded"
+                availability={actionAvailability(
+                  mayActivate && agreementReference.trim().length >= 10 ? 'ready' : 'waiting',
+                  busy ?? reauth.pendingKey, refreshing)}
+                label={busy === 'agreement' ? words.loading : words.providerAgreementAction}
+                onRun={recordAgreement}
+              />
+            </>
+          ) : null}
+        </section>
+      ) : null}
 
       {/* --- Technical details ---------------------------------------------- */}
       <section className={styles.block}>

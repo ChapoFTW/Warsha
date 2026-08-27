@@ -513,7 +513,7 @@ select is(has_function_privilege('authenticated','private.enforce_rate_limit(tex
   'a client cannot drive the rate limiter directly');
 select is(has_function_privilege('authenticated','private.require_domain_staff(text)','EXECUTE'),false,
   'a client cannot call the domain staff gate directly');
-select is(has_function_privilege('authenticated','private.consume_dual_control(text,text,text)','EXECUTE'),false,
+select is(has_function_privilege('authenticated','private.consume_dual_control(text,text,text,text)','EXECUTE'),false,
   'a client cannot consume a dual control approval directly');
 select is(has_function_privilege('authenticated','private.record_operational_event(text,text,text,jsonb,text,uuid)','EXECUTE'),
   false,'a client cannot write operational logs');

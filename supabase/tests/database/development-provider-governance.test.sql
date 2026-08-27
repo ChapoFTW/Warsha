@@ -59,7 +59,7 @@ select is(has_function_privilege(
   'anon', 'public.staff_activate_external_provider(text,text,text)', 'EXECUTE'), false,
   'anon cannot activate a provider');
 select is(has_function_privilege(
-  'authenticated', 'private.consume_dual_control(text,text,text)', 'EXECUTE'), false,
+  'authenticated', 'private.consume_dual_control(text,text,text,text)', 'EXECUTE'), false,
   'clients cannot consume approvals directly');
 select is(has_table_privilege('authenticated', 'private.external_providers', 'UPDATE'), false,
   'authenticated cannot bypass the provider RPC with a table update');
@@ -264,110 +264,77 @@ select throws_ok(
     'google_maps_platform','production','Wrong environment activation')$$,
   '42501', 'Provider activation environment mismatch',
   'development cannot activate a provider as production');
-select throws_ok(
-  $$select public.staff_activate_external_provider(
-    'google_maps_platform','development','Missing dual control activation')$$,
-  '42501', 'This action requires a second approver',
-  'provider activation without dual control is refused');
+select ok(public.staff_activate_external_provider(
+  'google_maps_platform','development',
+  'Activate only the provider registry; leave runtime delivery disabled') is not null,
+  'ONE AUTHORISED ADMINISTRATOR ACTIVATES A PROVIDER IN DEVELOPMENT');
 reset role;
 
--- An approved request with the wrong action key cannot unlock activation.
-set local role authenticated;
-select pg_temp.act_as('a2800000-0000-4000-8000-000000000004');
-select ok(public.staff_request_dual_control(
-  'manage_subprocessors','wrong_external_provider_action',
-  'google_maps_platform:development','Wrong purpose provider approval fixture') is not null,
-  'a wrong-purpose request is created for the binding test');
-reset role;
-select set_config('warsha.wrong_provider_approval',
-  (select id::text from private.staff_dual_control_requests
-   where requested_by = 'a2800000-0000-4000-8000-000000000004'
-     and action_key = 'wrong_external_provider_action'), true);
-set local role authenticated;
-select pg_temp.act_as('a2800000-0000-4000-8000-000000000002');
-select ok(public.staff_approve_dual_control(
-  current_setting('warsha.wrong_provider_approval')::uuid,
-  'Approved only to prove purpose binding') is not null,
-  'a second person approves the wrong-purpose fixture');
-reset role;
-set local role authenticated;
-select pg_temp.act_as('a2800000-0000-4000-8000-000000000004');
-select throws_ok(
-  $$select public.staff_activate_external_provider(
-    'google_maps_platform','development','Wrong purpose cannot activate')$$,
-  '42501', 'This action requires a second approver',
-  'wrong-purpose approval cannot activate the provider');
-reset role;
-
--- An exact approval that expires is still rejected by the mutation.
-set local role authenticated;
-select pg_temp.act_as('a2800000-0000-4000-8000-000000000003');
-select ok(public.staff_request_dual_control(
-  'manage_subprocessors','activate_external_provider',
-  'google_maps_platform:development','Expired provider approval fixture') is not null,
-  'an exact provider approval request can be opened');
-reset role;
-update private.staff_dual_control_requests
-set expires_at = now() - interval '1 minute'
-where requested_by = 'a2800000-0000-4000-8000-000000000003'
-  and action_key = 'activate_external_provider';
-select set_config('warsha.expired_provider_approval',
-  (select id::text from private.staff_dual_control_requests
-   where requested_by = 'a2800000-0000-4000-8000-000000000003'
-     and action_key = 'activate_external_provider'), true);
-set local role authenticated;
-select pg_temp.act_as('a2800000-0000-4000-8000-000000000002');
-select ok(public.staff_approve_dual_control(
-  current_setting('warsha.expired_provider_approval')::uuid,
-  'Approval arrives after expiry for the negative test') is not null,
-  'the fixture records a second-person approval');
-reset role;
-set local role authenticated;
-select pg_temp.act_as('a2800000-0000-4000-8000-000000000003');
-select throws_ok(
-  $$select public.staff_activate_external_provider(
-    'google_maps_platform','development','Expired approval cannot activate')$$,
-  '42501', 'That approval expired', 'an expired approval cannot activate a provider');
-reset role;
-
--- ---------------------------------------------------------------------------
--- Provider activation: exact second-person approval, once
--- ---------------------------------------------------------------------------
-
-set local role authenticated;
-select pg_temp.act_as('a2800000-0000-4000-8000-000000000001');
-select ok(public.staff_request_dual_control(
-  'manage_subprocessors','activate_external_provider',
-  'google_maps_platform:development','Activate Maps registry after reviewed prerequisites') is not null,
-  'the intended activator requests exact provider dual control');
-reset role;
 select set_config('warsha.provider_approval',
   (select id::text from private.staff_dual_control_requests
    where requested_by = 'a2800000-0000-4000-8000-000000000001'
-     and action_key = 'activate_external_provider'), true);
-set local role authenticated;
-select pg_temp.act_as('a2800000-0000-4000-8000-000000000001');
-select throws_ok(
-  $$select public.staff_approve_dual_control(
-    current_setting('warsha.provider_approval')::uuid,'Self approval is forbidden')$$,
-  '42501', 'A staff member cannot approve their own request',
-  'the provider requester cannot self-approve');
-reset role;
+     and action_key = 'activate_external_provider'
+     and subject_ref = 'google_maps_platform:development'), true);
 
+-- The record is the point. It names one actor, it says which policy produced
+-- it, and it carries no approver — there is no second person in this trail
+-- because there was no second person.
+select is((select governance_mode from private.staff_dual_control_requests
+           where id = current_setting('warsha.provider_approval')::uuid),
+  'single_admin', 'the authorisation records the policy that produced it');
+select is((select required_approvals from private.staff_dual_control_requests
+           where id = current_setting('warsha.provider_approval')::uuid), 1::smallint,
+  'and how many identities that policy asked for');
+select ok((select approved_by is null and approved_at is null
+           from private.staff_dual_control_requests
+           where id = current_setting('warsha.provider_approval')::uuid),
+  'THE RECORD NAMES NO SECOND APPROVER, BECAUSE THERE WAS NONE');
+select is((select requested_by::text from private.staff_dual_control_requests
+           where id = current_setting('warsha.provider_approval')::uuid),
+  'a2800000-0000-4000-8000-000000000001',
+  'and names the administrator who actually acted');
+select ok((select consumed_at is not null from private.staff_dual_control_requests
+           where id = current_setting('warsha.provider_approval')::uuid),
+  'the authorisation is spent in the same step it was created');
+select is((select count(*)::integer from private.staff_audit_events
+           where action = 'single_admin_authorisation_consumed'
+             and safe_detail->>'governanceMode' = 'single_admin'
+             and safe_detail->>'environment' = 'development'
+             and actor_id = 'a2800000-0000-4000-8000-000000000001'), 1,
+  'AND THE AUDIT TRAIL SAYS SINGLE-ADMIN IN AS MANY WORDS');
+select is((select count(*)::integer from private.staff_audit_events
+           where action = 'external_provider_activated'
+             and safe_detail->>'providerKey' = 'google_maps_platform'
+             and safe_detail->>'governanceMode' = 'single_admin'), 1,
+  'the activation audit records the policy it was governed by');
+
+-- Nobody may add a name afterwards. A record whose policy asked for one
+-- identity must not later look like it waited for two.
 set local role authenticated;
 select pg_temp.act_as('a2800000-0000-4000-8000-000000000002');
-select is((public.staff_approve_dual_control(
-  current_setting('warsha.provider_approval')::uuid,
-  'Credential name, environment, disabled flag and kill switch checked'))->>'approved',
-  'true', 'a different authorized staff member approves provider activation');
+select throws_ok(
+  $$select public.staff_approve_dual_control(
+    current_setting('warsha.provider_approval')::uuid,'A name nobody asked for')$$,
+  '42501', 'This authorisation needs no second approver',
+  'A SINGLE-ADMIN RECORD REFUSES A SECOND SIGNATURE RATHER THAN ABSORBING ONE');
 reset role;
 
+-- Authority is still authority. One person is not any person.
 set local role authenticated;
-select pg_temp.act_as('a2800000-0000-4000-8000-000000000001');
-select is((public.staff_activate_external_provider(
-  'google_maps_platform','development',
-  'Activate only the provider registry; leave runtime delivery disabled'))->>'status',
-  'active', 'a valid exact approval activates the registry once');
+select pg_temp.act_as('a2800000-0000-4000-8000-000000000005');
+select throws_ok(
+  $$select public.staff_activate_external_provider(
+    'google_maps_platform','development','Unauthorized single-admin attempt')$$,
+  '42501', 'Staff capability required',
+  'SINGLE-ADMIN GOVERNANCE STILL REFUSES AN ACCOUNT WITHOUT THE CAPABILITY');
+reset role;
+set local role authenticated;
+select pg_temp.act_as_nobody();
+select throws_ok(
+  $$select public.staff_activate_external_provider(
+    'google_maps_platform','development','Anonymous single-admin attempt')$$,
+  '42501', NULL,
+  'and refuses an unauthenticated caller outright');
 reset role;
 
 select is((select current_status from private.external_providers
@@ -406,25 +373,7 @@ select ok(
   )) = 0,
   'provider activation accepts no credential parameter');
 
--- A separately approved retry cannot create a second activation event.
-set local role authenticated;
-select pg_temp.act_as('a2800000-0000-4000-8000-000000000006');
-select ok(public.staff_request_dual_control(
-  'manage_subprocessors','activate_external_provider',
-  'google_maps_platform:development','Already active retry fixture request') is not null,
-  'a retry requester can open a separate exact request');
-reset role;
-select set_config('warsha.retry_provider_approval',
-  (select id::text from private.staff_dual_control_requests
-   where requested_by = 'a2800000-0000-4000-8000-000000000006'
-     and action_key = 'activate_external_provider'), true);
-set local role authenticated;
-select pg_temp.act_as('a2800000-0000-4000-8000-000000000002');
-select ok(public.staff_approve_dual_control(
-  current_setting('warsha.retry_provider_approval')::uuid,
-  'Approve retry only to exercise already-active refusal') is not null,
-  'the retry fixture receives second-person approval');
-reset role;
+-- A second attempt cannot create a second activation event, however authorised.
 set local role authenticated;
 select pg_temp.act_as('a2800000-0000-4000-8000-000000000006');
 select throws_ok(
@@ -436,9 +385,9 @@ select is((select count(*)::integer from private.external_provider_events
            where provider_key = 'google_maps_platform' and event_type = 'enabled'), 1,
   'an already-active retry writes no duplicate event');
 
--- Replay of a consumed approval is rejected even if an owner-only test fixture
--- restores the precondition. This proves the approval, not only the status, is
--- single use.
+-- Replay of a spent authorisation is rejected even when an owner-only fixture
+-- restores the precondition. This proves the authorisation, not only the
+-- status, is single use — single-admin does not mean single-admin-repeatedly.
 update private.external_providers
 set current_status = 'implemented_awaiting_credential'
 where provider_key = 'google_maps_platform';
@@ -446,71 +395,30 @@ set local role authenticated;
 select pg_temp.act_as('a2800000-0000-4000-8000-000000000001');
 select throws_ok(
   $$select public.staff_activate_external_provider(
-    'google_maps_platform','development','Consumed approval replay must fail')$$,
-  '42501', 'That approval was already used',
-  'a consumed provider approval cannot be replayed');
+    'google_maps_platform','development','Consumed authorisation replay must fail')$$,
+  '42501', 'That authorisation was already used',
+  'A SPENT SINGLE-ADMIN AUTHORISATION CANNOT BE REPLAYED');
 reset role;
 update private.external_providers
 set current_status = 'active'
 where provider_key = 'google_maps_platform';
 
 -- ---------------------------------------------------------------------------
--- Legal publication approval is exact and single use
+-- Material legal publication is authorised once, by the policy in force
 -- ---------------------------------------------------------------------------
+--
+-- The authority is unchanged: material and urgent publication is governed and
+-- editorial publication is not. Only the number of identities the governed path
+-- asks for follows the environment, and here that number is one.
 
 set local role authenticated;
 select pg_temp.act_as('a2800000-0000-4000-8000-000000000001');
-select throws_ok(
-  $$select public.staff_publish_legal_version(
-    'privacy_policy','9.9',repeat('a',64),repeat('b',64),'material',
-    'Material test summary for provider governance only.',
-    'ملخص اختبار مادي لمسار الحوكمة فقط.',current_date,
-    'Material publication without dual control')$$,
-  '42501', 'This action requires a second approver',
-  'material legal publication without dual control is refused');
-select ok(public.staff_request_dual_control(
-  'publish_legal_version','publish_legal_version',
-  'privacy_policy:9.9:development','Publish exact material privacy test version') is not null,
-  'the legal publisher requests an exact version approval');
-reset role;
-select set_config('warsha.legal_approval',
-  (select id::text from private.staff_dual_control_requests
-   where requested_by = 'a2800000-0000-4000-8000-000000000001'
-     and action_key = 'publish_legal_version'
-     and subject_ref = 'privacy_policy:9.9:development'), true);
-set local role authenticated;
-select pg_temp.act_as('a2800000-0000-4000-8000-000000000001');
-select throws_ok(
-  $$select public.staff_approve_dual_control(
-    current_setting('warsha.legal_approval')::uuid,'Legal self approval')$$,
-  '42501', 'A staff member cannot approve their own request',
-  'a legal publisher cannot approve their own publication');
-reset role;
-
-set local role authenticated;
-select pg_temp.act_as('a2800000-0000-4000-8000-000000000002');
-select is((public.staff_approve_dual_control(
-  current_setting('warsha.legal_approval')::uuid,
-  'Exact hashes, version, summaries and environment reviewed'))->>'approved',
-  'true', 'a second legal publisher approves the exact version');
-reset role;
-
-set local role authenticated;
-select pg_temp.act_as('a2800000-0000-4000-8000-000000000001');
-select throws_ok(
-  $$select public.staff_publish_legal_version(
-    'location_data_policy','9.9',repeat('c',64),repeat('d',64),'material',
-    'Different document must not use the privacy approval.',
-    'مستند مختلف لا يستخدم موافقة الخصوصية.',current_date,
-    'Wrong document publication')$$,
-  '42501', 'This action requires a second approver',
-  'approval for one document cannot publish another');
 select is((public.staff_publish_legal_version(
   'privacy_policy','9.9',repeat('a',64),repeat('b',64),'material',
   'Material test summary for provider governance only.',
   'ملخص اختبار مادي لمسار الحوكمة فقط.',current_date,
   'Publish the exact approved material test version'))->>'version',
-  '9.9', 'the exact approved material version publishes');
+  '9.9', 'ONE AUTHORISED PUBLISHER MAY PUBLISH A MATERIAL VERSION IN DEVELOPMENT');
 select throws_ok(
   $$select public.staff_publish_legal_version(
     'privacy_policy','9.9',repeat('a',64),repeat('b',64),'material',
@@ -521,19 +429,47 @@ select throws_ok(
   'the legal publication mutation cannot be replayed');
 reset role;
 
-select ok((select consumed_at is not null from private.staff_dual_control_requests
+select set_config('warsha.legal_approval',
+  (select id::text from private.staff_dual_control_requests
+   where requested_by = 'a2800000-0000-4000-8000-000000000001'
+     and action_key = 'publish_legal_version'
+     and subject_ref = 'privacy_policy:9.9:development'), true);
+select is((select governance_mode from private.staff_dual_control_requests
            where id = current_setting('warsha.legal_approval')::uuid),
-  'legal publication consumes the exact approval');
+  'single_admin', 'and its authorisation records the single-admin policy');
+select ok((select approved_by is null and consumed_at is not null
+           from private.staff_dual_control_requests
+           where id = current_setting('warsha.legal_approval')::uuid),
+  'spent, with no second name attached to it');
 select is((select count(*)::integer from private.staff_audit_events
            where action = 'publish'
              and safe_detail->>'documentKey' = 'privacy_policy'
              and safe_detail->>'version' = '9.9'
              and safe_detail->>'dualControlRequestId' = current_setting('warsha.legal_approval')), 1,
-  'legal publication audit identifies the consumed approval');
+  'legal publication audit identifies the consumed authorisation');
 select is((select count(*)::integer from private.legal_version_events
            where document_key = 'privacy_policy' and version = '9.9'
              and event_type = 'published'), 1,
-  'the approved legal version has one immutable publication event');
+  'the published version has one immutable publication event');
+
+-- The subject binding is unchanged: an authorisation is for one document at one
+-- version, and a second document needs its own.
+select is((select count(*)::integer from private.staff_dual_control_requests
+           where action_key = 'publish_legal_version'
+             and subject_ref = 'location_data_policy:9.9:development'), 0,
+  'AN AUTHORISATION FOR ONE DOCUMENT NEVER EXISTS FOR ANOTHER');
+
+set local role authenticated;
+select pg_temp.act_as('a2800000-0000-4000-8000-000000000005');
+select throws_ok(
+  $$select public.staff_publish_legal_version(
+    'location_data_policy','9.9',repeat('c',64),repeat('d',64),'material',
+    'An account without the capability must not publish.',
+    'حساب بدون صلاحية لا ينشر.',current_date,
+    'Unauthorized material publication')$$,
+  '42501', 'Staff capability required',
+  'AND PUBLICATION STILL REQUIRES THE PUBLISHING CAPABILITY');
+reset role;
 
 set local role authenticated;
 select pg_temp.act_as('a2800000-0000-4000-8000-000000000001');
@@ -542,12 +478,17 @@ select ok((public.staff_publish_legal_version(
   'Editorial test correction with no material effect.',
   'تصحيح تحريري اختباري دون تأثير جوهري.',current_date,
   'Prove non-material publication authority is unchanged'))->>'dualControlRequestId' is null,
-  'editorial publication remains outside the material dual-control gate');
+  'editorial publication remains outside the material governance gate');
 reset role;
 
 -- ---------------------------------------------------------------------------
--- Subprocessor promotion is separately approved; demotion remains immediate
+-- Subprocessor promotion is separately authorised; demotion remains immediate
 -- ---------------------------------------------------------------------------
+--
+-- Promotion means personal data may now reach a supplier, so it is governed
+-- separately from activation even for the same provider. Demotion is a
+-- restriction and must stay immediately available during an incident — that
+-- asymmetry is untouched by the approval count.
 
 set local role authenticated;
 select pg_temp.act_as('a2800000-0000-4000-8000-000000000001');
@@ -555,47 +496,49 @@ select is((public.staff_set_feature_flag(
   'location_provider','development',true,'all',100,
   'Temporarily exercise subprocessor promotion inside rollback'))->>'enabled',
   'true', 'the test enables the provider only inside its rollback transaction');
-select throws_ok(
-  $$select public.staff_sync_provider_status(
-    'google_maps_platform','Promotion without its own approval')$$,
-  '42501', 'This action requires a second approver',
-  'subprocessor promotion without dual control is refused');
-select ok(public.staff_request_dual_control(
-  'manage_subprocessors','sync_subprocessor_in_use',
-  'google_maps_platform:development:in_use',
-  'Promote Maps subprocessor after material approval') is not null,
-  'the intended promoter requests exact subprocessor dual control');
+select is((public.staff_sync_provider_status(
+  'google_maps_platform','Promote the approved Maps subprocessor in development'))->>'subprocessorStatus',
+  'in_use', 'one authorised administrator may promote the subprocessor here');
 reset role;
+
 select set_config('warsha.subprocessor_approval',
   (select id::text from private.staff_dual_control_requests
    where requested_by = 'a2800000-0000-4000-8000-000000000001'
      and action_key = 'sync_subprocessor_in_use'), true);
+select is((select governance_mode from private.staff_dual_control_requests
+           where id = current_setting('warsha.subprocessor_approval')::uuid),
+  'single_admin', 'promotion is authorised under the same recorded policy');
+select ok((select approved_by is null and consumed_at is not null
+           from private.staff_dual_control_requests
+           where id = current_setting('warsha.subprocessor_approval')::uuid),
+  'and its authorisation is spent with no second name attached');
 
-set local role authenticated;
-select pg_temp.act_as('a2800000-0000-4000-8000-000000000002');
-select is((public.staff_approve_dual_control(
-  current_setting('warsha.subprocessor_approval')::uuid,
-  'Material disclosure and enabled provider state independently checked'))->>'approved',
-  'true', 'a second person approves subprocessor promotion');
-reset role;
+-- Promotion is still a separate authorisation from activation: the activation
+-- record cannot pay for it.
+select isnt(current_setting('warsha.subprocessor_approval'),
+  current_setting('warsha.provider_approval'),
+  'PROMOTION IS AUTHORISED SEPARATELY FROM ACTIVATION, NOT CARRIED BY IT');
 
 set local role authenticated;
 select pg_temp.act_as('a2800000-0000-4000-8000-000000000001');
-select is((public.staff_sync_provider_status(
-  'google_maps_platform','Promote the approved Maps subprocessor in development'))->>'subprocessorStatus',
-  'in_use', 'an exact approval promotes the subprocessor');
 select is((public.staff_set_feature_flag(
   'location_provider','development',false,'none',0,
   'Return the test provider to its safe disabled state'))->>'enabled',
   'false', 'the test disables the provider again');
 select is((public.staff_sync_provider_status(
   'google_maps_platform','Restrictive demotion after disabling the provider'))->>'subprocessorStatus',
-  'approved_not_integrated', 'restrictive demotion does not wait for dual control');
+  'approved_not_integrated', 'restrictive demotion does not wait for any authorisation');
 reset role;
 
-select ok((select consumed_at is not null from private.staff_dual_control_requests
-           where id = current_setting('warsha.subprocessor_approval')::uuid),
-  'subprocessor promotion consumes its own approval');
+set local role authenticated;
+select pg_temp.act_as('a2800000-0000-4000-8000-000000000005');
+select throws_ok(
+  $$select public.staff_sync_provider_status(
+    'google_maps_platform','Unauthorized reconciliation')$$,
+  '42501', 'Staff capability required',
+  'and reconciliation still requires the subprocessor capability');
+reset role;
+
 select is((select integration_status from private.subprocessors
            where subprocessor_key = 'google_maps_platform'),
   'approved_not_integrated', 'the rollback fixture leaves the subprocessor non-integrated');
