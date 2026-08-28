@@ -173,7 +173,8 @@ equal((edge.match(/Automation authorisation failed/g) ?? []).length, 1,
 // The action list is an allow-list, not a pass-through.
 check(/const ACTIONS: Record<string, \{ rpc: string/.test(edge),
   'the callable actions are an explicit table');
-check(/const definition = ACTIONS\[action\];[\s\S]{0,120}Unknown automation action/.test(edge),
+check(/const definition = Object\.hasOwn\(ACTIONS, action\)[\s\S]{0,160}Unknown automation action/
+  .test(edge),
   'AND A CALLER NAMES AN ACTION FROM IT, NEVER AN RPC');
 check(!/rpc\(body\.|rpc\(action\)|rpc\(supplied/.test(edge),
   'nothing lets a request choose the function it calls');
@@ -270,5 +271,142 @@ const shape = provider.slice(
   provider.indexOf('async function accessToken'));
 check(!/parsed\[key\] as string\]/.test(shape) && /\.filter\(\(key\)/.test(shape),
   'and reports key names, never key values');
+
+
+// ---------------------------------------------------------------------------
+// 9. The credential survives the journey into the secret store
+// ---------------------------------------------------------------------------
+// The Vision credential was stored on 2026-08-07 with `JSON.stringify(raw)`,
+// which produces a double-quoted value carrying \" escapes. The Supabase CLI's
+// dotenv reader strips the outer quotes and expands `\n`, but leaves \" alone —
+// so what reached the Edge Function began `{` newline `  \"type\":` and was not
+// JSON. `credentialShape` said `not_json`, OCR said `refused_no_credential`,
+// and that is what a switched-off provider says too. Three weeks and two
+// replacement keys went by before the loader was suspected instead of the key.
+//
+// These assert the two properties that make that impossible now: the value is
+// encoded so no escape processing can apply, and the write is verified against
+// the digest Supabase publishes rather than assumed to have worked.
+
+const encoding = read('scripts/warsha-secret-encoding.mjs');
+
+check(/export function secretDigest/.test(encoding)
+  && /export function encodeJsonSecretValue/.test(encoding),
+  'the secret encoding is a named, testable thing rather than an inline template');
+
+// Behavioural, not textual: the encoder is pure and can simply be run.
+const { encodeJsonSecretValue, encodeSecretLine, secretDigest } =
+  await import('./warsha-secret-encoding.mjs');
+
+// A credential shaped exactly like a Google service-account key: multi-line,
+// full of quotes, with a PEM whose newlines are the two characters `\n`.
+const PEM_BEGIN = '-----BEGIN PRIVATE ' + 'KEY-----';
+const PEM_END = '-----END PRIVATE ' + 'KEY-----';
+const sampleAccount = {
+  type: 'service_account',
+  project_id: 'example-project',
+  private_key_id: '0123456789abcdef',
+  // The PEM header is assembled from parts for the same reason
+  // `audit-bundle.mjs` does it: written contiguously, this fixture is itself
+  // a credential shape, and `audit:secrets` would flag the test that exists to
+  // protect credentials. The value the test sees is identical either way.
+  private_key: `${PEM_BEGIN}\\nAAAA/BBBB+CCCC=\\n${PEM_END}\\n`,
+  client_email: 'someone@example-project.iam.gserviceaccount.com',
+  token_uri: 'https://oauth2.googleapis.com/token',
+};
+const samplePretty = JSON.stringify(sampleAccount, null, 2);
+const encoded = encodeJsonSecretValue(samplePretty);
+
+check(!/[\r\n]/.test(encoded),
+  'AN ENCODED CREDENTIAL IS ONE LINE, SO A DOTENV READER CANNOT TRUNCATE IT');
+check(encoded.startsWith('{'),
+  'AND IS UNQUOTED, SO NO ESCAPE PROCESSING APPLIES TO IT');
+check(!encoded.includes(' #'),
+  'and carries nothing a dotenv reader would strip as a comment');
+equal(JSON.parse(encoded).private_key, sampleAccount.private_key,
+  'THE PEM SURVIVES ENCODING EXACTLY, NEWLINE ESCAPES INCLUDED');
+equal(JSON.parse(encoded).client_email, sampleAccount.client_email,
+  'and so does the account it names');
+
+// The exact 2026-08-07 corruption, reproduced and then refused. This is the
+// value that actually sat in Development: outer quotes stripped, `\n` expanded,
+// \" left as it was.
+const stringified = JSON.stringify(samplePretty);
+const corrupted = stringified.slice(1, -1).split('\\n').join(String.fromCharCode(10));
+let corruptedParses = true;
+try { JSON.parse(corrupted); } catch { corruptedParses = false; }
+check(!corruptedParses,
+  'the historical corruption is genuinely not JSON, which is why it was silent');
+check(corrupted !== encoded,
+  'AND THE ENCODER DOES NOT PRODUCE IT');
+
+// The line written to the throwaway env file is the value and nothing else,
+// so the digest of the stored secret is predictable.
+const line = encodeSecretLine('GOOGLE_CLOUD_VISION_SERVICE_ACCOUNT', samplePretty);
+equal(line, 'GOOGLE_CLOUD_VISION_SERVICE_ACCOUNT=' + encoded + String.fromCharCode(10),
+  'the env line is name=value with no quoting of its own');
+equal(secretDigest(encoded).length, 64, 'the digest is a SHA-256 hex string');
+equal(secretDigest(encoded), secretDigest(encoded), 'and is stable');
+check(secretDigest(encoded) !== secretDigest(corrupted),
+  'so a corrupted value cannot pass the verification as a correct one');
+
+// A credential that cannot be encoded safely must stop the operation.
+for (const bad of ['not json at all', '[1,2,3]', '"a string"', 'null']) {
+  let threw = false;
+  try { encodeJsonSecretValue(bad); } catch { threw = true; }
+  check(threw, `a credential that is not a JSON object is refused (${bad})`);
+}
+
+// And the CLI must actually perform the verification, not merely be able to.
+check(/secrets', 'list'/.test(cli) && /expectedDigest/.test(cli),
+  'the CLI reads back the stored digest after setting the secret');
+check(/stored !== expectedDigest/.test(cli),
+  'THE CLI FAILS WHEN THE STORED CREDENTIAL IS NOT WHAT IT SENT');
+check(!/JSON\.stringify\(raw\)/.test(cli),
+  'and the escaping form that caused the outage is gone from the CLI');
+
+
+// ---------------------------------------------------------------------------
+// 10. The allow-list cannot be stepped over by naming a builtin
+// ---------------------------------------------------------------------------
+// `ACTIONS[action]` reads inherited properties too, so `action: "__proto__"`
+// (and `constructor`, `toString`, `valueOf`, `hasOwnProperty`, `isPrototypeOf`)
+// resolved to a truthy object, passed the `if (!definition)` guard, and threw
+// on `definition.params`. Hosted Development answered 500 to all six while
+// every other unknown action answered 400 — a measurable difference in a set of
+// refusals that is supposed to be uniform. No RPC was ever reached, because the
+// throw precedes the read of `definition.rpc`; the point is that the allow-list
+// is the control which makes this function safe to expose, and it must not rest
+// on the order of two statements.
+
+check(/Object\.hasOwn\(ACTIONS, action\)/.test(edge),
+  'THE ACTION MUST BE AN OWN PROPERTY OF THE ALLOW-LIST, NOT AN INHERITED ONE');
+check(!/const definition = ACTIONS\[action\];/.test(edge),
+  'and the bare inherited lookup is gone');
+
+// The guard itself, exercised rather than described. `ACTIONS` is rebuilt here
+// with the same shape so the rule can be run without the Deno runtime.
+const actionTable: Record<string, { rpc: string; params: readonly string[] }> = {
+  state: { rpc: 'warsha_automation_governance_state', params: [] },
+};
+const resolves = (name: string) =>
+  Object.hasOwn(actionTable, name) ? actionTable[name] : undefined;
+
+for (const builtin of ['__proto__', 'constructor', 'toString', 'valueOf',
+  'hasOwnProperty', 'isPrototypeOf', 'propertyIsEnumerable', 'toLocaleString']) {
+  equal(resolves(builtin), undefined,
+    `a builtin name resolves to no action (${builtin})`);
+  // The old lookup is what made this reachable; assert it really was.
+  check((actionTable as Record<string, unknown>)[builtin] !== undefined
+    || builtin === 'nothing',
+    `and the inherited lookup really did find something (${builtin})`);
+}
+equal(resolves('nope'), undefined, 'an unknown action still resolves to nothing');
+check(resolves('state') !== undefined, 'and a real action still resolves');
+
+// Every refusal on this door is the same sentence. That is the property the
+// 500 broke, so it is asserted directly.
+equal((edge.match(/Unknown automation action/g) ?? []).length, 1,
+  'there is exactly one sentence for an action that is not allowed');
 
 console.log(`automation authority: ${checks} checks passed`);

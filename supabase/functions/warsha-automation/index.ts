@@ -174,7 +174,23 @@ Deno.serve(async (request: Request): Promise<Response> => {
   }
 
   const action = typeof body.action === 'string' ? body.action : '';
-  const definition = ACTIONS[action];
+  /*
+   * An OWN property of the allow-list, not merely a readable one.
+   *
+   * `ACTIONS[action]` also finds everything on `Object.prototype`, so `action:
+   * "__proto__"` - and `constructor`, `toString`, `valueOf`, `hasOwnProperty` -
+   * returned a truthy object, walked past this guard, and then threw on
+   * `definition.params`, because none of them has one. That was a 500 where
+   * every other unknown action is a 400, which is exactly the kind of
+   * difference a prober measures: these refusals are meant to be
+   * indistinguishable from one another.
+   *
+   * It never reached an RPC - the throw happens before `definition.rpc` is
+   * read - but the allow-list is the control that makes this function safe to
+   * expose at all, and a control that can be stepped over by naming a builtin
+   * is not one to leave resting on the order of two statements.
+   */
+  const definition = Object.hasOwn(ACTIONS, action) ? ACTIONS[action] : undefined;
   if (!definition) return json({ error: 'Unknown automation action' }, 400);
 
   const supplied = (body.params ?? {}) as Record<string, unknown>;

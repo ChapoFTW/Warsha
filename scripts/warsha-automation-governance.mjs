@@ -29,6 +29,10 @@ import { chmodSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
+import {
+  encodeJsonSecretValue, encodeSecretLine, secretDigest,
+} from './warsha-secret-encoding.mjs';
+
 const ROOT = resolve(process.cwd());
 const TOKEN_FILE = join(ROOT, '.env.automation');
 const TOKEN_NAME = 'WARSHA_DEVELOPMENT_AUTOMATION_TOKEN';
@@ -181,24 +185,60 @@ function setVisionCredential(jsonPath) {
     fail('The private_key field does not contain a PEM private key.');
   }
 
-  // Uploaded as the exact bytes of the file, so nothing re-encodes the newlines
-  // in the PEM on the way. `--env-file` keeps it off the command line.
+  // Written as a single-line minified document, which no dotenv reader will
+  // alter — see `warsha-secret-encoding.mjs` for the escape bug this replaced.
+  // `--env-file` keeps the value off the command line.
+  const SECRET_NAME = 'GOOGLE_CLOUD_VISION_SERVICE_ACCOUNT';
+  let expectedDigest;
+  try {
+    expectedDigest = secretDigest(encodeJsonSecretValue(raw));
+  } catch (error) {
+    fail(`That credential cannot be stored safely: ${error.message}`);
+  }
+
   const staging = mkdtempSync(join(tmpdir(), 'warsha-vision-'));
   const envFile = join(staging, 'secrets.env');
   try {
-    writeFileSync(envFile, `GOOGLE_CLOUD_VISION_SERVICE_ACCOUNT=${JSON.stringify(raw)}
-`,
-      { mode: 0o600 });
+    writeFileSync(envFile, encodeSecretLine(SECRET_NAME, raw), { mode: 0o600 });
     const set = run('npx', ['supabase', 'secrets', 'set', '--env-file', envFile]);
     if (set.exitCode !== 0) fail(`Could not set the secret: ${set.stderr || set.stdout}`);
   } finally {
     rmSync(staging, { recursive: true, force: true });
   }
 
-  console.log('Vision service-account credential set.');
+  /*
+   * Confirm what actually landed.
+   *
+   * Supabase publishes the SHA-256 of each stored secret, so the bytes that
+   * arrived can be compared with the bytes intended without either being read
+   * back. This is the check whose absence let a corrupted credential sit in
+   * Development for three weeks looking exactly like a disabled provider.
+   */
+  const listed = run('npx', ['supabase', 'secrets', 'list', '--output', 'json']);
+  if (listed.exitCode !== 0) {
+    fail('The secret was set but could not be verified. Do not assume it is correct.');
+  }
+  let stored = null;
+  try {
+    const start = listed.stdout.search(/[[{]/);
+    const parsed = JSON.parse(listed.stdout.slice(start));
+    const rows = Array.isArray(parsed) ? parsed : (parsed.secrets ?? []);
+    stored = rows.find((row) => row.name === SECRET_NAME)?.value ?? null;
+  } catch {
+    fail('The secret was set but the verification listing could not be read.');
+  }
+  if (stored !== expectedDigest) {
+    fail(`The stored credential does not match what was sent.\n`
+      + `  expected digest: ${expectedDigest}\n`
+      + `  stored digest  : ${stored ?? 'absent'}\n`
+      + `The value was altered in transit. Do not treat OCR as configured.`);
+  }
+
+  console.log('Vision service-account credential set and verified in place.');
   console.log(`  Project id  : ${account.project_id}`);
   console.log(`  Client email: ${String(account.client_email).replace(/^[^@]+/, '***')}`);
   console.log(`  Fingerprint : ${fingerprint(raw)}`);
+  console.log(`  Stored digest matches the value sent.`);
   console.log('');
   console.log('Redeploy is not required. Confirm it with:');
   console.log('  npm run test:synthetic-ocr');

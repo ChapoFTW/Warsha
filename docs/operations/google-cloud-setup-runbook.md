@@ -82,15 +82,15 @@ Vision is called with a service account, not an API key, because a service
 account can be scoped to one API and rotated without touching anything else.
 
 ```
-gcloud iam service-accounts create warsha-vision \
+gcloud iam service-accounts create warsha-vision-ocr \
   --display-name="Warsha Vision (server only)" --project=<PROJECT>
 
 gcloud projects add-iam-policy-binding <PROJECT> \
-  --member="serviceAccount:warsha-vision@<PROJECT>.iam.gserviceaccount.com" \
+  --member="serviceAccount:warsha-vision-ocr@<PROJECT>.iam.gserviceaccount.com" \
   --role="roles/serviceusage.serviceUsageConsumer"
 
-gcloud iam service-accounts keys create warsha-vision.json \
-  --iam-account=warsha-vision@<PROJECT>.iam.gserviceaccount.com
+gcloud iam service-accounts keys create warsha-vision-ocr.json \
+  --iam-account=warsha-vision-ocr@<PROJECT>.iam.gserviceaccount.com
 ```
 
 ### Vision permissions
@@ -108,7 +108,7 @@ no bucket: Warsha downloads the document itself with the Supabase service role
 and posts the bytes. A Vision service account with Storage access would be a
 second, unaudited path to identity documents.
 
-### Handling `warsha-vision.json`
+### Handling `warsha-vision-ocr.json`
 
 The moment it is created it is the most sensitive file on the machine.
 
@@ -118,10 +118,38 @@ The moment it is created it is the most sensitive file on the machine.
   history, and a key that reaches history is compromised even after a revert;
 - record the key ID in the secret rotation runbook.
 
+Use the governed path. It validates the file, keeps the value off the command
+line, and confirms what actually landed:
+
 ```
-npx supabase secrets set GOOGLE_CLOUD_VISION_SERVICE_ACCOUNT="$(cat warsha-vision.json)" \
-  --project-ref <SUPABASE_PROJECT_REF>
-rm warsha-vision.json
+npm run automation:govern -- set-vision-credential <absolute-path-to-json>
+```
+
+**Do not** set this secret with a shell argument. The obvious form
+
+```
+# WRONG - do not use
+npx supabase secrets set GOOGLE_CLOUD_VISION_SERVICE_ACCOUNT="$(cat key.json)"
+```
+
+is wrong twice. It puts the private key in a process listing and a shell
+history, and it hands a multi-line JSON document to a reader that applies
+escape processing to it. The second fault is not hypothetical: on 2026-08-07 it
+stored a value whose `\"` escapes were never unwound, so the secret was
+present, was the right length, and was not JSON. OCR answered
+`refused_no_credential` - which is exactly what a switched-off provider answers
+- and so nothing looked wrong for three weeks. Two replacement keys were issued
+before anybody suspected the loader rather than the key.
+
+`set-vision-credential` writes a single-line minified document that no dotenv
+reader will alter, then compares the SHA-256 Supabase publishes for the stored
+secret against the SHA-256 of the value it sent, and fails loudly if they
+differ. See `scripts/warsha-secret-encoding.mjs`.
+
+Delete the local copy once the command reports that the digest matched:
+
+```
+rm warsha-vision-ocr.json
 ```
 
 ## Step 4 — The billed Maps server key
