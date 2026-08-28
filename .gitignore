@@ -52,3 +52,13 @@ tmp/
 /artifacts/
 .vercel
 .env*
+
+# Diagnostic output at the repository root.
+#
+# Seven console dumps - grep output, a pgTAP transcript, a stray SQL snippet -
+# were committed here and sat in the tree for weeks. Nothing referenced them and
+# nothing could: they were the residue of debugging sessions. Scoped to the root
+# and to these two shapes deliberately, so a real document is never hidden by a
+# rule meant for scratch output.
+/*.log
+/*-debug.txt

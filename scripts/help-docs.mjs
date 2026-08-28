@@ -106,6 +106,29 @@ for (const [path, value] of Object.entries(outputs)) {
   else check(existsSync(absolute) && readFileSync(absolute, 'utf8') === expected, `${path} matches the documentation authority`);
 }
 
+/**
+ * Paths this change DELETES, as opposed to edits.
+ *
+ * Needed because a deletion is a different kind of event from an edit, and the
+ * impact rules below match on the path rather than on what happened to it.
+ */
+function gitDeletedFiles() {
+  const commands = [
+    ['diff', '--name-only', '--diff-filter=D', 'origin/main...HEAD'],
+    ['diff', '--name-only', '--diff-filter=D'],
+    ['diff', '--cached', '--name-only', '--diff-filter=D'],
+  ];
+  const files = new Set();
+  for (const args of commands) {
+    try {
+      for (const line of execFileSync('git', args, { cwd: root, encoding: 'utf8' }).split(/\r?\n/)) {
+        if (line.trim()) files.add(line.trim().replaceAll('\\', '/'));
+      }
+    } catch { /* not a repository, or no such range */ }
+  }
+  return files;
+}
+
 function gitChangedFiles() {
   const commands = [['diff', '--name-only', 'origin/main...HEAD'], ['diff', '--name-only'], ['diff', '--cached', '--name-only']];
   const files = new Set();
@@ -117,6 +140,7 @@ function gitChangedFiles() {
 }
 
 const changed = gitChangedFiles();
+const deleted = gitDeletedFiles();
 const docsChanged = changed.some(path => sources.includes(path));
 const impactRules = [
   // `auth` must not match `authority`. `catalogue-consumer-authority.test.mts`
@@ -146,7 +170,25 @@ const impactRules = [
 // help text written to satisfy a gate is worse than no help text. A change that
 // genuinely alters behaviour edits a component or an RPC alongside its styles,
 // and that still trips the rule.
-const behavioural = (path) => !path.startsWith('docs/help/') && !/\.s?css$/i.test(path);
+/**
+ * Routes and database objects are the two things whose REMOVAL is itself
+ * documented behaviour: deleting `app/favourites.tsx` withdraws a screen the
+ * help centre describes, and dropping an RPC withdraws what it did. Everything
+ * else that is merely deleted cannot change what a reader is told, because a
+ * deletion that anything still used would have failed typecheck, lint or a
+ * regression suite long before this gate ran.
+ *
+ * Without this, a cleanup that removes dead code trips the gate on the FILE
+ * NAME alone — `auth-debug.txt`, `AddressSelector.tsx` — and the only way to
+ * satisfy it is to edit a help article that describes none of them. That is the
+ * filler this file's own comments warn against, and it would teach everyone to
+ * write filler.
+ */
+const removalIsBehaviour = (path) =>
+  /^(?:app|web\/app)\//.test(path) || path.startsWith('supabase/');
+const behavioural = (path) => !path.startsWith('docs/help/')
+  && !/\.s?css$/i.test(path)
+  && !(deleted.has(path) && !removalIsBehaviour(path));
 const impacted = impactRules.filter(rule => changed.some(path =>
   behavioural(path) && rule.pattern.test(path)));
 for (const rule of impacted) {
