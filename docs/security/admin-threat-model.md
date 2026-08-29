@@ -2,7 +2,13 @@
 
 Authority: Warsha Constitution → WPS-017 → WES-017.
 Scope: `supabase/migrations/202608020005_wps017_operations_analytics_admin.sql`,
-`src/admin/*`, `app/admin/*`.
+`web/app/admin/*`, `web/lib/{staff,capabilities,governed-action,reauth}.ts`.
+
+**Administration is web-only.** The native `src/admin/*` client this document
+originally also covered was retired on 2026-08-29: it was a second staff console
+that no screen ever reached. `scripts/native-admin-boundary.test.mts` now fails
+the build if a native module calls a `staff_*` RPC or resolves a staff
+capability on device, so the scope above is enforced rather than described.
 
 This is an internal engineering threat model. **No compliance certification is
 claimed or implied.**
@@ -79,11 +85,13 @@ staff member cannot download another's export.
 
 *Vector:* a service-role key reaches a browser or mobile bundle.
 
-**Controls.** There is no server component in this project and no admin client.
-The admin repository uses `getSupabaseClient()` — the same anon client as the
-customer app. `.env.example` states the prohibition twice. The regression suite
-asserts that neither `src/admin/admin-repository.ts` nor
-`src/admin/admin-context.tsx` mentions a service role.
+**Controls.** There is no server component in this project holding a service
+role. The web console uses the same publishable key any browser gets, and every
+privileged action is a `staff_*` RPC that begins with
+`require_staff_capability`. `.env.example` states the prohibition twice, and
+`wps017-operations-admin.test.mts` now asserts that NO client file — native or
+web — contains a service-role path or an arbitrary SQL executor, rather than
+checking two named files as it did before.
 
 ### T5 — Bulk data scraping
 

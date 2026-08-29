@@ -314,8 +314,18 @@ lacks(mockState, /^import .*(supabase|lib\/supabase)/im, 'Mock state imports no 
 lacks(mockState, /getSupabaseClient\s*\(/, 'Mock state never constructs a Supabase client');
 lacks(mockState, /\.rpc\s*\(|\.from\s*\(|fetch\s*\(/, 'Mock state performs no network call of any kind');
 const mockBranches = (repository.match(/environment\.dataMode === 'mock'/g) ?? []).length;
-check(mockBranches >= 14, `every repository method has an explicit Mock branch (${mockBranches})`);
-has(repository, /Staff actions are unavailable in Mock mode/, 'Mock refuses staff actions rather than faking them');
+check(mockBranches >= 11, `every repository method has an explicit Mock branch (${mockBranches})`);
+
+// This used to assert that Mock REFUSED the repository's staff actions rather
+// than faking them. On 2026-08-29 the three staff methods — `assignCase`,
+// `resolveCase`, `mergeCases` — were removed outright: nothing called them, and
+// administration is web-only, so a support console on a phone was drift rather
+// than a feature. Refusing an action you do not offer is a weaker guarantee
+// than not offering it, so the assertion is now the stronger one.
+lacks(repository, /rpc\(\s*['"`]staff_/,
+  'THE NATIVE SUPPORT REPOSITORY REACHES NO STAFF SURFACE AT ALL');
+lacks(repository, /assignCase|resolveCase|mergeCases/,
+  'and carries none of the retired staff case actions');
 has(repository, /mockAccount\(accountKey\)/, 'every Mock read and write is scoped to an account key');
 
 is(mockSupportMacros.filter(m => m.locale === 'en').length, 3, 'Mock carries English macros');

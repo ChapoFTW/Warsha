@@ -391,8 +391,14 @@ equal(surfaceIsRestricted(
 equal(surfaceIsRestricted(
   { ...unknownPlatformStatus, readOnlyMaintenance: false, activeSwitches: [] }, 'payouts'),
   false, 'an unrestricted surface stays open');
-match(read('src/launch/platform-status-repository.ts'), /fail closed/i,
-  'the status repository documents its fail-closed behaviour');
+// `platform-status-repository.ts` was retired on 2026-08-29: it documented a
+// fail-closed client, and no client ever imported it. The rules it would have
+// used are in `launch-types.ts`, which stays and is exercised directly above —
+// `surfaceIsRestricted` is the whole of that behaviour. The enforcement that
+// actually protects a person is the database's, which refuses the action
+// regardless of what any client offers.
+match(read('src/launch/launch-types.ts'), /surfaceIsRestricted/,
+  'THE RESTRICTION RULE SURVIVES ITS RETIRED CONSUMER');
 
 // ---------------------------------------------------------------------------
 // Motto and brand

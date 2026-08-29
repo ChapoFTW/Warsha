@@ -1,18 +1,8 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import {
-  canCreateRetryAttempt,
-  checkoutPhaseFor,
-  onlineMethodsSelectable,
-} from '../src/payments/production-payment-types.ts';
-import {
-  assertNoClientPaymentSecrets,
-  effectiveEnvironment,
-  mockOnlyMethods,
-} from '../src/payments/production-payment-policy.ts';
-import { productionPaymentCopy } from '../src/payments/production-payment-copy.ts';
 
 const root = process.cwd(); let checks = 0;
 const read = (path: string) => readFileSync(join(root, path), 'utf8');
@@ -34,9 +24,6 @@ const operationsRunbook = read('docs/operations/payment-operations-runbook.md');
 const incidentRunbook = read('docs/operations/payment-incident-runbook.md');
 const reconciliationRunbook = read('docs/operations/payment-reconciliation-runbook.md');
 const threatModel = read('docs/architecture/payment-threat-model.md');
-const repository = read('src/payments/production-payment-repository.ts');
-const types = read('src/payments/production-payment-types.ts');
-const translations = read('src/payments/production-payment-copy.ts');
 const pgtap = read('supabase/tests/database/production-payments-payouts.test.sql');
 const index = read('docs/wps/WPS-INDEX.md');
 const packageJson = read('package.json');
@@ -89,38 +76,38 @@ notMatch(migration, /secret_value|api_key_value|webhook_secret\s+text/i, 'no sec
 match(migration, /unique \(provider_key, environment\)/, 'sandbox and live credentials cannot be mixed');
 match(migration, /return 'disabled'/, 'incomplete configuration degrades to disabled');
 
-// The client bundle must never carry a payment secret.
-throws(() => assertNoClientPaymentSecrets({ EXPO_PUBLIC_PAYMOB_SECRET: 'x' }), 'client secret env var is rejected');
-throws(() => assertNoClientPaymentSecrets({ EXPO_PUBLIC_WEBHOOK_SIGNING_KEY: 'x' }), 'client webhook key is rejected');
-assertNoClientPaymentSecrets({ EXPO_PUBLIC_SUPABASE_URL: 'https://example.test' });
-checks += 1;
-notMatch(repository, /EXPO_PUBLIC_[A-Z_]*(SECRET|API_KEY|WEBHOOK)/, 'repository reads no client-side payment secret');
-
-equal(effectiveEnvironment('live', false), 'disabled', 'unconfigured live degrades to disabled');
-equal(effectiveEnvironment('sandbox', false), 'disabled', 'unconfigured sandbox degrades to disabled');
-equal(effectiveEnvironment('live', true), 'live', 'fully configured live is honoured');
-equal(effectiveEnvironment('mock', false), 'mock', 'mock never depends on provider configuration');
-equal(effectiveEnvironment('disabled', true), 'disabled', 'disabled stays disabled');
+// ---------------------------------------------------------------------------
+// The client bundle must never carry a payment secret
+// ---------------------------------------------------------------------------
+// This was asserted by calling `assertNoClientPaymentSecrets` on a hand-written
+// object and by grepping ONE repository file. Both are gone with the unshipped
+// gateway client layer they belonged to, and the property is now checked over
+// every shipped source file instead — which is what the rule always meant and
+// is strictly harder to evade than a guard one module chose to call.
+{
+  const shipped = execFileSync('git', ['ls-files', 'app', 'src', 'components', 'web/app',
+    'web/components', 'web/lib'], { encoding: 'utf8' })
+    .split('\n').filter(Boolean).filter(file => /\.(tsx?|jsx?)$/.test(file));
+  const offenders = shipped.filter(file =>
+    /EXPO_PUBLIC_[A-Z_]*(SECRET|API_KEY|WEBHOOK|PRIVATE)/.test(read(file)));
+  equal(offenders.join(', '), '',
+    'NO SHIPPED SOURCE FILE READS A CLIENT-SIDE PAYMENT SECRET');
+}
 
 // ---------------------------------------------------------------------------
 // Checkout: no client-declared success
 // ---------------------------------------------------------------------------
-equal(checkoutPhaseFor('created', true), 'awaitingCustomer', 'created attempt awaits the customer');
-equal(checkoutPhaseFor('pending', true), 'processing', 'pending attempt is processing');
-equal(checkoutPhaseFor('succeeded', false), 'succeeded', 'succeeded attempt is terminal');
-equal(checkoutPhaseFor('failed', false), 'failed', 'failed attempt is terminal');
-equal(checkoutPhaseFor('cancelled', false), 'cancelled', 'cancelled attempt is terminal');
-equal(checkoutPhaseFor('expired', false), 'expired', 'expired attempt is terminal');
-equal(checkoutPhaseFor('requires_review', false), 'requiresReview', 'review state is distinct');
-equal(canCreateRetryAttempt('failed'), true, 'retry allowed after failure');
-equal(canCreateRetryAttempt('cancelled'), true, 'retry allowed after cancellation');
-equal(canCreateRetryAttempt('expired'), true, 'retry allowed after expiry');
-equal(canCreateRetryAttempt('pending'), false, 'retry blocked while pending prevents duplicate taps');
-equal(canCreateRetryAttempt('succeeded'), false, 'retry blocked after success');
-equal(canCreateRetryAttempt('requires_review'), false, 'retry blocked while under review');
-equal(onlineMethodsSelectable({ gatewayEnvironment: 'disabled', maintenanceMode: false }), false, 'no online method while disabled');
-equal(onlineMethodsSelectable({ gatewayEnvironment: 'live', maintenanceMode: true }), false, 'no online method during maintenance');
-equal(onlineMethodsSelectable({ gatewayEnvironment: 'live', maintenanceMode: false }), true, 'online methods available when live and healthy');
+// The checkout phase machine, the retry rules and the online-method gate lived
+// in `production-payment-types.ts` and `production-payment-policy.ts`, a client
+// layer for a gateway that was never activated and that no screen ever
+// imported. It was retired on 2026-08-29 rather than kept as a draft to be
+// resurrected years later against a design nobody remembers agreeing to.
+//
+// Nothing is lost from THIS suite's point of view, because the property those
+// rules expressed — a client never declares a payment successful — was always
+// enforced by the database, and the migration assertions that follow are the
+// ones that made it true. If a gateway is activated, the client layer is built
+// then, against the schema below.
 match(migration, /awaitingProviderConfirmation/, 'checkout return still waits for provider confirmation');
 notMatch(migration, /set status = 'paid'/i, 'checkout return never marks a payment paid');
 
@@ -157,7 +144,17 @@ match(migration, /never rewrites ledger history/, 'reconciliation resolution is 
 // ---------------------------------------------------------------------------
 match(migration, /payout_provider_references_token_required_check/, 'tokenized destinations require a provider token');
 notMatch(migrationSql, /wallet_pin|raw_iban|cvv|card_number|\bpan\b/i, 'no raw payment or payout credential is stored');
-match(types, /never stores raw bank[\s*]+credentials or wallet PINs/, 'the payout contract documents the credential boundary');
+// The credential boundary, asserted on the schema rather than on a comment in a
+// client module. `provider_payout_destinations` has a `display_label` and a
+// `masked_value` of four to twenty-four characters, and no column an account
+// number or a wallet PIN could be written to. A table that cannot hold a secret
+// is a stronger guarantee than a file that says it will not.
+match(read('supabase/migrations/202607300001_payments_earnings_ledger.sql'),
+  /masked_value text not null check \(length\(masked_value\) between 4 and 24\)/,
+  'A PAYOUT DESTINATION CAN ONLY EVER HOLD A MASKED VALUE');
+notMatch(read('supabase/migrations/202607300001_payments_earnings_ledger.sql'),
+  /(account_number|iban|wallet_pin|card_number)\s+text/i,
+  'and no raw bank or wallet credential column exists at all');
 match(migration, /run_earning_release_batch/, 'a release scheduler batch exists');
 match(migration, /'disabled'/, 'the scheduler is disabled by default');
 match(migration, /release_eligible_provider_earnings/, 'the scheduler delegates to the WPS-007 release authority');
@@ -173,32 +170,42 @@ notMatch(migration, /update public\.provider_profiles set (rating|ranking)/i, 'c
 // ---------------------------------------------------------------------------
 // Mock isolation and no fake money
 // ---------------------------------------------------------------------------
-match(repository, /environment\.dataMode === 'mock'/, 'Mock mode is explicitly isolated');
-notMatch(repository, /fetch\(|axios|XMLHttpRequest/, 'the repository makes no direct external provider call');
-match(repository, /development simulation/i, 'Mock mode is labelled development-only');
-match(repository, /onlinePaymentsDevelopmentOnly: true/, 'Mock never claims a licensed provider');
-equal(mockOnlyMethods().includes('cash'), true, 'cash remains available in Mock');
-notMatch(repository, /Mock.*fallback|fallback.*Mock/i, 'no sandbox or live failure falls back to Mock writes');
+// These four asserted that the retired gateway client isolated Mock, made no
+// direct provider call and never claimed a licensed provider. The module is
+// gone, and the property that outlives it belongs to the database: the gateway
+// stays disabled until a provider is named, and the schema is what refuses.
+match(migrationSql, /return 'disabled'/,
+  'AN UNCONFIGURED GATEWAY DEGRADES TO DISABLED IN THE DATABASE');
+match(migrationSql, /payout_mode in \('disabled','mock'\) or active_payout_provider is not null/,
+  'and a live payout mode is impossible without a named provider');
+match(migrationSql, /'cash'/, 'cash remains a first-class payment method in the schema');
 
 // ---------------------------------------------------------------------------
 // Localization, accessibility and prohibited language
 // ---------------------------------------------------------------------------
-const en = productionPaymentCopy.en;
-const ar = productionPaymentCopy.ar;
-equal(Object.keys(en).length, Object.keys(ar).length, 'English and Arabic key counts match');
-for (const key of Object.keys(en)) {
-  ok(key in ar, `Arabic copy exists for ${key}`);
-}
-const arabicText = Object.values(ar).join(' ');
-match(arabicText, /[؀-ۿ]/, 'Arabic copy uses Arabic script');
-const englishText = Object.values(en).join(' ');
-notMatch(englishText, /wallet balance|bank balance|escrow|salary|instant refund|guaranteed settlement/i, 'no prohibited financial language in English copy');
-notMatch(englishText, /gateway|webhook|HMAC|API|provider_key|SDK/i, 'no technical gateway terminology in customer copy');
-match(en.refundNoTimingPromise, /depends on/i, 'refund copy makes no instant-refund promise');
-match(en.minimumWithdrawalNote, /EGP 200/, 'withdrawal copy states the EGP 200 minimum');
-match(en.minimumWithdrawalNote, /no withdrawal fee/i, 'withdrawal copy states the zero fee');
-match(ar.minimumWithdrawalNote, /200/, 'Arabic withdrawal copy states the minimum');
-match(translations, /no wallet-balance or bank-balance language/, 'the copy module documents its language rules');
+// The wording rules were asserted against `production-payment-copy.ts`, which no
+// screen rendered. They are product rules about what Warsha may say to somebody
+// about their money, so they now govern `src/i18n/payment-translations.ts` — the
+// copy the earnings screen, the booking payment card, the price-adjustment card
+// and the cash-payment card actually display.
+//
+// Asserted over the module's source rather than its exports because it imports a
+// React hook and cannot be loaded by a Node suite. That costs nothing here: these
+// rules are about whether a phrase appears in customer-facing copy at all, which
+// is exactly what a search of the text answers.
+const livePaymentCopy = read('src/i18n/payment-translations.ts');
+
+match(livePaymentCopy, /[؀-ۿ]/, 'the live payment copy carries Arabic');
+match(livePaymentCopy, /frenchPaymentTranslations: Record<PaymentCopyKey, string>/,
+  'FRENCH COMPLETENESS IS ENFORCED BY THE TYPE, NOT BY HOPE');
+notMatch(livePaymentCopy, /wallet balance|bank balance|escrow|salary|instant refund|guaranteed settlement/i,
+  'NO PROHIBITED FINANCIAL LANGUAGE IN THE COPY CUSTOMERS ACTUALLY READ');
+notMatch(livePaymentCopy, /gateway|webhook|HMAC|provider_key|SDK/i,
+  'no technical gateway terminology in customer payment copy');
+match(livePaymentCopy, /minimumWithdrawal/, 'the withdrawal minimum is stated to the worker');
+match(livePaymentCopy, /zeroWithdrawalFee/, 'and the zero withdrawal fee is stated');
+match(livePaymentCopy, /Warsha does not collect it/,
+  'cash copy still says Warsha does not collect the money');
 
 // ---------------------------------------------------------------------------
 // Motto audit
@@ -206,7 +213,8 @@ match(translations, /no wallet-balance or bank-balance language/, 'the copy modu
 const motto = read('src/i18n/translations.ts');
 match(motto, /brandMotto: 'YOUR WORK, OUR MISSION'/, 'approved English motto remains active');
 match(motto, /brandMotto: 'شغلك مهمتنا'/, 'approved Arabic motto remains active');
-notMatch(translations, /YOUR WORK, OUR MISSION/, 'payment copy does not misuse the motto');
+notMatch(livePaymentCopy, /YOUR WORK, OUR MISSION|شغلك مهمتنا/,
+  'payment copy does not misuse the motto');
 notMatch(migration, /YOUR WORK, OUR MISSION/, 'the migration does not embed the motto');
 
 // ---------------------------------------------------------------------------

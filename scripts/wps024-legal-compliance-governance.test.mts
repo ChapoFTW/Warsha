@@ -25,6 +25,7 @@
  * machinery, not for the words.
  */
 
+import { execFileSync } from 'node:child_process';
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
@@ -432,9 +433,19 @@ check(!/delete|drop|truncate/i.test(repositorySource),
 check(/environment.dataMode === 'mock'/.test(repositorySource),
   'every repository method branches on the data mode');
 
-const staffRepositorySource = codeOf('src', 'legal', 'legal-staff-repository.ts');
-check(!/publish_legal_version/.test(staffRepositorySource),
-  'THE STAFF REPOSITORY DOES NOT PUBLISH A VERSION FROM A PHONE SCREEN');
+// `legal-staff-repository.ts` was retired on 2026-08-29. The rule it carried —
+// nobody publishes a legal version from a phone — is now structural rather than
+// conditional: there is no native legal staff surface at all, and
+// `wps017-operations-admin.test.mts` asserts that no native admin or staff
+// module exists. Legal governance is the web console's, which calls
+// `staff_publish_legal_version` behind a capability and dual control.
+{
+  const nativeLegalStaff = execFileSync('git', ['ls-files', 'app', 'src', 'components'],
+    { encoding: 'utf8' }).split('\n').filter(Boolean)
+    .filter(file => /legal.*staff|staff.*legal/i.test(file));
+  check(nativeLegalStaff.length === 0,
+    'NO NATIVE SURFACE CAN PUBLISH A LEGAL VERSION, BECAUSE NONE EXISTS');
+}
 
 // The context fails closed. `satisfied` must never be optimistic.
 const contextSource = codeOf('src', 'legal', 'legal-context.tsx');

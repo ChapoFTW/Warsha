@@ -220,8 +220,26 @@ const retirementOnlyMigration = (path) => {
     .filter((statement) => !/^notify\s+pgrst/i.test(statement));
   return statements.length > 0 && statements.every((statement) => /^drop\s/i.test(statement));
 };
+/**
+ * A regression suite asserts behaviour; it does not implement any.
+ *
+ * The rules match on the path, and a suite is named after the thing it tests —
+ * `wps023-authentication-onboarding-vetting.test.mts` carries both `auth` and
+ * `vetting`. Retiring a dead module and re-pointing its assertions changes only
+ * test files, and demanding a help-article review for that produces the filler
+ * this file's own comments warn against.
+ *
+ * Safe because it cannot hide a real change: behaviour lives in `app/`, `src/`,
+ * `components/`, `web/` or `supabase/`, and a test-only diff means none of them
+ * moved. A change that DOES alter behaviour edits one of those alongside its
+ * test, and that still trips the rule.
+ */
+const testOnly = (path) => /\.test\.(mts|ts|tsx)$/.test(path)
+  || path.startsWith('supabase/tests/');
+
 const behavioural = (path) => !path.startsWith('docs/help/')
   && !/\.s?css$/i.test(path)
+  && !testOnly(path)
   && !retirementOnlyMigration(path)
   && !(deleted.has(path) && !removalIsBehaviour(path));
 const impacted = impactRules.filter(rule => changed.some(path =>

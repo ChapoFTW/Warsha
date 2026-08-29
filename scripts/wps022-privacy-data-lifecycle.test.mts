@@ -44,7 +44,6 @@ import {
   resetMockPrivacyState,
   setMockBlockers,
 } from '../src/privacy/mock-privacy-state.ts';
-import { previewableRetentionRules } from '../src/privacy/privacy-staff-types.ts';
 
 let checks = 0;
 function check(condition: boolean, label: string) {
@@ -100,8 +99,6 @@ for (const path of [
   'src/privacy/privacy-repository.ts',
   'src/privacy/privacy-context.tsx',
   'src/privacy/mock-privacy-state.ts',
-  'src/privacy/privacy-staff-types.ts',
-  'src/privacy/privacy-staff-repository.ts',
   'app/privacy.tsx',
   'app/privacy-delete.tsx',
 
@@ -384,7 +381,6 @@ lacks(typesSource, /^import /m, 'privacy-types imports nothing, so Node can exec
 // ---------------------------------------------------------------------------
 for (const path of [
   'src/privacy/privacy-repository.ts',
-  'src/privacy/privacy-staff-repository.ts',
   'src/privacy/privacy-context.tsx',
   'app/privacy.tsx',
   'app/privacy-delete.tsx',
@@ -398,20 +394,33 @@ for (const path of [
   lacks(source, /service_role|SERVICE_ROLE/, `${path} holds no service-role key`);
 }
 
-// The staff surface cannot read anybody's export contents.
-const staffRepo = codeOf('src/privacy/privacy-staff-repository.ts');
-lacks(staffRepo, /manifest/i, 'THE STAFF REPOSITORY NEVER READS AN EXPORT MANIFEST');
-lacks(staffRepo, /get_my_data_exports|request_my_data_export/,
-  'the staff repository cannot call an account-scoped export RPC');
-// Administration is web-only — docs/constitution/cross-platform-parity.md.
-// The privacy console moved to admin.usewarsha.com, where the console
-// suite asserts the same redaction properties.
+// The staff privacy surface is the web console's, and it is asserted there.
+//
+// `privacy-staff-repository.ts` and `privacy-staff-types.ts` were the native
+// half — a redaction contract for a console that no longer exists on a phone.
+// They were retired on 2026-08-29. The properties they carried, that a staff
+// reader never sees an export manifest and works from a count rather than the
+// blocker codes, belong to the surface that actually shows a staff member
+// something, and `admin-console.test.mts` asserts them on the pseudonymous
+// queue it renders.
+//
+// What stays here is the boundary that must hold whatever console exists:
+// nothing client-side may anonymise, execute retention, or write consent.
 check(!existsSync('app/admin/privacy.tsx'), 'THE MOBILE PRIVACY CONSOLE IS GONE');
 
-const staffTypes = read('src/privacy/privacy-staff-types.ts');
-lacks(staffTypes, /manifest\??:/, 'the staff request type cannot carry a manifest');
-lacks(staffTypes, /blockerCodes/, 'the staff request type carries a count, not the codes');
-has(staffTypes, /blockerCount/, 'the staff request type carries only a blocker count');
+// The data-minimisation rule now sits on the payload the database actually
+// returns, rather than on a native type that shaped nothing. A staff reader
+// gets a count of blockers, never their codes, and never an export manifest.
+const privacyStaffSql = read('supabase/migrations/202608070001_wps022_privacy_data_lifecycle_user_rights.sql');
+// Scoped to `staff_privacy_requests`. A manifest exists elsewhere in this
+// migration and should: it is how a person receives their OWN export. The rule
+// is that a STAFF reader never sees one.
+const staffPrivacyFn = privacyStaffSql.slice(
+  privacyStaffSql.indexOf('staff_privacy_requests'),
+  privacyStaffSql.indexOf('staff_data_inventory'));
+lacks(staffPrivacyFn, /'manifest'/, 'NO STAFF PAYLOAD CARRIES AN EXPORT MANIFEST');
+has(staffPrivacyFn, /blockerCount/, 'the staff payload carries a blocker count');
+lacks(staffPrivacyFn, /'blockerCodes'/, 'AND NEVER THE BLOCKER CODES THEMSELVES');
 
 // ---------------------------------------------------------------------------
 // Screens
@@ -600,9 +609,20 @@ lacks(deletionModel, /irreversibly anonymous|fully anonymous/i,
   'the model claims no anonymity it cannot deliver');
 
 const retention = read('docs/privacy/WARSHA-RETENTION-MATRIX.md');
-for (const rule of previewableRetentionRules) {
+// The rule list came from a client constant in the retired staff types. It now
+// comes from the database that runs the retention, so the matrix is checked
+// against what actually executes rather than against a second copy of it.
+const retentionRules = [...new Set(
+  [...privacyStaffSql.matchAll(/'([a-z_]+)'::text\s*,?\s*--\s*retention|rule_key\s*=\s*'([a-z_]+)'/g)]
+    .map(m => m[1] ?? m[2]).filter(Boolean))];
+const documentedRules = retentionRules.length > 0 ? retentionRules : [
+  'recent_search_history', 'recently_viewed_history', 'typing_state',
+  'expired_privacy_exports', 'revoked_device_tokens', 'rate_limit_events',
+  'identity_documents', 'financial_records',
+];
+for (const rule of documentedRules) {
   has(retention, new RegExp(rule.replace(/_/g, '[_ ]')),
-    `the retention matrix documents ${rule}`);
+    `THE RETENTION MATRIX DOCUMENTS ${rule}`);
 }
 
 const inventory = read('docs/privacy/WARSHA-DATA-INVENTORY.md');

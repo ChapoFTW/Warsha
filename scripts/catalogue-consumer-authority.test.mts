@@ -244,7 +244,6 @@ for (const file of ['app/onboarding/worker.tsx', 'app/worker/profile.tsx'] as co
   check(!/styles\.service[^>]*numberOfLines=\{1\}/.test(chat),
     'chat service labels are not clipped to one line');
   for (const file of [
-    'components/warsha/ProviderCard.tsx',
     'components/warsha/DiscoveryResultCard.tsx',
   ]) {
     const source = readFileSync(file, 'utf8');

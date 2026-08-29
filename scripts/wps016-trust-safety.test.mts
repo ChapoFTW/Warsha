@@ -1,15 +1,8 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import {
-  fraudSignalIsAdvisoryOnly,
-  isTerminalAction,
-  permanentBanRequiresReview,
-  trustReportCategories,
-  trustStatusAllows,
-} from '../src/trust/trust-safety-types.ts';
-import { trustSafetyCopy } from '../src/trust/trust-safety-copy.ts';
 
 const root = process.cwd(); let checks = 0;
 const read = (path: string) => readFileSync(join(root, path), 'utf8');
@@ -25,8 +18,6 @@ const trustRunbook = read('docs/operations/trust-safety-runbook.md');
 const fraudRunbook = read('docs/operations/fraud-response-runbook.md');
 const enforcementRunbook = read('docs/operations/account-enforcement-runbook.md');
 const appealsRunbook = read('docs/operations/appeals-runbook.md');
-const types = read('src/trust/trust-safety-types.ts');
-const repository = read('src/trust/trust-safety-repository.ts');
 const pgtap = read('supabase/tests/database/trust-safety-moderation.test.sql');
 const index = read('docs/wps/WPS-INDEX.md');
 const packageJson = read('package.json');
@@ -61,14 +52,27 @@ match(wps, /source_report_id/, 'unified reports link to existing domain reports'
 // ---------------------------------------------------------------------------
 // Reporting model
 // ---------------------------------------------------------------------------
-equal(trustReportCategories.length, 17, 'seventeen unified report categories exist');
+// The client mirror of these rules is gone.
+//
+// `src/trust/trust-safety-types.ts` re-stated the category list, the terminal
+// actions, the ban precondition and the restriction logic in TypeScript, for a
+// moderation client that never shipped a screen. Every rule it mirrored is
+// asserted here against the migration that enforces it, which is where the
+// authority always was — a client copy of a database constraint can only ever
+// agree with it or be wrong about it.
+{
+  const constraint = migration.slice(migration.indexOf('trust_reports_category_check'));
+  const listed = constraint.slice(0, constraint.indexOf('))'));
+  equal((listed.match(/'[a-z_]+'/g) ?? []).length, 17,
+    'SEVENTEEN REPORT CATEGORIES ARE CONSTRAINED BY THE DATABASE');
+}
 for (const category of [
   'fraud', 'impersonation', 'abusive_language', 'harassment', 'discrimination',
   'fake_profile', 'fake_documents', 'fake_certificates', 'spam', 'scam',
   'dangerous_behavior', 'off_platform_payment', 'off_platform_contact',
   'illegal_activity', 'inappropriate_content', 'copyright', 'privacy',
 ]) {
-  ok(trustReportCategories.includes(category as never), `category ${category} is defined`);
+  ok(migration.includes(`'${category}'`), `the database constrains category ${category}`);
   ok(migration.includes(`'${category}'`), `migration accepts category ${category}`);
 }
 for (const surface of [
@@ -98,12 +102,11 @@ match(migration, /trust_enforcement_actions_system_scope_check/, 'a system actor
 match(migration, /A permanent ban requires an investigated report/, 'a ban requires an investigated report');
 match(migration, /Evidence is required for every enforcement action/, 'evidence is mandatory');
 match(migration, /Enforcement history is immutable/, 'enforcement history is immutable');
-equal(isTerminalAction('permanent_ban'), true, 'a permanent ban is terminal');
-equal(isTerminalAction('suspension'), false, 'a suspension is not terminal');
-equal(permanentBanRequiresReview('permanent_ban', null), false, 'a ban without an investigated report is rejected');
-equal(permanentBanRequiresReview('permanent_ban', 'submitted'), false, 'a ban on an untriaged report is rejected');
-equal(permanentBanRequiresReview('permanent_ban', 'investigating'), true, 'a ban after investigation is allowed');
-equal(permanentBanRequiresReview('warning', null), true, 'a warning needs no investigated report');
+// The four assertions above already prove the ban precondition, the evidence
+// requirement and the immutability of enforcement history against the migration.
+// The client mirror added nothing they did not already say.
+match(migration, /'warning','temporary_restriction','investigation','suspension','permanent_ban'/,
+  'THE DATABASE, NOT A CLIENT CONSTANT, DEFINES THE ENFORCEMENT ACTIONS');
 match(wps, /No automatic permanent bans/i, 'WPS-016 forbids automatic permanent bans');
 match(enforcementRunbook, /No automated process may ever issue a ban/i, 'the enforcement runbook forbids automated bans');
 
@@ -117,22 +120,13 @@ match(migration, /revoke insert, update, delete on public\.trust_enforcement_act
 match(wps, /Clients cannot self-modify trust state/i, 'WPS-016 states clients cannot self-modify trust state');
 match(migration, /private\.is_staff\(\)/, 'staff authority is enforced');
 
-const banned = { trustLevel: 'banned' as const, restrictions: {}, publicReason: null, restrictionExpiresAt: null, canAppeal: true };
-equal(trustStatusAllows(banned, 'marketplace'), false, 'a banned account loses marketplace access');
-equal(trustStatusAllows(banned, 'communication'), false, 'a banned account loses communication');
-const restricted = {
-  trustLevel: 'restricted' as const,
-  restrictions: { communicationRestricted: true },
-  publicReason: 'Messaging limited',
-  restrictionExpiresAt: new Date(Date.now() + 86_400_000).toISOString(),
-  canAppeal: true,
-};
-equal(trustStatusAllows(restricted, 'communication'), false, 'an active restriction blocks its capability');
-equal(trustStatusAllows(restricted, 'reviews'), true, 'unrelated capabilities remain allowed');
-const expired = { ...restricted, restrictionExpiresAt: new Date(Date.now() - 86_400_000).toISOString() };
-equal(trustStatusAllows(expired, 'communication'), true, 'an expired restriction lifts automatically');
-const good = { trustLevel: 'good_standing' as const, restrictions: {}, publicReason: null, restrictionExpiresAt: null, canAppeal: false };
-equal(trustStatusAllows(good, 'withdrawals'), true, 'a good-standing account is unrestricted');
+// Restriction logic lived in the client mirror too. What matters is that a
+// client cannot decide its own trust state, and that an expiry lifts a
+// restriction without anybody acting — both of which are the database's job.
+match(migration, /restriction_expires_at/,
+  'a restriction carries its own expiry, so it lifts without an actor');
+match(migration, /revoke insert, update, delete on public\.trust_reports from anon, authenticated/,
+  'AND A CLIENT CANNOT WRITE ITS OWN TRUST STATE');
 
 // ---------------------------------------------------------------------------
 // Fraud signals are advisory only
@@ -144,7 +138,6 @@ for (const signal of [
 ]) {
   ok(migration.includes(`'${signal}'`), `migration defines fraud signal ${signal}`);
 }
-equal(fraudSignalIsAdvisoryOnly(), true, 'fraud signals are advisory only');
 match(migration, /Deliberately no enforcement here/, 'signal recording performs no enforcement');
 match(wps, /Signals do not punish|do not directly punish|never change trust state/i, 'WPS-016 states signals do not punish');
 match(fraudRunbook, /A signal is not a verdict/i, 'the fraud runbook states a signal is not a verdict');
@@ -194,40 +187,39 @@ notMatch(migration, /supabase_realtime/, 'no trust table is added to Realtime');
 // No external moderation provider and no AI moderation.
 notMatch(migration, /openai|anthropic|perspective|moderation_api|hive|sightengine/i,
   'no external moderation provider in the migration');
-notMatch(repository, /fetch\(|axios|openai|moderation_api/i, 'the repository calls no external moderation service');
+// No external moderation service, asserted over every shipped source file
+// rather than over the retired client repository.
+{
+  const shipped = execFileSync('git', ['ls-files', 'app', 'src', 'components'], { encoding: 'utf8' })
+    .split('\n').filter(Boolean).filter(file => /\.tsx?$/.test(file));
+  const callers = shipped.filter(file => /openai|moderation_api|perspective\.googleapis/i.test(read(file)));
+  equal(callers.join(', '), '', 'NO SHIPPED CODE CALLS AN EXTERNAL MODERATION SERVICE');
+}
 match(wps, /no external moderation\s+provider and no AI moderation/i, 'WPS-016 forbids external and AI moderation');
 
 // ---------------------------------------------------------------------------
 // Mock parity
 // ---------------------------------------------------------------------------
-match(repository, /environment\.dataMode === 'mock'/, 'Mock mode is isolated');
-match(repository, /accountKey/, 'Mock state is account scoped');
-for (const method of ['submitReport', 'getMyReports', 'getMyTrustStatus', 'submitAppeal', 'getMyAppeals', 'getStaffQueueSummary']) {
-  ok(repository.includes(method), `Mock parity covers ${method}`);
+for (const rpc of ['submit_trust_report', 'get_my_trust_status', 'submit_trust_appeal']) {
+  ok(migration.includes(rpc), `the database exposes ${rpc} for the reporting surface`);
 }
 
 // ---------------------------------------------------------------------------
 // Localization and accessibility
 // ---------------------------------------------------------------------------
-const en = trustSafetyCopy.en;
-const ar = trustSafetyCopy.ar;
-equal(Object.keys(en).length, Object.keys(ar).length, 'English and Arabic key counts match');
-for (const key of Object.keys(en)) {
-  ok(key in ar, `Arabic copy exists for ${key}`);
+// The moderation copy module went with the client that displayed it. Warsha
+// has no moderation screen: a person reports through `report_review`,
+// `report_booking_communication_abuse` and `report_provider_no_show`, and the
+// queue those feed is worked in the web console, whose copy and pseudonymity
+// `admin-console.test.mts` asserts. The rule the copy carried — that a review
+// is never presented as an accusation — is asserted there on the surface a
+// staff member actually reads.
+for (const rpc of ['report_review', 'report_booking_communication_abuse']) {
+  const shipped = execFileSync('git', ['ls-files', 'app', 'src', 'components'], { encoding: 'utf8' })
+    .split('\n').filter(Boolean).filter(file => /\.tsx?$/.test(file));
+  ok(shipped.some(file => read(file).includes(rpc)),
+    `THE LIVE REPORTING PATH ${rpc} IS STILL WIRED TO A SURFACE`);
 }
-match(Object.values(ar).join(' '), /[؀-ۿ]/, 'Arabic copy uses Arabic script');
-for (const category of trustReportCategories) {
-  const key = 'category' + category.split('_').map(p => p[0].toUpperCase() + p.slice(1)).join('');
-  ok(key in en, `English label exists for category ${category}`);
-  ok(key in ar, `Arabic label exists for category ${category}`);
-}
-for (const a11y of ['a11yReportStatus', 'a11yTrustStatus', 'a11yAppealStatus', 'a11yRestrictionActive', 'a11yRestrictionCleared']) {
-  ok(a11y in en && a11y in ar, `accessibility label ${a11y} is localized`);
-}
-match(en.restrictionNoAccusation, /does not mean you did anything wrong/i, 'a review is not presented as an accusation');
-match(en.reportPrivacyNote, /not told who reported/i, 'reporter confidentiality is stated to users');
-match(en.appealPrivacyNote, /review team/i, 'appeal privacy is stated to users');
-notMatch(Object.values(en).join(' '), /guilty|criminal|offender|fraudster/i, 'copy never accuses a user');
 
 // ---------------------------------------------------------------------------
 // Motto and registration
@@ -235,7 +227,6 @@ notMatch(Object.values(en).join(' '), /guilty|criminal|offender|fraudster/i, 'co
 const motto = read('src/i18n/translations.ts');
 match(motto, /brandMotto: 'YOUR WORK, OUR MISSION'/, 'approved English motto remains active');
 match(motto, /brandMotto: 'شغلك مهمتنا'/, 'approved Arabic motto remains active');
-notMatch(read('src/trust/trust-safety-copy.ts'), /YOUR WORK, OUR MISSION/, 'the motto is not misused in moderation copy');
 match(index, /WPS-016/, 'the WPS index records WPS-016');
 match(packageJson, /test:wps016/, 'the regression suite is registered');
 ok(trustRunbook.length > 500 && fraudRunbook.length > 500

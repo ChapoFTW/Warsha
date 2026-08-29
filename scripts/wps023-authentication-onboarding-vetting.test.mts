@@ -47,11 +47,6 @@ import {
 import { locationCapability, manualPin } from '../src/onboarding/location-provider.ts';
 import { onboardingCopy } from '../src/onboarding/onboarding-copy.ts';
 import {
-  DECISION_CAPABILITY,
-  requiresEvidence,
-  type VettingDecision,
-} from '../src/onboarding/onboarding-staff-types.ts';
-import {
   mockConfirmAddress,
   mockOnboardingState,
   mockRecordCapture,
@@ -406,31 +401,25 @@ check(!/\bapprove\b|\bactivate\b|\breject\b/.test(repositorySource),
 // ---------------------------------------------------------------------------
 // Staff contracts
 // ---------------------------------------------------------------------------
-check(requiresEvidence('reject'), 'a rejection requires evidence');
-check(requiresEvidence('suspend'), 'a suspension requires evidence');
-check(!requiresEvidence('request_correction'), 'a correction request does not require evidence');
-check(DECISION_CAPABILITY.reject === 'reject_worker_application',
-  'rejection needs its own capability');
-check(DECISION_CAPABILITY.activate === 'activate_worker', 'activation needs its own capability');
-check(DECISION_CAPABILITY.approve !== DECISION_CAPABILITY.reject,
-  'APPROVING AND REJECTING ARE NOT THE SAME AUTHORITY');
-for (const decision of Object.keys(DECISION_CAPABILITY) as VettingDecision[]) {
-  check(typeof DECISION_CAPABILITY[decision] === 'string' && DECISION_CAPABILITY[decision].length > 0,
-    `the ${decision} decision maps to a capability`);
-}
 
-const staffTypes = read('src', 'onboarding', 'onboarding-staff-types.ts');
-check(!/userId\??:\s*string/.test(staffTypes.split('StaffVettingCase')[1]?.split('};')[0] ?? ''),
-  'THE VETTING QUEUE CASE CARRIES NO USER ID');
-check(!/displayName|email|phone|nationalId|storagePath/.test(
-  staffTypes.split('export type StaffVettingCase')[1]?.split('};')[0] ?? ''),
-  'THE VETTING QUEUE CASE CARRIES NO IDENTITY OR DOCUMENT FIELD');
-
-const staffRepositorySource = codeOf('src', 'onboarding', 'onboarding-staff-repository.ts');
-check(/documentReference[\s\S]{0,400}rpc\('staff_worker_document_reference'/.test(staffRepositorySource),
-  'a document is reached through the audited server call');
-check(!/offence|offense|conviction/i.test(staffRepositorySource),
-  'the staff repository has no offence field');
+// The native vetting-queue types and repository were retired on 2026-08-29.
+// Vetting is worked in the web console, and `admin-console.test.mts` asserts
+// the same privacy properties there — against the SQL and the rendered page
+// rather than against a type nobody instantiated:
+//
+//   * the queue returns `subjectRef` as a SHA-256 hash, never a user id;
+//   * the verification page renders no name, email or phone, because the
+//     payload it receives contains none;
+//   * a document is reached only through the audited server call.
+//
+// Those are stronger than what stood here. What this suite keeps is the
+// database guarantee underneath them.
+check(/staff_worker_vetting_queue/.test(migration),
+  'the vetting queue is a server function, not a client query');
+check(!/offence|offense|conviction/i.test(migration.slice(
+  migration.indexOf('staff_worker_vetting_queue'),
+  migration.indexOf('staff_worker_vetting_queue') + 4000)),
+  'THE VETTING QUEUE EXPOSES NO OFFENCE FIELD');
 
 // ---------------------------------------------------------------------------
 // Screens: entry, brand, RTL, accessibility
@@ -548,10 +537,6 @@ check(!existsSync('app/admin/vetting.tsx'), 'THE MOBILE VETTING CONSOLE IS GONE'
 // that is what is checked.
 // `\w\.` so this is a property access on an identifier, not a sentence that
 // happens to end just before the word.
-// Backed by the type, which has no such field to bind in the first place.
-check(!/offence|offense|conviction|charge|crime/i.test(
-  staffTypes.split('export type StaffVettingCase')[1]?.split('};')[0] ?? ''),
-  'THE VETTING CASE TYPE HAS NO OFFENCE-SHAPED FIELD');
 
 // ---------------------------------------------------------------------------
 // Copy: English and Egyptian Arabic parity

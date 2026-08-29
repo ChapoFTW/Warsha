@@ -14,8 +14,7 @@
     "test:wps008-alignment": "node --no-warnings --experimental-strip-types scripts/wps008-alignment.test.mts",
     "test:device-p1": "node --no-warnings --experimental-strip-types scripts/device-p1-regressions.test.mts",
     "test:brand": "node --no-warnings --experimental-strip-types scripts/brand-system.test.mts",
-    "test:provider-card": "node --no-warnings --experimental-strip-types scripts/provider-card-media.test.mts",
-    "test:worker-auth": "node --no-warnings --experimental-strip-types scripts/worker-auth-flow.test.mts",
+      "test:worker-auth": "node --no-warnings --experimental-strip-types scripts/worker-auth-flow.test.mts",
     "test:customer-email-confirmation": "node --no-warnings --experimental-strip-types scripts/customer-email-confirmation.test.mts",
     "test:qa-preview": "node --no-warnings --experimental-strip-types scripts/qa-preview-pipeline.test.mts",
     "qa:status": "node scripts/qa-release.mjs status",
@@ -105,7 +104,8 @@
     "automation:provision": "node scripts/warsha-automation-governance.mjs provision",
     "automation:govern": "node scripts/warsha-automation-governance.mjs",
     "test:automation-authority": "node --no-warnings --experimental-strip-types scripts/automation-authority.test.mts",
-    "test:financial-notifications": "node --no-warnings --experimental-strip-types scripts/financial-notifications.test.mts",
+    "test:native-admin-boundary": "node --no-warnings --experimental-strip-types scripts/native-admin-boundary.test.mts",
+  "test:financial-notifications": "node --no-warnings --experimental-strip-types scripts/financial-notifications.test.mts",
   "test:identity-extraction": "node --no-warnings --experimental-strip-types scripts/identity-extraction.test.mts"
   },
   "dependencies": {

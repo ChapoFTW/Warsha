@@ -124,41 +124,4 @@ export const growthRepository = {
     return (data ?? []) as StaffReferralProgram[];
   },
 
-  async setCampaignState(campaignId: string, state: string, reason: string): Promise<void> {
-    if (environment.dataMode === 'mock') return;
-    const { error } = await getSupabaseClient().rpc('staff_set_campaign_state', {
-      p_campaign_id: campaignId,
-      p_state: state,
-      p_reason: reason,
-    });
-    if (error) throw error;
-  },
-
-  async activateCampaign(campaignId: string, note: string): Promise<void> {
-    if (environment.dataMode === 'mock') return;
-    const { error } = await getSupabaseClient().rpc('staff_activate_campaign', {
-      p_campaign_id: campaignId,
-      p_note: note,
-    });
-    if (error) throw error;
-  },
-
-  async setReferralProgramState(programId: string, state: string, reason: string): Promise<void> {
-    if (environment.dataMode === 'mock') return;
-    const { error } = await getSupabaseClient().rpc('staff_set_referral_program_state', {
-      p_program_id: programId,
-      p_state: state,
-      p_reason: reason,
-    });
-    if (error) throw error;
-  },
-
-  async activateReferralProgram(programId: string, note: string): Promise<void> {
-    if (environment.dataMode === 'mock') return;
-    const { error } = await getSupabaseClient().rpc('staff_activate_referral_program', {
-      p_program_id: programId,
-      p_note: note,
-    });
-    if (error) throw error;
-  },
 };

@@ -492,42 +492,6 @@ export const supportRepository = {
     return data as StaffSupportToolkit;
   },
 
-  async assignCase(
-    caseId: string, assignee: string | null, note: string, idempotencyKey: string,
-  ): Promise<{ assignedTo: string; duplicate: boolean }> {
-    if (environment.dataMode === 'mock') throw new Error('Staff actions are unavailable in Mock mode');
-    const client = getSupabaseClient();
-    const { data, error } = await client.rpc('staff_assign_support_case', {
-      p_case_id: caseId, p_assignee: assignee, p_note: note, p_idempotency_key: idempotencyKey,
-    });
-    if (error) throw error;
-    return data as { assignedTo: string; duplicate: boolean };
-  },
-
-  async resolveCase(
-    caseId: string, reasonKey: string, note: string | null, idempotencyKey: string,
-  ): Promise<{ status: string; duplicate: boolean }> {
-    if (environment.dataMode === 'mock') throw new Error('Staff actions are unavailable in Mock mode');
-    const client = getSupabaseClient();
-    const { data, error } = await client.rpc('staff_resolve_support_case', {
-      p_case_id: caseId, p_resolution_reason: reasonKey, p_note: note, p_idempotency_key: idempotencyKey,
-    });
-    if (error) throw error;
-    return data as { status: string; duplicate: boolean };
-  },
-
-  async mergeCases(
-    sourceCaseId: string, targetCaseId: string, reason: string, idempotencyKey: string,
-  ): Promise<{ targetCaseId: string; duplicate: boolean }> {
-    if (environment.dataMode === 'mock') throw new Error('Staff actions are unavailable in Mock mode');
-    const client = getSupabaseClient();
-    const { data, error } = await client.rpc('staff_merge_support_cases', {
-      p_source_case_id: sourceCaseId, p_target_case_id: targetCaseId,
-      p_reason: reason, p_idempotency_key: idempotencyKey,
-    });
-    if (error) throw error;
-    return data as { targetCaseId: string; duplicate: boolean };
-  },
 };
 
 export { resetMockSupportState } from './mock-support-state';
