@@ -105,6 +105,7 @@
     "automation:govern": "node scripts/warsha-automation-governance.mjs",
     "test:automation-authority": "node --no-warnings --experimental-strip-types scripts/automation-authority.test.mts",
     "test:native-admin-boundary": "node --no-warnings --experimental-strip-types scripts/native-admin-boundary.test.mts",
+  "test:notification-catalogue": "node --no-warnings --experimental-strip-types scripts/notification-catalogue.test.mts",
   "test:financial-notifications": "node --no-warnings --experimental-strip-types scripts/financial-notifications.test.mts",
   "test:identity-extraction": "node --no-warnings --experimental-strip-types scripts/identity-extraction.test.mts"
   },

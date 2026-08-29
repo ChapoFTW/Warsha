@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { isQuietTime, notificationAccountId, notificationDefinition } from '../src/notifications/notification-policy.ts';
 import { externalNotificationPreview, pushCapability, pushDeliveryPolicy, simulateMockPush } from '../src/notifications/notification-push-adapter.ts';
 import { notificationCategories } from '../src/notifications/notification-types.ts';
+import { legacyNotificationEventCopy } from '../src/notifications/notification-copy.ts';
 
 const root = process.cwd(); let checks = 0;
 const read = (path: string) => readFileSync(join(root, path), 'utf8');
@@ -105,8 +106,24 @@ match(reminderSimulation, /warsha:notification-reminder-simulations:v1:\$\{accou
 match(reminderSimulation, /review_submitted: \['review_opportunity'\]/, 'Mock review completion suppresses its reminder');
 notMatch(reminderSimulation, /setTimeout|setInterval|fetch\(/, 'Mock reminder ledger has no scheduler or network call');
 
-for (const eventKey of ['marketplace_booking_confirmed','review_unlocked','verification_expired','cash_debt_threshold_warning','review_publication_held','dispute_response_required']) {
-  equal((translations.match(new RegExp(`^    ${eventKey}:`, 'gm')) ?? []).length, 2, `${eventKey} has English and Egyptian Arabic event copy`);
+// Event copy moved to one table, and this assertion moved with it.
+//
+// It counted how many times a key appeared in `eventCopy`, which restated the
+// title and body of every event beside the shared table. The two had drifted
+// apart for twenty-seven events, so the same notification read differently on
+// a phone and in a browser. `eventCopy` now carries only the action label, and
+// the words come from `notification-copy.ts` for both platforms.
+//
+// `notification-catalogue.test.mts` asserts the property this was reaching
+// for — every catalogued event has real copy — across all 108 events and
+// three languages rather than six events and two.
+for (const eventKey of ['marketplace_booking_confirmed', 'review_unlocked',
+  'verification_expired', 'cash_debt_threshold_warning', 'review_publication_held',
+  'dispute_response_required']) {
+  const en = legacyNotificationEventCopy('en', eventKey);
+  const ar = legacyNotificationEventCopy('ar', eventKey);
+  ok(en && ar, `${eventKey} has English and Egyptian Arabic event copy`);
+  ok(ar && /[؀-ۿ]/.test(ar.title), `${eventKey} Arabic is in Arabic script`);
 }
 
 for (const column of ['event_key','category','priority','audience','action_type','route_type','resource_id','source_key','source_event_id','group_family','group_key','group_count','required_action','last_event_at','archived_at']) match(migration, new RegExp(`add column if not exists ${column}`), `${column} extends the existing table`);

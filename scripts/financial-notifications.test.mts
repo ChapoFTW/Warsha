@@ -109,28 +109,27 @@ for (const key of FINANCIAL_NOTIFICATION_EVENT_KEYS) {
 }
 
 // ---------------------------------------------------------------------------
-// 4. The two client tables do not disagree
+// 4. There is only one table left to disagree with
 // ---------------------------------------------------------------------------
-// WPS-014 defines four payments events in its own `eventCopy`, which the native
-// resolver consults BEFORE the shared table. Web only ever reads the shared
-// table. If the two disagree, the same notification reads differently on a
-// phone and in a browser, which is the parity defect the constitution names.
+// WPS-014's `eventCopy` used to restate the title and body of every event beside
+// the shared table, and this section checked the four payment events they both
+// defined. On 2026-08-29 the two were found to have drifted apart for
+// twenty-seven events, so `eventCopy` was reduced to the action label alone and
+// the words now come from one place for both platforms. The divergence this
+// section guarded against is no longer expressible.
 
-const governedByWps014 = ['payment_required', 'payment_failed', 'refund_failed',
-  'cash_debt_threshold_warning'];
-for (const key of governedByWps014) {
-  for (const language of ['en', 'ar'] as const) {
-    const pattern = new RegExp(
-      `${key}: \\{ title: '([^']*)', body: '([^']*)'`, 'g');
-    const matches = [...engagement.matchAll(pattern)];
-    ok(matches.length >= 2, `${key} is defined for both languages in the engagement table`);
-    const [title, body] = language === 'en'
-      ? [matches[0][1], matches[0][2]]
-      : [matches[1][1], matches[1][2]];
-    const shared = legacyNotificationEventCopy(language, key)!;
-    equal(shared.title, title, `${language}: ${key} TITLE MATCHES BETWEEN WEB AND NATIVE`);
-    equal(shared.body, body, `${language}: ${key} body matches between web and native`);
-  }
+ok(!/const eventCopy/.test(engagement),
+  'THE DUPLICATE TITLE AND BODY TABLE IS GONE');
+ok(/legacyNotificationEventCopy\(language, eventKey\)/.test(engagement),
+  'and the native resolver reads the same shared table the browser reads');
+
+// The payments events that offer an action still offer one, in every language.
+const actionMap = engagement.slice(engagement.indexOf('const eventAction'));
+const mapped = new Map([...actionMap.slice(0, actionMap.indexOf('};'))
+  .matchAll(/^\s{2}([a-z_]+): '([a-zA-Z]+)'/gm)].map((m) => [m[1], m[2]]));
+for (const key of ['payment_required', 'payment_failed', 'refund_failed',
+  'cash_debt_threshold_warning']) {
+  ok(mapped.has(key), `${key} still offers somewhere to go`);
 }
 
 // ---------------------------------------------------------------------------
