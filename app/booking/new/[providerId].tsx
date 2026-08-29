@@ -35,7 +35,7 @@ import { useMarketplaceData } from "@/src/data/marketplace-context";
 import { useLocalization } from "@/src/i18n/localization";
 import { useAddressFormText } from "@/src/i18n/address-form-copy";
 import type { TranslationKey } from "@/src/i18n/translations";
-import { catalogueServiceLabel } from "@/src/services/specific-services";
+import { catalogueServiceLabel, serviceMetaLine } from "@/src/services/specific-services";
 import { resolvedAddressFields } from "@/src/providers/location-address";
 import {
   formatBookingDateTime,
@@ -323,7 +323,8 @@ export default function NewBookingScreen() {
                     <View style={styles.grow}>
                       <AppText style={styles.cardTitle}>{catalogueServiceLabel(item, language)}</AppText>
                       <AppText style={styles.help}>
-                        {t(serviceDescriptionKey(item))} — {item.duration}
+                        {serviceMetaLine([t(serviceDescriptionKey(item)),
+                          item.duration], ' — ')}
                       </AppText>
                       <AppText style={styles.help}>
                         {item.pricingType === "inspection"

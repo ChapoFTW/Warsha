@@ -10,6 +10,7 @@ import {
 import {
   catalogueServiceLabel,
   cataloguedServiceReferenceLabel,
+  serviceMetaLine,
 } from '../src/services/specific-services.ts';
 import { parseBookings } from '../web/lib/customer.ts';
 import { parseEarnings, parseWorkerBookings, parseWorkerProfile } from '../web/lib/worker.ts';
@@ -317,6 +318,34 @@ for (const file of ['app/onboarding/worker.tsx', 'app/worker/profile.tsx'] as co
     check(migration.includes(`when '${profession}' then '${category}'`),
       `${profession} is re-homed to ${category}`);
   }
+}
+
+// ---------------------------------------------------------------------------
+// A separator with nothing on one side of it
+// ---------------------------------------------------------------------------
+// `public.services.duration_label` is set for five demo rows and null for all
+// 171 catalogued services, and `mapService` turns that null into ''. Both
+// render sites interpolated it beside a separator, so for essentially every
+// real service the provider profile read " · Quote" and the booking picker
+// read "Fix a leaking pipe — ". The separator belongs to the join.
+
+check(serviceMetaLine(['', 'Quote'], ' · ') === 'Quote',
+  'A MISSING DURATION TAKES ITS SEPARATOR WITH IT');
+check(serviceMetaLine(['1–2 hours', 'Quote'], ' · ') === '1–2 hours · Quote',
+  'and a duration that exists is still joined to the pricing label');
+check(serviceMetaLine(['Fix a leaking pipe', ''], ' — ') === 'Fix a leaking pipe',
+  'the booking picker does not trail an em dash into nothing');
+check(serviceMetaLine([null, undefined], ' · ') === '',
+  'and a line with no parts at all is empty rather than punctuation');
+check(serviceMetaLine([' ', 'Quote'], ' · ') === 'Quote',
+  'whitespace is not a part');
+
+for (const site of ['app/provider/[id].tsx', 'app/booking/new/[providerId].tsx']) {
+  const source = readFileSync(site, 'utf8');
+  check(/serviceMetaLine\(/.test(source),
+    `${site} composes its service line through the shared authority`);
+  check(!/\{service\.duration\}\s*·|— \{item\.duration\}/.test(source),
+    `${site} NO LONGER INTERPOLATES A DURATION BESIDE A BARE SEPARATOR`);
 }
 
 console.log(`Catalogue consumer authority: ${checks} checks passed.`);

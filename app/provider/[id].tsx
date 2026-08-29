@@ -16,7 +16,7 @@ import type { Language } from "@/src/i18n/translations";
 import { useMarketplaceText } from "@/src/marketplace-intelligence/marketplace-translations";
 import { useWorkerProfileText } from "@/src/i18n/worker-profile-translations";
 import { professionLabel } from "@/src/providers/profession-taxonomy";
-import { catalogueServiceLabel } from "@/src/services/specific-services";
+import { catalogueServiceLabel, serviceMetaLine } from "@/src/services/specific-services";
 
 const servicePricingLabels: Record<Language, Record<Service["pricingType"], string>> = {
   en: { fixed: "Fixed price", starting: "Starting from", hourly: "Hourly", inspection: "Inspection fee", quote: "Quote required" },
@@ -243,7 +243,8 @@ function ServiceRow({ service }: { service: Service }) {
       <View>
         <AppText style={styles.strong}>{catalogueServiceLabel(service, language)}</AppText>
         <AppText style={styles.muted}>
-          {service.duration} · {servicePricingLabels[language][service.pricingType]}
+          {serviceMetaLine([service.duration,
+            servicePricingLabels[language][service.pricingType]], ' · ')}
         </AppText>
       </View>
       <View style={styles.inline}>

@@ -410,6 +410,29 @@ export type CataloguedServiceReference = {
  * stable UUID. Only an entity with neither a usable key nor a known UUID falls
  * back to its preserved name snapshot.
  */
+/**
+ * Joins the parts of a service's secondary line, dropping the ones that are
+ * not there.
+ *
+ * `public.services.duration_label` is set for five demo rows and null for all
+ * 171 catalogued services, and `mapService` turns that null into an empty
+ * string. Both render sites interpolated it straight into a separated line, so
+ * for essentially every real service a customer read " \u00b7 Quote" on the
+ * provider profile and "Fix a leaking pipe \u2014 " on the booking screen: a
+ * separator with nothing on one side of it.
+ *
+ * The separator belongs to the join, not to either part.
+ */
+export function serviceMetaLine(
+  parts: readonly (string | null | undefined)[],
+  separator: string,
+): string {
+  return parts
+    .map((part) => part?.trim())
+    .filter((part): part is string => Boolean(part))
+    .join(separator);
+}
+
 export function cataloguedServiceReferenceLabel(
   reference: CataloguedServiceReference,
   catalogue: readonly (CatalogueServiceName & { id: string })[],
