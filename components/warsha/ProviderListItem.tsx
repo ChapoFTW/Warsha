@@ -36,7 +36,9 @@ export function ProviderListItem({ provider }: { provider: Provider }) {
           compact
         />
         <AppText style={styles.profession}>
-          {professionLabel(provider.profession, language)} · {provider.distance.toFixed(1)} km
+          {provider.distance === null
+            ? professionLabel(provider.profession, language)
+            : `${professionLabel(provider.profession, language)} · ${provider.distance.toFixed(1)} km`}
         </AppText>
         <View style={[styles.rating, isRTL && styles.reverse]}>
           <MaterialIcons name="star" size={15} color={colors.white} />

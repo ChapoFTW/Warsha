@@ -291,7 +291,7 @@
       "title": "Requests, quotes, and jobs",
       "summary": "Understand what happens from posting a request to completing or cancelling a job.",
       "version": 6,
-      "lastReviewedDate": "2026-08-26",
+      "lastReviewedDate": "2026-08-30",
       "features": [
         "marketplace",
         "quotes",
@@ -321,7 +321,7 @@
       "title": "الطلبات والعروض والشغل",
       "summary": "افهم اللي بيحصل من نشر الطلب لحد اكتمال الشغل أو إلغائه.",
       "version": 6,
-      "lastReviewedDate": "2026-08-26",
+      "lastReviewedDate": "2026-08-30",
       "features": [
         "marketplace",
         "quotes",
@@ -583,7 +583,7 @@
       "title": "Opportunities, quotes, and jobs",
       "summary": "Review matching requests, write clear quotes, and update real job progress.",
       "version": 6,
-      "lastReviewedDate": "2026-08-26",
+      "lastReviewedDate": "2026-08-30",
       "features": [
         "marketplace",
         "quotes",
@@ -611,7 +611,7 @@
       "title": "الفرص والعروض والشغل",
       "summary": "راجع الطلبات المناسبة، اكتب عرض واضح، وحدّث تقدم الشغل الحقيقي.",
       "version": 6,
-      "lastReviewedDate": "2026-08-26",
+      "lastReviewedDate": "2026-08-30",
       "features": [
         "marketplace",
         "quotes",
@@ -1199,7 +1199,7 @@
       "title": "Demandes, devis et interventions",
       "summary": "Comprenez le parcours d’une demande jusqu’à la fin ou l’annulation de l’intervention.",
       "version": 6,
-      "lastReviewedDate": "2026-08-26",
+      "lastReviewedDate": "2026-08-30",
       "features": [
         "marketplace",
         "quotes",
@@ -1345,7 +1345,7 @@
       "title": "Opportunités, devis et interventions",
       "summary": "Répondez aux demandes admissibles et mettez à jour le déroulement réel du travail.",
       "version": 6,
-      "lastReviewedDate": "2026-08-26",
+      "lastReviewedDate": "2026-08-30",
       "features": [
         "marketplace",
         "quotes",

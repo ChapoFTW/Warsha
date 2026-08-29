@@ -666,4 +666,50 @@ has(pgTap, /browsing writes no matching-run score/, 'ranking non-interference is
 has(pgTap, /system is stored as system, never as the resolved scheme/, 'preference fidelity is asserted');
 has(pgTap, /page two does not repeat page one/, 'stable pagination is asserted');
 
+// ---------------------------------------------------------------------------
+// The legacy marketplace surface obeys the same rule as discovery
+// ---------------------------------------------------------------------------
+// Discovery has always been careful: `distanceKm` is null without a location,
+// and `availableSorts` withholds distance sorting until there is one — both
+// asserted above. The older marketplace path that feeds the category and
+// favourites screens declared `distance: number` and the adapter filled it
+// with 0. So every provider read "0.0 km" away, every radius filter passed
+// every provider, and "nearest" sorted nothing. The zero was not a distance;
+// it was the absence of one, wearing a number.
+
+const marketplaceAdapter = readFileSync(
+  join(process.cwd(), 'src/data/adapters/supabase-adapter.ts'), 'utf8');
+check(!/\bdistance: 0\b/.test(marketplaceAdapter),
+  'THE ADAPTER DOES NOT FABRICATE A ZERO DISTANCE');
+check(/\bdistance: null\b/.test(marketplaceAdapter),
+  'it reports the distance it does not have as unknown');
+
+const marketplaceTypes = readFileSync(
+  join(process.cwd(), 'src/data/marketplace-types.ts'), 'utf8');
+check(/distance:number\|null/.test(marketplaceTypes),
+  'and the type admits that a distance can be unknown, so the compiler finds the readers');
+
+const filterSource = readFileSync(
+  join(process.cwd(), 'components/warsha/ProviderFilters.tsx'), 'utf8');
+check(/item\.distance===null\|\|item\.distance<=filters\.maximumDistance/.test(filterSource),
+  'AN UNKNOWN DISTANCE IS NOT TREATED AS BEING WITHIN EVERY RADIUS');
+check(/value!=='nearest'\|\|distanceAvailable/.test(filterSource),
+  'NEAREST IS NOT OFFERED AS A SORT WHEN NO DISTANCE IS KNOWN');
+check(/distanceAvailable&&<Row title=\{t\('maximumDistance'\)\}/.test(filterSource),
+  'and the radius filter is withheld rather than shown doing nothing');
+
+const listItem = readFileSync(
+  join(process.cwd(), 'components/warsha/ProviderListItem.tsx'), 'utf8');
+check(/provider\.distance === null/.test(listItem),
+  'THE LIST ITEM STATES NO DISTANCE WHEN THERE IS NONE TO STATE');
+check(!/\}\s*·\s*\{provider\.distance/.test(listItem),
+  'so the separator and the number are no longer rendered unconditionally');
+
+// The same zero-means-unknown confusion lived in the Mock filter.
+const mockSource = readFileSync(
+  join(process.cwd(), 'src/discovery/mock-discovery-state.ts'), 'utf8');
+check(/provider\.distance !== null\s*\n?\s*&& provider\.distance > filters\.maximumDistanceKm/
+  .test(mockSource),
+  'and Mock does not hide a provider whose distance it never knew');
+
 console.log(`WPS-020 search, discovery and appearance: ${checks} checks passed.`);

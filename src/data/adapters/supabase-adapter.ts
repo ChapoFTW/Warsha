@@ -46,7 +46,10 @@ function mapProvider(row: Record<string, unknown>): Provider {
     categoryIds: Array.isArray(row.category_ids) ? row.category_ids.map(String) : [],
     rating: Number(row.rating_average),
     reviewCount: Number(row.review_count),
-    distance: 0,
+    // No customer location reaches this adapter, so the distance is not
+    // known here. It used to be reported as 0, which read as "0.0 km away"
+    // on every provider and quietly satisfied every distance filter.
+    distance: null,
     price: Number(row.starting_price_egp ?? 0),
     image: String(row.avatar_url ?? ''),
     coverImage: String(row.avatar_url ?? ''),

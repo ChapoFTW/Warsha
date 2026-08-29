@@ -138,7 +138,10 @@ function passesFilters(provider: (typeof mockProviders)[number], filters: Discov
   if (filters.emergencyAvailable && !provider.emergencyAvailable) return false;
   if (filters.pricingType && !provider.services.some(service => service.pricingType === filters.pricingType)) return false;
   if (filters.language && !provider.languages.includes(filters.language)) return false;
-  if (filters.maximumDistanceKm !== undefined && provider.distance > filters.maximumDistanceKm) return false;
+  // An unknown distance is not a distance of zero, and it is not grounds for
+  // hiding a provider from a customer who asked for a radius.
+  if (filters.maximumDistanceKm !== undefined && provider.distance !== null
+    && provider.distance > filters.maximumDistanceKm) return false;
   return true;
 }
 
