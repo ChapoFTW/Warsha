@@ -4,6 +4,8 @@ import { readFileSync } from 'node:fs';
 import {
   humanizeServiceKey, serviceCategoryDescription, serviceCategoryLabel,
 } from '../src/i18n/service-labels.ts';
+import { translations } from '../src/i18n/translations.ts';
+import { specificServiceLabel } from '../src/services/specific-services.ts';
 
 /**
  * Customer-facing surfaces must never render a backend identifier.
@@ -49,12 +51,63 @@ for (const row of categoryRows) {
     const description = serviceCategoryDescription(row.descriptionKey, language);
     check(description !== row.descriptionKey,
       `${row.id} does not render its description key in ${language}`);
+
+    // The assertions above are all satisfied by the humanized fallback:
+    // `humanizeServiceKey('ac-repair')` is "Ac repair", which is non-empty,
+    // differs from the id and the key, and carries no slug shape. A category
+    // with no copy at all would pass every one of them. So the real question
+    // is whether the shared catalogue actually holds the entry.
+    const catalogued = (translations[language] as Record<string, unknown>)[row.translationKey];
+    check(typeof catalogued === 'string' && catalogued.length > 0,
+      `${row.id} IS PRESENT IN THE ${language.toUpperCase()} CATALOGUE, NOT MERELY HUMANIZED`);
+    const describedKey = row.descriptionKey
+      ? (translations[language] as Record<string, unknown>)[row.descriptionKey] : null;
+    check(!row.descriptionKey || (typeof describedKey === 'string' && describedKey.length > 0),
+      `${row.id} has a real ${language} description rather than a null`);
   }
   // Arabic must be genuinely different text, not an English fallback.
   check(serviceCategoryLabel(row.translationKey, 'ar', row.id)
     !== serviceCategoryLabel(row.translationKey, 'en', row.id),
     `${row.id} IS ACTUALLY TRANSLATED INTO ARABIC, NOT FALLING BACK TO ENGLISH`);
 }
+
+// --- Every seeded SERVICE, not just its category ---------------------------
+//
+// The categories were guarded; the 171 services under them were not. They are
+// the same bug class and a larger surface: `public.services.translation_key` is
+// a row value, so TypeScript cannot see it, and a service added to the backend
+// without client copy reaches a customer as whatever the render site falls back
+// to. `specificServiceLabel` returns null for a key it does not know, which is
+// what makes this checkable rather than vacuous.
+
+const catalogueSql = readFileSync(
+  'supabase/migrations/202608250002_specific_service_catalogue.sql', 'utf8');
+const servicesBlock = catalogueSql.slice(catalogueSql.indexOf('insert into public.services'));
+const serviceKeys = [...new Set([...servicesBlock
+  .slice(0, servicesBlock.indexOf(';'))
+  .matchAll(/\('[a-z0-9-]+',\s*'[^']*',\s*'([a-z0-9-]+)'/g)].map((m) => m[1]))];
+
+// If the parse ever stops finding rows this must fail loudly rather than
+// quietly testing an empty list, which is how a guard becomes decoration.
+check(serviceKeys.length >= 150,
+  `the seeded services are readable (found ${serviceKeys.length})`);
+
+for (const key of serviceKeys) {
+  for (const language of LANGUAGES) {
+    const label = specificServiceLabel(key, language);
+    check(label !== null && label.length > 0,
+      `${key} HAS A ${language.toUpperCase()} NAME`);
+    check(label !== key, `${key} does not render its own key in ${language}`);
+  }
+  const arabic = specificServiceLabel(key, 'ar');
+  check(arabic !== null && /[\u0600-\u06ff]/.test(arabic),
+    `${key} IS WRITTEN IN ARABIC SCRIPT, NOT ENGLISH IN AN ARABIC SLOT`);
+}
+
+// A service the client has never heard of is reported as unknown, so the
+// render site can choose words rather than being handed a slug.
+equal(specificServiceLabel('plumbing-teleport-drain', 'ar'), null,
+  'AN UNKNOWN SERVICE KEY IS REPORTED AS UNKNOWN, NOT GUESSED');
 
 // The specific values from the reported defect.
 equal(serviceCategoryLabel('electrical', 'ar', 'electrical'), 'كهرباء',
