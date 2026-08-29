@@ -22,20 +22,124 @@ const rawCopy = {
   },
 } as const;
 
+/**
+ * The financial events, in all three languages.
+ *
+ * Warsha's payment system emits fifteen notification types directly
+ * (`202607300001_payments_earnings_ledger.sql`) and WPS-014's event catalogue
+ * adds `payment_required` and `cash_debt_threshold_warning`. None of the
+ * seventeen had an entry in this table, so every one of them resolved to the
+ * generic "Payment update / Your payment status changed" — in English, Arabic
+ * and French, on the web and on both native platforms. A worker was told their
+ * earnings had "an update" rather than that they were available to withdraw.
+ *
+ * The copy existed. It sat in `payment-notification-translations.ts`, complete
+ * in three languages, imported by nothing, for as long as the events have been
+ * firing. It is here now because this table is the one both platforms read:
+ * `web/lib/notifications.ts` calls `legacyNotificationEventCopy` directly and
+ * `notification-engagement-translations.ts` falls through to it for every key
+ * its own `eventCopy` does not define. A second table would have been a parity
+ * defect the moment one side gained an event the other did not.
+ *
+ * Four of the seventeen — `payment_required`, `payment_failed`, `refund_failed`
+ * and `cash_debt_threshold_warning` — are governed by WPS-014, which chose
+ * deliberately non-specific wording for them. That wording is reproduced here
+ * exactly rather than improved on, so the two tables cannot disagree;
+ * `wps014-notifications-engagement.test.mts` asserts they still match.
+ *
+ * There is no amount, no balance and no payment method in any of these
+ * strings. What a reader needs is which of their things changed and whether
+ * they must act; the numbers live behind the route the notification opens, and
+ * lock-screen previews are category-generic anyway
+ * (`notification-push-adapter.ts`).
+ */
+const financial = {
+  en: {
+    payment_confirmed: 'Payment confirmed', payment_confirmedBody: 'Your payment has been confirmed.',
+    payment_failed: 'Payment needs attention', payment_failedBody: 'Your payment status changed.',
+    payment_required: 'Payment required', payment_requiredBody: 'Action is required on your payment.',
+    refund_initiated: 'Refund started', refund_initiatedBody: 'Your refund request is being processed.',
+    refund_completed: 'Refund completed', refund_completedBody: 'Your refund has been recorded.',
+    refund_failed: 'Refund needs attention', refund_failedBody: 'The refund status requires attention.',
+    earnings_pending: 'Earnings pending', earnings_pendingBody: 'Job earnings were recorded and are not available yet.',
+    earnings_available: 'Earnings available', earnings_availableBody: 'Earnings from a completed job are available to withdraw.',
+    earnings_held: 'Earnings temporarily held', earnings_heldBody: 'An amount is held while an issue is reviewed.',
+    earnings_released: 'Earnings available again', earnings_releasedBody: 'The review is complete and the amount is available again.',
+    withdrawal_requested: 'Withdrawal requested', withdrawal_requestedBody: 'Your withdrawal request is being reviewed.',
+    withdrawal_paid: 'Withdrawal completed', withdrawal_paidBody: 'Your withdrawal has been completed.',
+    withdrawal_failed: 'Withdrawal update', withdrawal_failedBody: 'The withdrawal could not be completed and the amount is available again.',
+    cash_collection_reported: 'Confirm cash payment', cash_collection_reportedBody: 'The provider reported collecting cash. Please confirm what happened.',
+    cash_collection_confirmed: 'Cash payment confirmed', cash_collection_confirmedBody: 'The customer confirmed the cash payment.',
+    cash_collection_disputed: 'Cash payment needs review', cash_collection_disputedBody: 'The customer did not confirm the reported cash payment.',
+    cash_debt_threshold_warning: 'Account action required', cash_debt_threshold_warningBody: 'Your worker financial account requires attention.',
+  },
+  ar: {
+    payment_confirmed: 'تم تأكيد الدفع', payment_confirmedBody: 'تم تأكيد دفع الحجز.',
+    payment_failed: 'الدفع محتاج اهتمام', payment_failedBody: 'حالة الدفع اتغيّرت.',
+    payment_required: 'مطلوب دفع', payment_requiredBody: 'فيه إجراء مطلوب على الدفع.',
+    refund_initiated: 'بدأ استرداد المبلغ', refund_initiatedBody: 'طلب استرداد المبلغ قيد التنفيذ.',
+    refund_completed: 'تم استرداد المبلغ', refund_completedBody: 'تم تسجيل استرداد المبلغ.',
+    refund_failed: 'الاسترداد محتاج اهتمام', refund_failedBody: 'حالة استرداد المبلغ محتاجة اهتمام.',
+    earnings_pending: 'أرباح معلّقة', earnings_pendingBody: 'اتسجلت أرباح الشغل ولسه مش متاحة للسحب.',
+    earnings_available: 'أرباحك متاحة', earnings_availableBody: 'أرباح شغل مكتمل بقت متاحة للسحب.',
+    earnings_held: 'مبلغ متوقف للمراجعة', earnings_heldBody: 'المبلغ متوقف مؤقتًا لمراجعة مشكلة.',
+    earnings_released: 'المبلغ متاح تاني', earnings_releasedBody: 'تم إنهاء المراجعة والمبلغ متاح تاني.',
+    withdrawal_requested: 'تم طلب السحب', withdrawal_requestedBody: 'طلب السحب بيتراجع دلوقتي.',
+    withdrawal_paid: 'تم صرف الأرباح', withdrawal_paidBody: 'تم إكمال طلب السحب.',
+    withdrawal_failed: 'تحديث طلب السحب', withdrawal_failedBody: 'تعذّر إكمال السحب والمبلغ بقى متاح تاني.',
+    cash_collection_reported: 'أكد الدفع الكاش', cash_collection_reportedBody: 'الفني سجّل إنه استلم الدفع كاش. أكد لنا اللي حصل.',
+    cash_collection_confirmed: 'تم تأكيد الدفع الكاش', cash_collection_confirmedBody: 'العميل أكد الدفع الكاش.',
+    cash_collection_disputed: 'الدفع الكاش محتاج مراجعة', cash_collection_disputedBody: 'العميل ما أكدش الدفع الكاش المسجّل.',
+    cash_debt_threshold_warning: 'مطلوب إجراء على الحساب', cash_debt_threshold_warningBody: 'حسابك المالي كصنايعي محتاج اهتمام.',
+  },
+  fr: {
+    payment_confirmed: 'Paiement confirmé', payment_confirmedBody: 'Votre paiement a été confirmé.',
+    payment_failed: 'Paiement à vérifier', payment_failedBody: 'Le statut de votre paiement a changé.',
+    payment_required: 'Paiement requis', payment_requiredBody: 'Une action est requise sur votre paiement.',
+    refund_initiated: 'Remboursement commencé', refund_initiatedBody: 'Votre demande de remboursement est en cours.',
+    refund_completed: 'Remboursement terminé', refund_completedBody: 'Votre remboursement a été enregistré.',
+    refund_failed: 'Remboursement à vérifier', refund_failedBody: 'Le statut du remboursement demande votre attention.',
+    earnings_pending: 'Revenus en attente', earnings_pendingBody: 'Les revenus du travail sont enregistrés mais pas encore disponibles.',
+    earnings_available: 'Revenus disponibles', earnings_availableBody: 'Les revenus d’un travail terminé peuvent être retirés.',
+    earnings_held: 'Revenus temporairement retenus', earnings_heldBody: 'Un montant est retenu pendant l’examen d’un problème.',
+    earnings_released: 'Revenus de nouveau disponibles', earnings_releasedBody: 'L’examen est terminé et le montant est de nouveau disponible.',
+    withdrawal_requested: 'Retrait demandé', withdrawal_requestedBody: 'Votre demande de retrait est en cours d’examen.',
+    withdrawal_paid: 'Retrait terminé', withdrawal_paidBody: 'Votre retrait a été effectué.',
+    withdrawal_failed: 'Mise à jour du retrait', withdrawal_failedBody: 'Le retrait n’a pas abouti et le montant est de nouveau disponible.',
+    cash_collection_reported: 'Confirmer le paiement en espèces', cash_collection_reportedBody: 'Le professionnel a déclaré avoir reçu les espèces. Confirmez ce qui s’est passé.',
+    cash_collection_confirmed: 'Paiement en espèces confirmé', cash_collection_confirmedBody: 'Le client a confirmé le paiement en espèces.',
+    cash_collection_disputed: 'Paiement en espèces à examiner', cash_collection_disputedBody: 'Le client n’a pas confirmé le paiement en espèces déclaré.',
+    cash_debt_threshold_warning: 'Action requise sur le compte', cash_debt_threshold_warningBody: 'Votre compte financier professionnel demande votre attention.',
+  },
+} as const;
+
+/** The event keys Warsha's financial system emits. Exported for the tests. */
+export const FINANCIAL_NOTIFICATION_EVENT_KEYS = [
+  'payment_confirmed', 'payment_failed', 'payment_required',
+  'refund_initiated', 'refund_completed', 'refund_failed',
+  'earnings_pending', 'earnings_available', 'earnings_held', 'earnings_released',
+  'withdrawal_requested', 'withdrawal_paid', 'withdrawal_failed',
+  'cash_collection_reported', 'cash_collection_confirmed', 'cash_collection_disputed',
+  'cash_debt_threshold_warning',
+] as const;
+
 export const copy = {
   en: {
     ...rawCopy.en,
+    ...financial.en,
     dispute_opened: 'Dispute opened', dispute_evidence_requested: 'Evidence requested', dispute_evidence_submitted: 'Evidence added', dispute_under_review: 'Dispute under review', dispute_resolved: 'Dispute resolved', dispute_closed: 'Dispute closed', dispute_cancelled: 'Dispute withdrawn',
     dispute_openedBody: 'A dispute was opened for this booking.', dispute_evidence_requestedBody: 'Warsha support requested more evidence.', dispute_evidence_submittedBody: 'New evidence was added to the dispute.', dispute_under_reviewBody: 'Warsha support is reviewing the dispute.', dispute_resolvedBody: 'A resolution is available for the dispute.', dispute_closedBody: 'The dispute was closed.', dispute_cancelledBody: 'The customer withdrew the dispute.',
   },
   ar: {
     ...rawCopy.ar,
+    ...financial.ar,
     booking_message: 'رسالة جديدة', booking_messageBody: 'لديك رسالة جديدة بشأن حجزك.',
     dispute_opened: 'تم فتح نزاع', dispute_evidence_requested: 'مطلوب أدلة', dispute_evidence_submitted: 'اتضاف دليل', dispute_under_review: 'النزاع تحت المراجعة', dispute_resolved: 'النزاع اتحل', dispute_closed: 'النزاع اتقفل', dispute_cancelled: 'النزاع اتسحب',
     dispute_openedBody: 'اتفتح نزاع على الحجز ده.', dispute_evidence_requestedBody: 'فريق دعم ورشة طلب أدلة زيادة.', dispute_evidence_submittedBody: 'اتضاف دليل جديد للنزاع.', dispute_under_reviewBody: 'فريق دعم ورشة بيراجع النزاع.', dispute_resolvedBody: 'قرار النزاع بقى متاح.', dispute_closedBody: 'النزاع اتقفل.', dispute_cancelledBody: 'العميل سحب النزاع.',
   },
   fr: {
     ...rawCopy.en,
+    ...financial.fr,
     notifications: 'Notifications', notificationBell: 'Ouvrir les notifications', markAllRead: 'Tout marquer comme lu', markRead: 'Marquer comme lu', dismiss: 'Masquer la notification', empty: 'Aucune notification', emptyBody: 'Les mises à jour de vos travaux et les activités importantes du compte apparaîtront ici.', loadError: 'Impossible de charger les notifications.', retry: 'Réessayer', loadMore: 'Afficher plus', newUpdate: 'Nouvelle mise à jour', justNow: "À l'instant",
     new_booking_request: 'Nouvelle demande de réservation', booking_message: 'Nouveau message', booking_pending_provider_approval: 'Demande de réservation envoyée', booking_accepted: 'Réservation acceptée', booking_rejected: 'Réservation refusée', booking_rescheduling_requested: 'Nouveau créneau proposé', booking_reschedule_accepted: 'Nouveau créneau accepté', booking_reschedule_rejected: 'Nouveau créneau refusé', booking_confirmed: 'Réservation confirmée', booking_provider_on_the_way: 'Le professionnel est en route', booking_provider_arrived: 'Le professionnel est arrivé', booking_job_started: 'Travail commencé', booking_work_in_progress: 'Travail en cours', booking_completed: 'Travail terminé', booking_cancelled: 'Réservation annulée', booking_no_show: 'Client absent', booking_disputed: 'Problème signalé', booking_refunded: 'Réservation remboursée', verification_submitted: 'Vérification envoyée', verification_approved: 'Identité vérifiée', verification_rejected: 'Vérification à corriger', verification_resubmission_requested: 'Nouvelles photos requises', verification_expired: 'Vérification expirée',
     operation_traveling: 'Professionnel en route', operation_arrived: 'Professionnel arrivé', operation_started: 'Travail commencé', operation_paused: 'Travail interrompu', operation_resumed: 'Travail repris', operation_waiting_for_approval: 'Accord requis', operation_additional_work: 'Mise à jour du travail supplémentaire', operation_delay: 'Mise à jour du retard', operation_finished: 'Travail prêt', operation_inspection: 'Contrôle requis', operation_completed: 'Travail terminé', operation_return_visit: 'Mise à jour de la visite de retour', review_unlocked: 'Avis disponible',

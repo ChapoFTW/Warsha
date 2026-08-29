@@ -186,8 +186,43 @@ const impactRules = [
  */
 const removalIsBehaviour = (path) =>
   /^(?:app|web\/app)\//.test(path) || path.startsWith('supabase/');
+
+/**
+ * A migration that only takes things away.
+ *
+ * The impact rules match on the PATH, and a migration's filename is prose. That
+ * is already a known false positive in this file — the `worker-getting-started`
+ * rule above was narrowed to specific modules because "a grants-only migration
+ * and a pgTAP fixture both carry the word and change nothing a worker could
+ * read about". `202608290001_retire_unused_staff_rpcs.sql` is the same shape: it
+ * contains the word `staff`, drops three RPCs that no client, test, document or
+ * other database object ever referenced, and changes nothing a reader is told.
+ * All thirty-two help articles were checked for the retired surfaces; none
+ * mentions them.
+ *
+ * So a migration whose statements are exclusively `drop`s is treated as a
+ * retirement rather than a behaviour change. It cannot be anything else: an
+ * object with a surface has a caller in `src/`, `app/` or `web/`, and dropping
+ * it means changing that caller too — which is a source path, which the rules
+ * still match. Comments are stripped first, because these migrations are mostly
+ * comment, and `notify pgrst` is ignored because every migration ends with one.
+ */
+const retirementOnlyMigration = (path) => {
+  if (!/^supabase\/migrations\/.*\.sql$/.test(path)) return false;
+  let sql;
+  try { sql = readFileSync(join(root, path), 'utf8'); } catch { return false; }
+  const statements = sql
+    .replace(/--[^\n]*/g, ' ')
+    .replace(/\/\*[\s\S]*?\*\//g, ' ')
+    .split(';')
+    .map((statement) => statement.trim())
+    .filter(Boolean)
+    .filter((statement) => !/^notify\s+pgrst/i.test(statement));
+  return statements.length > 0 && statements.every((statement) => /^drop\s/i.test(statement));
+};
 const behavioural = (path) => !path.startsWith('docs/help/')
   && !/\.s?css$/i.test(path)
+  && !retirementOnlyMigration(path)
   && !(deleted.has(path) && !removalIsBehaviour(path));
 const impacted = impactRules.filter(rule => changed.some(path =>
   behavioural(path) && rule.pattern.test(path)));

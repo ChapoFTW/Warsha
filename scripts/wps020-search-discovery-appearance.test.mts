@@ -7,6 +7,7 @@
  * this file asserts what the client guarantees.
  */
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -237,22 +238,53 @@ lacks(codeOf(rootLayout), /filter:\s*\[?['"`]?invert/i, 'the root layout applies
 lacks(codeOf(rootLayout), /invert\(/i, 'the root layout uses no CSS invert function');
 
 // ---------------------------------------------------------------------------
-// The colour-scheme hook answers "what is Warsha painting", not "what is the
-// device set to". Those diverge the moment someone chooses Light on a dark
-// phone, and the old hook answered the second question while looking like it
-// answered the first.
+// "What is Warsha painting" and "what is the device set to" are different
+// questions, and they diverge the moment someone chooses Light on a dark phone.
+//
+// This used to be asserted against `hooks/use-color-scheme.ts` and
+// `hooks/use-theme-color.ts`, which WPS-020 had rewritten to answer the first
+// question. Those two files were retired on 2026-08-29: nothing imported them,
+// and by then the only thing keeping them alive was this test reading their
+// text. A test that preserves an implementation nobody calls is protecting the
+// wrong thing.
+//
+// So the same properties are now asserted where they actually live, and as
+// facts about the WHOLE app rather than about one file — which is stronger than
+// what was here before, because the old version could not have noticed a second
+// component reaching for the device hook directly.
 // ---------------------------------------------------------------------------
-const colorSchemeHook = read('hooks/use-color-scheme.ts');
-has(colorSchemeHook, /useAppearance\(\)\.scheme/,
-  'useColorScheme reports the resolved app appearance');
-lacks(codeOf(colorSchemeHook), /from 'react-native'/,
-  'useColorScheme no longer re-exports the device-level hook');
-has(colorSchemeHook, /: ResolvedAppearance/,
-  'the hook narrows to a resolved appearance, never null');
-check(!existsSync(join(root, 'hooks/use-color-scheme.web.ts')),
-  'the platform split is gone: there is nothing platform-specific left to decide');
-lacks(codeOf(read('hooks/use-theme-color.ts')), /\?\? 'light'/,
-  'the dead null-guard is gone now that the scheme is always resolved');
+const appearanceFiles = execFileSync('git', ['ls-files', 'app', 'components', 'src', 'hooks', 'constants'],
+  { encoding: 'utf8' }).split('\n').filter(Boolean).filter(file => /\.tsx?$/.test(file));
+
+const deviceSchemeReaders = appearanceFiles
+  .filter(file => /Appearance\.getColorScheme\(\)|from 'react-native'[\s\S]{0,200}useColorScheme|useColorScheme\s*\}\s*from\s*'react-native'/
+    .test(read(file)));
+check(deviceSchemeReaders.join(', ') === 'src/appearance/appearance-context.tsx',
+  `EXACTLY ONE FILE ASKS THE DEVICE WHAT COLOUR SCHEME IT IS SET TO (found: ${deviceSchemeReaders.join(', ') || 'none'})`);
+
+const devicePreference = appearanceFiles.filter(file => /\buseColorScheme\b/.test(read(file)));
+check(devicePreference.length === 0,
+  `AND NO COMPONENT READS THE DEVICE-LEVEL HOOK AT ALL (found: ${devicePreference.join(', ') || 'none'})`);
+
+// The resolved/​device distinction is a type, not a convention: `scheme` cannot
+// be null and `deviceScheme` can, so a caller cannot accidentally treat "the
+// platform said nothing" as "paint light".
+has(contextSource, /scheme: ResolvedAppearance;/,
+  'the painted appearance is always resolved, never null');
+has(contextSource, /deviceScheme: ResolvedAppearance \| null;/,
+  'and the device setting is separately typed as possibly absent');
+has(read('src/appearance/appearance-types.ts'),
+  /return deviceScheme === 'light' \? 'light' : 'dark';/,
+  'an unknown device resolves to Warsha dark rather than flipping to light');
+
+// The retired hooks must not come back, in any platform variant.
+for (const retired of [
+  'hooks/use-color-scheme.ts', 'hooks/use-color-scheme.web.ts',
+  'hooks/use-theme-color.ts', 'hooks/use-theme-color.web.ts',
+]) {
+  check(!existsSync(join(root, retired)),
+    `the retired ${retired} has not returned`);
+}
 
 // ---------------------------------------------------------------------------
 // Startup: no flash

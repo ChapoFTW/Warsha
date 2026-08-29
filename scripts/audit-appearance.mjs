@@ -51,7 +51,6 @@ const STATIC_PALETTE_ALLOWED = new Set([
   'constants/theme.ts',
   'constants/appearance.ts',
   'src/appearance/appearance-context.tsx',
-  'hooks/use-theme-color.ts',
 ]);
 
 const COLOUR_LITERAL = /#[0-9a-fA-F]{3,8}\b|\brgba?\s*\(/;

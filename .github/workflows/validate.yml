@@ -82,7 +82,13 @@ jobs:
       - name: Forbidden files
         run: |
           set -euo pipefail
-          if git ls-files | grep -E '^\.env($|\.local$|\.production$)'; then
+          # Any tracked env file except the documented template. The previous
+          # rule named three exact filenames and therefore missed
+          # `.env.local.backup`, which was committed on 2026-08-07 and stayed in
+          # the tree until 2026-08-29: `.gitignore` says `.env*`, but a rule
+          # cannot untrack a file that is already tracked, so the only thing
+          # standing between a stray copy and the repository is this check.
+          if git ls-files | grep -E '^\.env' | grep -v -E '^\.env\.example$'; then
             echo "An environment file is tracked."; exit 1
           fi
           if git ls-files | grep -E '\.(p12|p8|jks|keystore|mobileprovision|pem)$'; then

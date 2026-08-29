@@ -105,7 +105,8 @@
     "automation:provision": "node scripts/warsha-automation-governance.mjs provision",
     "automation:govern": "node scripts/warsha-automation-governance.mjs",
     "test:automation-authority": "node --no-warnings --experimental-strip-types scripts/automation-authority.test.mts",
-    "test:identity-extraction": "node --no-warnings --experimental-strip-types scripts/identity-extraction.test.mts"
+    "test:financial-notifications": "node --no-warnings --experimental-strip-types scripts/financial-notifications.test.mts",
+  "test:identity-extraction": "node --no-warnings --experimental-strip-types scripts/identity-extraction.test.mts"
   },
   "dependencies": {
     "@expo-google-fonts/cairo": "^0.4.2",

@@ -55,6 +55,7 @@ export const DETERMINISTIC_TEST_SCRIPTS = [
   'test:state-persistence',
   'test:automation-authority',
   'test:identity-extraction',
+  'test:financial-notifications',
   'test:address-contract',
   'test:spacing-system',
   'test:help-docs',
