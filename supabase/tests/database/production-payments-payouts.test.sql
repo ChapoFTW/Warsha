@@ -303,5 +303,86 @@ select throws_ok(
   'anonymous access to payment capabilities is denied at the privilege layer');
 reset role;
 
+-- ---------------------------------------------------------------------------
+-- "Enabled" and "development only" are two different questions
+-- ---------------------------------------------------------------------------
+-- This file already defines the answer, in `get_production_payment_capabilities`:
+-- enabled is `<> 'disabled'` and development-only is `= 'mock'`. The two
+-- functions the CLIENTS read -- `get_financial_capabilities`, which the payment
+-- context loads, and `get_my_provider_earnings`, which `app/provider-earnings.tsx`
+-- gates its withdrawal button on -- answered both with `= 'mock'` until
+-- 202608300002.
+--
+-- Nothing was observable while every mode was `disabled`, because both
+-- spellings return false there. The failure was reserved for the first day
+-- payouts became real: `withdrawalsEnabled` would flip to FALSE in `sandbox`
+-- and `live`, and every worker on the platform would lose the withdrawal
+-- button at the moment it started meaning something.
+--
+-- So these assertions are about the modes the platform has not entered yet.
+
+savepoint capability_switches;
+
+update private.payment_configuration
+  set gateway_mode = 'sandbox', payout_mode = 'sandbox',
+      active_payment_provider = 'paymob', active_payout_provider = 'paymob',
+      live_gateway_name = 'paymob';
+
+select is((public.get_financial_capabilities()->>'onlinePaymentsEnabled')::boolean, true,
+  'SANDBOX COUNTS AS ONLINE PAYMENTS ENABLED');
+select is((public.get_financial_capabilities()->>'withdrawalsEnabled')::boolean, true,
+  'SANDBOX COUNTS AS WITHDRAWALS ENABLED');
+select is((public.get_financial_capabilities()->>'withdrawalsDevelopmentOnly')::boolean, false,
+  'and sandbox is not reported as development-only');
+
+rollback to savepoint capability_switches;
+
+update private.payment_configuration set gateway_mode = 'mock', payout_mode = 'mock';
+
+select is((public.get_financial_capabilities()->>'withdrawalsEnabled')::boolean, true,
+  'mock counts as enabled');
+select is((public.get_financial_capabilities()->>'withdrawalsDevelopmentOnly')::boolean, true,
+  'AND MOCK IS THE CASE THAT IS DEVELOPMENT-ONLY');
+
+rollback to savepoint capability_switches;
+
+update private.payment_configuration set gateway_mode = 'disabled', payout_mode = 'disabled';
+
+select is((public.get_financial_capabilities()->>'onlinePaymentsEnabled')::boolean, false,
+  'disabled is still disabled');
+select is((public.get_financial_capabilities()->>'withdrawalsEnabled')::boolean, false,
+  'and a disabled payout mode still offers no withdrawal');
+
+rollback to savepoint capability_switches;
+
+-- `get_my_provider_earnings` needs a whole provider with earnings to answer, so
+-- the switch inside it is asserted where it is written rather than by calling
+-- it. A pair of expressions that must differ is checked by requiring that the
+-- enabled half is not spelled the same way as the development-only half.
+select is_empty(
+  $$
+  select n.nspname || '.' || p.proname
+  from pg_proc p
+  join pg_namespace n on n.oid = p.pronamespace
+  where n.nspname = 'public'
+    and p.proname in ('get_financial_capabilities', 'get_my_provider_earnings')
+    and p.prosrc ~ 'withdrawalsEnabled''\s*,\s*[a-z_.]*payout_mode\s*=\s*''mock'''
+  order by 1
+  $$,
+  'NO CLIENT-FACING FUNCTION EQUATES "WITHDRAWALS ENABLED" WITH "PAYOUTS ARE FAKE"'
+);
+
+select is_empty(
+  $$
+  select n.nspname || '.' || p.proname
+  from pg_proc p
+  join pg_namespace n on n.oid = p.pronamespace
+  where n.nspname = 'public'
+    and p.proname = 'get_financial_capabilities'
+    and p.prosrc ~ 'onlinePaymentsEnabled''\s*,\s*[a-z_.]*gateway_mode\s*=\s*''mock'''
+  $$,
+  'nor equates "online payments enabled" with "the gateway is fake"'
+);
+
 select * from finish();
 rollback;
