@@ -19,7 +19,7 @@
 
 begin;
 
-select plan(15);
+select plan(19);
 
 -- ---------------------------------------------------------------------------
 -- 1. The signed-out role writes nothing, anywhere
@@ -214,6 +214,53 @@ select is(
    where table_schema = 'private' and grantee in ('anon', 'authenticated', 'PUBLIC')),
   0,
   'AND NO CLIENT ROLE REACHES A TABLE IN THE PRIVATE SCHEMA');
+
+-- ---------------------------------------------------------------------------
+-- Staff is granted one way
+-- ---------------------------------------------------------------------------
+-- `private.is_staff` answers true for a legacy `user_roles` row with role
+-- 'admin' or 'support' as well as for a governed grant, and thirty-six RLS
+-- policies are gated on it. The staff console is not: it requires the governed
+-- grant and refuses the legacy row outright.
+--
+-- So a legacy row is staff at the API and not staff in the console, with no
+-- expiry, no granter, no reason and no revocation record. Nothing in the
+-- product ever created one -- `handle_new_user` and `ensure_customer_profile`
+-- write 'customer', `activate_provider_role` writes 'provider', and client
+-- roles hold SELECT on that table and nothing else -- so one could only ever
+-- arrive by hand, which is the path that leaves no trail.
+--
+-- 202608310006 does not remove the legacy branch, because an administrator this
+-- repository cannot see may be standing on it. It removes the ability to make a
+-- new one.
+
+select has_function('private', 'refuse_new_legacy_staff_role',
+  'the guard against ungoverned staff rows exists');
+
+select throws_ok(
+  $$insert into public.user_roles(user_id, role)
+    values ('00000000-0000-4000-8000-0000000000ff', 'admin')$$,
+  '42501',
+  'Staff access is granted through public.staff_role_grants, not user_roles',
+  'A NEW LEGACY ADMIN ROW IS REFUSED');
+
+select throws_ok(
+  $$insert into public.user_roles(user_id, role)
+    values ('00000000-0000-4000-8000-0000000000fe', 'support')$$,
+  '42501',
+  'Staff access is granted through public.staff_role_grants, not user_roles',
+  'and so is a new legacy support row');
+
+-- An ordinary role is untouched. A guard that blocks signup is not a guard.
+-- Against a real account, because `user_roles.user_id` references `profiles`
+-- and a guard that let a fabricated id through would be testing the wrong
+-- thing. If the environment has no profiles the insert touches nothing and
+-- still lives, which is the property under test either way.
+select lives_ok(
+  $$insert into public.user_roles(user_id, role)
+    select id, 'customer' from public.profiles limit 1
+    on conflict do nothing$$,
+  'while an ordinary customer role is still written normally');
 
 select * from finish();
 

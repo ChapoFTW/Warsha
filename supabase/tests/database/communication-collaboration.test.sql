@@ -38,7 +38,14 @@ insert into auth.users(instance_id,id,aud,role,email,encrypted_password,email_co
 insert into public.provider_profiles(id,user_id,display_name,profession_key,onboarding_status,is_published) values
 ('64000000-0000-0000-0000-000000000001','62000000-0000-0000-0000-000000000001','WPS009 Worker One','professional','approved',true),
 ('64000000-0000-0000-0000-000000000002','62000000-0000-0000-0000-000000000002','WPS009 Worker Two','professional','approved',true);
+-- Simulates a staff row that predates 202608310006, which refuses NEW
+-- legacy staff rows so that staff can only be granted through
+-- `staff_role_grants`, where it is auditable and revocable. Existing rows
+-- keep working, and that is exactly what this fixture stands in for.
+alter table public.user_roles disable trigger refuse_new_legacy_staff_role;
 insert into public.user_roles(user_id,role) values ('63000000-0000-0000-0000-000000000001','support') on conflict do nothing;
+alter table public.user_roles enable trigger refuse_new_legacy_staff_role;
+
 
 select set_config('request.jwt.claim.sub','61000000-0000-0000-0000-000000000001',true);
 insert into public.bookings(id,customer_id,provider_id,service_id,status,service_name_snapshot,pricing_type,estimated_price_egp,issue_description,scheduled_date,scheduled_time,address_snapshot,idempotency_key)

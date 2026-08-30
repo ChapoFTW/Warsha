@@ -165,9 +165,16 @@ insert into storage.objects(bucket_id,name) values
 ('profile-images','81000000-0000-0000-0000-000000000001/avatar/profile.jpg'),
 ('profile-images','81000000-0000-0000-0000-000000000002/avatar/profile.jpg');
 
+-- Simulates a staff row that predates 202608310006, which refuses NEW
+-- legacy staff rows so that staff can only be granted through
+-- `staff_role_grants`, where it is auditable and revocable. Existing rows
+-- keep working, and that is exactly what this fixture stands in for.
+alter table public.user_roles disable trigger refuse_new_legacy_staff_role;
 insert into public.user_roles(user_id, role)
 values ('81000000-0000-0000-0000-000000000004', 'admin')
 on conflict do nothing;
+alter table public.user_roles enable trigger refuse_new_legacy_staff_role;
+
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '81000000-0000-0000-0000-000000000001', true);

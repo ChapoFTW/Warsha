@@ -40,7 +40,14 @@ values
 ('00000000-0000-0000-0000-000000000000','b1100000-0000-4000-8000-000000000002','authenticated','authenticated','wps011-c2@test.local',null,'',now(),null,'{}','{"display_name":"Customer Two"}',now(),now()),
 ('00000000-0000-0000-0000-000000000000','b1100000-0000-4000-8000-000000000003','authenticated','authenticated',null,'+201000001103','',null,now(),'{}','{"display_name":"Review Worker"}',now(),now()),
 ('00000000-0000-0000-0000-000000000000','b1100000-0000-4000-8000-000000000004','authenticated','authenticated','wps011-staff@test.local',null,'',now(),null,'{}','{"display_name":"Review Staff"}',now(),now());
+-- Simulates a staff row that predates 202608310006, which refuses NEW
+-- legacy staff rows so that staff can only be granted through
+-- `staff_role_grants`, where it is auditable and revocable. Existing rows
+-- keep working, and that is exactly what this fixture stands in for.
+alter table public.user_roles disable trigger refuse_new_legacy_staff_role;
 insert into public.user_roles(user_id,role) values('b1100000-0000-4000-8000-000000000004','admin') on conflict do nothing;
+alter table public.user_roles enable trigger refuse_new_legacy_staff_role;
+
 
 insert into public.provider_profiles(id,user_id,display_name,profession_key,primary_category_id,category_ids,about,experience_years,avatar_url,service_radius_km,is_verified,is_available,is_published,onboarding_status,created_at)
 values('b1200000-0000-4000-8000-000000000001','b1100000-0000-4000-8000-000000000003','Review Worker','plumbing','plumbing',array['plumbing'],'I complete careful plumbing repairs and explain the agreed work.',4,'b1100000-0000-4000-8000-000000000003/avatar/profile.jpg',15,true,true,true,'approved',now()-interval '4 years');

@@ -148,8 +148,15 @@ select ok(private.bootstrap_staff_role('a1800000-0000-4000-8000-000000000008','s
 select ok(private.bootstrap_staff_role('a1800000-0000-4000-8000-000000000009','super_administrator',
   'WPS-018 fixture break glass two') is not null, 'a second break-glass holder is granted');
 -- A pre-WPS-017 staff account, identified only by the legacy role table.
+-- Simulates a staff row that predates 202608310006, which refuses NEW
+-- legacy staff rows so that staff can only be granted through
+-- `staff_role_grants`, where it is auditable and revocable. Existing rows
+-- keep working, and that is exactly what this fixture stands in for.
+alter table public.user_roles disable trigger refuse_new_legacy_staff_role;
 insert into public.user_roles(user_id, role) values ('a1800000-0000-4000-8000-000000000005','support')
 on conflict do nothing;
+alter table public.user_roles enable trigger refuse_new_legacy_staff_role;
+
 
 -- ---------------------------------------------------------------------------
 -- Server-verified session freshness (WPS-017 finding F2, closed)

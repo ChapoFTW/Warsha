@@ -52,8 +52,15 @@ values
 ('00000000-0000-0000-0000-000000000000','a1600000-0000-4000-8000-000000000003','authenticated','authenticated','wps016-staff@test.local','',now(),'{}','{"display_name":"Staff"}',now(),now()),
 ('00000000-0000-0000-0000-000000000000','a1600000-0000-4000-8000-000000000004','authenticated','authenticated','wps016-other@test.local','',now(),'{}','{"display_name":"Unrelated"}',now(),now());
 
+-- Simulates a staff row that predates 202608310006, which refuses NEW
+-- legacy staff rows so that staff can only be granted through
+-- `staff_role_grants`, where it is auditable and revocable. Existing rows
+-- keep working, and that is exactly what this fixture stands in for.
+alter table public.user_roles disable trigger refuse_new_legacy_staff_role;
 insert into public.user_roles(user_id, role) values ('a1600000-0000-4000-8000-000000000003','support')
 on conflict do nothing;
+alter table public.user_roles enable trigger refuse_new_legacy_staff_role;
+
 
 -- ---------------------------------------------------------------------------
 -- Report intake: authenticated only, immutable, idempotent, no self-report

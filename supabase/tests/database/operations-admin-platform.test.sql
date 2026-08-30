@@ -275,8 +275,15 @@ select throws_ok($$select public.get_staff_queue('abuse_reports')$$,'42501','Sta
 reset role;
 
 -- A legacy user_roles staff row keeps working exactly as before.
+-- Simulates a staff row that predates 202608310006, which refuses NEW
+-- legacy staff rows so that staff can only be granted through
+-- `staff_role_grants`, where it is auditable and revocable. Existing rows
+-- keep working, and that is exactly what this fixture stands in for.
+alter table public.user_roles disable trigger refuse_new_legacy_staff_role;
 insert into public.user_roles(user_id, role) values ('a1700000-0000-4000-8000-000000000006','support')
 on conflict do nothing;
+alter table public.user_roles enable trigger refuse_new_legacy_staff_role;
+
 set local role authenticated;
 select pg_temp.act_as('a1700000-0000-4000-8000-000000000006');
 select is(private.is_staff(), true, 'a legacy support role still satisfies the legacy gate unchanged');
