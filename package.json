@@ -3,6 +3,7 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
+    "test:worker-journey": "node scripts/worker-journey.mjs",
     "test:admin-boundary": "node scripts/admin-boundary-journey.mjs",
     "test:authorization-attack": "node scripts/authorization-attack.mjs",
     "test:privacy-export-journey": "node scripts/privacy-export-journey.mjs",
