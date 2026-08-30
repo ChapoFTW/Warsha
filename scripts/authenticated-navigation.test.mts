@@ -56,6 +56,10 @@ for (const href of ['/addresses', '/notifications', '/support', '/help', '/accou
 const CUSTOMER_DESTINATIONS = [
   '/', '/discover', '/requests', '/jobs',
   '/addresses', '/notifications', '/support', '/help', '/account',
+  // Added 2026-08-30 with the web privacy centre. Native has had a privacy
+  // screen since WPS-022 and the browser had none, so a customer who signed up
+  // on the web could not exercise a data right without installing the app.
+  '/privacy',
 ];
 assert.deepEqual(allDestinations(customer).map((item) => item.href).sort(),
   [...CUSTOMER_DESTINATIONS].sort(),

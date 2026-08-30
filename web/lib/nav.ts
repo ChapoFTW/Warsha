@@ -77,6 +77,7 @@ export function customerNavigation(words: Record<string, string>): RoleNavigatio
       { href: '/notifications', label: words.navNotifications },
       { href: '/addresses', label: words.navAddresses },
       { href: '/account', label: words.navAccount },
+      { href: '/privacy', label: words.navPrivacy },
       { href: '/support', label: words.navSupport },
       { href: '/help', label: words.navHelp },
     ],
