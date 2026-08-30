@@ -3,6 +3,11 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
+    "test:privacy-export-journey": "node scripts/privacy-export-journey.mjs",
+    "test:web-route-crawl": "node scripts/web-route-crawl.mjs",
+    "test:web-accessibility": "node scripts/web-accessibility-audit.mjs",
+    "test:web-presentation": "node scripts/web-presentation-audit.mjs",
+    "test:web-customer-journey": "node scripts/web-customer-journey.mjs",
     "start": "expo start",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo start --android",
