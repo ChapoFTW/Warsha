@@ -1,6 +1,10 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  formatWarshaDate as formatDay,
+  formatWarshaTimestamp as formatMoment,
+} from '@/src/utils/warsha-time';
 
 import { AppShell } from '@/components/app-shell';
 import { LifecycleBadge } from '@/components/lifecycle-badge';
@@ -215,5 +219,3 @@ function WorkerJobList({ title, empty, rows, locale, appWords, onOpen }: {
 function Field({ label, children }: { label: string; children: React.ReactNode }) { return <label className={styles.field}><span className={styles.label}>{label}</span>{children}</label>; }
 function Fact({ label, value }: { label: string; value: string }) { return <div className={styles.fact}><span className={styles.factLabel}>{label}</span><span className={styles.factValue}>{value || '—'}</span></div>; }
 function today() { const date = new Date(); return new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 10); }
-function formatDay(value: string, locale: Locale) { const date = new Date(value); return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat(intlLocale(locale), { dateStyle: 'medium' }).format(date); }
-function formatMoment(value: string, locale: Locale) { const date = new Date(value); return Number.isNaN(date.getTime()) ? '—' : new Intl.DateTimeFormat(intlLocale(locale), { dateStyle: 'medium', timeStyle: 'short' }).format(date); }

@@ -3,6 +3,7 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
+    "test:timezone": "node --experimental-strip-types --no-warnings scripts/timezone-correctness.test.mts",
     "test:client-error-reporting": "node --experimental-strip-types --no-warnings scripts/client-error-reporting.test.mts",
     "test:worker-journey": "node scripts/worker-journey.mjs",
     "test:admin-boundary": "node scripts/admin-boundary-journey.mjs",

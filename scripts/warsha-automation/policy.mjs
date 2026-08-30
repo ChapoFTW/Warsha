@@ -55,6 +55,7 @@ export const DETERMINISTIC_TEST_SCRIPTS = [
   'test:automation-authority',
   'test:identity-extraction',
   'test:client-error-reporting',
+  'test:timezone',
   'test:native-admin-boundary',
   'test:notification-catalogue',
   'test:financial-notifications',

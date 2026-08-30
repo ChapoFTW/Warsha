@@ -1,6 +1,10 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  formatWarshaDate as formatDay,
+  formatWarshaTimestamp as formatMoment,
+} from '@/src/utils/warsha-time';
 
 import { AppShell } from '@/components/app-shell';
 import { LifecycleBadge } from '@/components/lifecycle-badge';
@@ -268,17 +272,4 @@ function today(): string {
   return new Date(now.getTime() - now.getTimezoneOffset() * 60_000).toISOString().slice(0, 10);
 }
 
-function formatDay(value: string, locale: Locale): string {
-  if (!value) return '—';
-  const at = new Date(value);
-  if (Number.isNaN(at.getTime())) return value;
-  return new Intl.DateTimeFormat(intlLocale(locale), { dateStyle: 'medium' }).format(at);
-}
 
-function formatMoment(value: string, locale: Locale): string {
-  const at = new Date(value);
-  if (Number.isNaN(at.getTime())) return '—';
-  return new Intl.DateTimeFormat(intlLocale(locale), {
-    dateStyle: 'medium', timeStyle: 'short',
-  }).format(at);
-}
