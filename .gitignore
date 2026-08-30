@@ -63,3 +63,4 @@ tmp/
 /*.log
 /*-debug.txt
 .devport
+devlog.txt

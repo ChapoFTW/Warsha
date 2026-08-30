@@ -20,7 +20,7 @@
 
 begin;
 
-select plan(8);
+select plan(9);
 
 -- ---------------------------------------------------------------------------
 -- 1. No client-reachable function carries an unqualified DELETE
@@ -127,6 +127,51 @@ select is_empty(
   order by 1
   $$,
   'deferred attachment scaffolding is not reachable by a client role'
+);
+
+-- ---------------------------------------------------------------------------
+-- A function that writes is not STABLE
+-- ---------------------------------------------------------------------------
+-- PostgREST honours the volatility declaration: it runs a STABLE or IMMUTABLE
+-- function inside a READ ONLY transaction. A function that says STABLE and then
+-- writes therefore raises SQLSTATE 25006 -- "cannot execute INSERT in a
+-- read-only transaction" -- on every call that arrives through the API, and the
+-- caller sees HTTP 405.
+--
+-- Six staff functions were in exactly that state, each one declared STABLE and
+-- each one calling `private.staff_log_access` to record who had looked at what:
+-- the analytics dashboard, the business report, a support case, a customer
+-- overview, a worker overview, and the audit explorer. None of them could
+-- return a single row to a staff member, and every pgTAP assertion about them
+-- passed, because pgTAP runs in an ordinary read-write transaction and never
+-- meets the constraint the API imposes. 202608310002 corrected the
+-- declarations.
+--
+-- This is the second defect of this shape. The first was `search_providers`
+-- raising on an unqualified DELETE. Both are the same lesson: the database can
+-- run something the API will not.
+
+select is_empty(
+  $$
+  with writers as (
+    select p.oid, p.proname
+    from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    where p.provolatile = 'v'
+      and n.nspname in ('public', 'private')
+      and p.prosrc ~* 'insert[[:space:]]+into|update[[:space:]]+[a-z_.]+[[:space:]]+set|delete[[:space:]]+from'
+  )
+  select n.nspname || '.' || p.proname
+  from pg_proc p
+  join pg_namespace n on n.oid = p.pronamespace
+  where n.nspname = 'public'
+    and p.provolatile in ('i', 's')
+    and (has_function_privilege('anon', p.oid, 'execute')
+      or has_function_privilege('authenticated', p.oid, 'execute'))
+    and exists (select 1 from writers w where p.prosrc like '%' || w.proname || '%')
+  order by 1
+  $$,
+  'NO CLIENT-REACHABLE FUNCTION CLAIMS TO BE READ-ONLY WHILE CALLING A WRITER'
 );
 
 select * from finish();
