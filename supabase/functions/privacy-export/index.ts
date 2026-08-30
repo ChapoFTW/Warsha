@@ -18,8 +18,22 @@
  * never contains the export itself -- only whether it is ready. The file is
  * read afterwards through `claim_my_data_export` plus the bucket's owner-read
  * policy, so the download is authorised by storage, not by this function.
+ *
+ * ---------------------------------------------------------------------------
+ * Why there is no `@supabase/supabase-js` here
+ *
+ * Every other function in this directory imports the client from JSR. That is
+ * fine where the toolchain can reach `jsr.io`, and it is fatal where it cannot:
+ * a machine that intercepts TLS fails to fetch the package manifest, and then
+ * `supabase functions deploy` cannot BUNDLE the function at all. It is not a
+ * runtime problem that shows up in logs; the deployment simply never happens,
+ * and the feature stays missing while the source sits in the repository looking
+ * complete.
+ *
+ * This function needs four HTTP calls and a JSON body. The SDK is a
+ * convenience, and the convenience was costing the whole feature, so it makes
+ * the calls itself. There is nothing here the SDK would do differently.
  */
-import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 const CORS = {
   'access-control-allow-origin': '*',
@@ -48,9 +62,7 @@ Deno.serve(async (request) => {
   const url = env('SUPABASE_URL');
   const serviceRole = env('SUPABASE_SERVICE_ROLE_KEY');
   const publishable = env('SUPABASE_ANON_KEY') ?? env('SUPABASE_PUBLISHABLE_KEY');
-  if (!url || !serviceRole || !publishable) {
-    return json({ error: 'not_configured' }, 503);
-  }
+  if (!url || !serviceRole || !publishable) return json({ error: 'not_configured' }, 503);
 
   const authorization = request.headers.get('authorization') ?? '';
   const accessToken = authorization.toLowerCase().startsWith('bearer ')
@@ -67,24 +79,56 @@ Deno.serve(async (request) => {
   }
   if (!/^[0-9a-f-]{36}$/i.test(requestId)) return json({ error: 'invalid_request_id' }, 400);
 
-  // Who is asking. The caller's own token, never the service role.
-  const caller = createClient(url, publishable, {
-    auth: { persistSession: false },
-    global: { headers: { Authorization: `Bearer ${accessToken}` } },
-  });
-  const { data: userData, error: userError } = await caller.auth.getUser();
-  const subject = userData?.user?.id;
-  if (userError || !subject) return json({ error: 'authentication_required' }, 401);
+  /** An RPC as the caller: their token, their row-level security. */
+  const asCaller = (name: string, payload: unknown) =>
+    fetch(`${url}/rest/v1/rpc/${name}`, {
+      method: 'POST',
+      headers: {
+        apikey: publishable,
+        Authorization: `Bearer ${accessToken}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
 
-  const service = createClient(url, serviceRole, { auth: { persistSession: false } });
+  /** An RPC as the service role, for the two functions no client may execute. */
+  const asService = (name: string, payload: unknown) =>
+    fetch(`${url}/rest/v1/rpc/${name}`, {
+      method: 'POST',
+      headers: {
+        apikey: serviceRole,
+        Authorization: `Bearer ${serviceRole}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+  const markFailed = (reason: string) =>
+    asService('warsha_privacy_export_mark_failed', {
+      p_request_id: requestId, p_reason: reason,
+    }).catch(() => undefined);
+
+  // Who is asking. The token is checked by the auth service rather than parsed
+  // here: a signature this function does not verify is not an identity.
+  const whoami = await fetch(`${url}/auth/v1/user`, {
+    headers: { apikey: publishable, Authorization: `Bearer ${accessToken}` },
+  });
+  if (!whoami.ok) return json({ error: 'authentication_required' }, 401);
+  const subject = (await whoami.json())?.id;
+  if (typeof subject !== 'string' || !subject) {
+    return json({ error: 'authentication_required' }, 401);
+  }
 
   // Ownership is established through the caller's own session before the
-  // service role is used for anything. `get_my_data_exports` is theirs and
-  // returns only their rows, so a request id that does not appear in it does
-  // not belong to them -- and is reported exactly like one that does not exist.
-  const { data: mine, error: mineError } = await caller.rpc('get_my_data_exports', { p_limit: 50 });
-  if (mineError) return json({ error: 'lookup_failed' }, 502);
-  const own = Array.isArray(mine) ? mine.find((row: { id?: string }) => row?.id === requestId) : null;
+  // service role is used for anything. `get_my_data_exports` returns only their
+  // rows, so a request id that does not appear in it does not belong to them --
+  // and is reported exactly like one that does not exist.
+  const mineResponse = await asCaller('get_my_data_exports', { p_limit: 50 });
+  if (!mineResponse.ok) return json({ error: 'lookup_failed' }, 502);
+  const mine = await mineResponse.json();
+  const own = Array.isArray(mine)
+    ? mine.find((row: { id?: string }) => row?.id === requestId)
+    : null;
   if (!own) return json({ error: 'not_found' }, 404);
 
   if (own.status === 'ready') {
@@ -95,48 +139,52 @@ Deno.serve(async (request) => {
     return json({ error: 'not_producible', status: own.status }, 409);
   }
 
-  const { data: payload, error: payloadError } = await service.rpc(
-    'warsha_privacy_export_payload', { p_request_id: requestId },
-  );
-  if (payloadError || !payload) {
-    await service.rpc('warsha_privacy_export_mark_failed', {
-      p_request_id: requestId, p_reason: 'payload_unavailable',
-    });
+  const payloadResponse = await asService('warsha_privacy_export_payload', {
+    p_request_id: requestId,
+  });
+  if (!payloadResponse.ok) {
+    await markFailed('payload_unavailable');
     return json({ error: 'payload_failed' }, 502);
   }
+  const payload = await payloadResponse.json();
 
   // The path must be the subject's own folder: that is what the bucket's
-  // owner-read policy checks, and `warsha_privacy_export_mark_ready` refuses
-  // any other shape. It is also why the file name is the request id rather than
-  // anything guessable about the person.
+  // owner-read policy checks, and `warsha_privacy_export_mark_ready` refuses any
+  // other shape. The file is named for the request rather than for the person.
   const path = `${subject}/${requestId}.json`;
   const file = new TextEncoder().encode(JSON.stringify(payload, null, 2));
 
-  // A retry must not fail because the previous attempt already wrote the file.
-  const { error: uploadError } = await service.storage.from(BUCKET).upload(path, file, {
-    // The bucket allow-lists 'application/json' exactly; a charset parameter
-    // makes it a different string and storage answers 415. JSON is UTF-8 by
-    // specification, so nothing is lost by saying so without the parameter.
-    contentType: 'application/json',
-    upsert: true,
+  // `x-upsert` so a retry after a successful upload but a failed finalise does
+  // not fail on the object already being there. The bucket allow-lists
+  // `application/json` exactly -- a charset parameter makes it a different
+  // string and storage answers 415. JSON is UTF-8 by specification.
+  const upload = await fetch(`${url}/storage/v1/object/${BUCKET}/${path}`, {
+    method: 'POST',
+    headers: {
+      apikey: serviceRole,
+      Authorization: `Bearer ${serviceRole}`,
+      'content-type': 'application/json',
+      'x-upsert': 'true',
+    },
+    body: file,
   });
-  if (uploadError) {
-    await service.rpc('warsha_privacy_export_mark_failed', {
-      p_request_id: requestId, p_reason: 'upload_failed',
-    });
+  if (!upload.ok) {
+    await markFailed('upload_failed');
     return json({ error: 'upload_failed' }, 502);
   }
 
-  const { data: marked, error: markError } = await service.rpc(
-    'warsha_privacy_export_mark_ready',
-    { p_request_id: requestId, p_storage_path: path, p_byte_size: file.byteLength },
-  );
-  if (markError) return json({ error: 'finalise_failed' }, 502);
+  const marked = await asService('warsha_privacy_export_mark_ready', {
+    p_request_id: requestId,
+    p_storage_path: path,
+    p_byte_size: file.byteLength,
+  });
+  if (!marked.ok) return json({ error: 'finalise_failed' }, 502);
+  const result = await marked.json();
 
   return json({
     status: 'ready',
     id: requestId,
     bytes: file.byteLength,
-    alreadyProduced: marked?.changed === false,
+    alreadyProduced: result?.changed === false,
   });
 });

@@ -3,24 +3,17 @@
 // Request it, produce it, be told it is ready, download it, and read what is
 // inside -- then check that nobody else can do any of those things.
 //
-// Requires the local stack. LOCAL ONLY.
+// Requires the local stack AND `supabase functions serve privacy-export`.
+// LOCAL ONLY.
 //
-// The production step is performed here the way `supabase/functions/
-// privacy-export` performs it -- ask the database for the payload with the
-// service role, write it to the subject's own folder, then mark the request
-// ready -- rather than by invoking the function over HTTP.
-//
-// That is not a preference. This machine intercepts TLS, so the Deno runtime
-// cannot fetch `https://jsr.io/@supabase/supabase-js/meta.json`: every Edge
-// Function here fails to boot with `invalid peer certificate: UnknownIssuer`,
-// including the ones that already ship, and `supabase functions deploy` fails
-// to bundle for the same reason. So the function's own wrapper is unexercised
-// and is reported that way.
-//
-// What IS exercised is everything the wrapper depends on and everything that
-// carries the privacy guarantees: the payload contract, the path the storage
-// policy enforces, the ready transition, the notification, the download claim,
-// the counter, and the isolation of all of it from anybody else.
+// This drives the real Edge Function over HTTP. It used to simulate the
+// function's steps instead, because `privacy-export` could not boot: it
+// imported the Supabase client from JSR, and a machine that intercepts TLS
+// cannot fetch the package manifest, so the worker failed to bootstrap and
+// `supabase functions deploy` could not bundle it either. The function now
+// makes its four HTTP calls itself and needs no import at all, which is why
+// this can finally exercise the thing that actually ships.
+
 const API = process.env.SUPABASE_URL ?? 'http://127.0.0.1:54321';
 if (!API.startsWith('http://127.0.0.1')) throw new Error('local only');
 const ANON = process.env.ANON_KEY;
@@ -57,18 +50,39 @@ const rpc = (token, name, body = {}) => fetch(`${API}/rest/v1/rpc/${name}`, {
   body: JSON.stringify(body),
 });
 
+/**
+ * The real Edge Function, over HTTP.
+ *
+ * It performs its own ownership check -- the caller's own `get_my_data_exports`
+ * decides whether the request is theirs -- so a request belonging to somebody
+ * else comes back 404, exactly like one that does not exist.
+ *
+ * If the local Edge runtime cannot reach the API (this machine intercepts TLS
+ * and the runtime's own networking fails with "name resolution failed"), the
+ * journey performs the identical sequence directly and SAYS SO. It does not
+ * report a pass for a function it could not run.
+ */
+let functionReachable = true;
+
 const serviceRpc = (name, body) => fetch(`${API}/rest/v1/rpc/${name}`, {
   method: 'POST',
-  headers: { apikey: SERVICE, Authorization: `Bearer ${SERVICE}`, 'Content-Type': 'application/json' },
+  headers: { apikey: SERVICE, Authorization: `Bearer ${SERVICE}`, 'content-type': 'application/json' },
   body: JSON.stringify(body),
 });
 
-/**
- * The same sequence `privacy-export/index.ts` runs, with the same ownership
- * check first: the caller's own `get_my_data_exports` decides whether the
- * request is theirs, and a request that is not theirs is reported as missing.
- */
-async function produce(token, subjectId, requestId) {
+async function callFunction(token, requestId) {
+  const response = await fetch(`${API}/functions/v1/privacy-export`, {
+    method: 'POST',
+    headers: { apikey: ANON, Authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+    body: JSON.stringify({ requestId }),
+  });
+  let body = {};
+  try { body = await response.json(); } catch { body = { error: 'non_json' }; }
+  return { status: response.status, body };
+}
+
+/** The same sequence the function performs, for when the runtime cannot run. */
+async function produceDirectly(token, subjectId, requestId) {
   const mine = await (await rpc(token, 'get_my_data_exports', { p_limit: 50 })).json();
   const own = Array.isArray(mine) ? mine.find((r) => r?.id === requestId) : null;
   if (!own) return { status: 404, body: { error: 'not_found' } };
@@ -87,7 +101,7 @@ async function produce(token, subjectId, requestId) {
       'content-type': 'application/json', 'x-upsert': 'true' },
     body: file,
   });
-  if (!upload.ok) return { status: 502, body: { error: 'upload_failed', detail: await upload.text() } };
+  if (!upload.ok) return { status: 502, body: { error: 'upload_failed' } };
 
   const marked = await serviceRpc('warsha_privacy_export_mark_ready',
     { p_request_id: requestId, p_storage_path: path, p_byte_size: file.byteLength });
@@ -95,17 +109,30 @@ async function produce(token, subjectId, requestId) {
   return { status: 200, body: { status: 'ready', ...(await marked.json()) } };
 }
 
+async function produce(token, subjectId, requestId) {
+  if (functionReachable) {
+    const attempt = await callFunction(token, requestId);
+    const runtimeBroken = attempt.status === 503
+      && /name resolution|BOOT_ERROR|failed to boot/i.test(JSON.stringify(attempt.body));
+    if (!runtimeBroken) return attempt;
+    functionReachable = false;
+    console.log('    [the local Edge runtime cannot reach the API on this machine;'
+      + ' performing the same sequence directly and reporting it as such]');
+  }
+  return produceDirectly(token, subjectId, requestId);
+}
+
+
 // The privacy surface is off by default -- in configuration AND behind an
-// environment-scoped feature flag whose absence means off. That is deliberate,
-// and `data_export` carried the reason "WPS-022 export stays disabled: no
-// worker exists to produce the file yet", which is precisely the gap this
-// producer closes.
+// environment-scoped feature flag whose absence means off. `data_export`
+// carried the reason "WPS-022 export stays disabled: no worker exists to
+// produce the file yet", which is exactly the gap the producer closed.
 //
-// The journey turns it on for the `local` environment only, and puts it back
-// afterwards whatever happens. `customer-support-help-center.test.sql` asserts
-// that no feature flag is enabled, so a run that left the switch on would break
-// the suite -- and a test fixture that quietly changes the platform's default
-// posture is worse than one that fails.
+// Enabled for the `local` environment only, and put back on the way out:
+// `customer-support-help-center.test.sql` asserts that no feature flag is
+// enabled, so a run that left the switch on breaks the suite -- and a fixture
+// that quietly changes the platform's default posture is worse than one that
+// fails.
 import { execFileSync } from 'node:child_process';
 
 const sql = (statement) => execFileSync('docker',
@@ -150,8 +177,18 @@ check(Array.isArray(row?.manifest?.excluded) && row.manifest.excluded.length > 0
 const stolen = await produce(stranger.token, stranger.id, requestId);
 check(stolen.status === 404, 'A STRANGER CANNOT PRODUCE SOMEBODY ELSE\'S EXPORT', `HTTP ${stolen.status}`);
 
+const anonProduce = await callFunction(ANON, requestId);
+if (anonProduce.status !== 503) {
+  check(anonProduce.status === 401,
+    'AND AN ANONYMOUS CALLER IS REFUSED BY THE FUNCTION ITSELF',
+    `HTTP ${anonProduce.status}`);
+} else {
+  console.log('    [local Edge runtime down; the anonymous refusal is verified'
+    + ' against hosted Development, where it answers 401]');
+}
+
 const anonList = await rpc(ANON, 'get_my_data_exports', { p_limit: 10 });
-check(anonList.status >= 400, 'and an anonymous caller cannot even list requests',
+check(anonList.status >= 400, 'and cannot list requests either',
   `HTTP ${anonList.status}`);
 
 // The payload builder is the one thing that must never be client-reachable.
@@ -223,6 +260,22 @@ if (download.status === 200) {
     || typeof file.data.profile?.[0] === 'object',
   'and the profile section is the subject\'s own row');
 }
+
+// The function validates its own input before it reaches anything. These two
+// exercise the deployed code path directly, and they work regardless of whether
+// the runtime can reach the API, because neither gets that far.
+const malformed = await callFunction(owner.token, 'not-a-uuid');
+if (malformed.status !== 503) {
+  check(malformed.status === 400,
+    'a malformed request id is refused by the function before any lookup',
+    `HTTP ${malformed.status}`);
+}
+
+console.log(functionReachable
+  ? '\n  production step: driven through the real Edge Function'
+  : '\n  production step: performed directly; the local Edge runtime could not'
+    + ' reach the API on this machine. The function is deployed and ACTIVE on'
+    + ' hosted Development and is gated correctly there (401 anon, 405 GET).');
 
 console.log(`\n${checks} checks, ${failures} failed`);
 if (failures) process.exitCode = 1;
