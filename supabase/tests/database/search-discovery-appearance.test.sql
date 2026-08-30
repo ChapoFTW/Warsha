@@ -618,5 +618,48 @@ select is(
   0,
   'a service no discoverable provider offers still returns nothing');
 
+-- ---------------------------------------------------------------------------
+-- A partial word is what a person types while they are still typing
+-- ---------------------------------------------------------------------------
+-- `websearch_to_tsquery` produces whole lexemes, so "electrical" matched and
+-- "electric" found nobody. 202608310005 adds a prefix query alongside the exact
+-- one; the exact query is unchanged and the prefix query only ever adds rows.
+
+select is(
+  ((public.search_providers('electric', '{}'::jsonb, 'rating', 5, 0))->>'totalCount')::integer,
+  ((public.search_providers('electrical', '{}'::jsonb, 'rating', 5, 0))->>'totalCount')::integer,
+  'A PARTIAL ENGLISH TERM FINDS WHAT THE WHOLE WORD FINDS');
+
+select cmp_ok(
+  ((public.search_providers('plumb', '{}'::jsonb, 'rating', 5, 0))->>'totalCount')::integer,
+  '>=', 1, 'and so does a partial English service term');
+
+select cmp_ok(
+  ((public.search_providers('سباك', '{}'::jsonb, 'rating', 5, 0))->>'totalCount')::integer,
+  '>=', 1, 'A PARTIAL ARABIC TERM FINDS ITS PROFESSIONAL');
+
+select cmp_ok(
+  ((public.search_providers('Plomb', '{}'::jsonb, 'rating', 5, 0))->>'totalCount')::integer,
+  '>=', 1, 'and a partial French term does too');
+
+-- The prefix query must not become a way of matching everything.
+select is(
+  ((public.search_providers('zzzz', '{}'::jsonb, 'rating', 5, 0))->>'totalCount')::integer,
+  0, 'a term that matches nothing still matches nothing');
+
+select is(
+  ((public.search_providers('a', '{}'::jsonb, 'rating', 5, 0))->>'totalCount')::integer,
+  0, 'A SINGLE LETTER IS NOT A PREFIX SEARCH');
+
+-- The user's text reaches a tsquery parser. It must not be able to carry
+-- operators into it.
+select lives_ok(
+  $$select public.search_providers('&|!():*<>', '{}'::jsonb, 'rating', 5, 0)$$,
+  'TSQUERY OPERATORS IN A QUERY ARE STRIPPED, NOT PARSED');
+
+select is(
+  ((public.search_providers('&|!():*<>', '{}'::jsonb, 'rating', 5, 0))->>'totalCount')::integer,
+  0, 'and a query of nothing but operators finds nobody');
+
 select * from finish();
 rollback;
