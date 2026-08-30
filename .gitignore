@@ -62,3 +62,4 @@ tmp/
 # rule meant for scratch output.
 /*.log
 /*-debug.txt
+.devport

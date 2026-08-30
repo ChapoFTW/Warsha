@@ -1,6 +1,6 @@
 begin;
 
-select plan(30);
+select plan(32);
 
 -- Table privileges stay minimal and column-scoped.
 select is(has_table_privilege('authenticated', 'public.profiles', 'select'), true, 'authenticated can read profiles rows RLS allows');
@@ -94,33 +94,63 @@ values ('b4000000-0000-4000-8000-000000000001', 'Cairo', 'Maadi', 15);
 insert into storage.objects(bucket_id, name)
 values ('profile-images', 'b3000000-0000-4000-8000-000000000002/avatar/profile.jpg');
 
--- Asserting a literal 1 here was only correct while the global seed produced no
--- discoverable providers at all -- and that emptiness was itself the blind spot
--- that let `search_providers` raise on every call unnoticed. The property this
--- assertion is reaching for does not depend on how many providers exist: anon
--- sees the profiles of discoverable providers, and no others. So the expected
--- number is computed from the data before the role drops to anon.
-select set_config(
-  'warsha.expected_visible_profiles',
-  (select count(*)::text
-   from public.provider_profiles pp
-   join public.profiles pr on pr.id = pp.user_id
-   where private.is_provider_publicly_discoverable(pp.id)),
-  true
-);
+-- Anonymous visitors read nothing here at all.
+--
+-- This assertion has now been wrong twice, in opposite directions, and both
+-- times the test was describing the implementation rather than the rule.
+--
+-- It first asserted a literal 1, which was only true while the seed produced no
+-- discoverable providers -- the same emptiness that let `search_providers` raise
+-- on every call unnoticed. It was then corrected to "anon sees exactly the
+-- discoverable provider profiles", which faithfully described
+-- `profiles_public_provider_select` -- a policy that handed `anon` every column
+-- of this table, `phone` included, for every published professional.
+--
+-- The rule was never "which profiles may a stranger read". It is that
+-- `public.profiles` holds account data, including a phone number, and a
+-- stranger reads none of it. Public provider cards are served from
+-- `provider_profiles`, which carries its own `display_name` and `avatar_url`.
+-- 202608310001 dropped the policy and took back the grant.
 
 set local role anon;
-select is(
-  (select count(*)::integer from public.profiles),
-  current_setting('warsha.expected_visible_profiles')::integer,
-  'ANONYMOUS VISITORS SEE EXACTLY THE DISCOVERABLE PROVIDER PROFILES, AND NO OTHERS'
-);
-select is(
-  (select count(*)::integer from public.profiles where id = 'b3000000-0000-4000-8000-000000000002'),
-  1,
-  'the discoverable provider profile row is the visible one'
+select throws_ok(
+  'select count(*) from public.profiles',
+  '42501',
+  null,
+  'AN ANONYMOUS VISITOR CANNOT READ public.profiles AT ALL'
 );
 reset role;
+
+-- And the grant is gone, so a policy added later cannot quietly reopen it.
+select is_empty(
+  $$
+  select privilege_type from information_schema.table_privileges
+  where table_schema = 'public' and table_name = 'profiles' and grantee = 'anon'
+  order by 1
+  $$,
+  'anon holds no privilege on the account table'
+);
+
+select is_empty(
+  $$
+  select policyname from pg_policies
+  where schemaname = 'public' and tablename = 'profiles'
+    and 'anon' = any (roles)
+  order by 1
+  $$,
+  'AND NO POLICY ON profiles NAMES anon'
+);
+
+-- The provider's public identity still has somewhere to come from, or the fix
+-- would have taken the marketplace down with the leak.
+select isnt_empty(
+  $$
+  select column_name from information_schema.columns
+  where table_schema = 'public' and table_name = 'provider_profiles'
+    and column_name in ('display_name', 'avatar_url')
+  $$,
+  'provider_profiles still carries the public display data'
+);
 
 select * from finish();
 

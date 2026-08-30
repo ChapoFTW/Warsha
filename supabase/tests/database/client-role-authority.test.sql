@@ -59,7 +59,11 @@ select is(
   (select coalesce(string_agg(distinct table_name, ', ' order by table_name), '')
    from information_schema.role_column_grants
    where table_schema = 'public' and grantee = 'anon'),
-  'profession_service_categories, profession_services, professions, profiles, '
+  -- `profiles` left this list on 2026-08-31. It held a public-provider read
+  -- policy and a column grant on every column, `phone` included, so any
+  -- anonymous caller could read a published professional's telephone number.
+  -- Provider cards render from `provider_profiles`; nothing needed this.
+  'profession_service_categories, profession_services, professions, '
   || 'provider_portfolio, provider_services, review_responses, reviews, '
   || 'service_categories, services',
   'THE ANONYMOUS READ SURFACE IS EXACTLY THE PUBLIC CATALOGUE');
