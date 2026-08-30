@@ -25,8 +25,22 @@
   padding: 9px var(--gutter);
   display: flex;
   align-items: center;
-  gap: 16px;
+  /*
+   * The brand and the actions both refuse to shrink, and the call to action
+   * does not wrap, so at 320px the row is as wide as its longest translation.
+   * French is the longest -- "Créer un compte" against "Create account" -- and
+   * pushed the whole page five pixels past the viewport, which gives every
+   * French page a horizontal scrollbar on a small phone. The gap is the part
+   * that can give way without shrinking a touch target.
+   */
+  gap: 8px;
   min-height: 60px;
+}
+
+@media (min-width: 380px) {
+  .headerInner {
+    gap: 16px;
+  }
 }
 
 .brand {

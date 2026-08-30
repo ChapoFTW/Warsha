@@ -1,9 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
 import { isLocale, localeFromAcceptLanguage, pathWithoutLocale } from './lib/preferences.ts';
-
-/** The canonical host. Everything else redirects here. */
-const CANONICAL_HOST = 'usewarsha.com';
+// Shared with `robots.ts` and `sitemap.ts`, which must name the same domain.
+import { CANONICAL_HOST } from './lib/site.ts';
 
 /**
  * Serve an application tree from a host without exposing its path prefix.
