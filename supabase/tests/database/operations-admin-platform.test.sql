@@ -450,7 +450,9 @@ select is((public.get_staff_customer_overview('a1700000-0000-4000-8000-000000000
 select is((public.get_staff_customer_overview('a1700000-0000-4000-8000-000000000006'))->>'contactVisible',
   'false','the projection states that contact details are hidden');
 select throws_ok($$select public.get_staff_customer_overview('a1700000-0000-4000-8000-00000000ffff')$$,
-  'P0002','Account not found','an unknown account is not found');
+-- PT404 since 202608310007. These raises all mean an ordinary missing
+-- record, and PostgREST was answering HTTP 500 for every one of them.
+  'PT404','Account not found','an unknown account is not found');
 reset role;
 select ok((select count(*) from private.staff_access_log where surface='customer_overview') >= 1,
   'safe profile access is logged');
@@ -522,7 +524,7 @@ select is((public.staff_rollback_configuration('marketplace_waves','local',1,
   'Reverting to the previous wave size'))->>'version','2','a rollback creates a new version');
 select throws_ok(
   $$select public.staff_rollback_configuration('marketplace_waves','local',99,'Reverting to a missing version')$$,
-  'P0002','Target version not found','a rollback to a missing version is refused');
+  'PT404','Target version not found','a rollback to a missing version is refused');
 reset role;
 
 select is((select applied_by from private.staff_configuration_domains where domain_key='marketplace_waves'),

@@ -237,12 +237,14 @@ select isnt(public.get_help_article('how-payments-work','ar')->>'body',
   'the Arabic body is not the English body');
 select ok(pg_catalog.jsonb_array_length(public.get_help_article('how-payments-work','en')->'related') > 0,
   'related articles are returned');
-select throws_ok($$select public.get_help_article('no-such-article','en')$$,'P0002',
+-- PT404 since 202608310007. These raises all mean an ordinary missing
+-- record, and PostgREST was answering HTTP 500 for every one of them.
+select throws_ok($$select public.get_help_article('no-such-article','en')$$,'PT404',
   'Help article not found','an unknown slug is refused');
 
 select ok(pg_catalog.jsonb_array_length(public.get_help_category('payment_help','en')->'articles') > 0,
   'a category lists its articles');
-select throws_ok($$select public.get_help_category('no_such_category','en')$$,'P0002',
+select throws_ok($$select public.get_help_category('no_such_category','en')$$,'PT404',
   'Help category not found','an unknown category is refused');
 
 -- ---------------------------------------------------------------------------
@@ -363,15 +365,15 @@ set local role authenticated;
 select pg_temp.act_as('a1900000-0000-4000-8000-000000000004');
 select throws_ok(
   pg_catalog.format($$select public.get_my_support_case(%L)$$, current_setting('wps019.case')),
-  'P0002','Support case not found','another account cannot read a case it does not own');
+  'PT404','Support case not found','another account cannot read a case it does not own');
 select throws_ok(
   pg_catalog.format($$select public.reopen_support_case(%L,'Let me in','wps019-intruder-1')$$,
     current_setting('wps019.case')),
-  'P0002','Support case not found','another account cannot reopen a case it does not own');
+  'PT404','Support case not found','another account cannot reopen a case it does not own');
 select throws_ok(
   pg_catalog.format($$select public.submit_support_satisfaction(%L,5::smallint,null)$$,
     current_setting('wps019.case')),
-  'P0002','Support case not found','another account cannot rate a case it does not own');
+  'PT404','Support case not found','another account cannot rate a case it does not own');
 select is((select count(*)::integer from public.support_tickets t
   where t.requester_id='a1900000-0000-4000-8000-000000000003'),0,
   'row level security hides another account''s cases entirely');
@@ -745,7 +747,7 @@ select is((select count(*)::integer from public.help_article_versions v
 -- A draft is invisible to a customer in every read path.
 set local role authenticated;
 select pg_temp.act_as('a1900000-0000-4000-8000-000000000003');
-select throws_ok($$select public.get_help_article('wps019-draft-article','en')$$,'P0002',
+select throws_ok($$select public.get_help_article('wps019-draft-article','en')$$,'PT404',
   'Help article not found','a customer cannot read a draft article');
 select is((select count(*)::integer from public.help_articles where slug='wps019-draft-article'),0,
   'row level security hides a draft article from a customer');

@@ -20,7 +20,7 @@
 
 begin;
 
-select plan(9);
+select plan(10);
 
 -- ---------------------------------------------------------------------------
 -- 1. No client-reachable function carries an unqualified DELETE
@@ -172,6 +172,45 @@ select is_empty(
   order by 1
   $$,
   'NO CLIENT-REACHABLE FUNCTION CLAIMS TO BE READ-ONLY WHILE CALLING A WRITER'
+);
+
+-- ---------------------------------------------------------------------------
+-- "Not found" is not a server error
+-- ---------------------------------------------------------------------------
+-- Fifty-seven client-reachable functions, and thirteen private helpers they
+-- call, signalled a missing record with SQLSTATE P0002. PostgREST answered
+-- HTTP 500 for every one -- "Support case not found", "Booking not found",
+-- "Help article not found" -- so a client could not tell a gone record from a
+-- broken server, and every ordinary miss appeared in monitoring as a 5xx.
+--
+-- They raise PT404 now, which PostgREST honours as the HTTP status.
+
+select is_empty(
+  $$
+  with raisers as (
+    select p.oid, n.nspname, p.proname, p.prosrc
+    from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname in ('public', 'private')
+      and p.prosrc like '%P0002%'
+  ),
+  reachable as (
+    select p.prosrc
+    from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public'
+      and (has_function_privilege('anon', p.oid, 'execute')
+        or has_function_privilege('authenticated', p.oid, 'execute'))
+  )
+  select r.nspname || '.' || r.proname
+  from raisers r
+  where (r.nspname = 'public'
+         and (has_function_privilege('anon', r.oid, 'execute')
+           or has_function_privilege('authenticated', r.oid, 'execute')))
+     or exists (select 1 from reachable c where c.prosrc like '%' || r.proname || '%')
+  order by 1
+  $$,
+  'NO CLIENT-REACHABLE PATH REPORTS A MISSING RECORD AS A SERVER ERROR'
 );
 
 select * from finish();

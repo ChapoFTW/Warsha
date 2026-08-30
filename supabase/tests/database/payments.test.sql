@@ -210,7 +210,9 @@ select is(
 select set_config('request.jwt.claim.sub', '91000000-0000-0000-0000-000000000002', true);
 select throws_ok(
   $$select public.get_my_booking_payment('95000000-0000-0000-0000-000000000001')$$,
-  'P0002',
+-- PT404 since 202608310007. These raises all mean an ordinary missing
+-- record, and PostgREST was answering HTTP 500 for every one of them.
+  'PT404',
   'Booking not found',
   'another customer cannot read a payment'
 ); -- 31

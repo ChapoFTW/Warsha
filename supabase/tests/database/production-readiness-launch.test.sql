@@ -293,7 +293,9 @@ select is(private.is_staff(), true, 'a legacy staff account still satisfies the 
 select is((public.get_staff_session())->>'isStaff','false','a legacy account holds no WPS-017 capability');
 select throws_ok(
   $$select public.moderate_review('00000000-0000-0000-0000-000000000001','hide','x')$$,
-  'P0002', null, 'a legacy account still reaches the domain logic while grace is allowed');
+-- PT404 since 202608310007. These raises all mean an ordinary missing
+-- record, and PostgREST was answering HTTP 500 for every one of them.
+  'PT404', null, 'a legacy account still reaches the domain logic while grace is allowed');
 reset role;
 
 -- Turning grace off closes it, which is what production does by constraint.
