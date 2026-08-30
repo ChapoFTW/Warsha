@@ -74,7 +74,6 @@ export type QuoteSort = typeof QUOTE_SORTS[number];
 export type ServiceCategory = {
   id: string;
   translationKey: string;
-  iconName: string | null;
   descriptionKey: string | null;
 };
 
@@ -133,7 +132,6 @@ export function parseCategories(value: unknown): ServiceCategory[] {
       // The server sends snake_case here and camelCase elsewhere. Both are its
       // choice; neither is corrected, only read.
       translationKey: str(row.translation_key) ?? row.id,
-      iconName: str(row.icon_name),
       descriptionKey: str(row.description_key),
     }];
   })

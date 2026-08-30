@@ -13,6 +13,9 @@ import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { warshaIconElements } from '../src/brand/warsha-icon-geometry.ts';
+import { categoryIconName, WARSHA_FALLBACK_ICON } from '../src/brand/warsha-icons.ts';
+
 import { serviceCategoryDescription, serviceCategoryLabel } from '../src/i18n/service-labels.ts';
 import { translations } from '../src/i18n/translations.ts';
 import { appCopy as appCopyForCatalogue } from '../web/lib/app-copy.ts';
@@ -526,61 +529,41 @@ equal(matchServiceCategories('ac'), ['ac'],
 
 // --- Every catalogue icon resolves to a real glyph ---------------------------
 //
-// `supabase-adapter.ts` casts the stored value straight to the icon type --
-// `String(row.icon_name) as Category['icon']` -- so TypeScript validates the
-// shared mock catalogue and never sees what the database actually holds. Four of
-// the seven names introduced with the expansion did not exist in MaterialIcons:
-// `water-heater`, `flooring`, `renovation`, `garden`. They read like icon names,
-// which is why nobody questioned them, and an unknown name renders whatever the
-// font falls back to -- on a screen no test could read.
+// This section used to read the MaterialIcons glyph map and assert that every
+// `service_categories.icon_name` was a real glyph, in the database and in the
+// shared mock catalogue. It was written for a real defect: four of seven names
+// added in an expansion -- `water-heater`, `flooring`, `renovation`, `garden` --
+// did not exist in MaterialIcons and drew an empty box on a screen no test
+// could read.
+//
+// That architecture is gone. Category marks resolve from the category id
+// through `categoryIconName` into Warsha's own geometry, precisely so an
+// unvalidated glyph name cannot decide what a customer sees. `icon_name` is no
+// longer read by anything: the client `Category` type no longer declares it,
+// the adapter no longer maps it, `web/lib/customer.ts` no longer carries it,
+// and the discovery payload no longer ships it.
+//
+// So these assertions are not weakened, they are re-pointed at what actually
+// renders: every category the product offers has its own Warsha mark, and no
+// active category falls back to the generic one.
 {
-  const glyphs = JSON.parse(readFileSync(
-    'node_modules/@expo/vector-icons/build/vendor/react-native-vector-icons/glyphmaps/MaterialIcons.json',
-    'utf8')) as Record<string, number>;
-  const available = new Set(Object.keys(glyphs));
-  check(available.size > 1000, 'the MaterialIcons glyph map is the real one');
+  const active = mockCategories.filter((category) => !isLegacyCategory(category.id));
+  check(active.length > 10, `the shared catalogue has categories (${active.length})`);
 
-  for (const category of mockCategories) {
-    check(available.has(category.icon),
-      `${category.id} renders a real glyph, not a fallback (${category.icon})`);
+  for (const category of active) {
+    const mark = categoryIconName(category.id);
+    check(mark !== WARSHA_FALLBACK_ICON,
+      `${category.id} HAS ITS OWN WARSHA MARK, NOT THE GENERIC ONE (${mark})`);
+    const drawn = warshaIconElements(mark);
+    check(drawn != null && drawn.length > 0,
+      `${category.id} resolves geometry the renderer can actually draw`);
   }
 
-  // What the database is actually told to store, across every migration that
-  // writes an icon. Reading the SQL rather than the module is the point: the
-  // module is typed and the database is not.
-  const iconWrites = new Map<string, string>();
-  for (const file of readdirSync('supabase/migrations').filter((n) => n.endsWith('.sql'))) {
-    const sql = readFileSync(join('supabase/migrations', file), 'utf8');
-    // Scoped to statements that actually touch service_categories. A blanket
-    // scan over every migration matches tuples from unrelated tables -- the
-    // first version of this test read an image-format row and asked why "webp"
-    // was not an icon.
-    for (const [statement] of sql.matchAll(
-      /insert into public\.service_categories[\s\S]*?;/g)) {
-      for (const [, id, icon] of statement.matchAll(
-        /\('([a-z-]+)', '[A-Za-z]+', '[A-Za-z]+', '([a-z-]+)'/g)) {
-        iconWrites.set(id, icon);
-      }
-    }
-    for (const [, icon, id] of sql.matchAll(
-      /update public\.service_categories set icon_name = '([a-z-]+)'\s+where id = '([a-z-]+)'/g)) {
-      iconWrites.set(id, icon);
-    }
-  }
-  check(iconWrites.size > 0, 'the migrations do write icon names');
-  for (const [id, icon] of iconWrites) {
-    check(available.has(icon),
-      `THE DATABASE STORES A REAL GLYPH FOR ${id}, NOT "${icon}"`);
-  }
-  // And the two sources must agree, or a customer sees one icon in mock mode
-  // and a different one against the real backend.
-  const byId = new Map(mockCategories.map((c) => [c.id, c.icon]));
-  for (const [id, icon] of iconWrites) {
-    // A withdrawn category is absent from the shared catalogue by design; the
-    // database keeps its icon so history still renders.
-    if (isLegacyCategory(id) || !byId.has(id)) continue;
-    equal(icon, byId.get(id),
-      `${id} has the same icon in the database as in the shared catalogue`);
+  // A withdrawn category keeps rendering, because history still shows it. It is
+  // allowed to reach the fallback -- that is what the fallback is for.
+  for (const category of mockCategories.filter((c) => isLegacyCategory(c.id))) {
+    check(warshaIconElements(categoryIconName(category.id)) !== undefined,
+      `the withdrawn ${category.id} still draws something rather than nothing`);
   }
 }
 

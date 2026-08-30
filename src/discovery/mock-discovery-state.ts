@@ -202,7 +202,7 @@ export function mockFilterMetadata(): DiscoveryFilterMetadata {
   return {
     categories: mockCategories
       .filter(category => mockProviders.some(p => p.categoryId === category.id))
-      .map(category => ({ id: category.id, translationKey: category.label, iconName: category.icon })),
+      .map(category => ({ id: category.id, translationKey: category.label })),
     governorates: governorates.sort(),
     languages,
     pricingTypes,
@@ -229,7 +229,7 @@ export function mockSuggestions(accountKey: string | null): DiscoverySuggestions
   return {
     recentSearches: accountKey ? [...account(accountKey).recentSearches] : [],
     suggestedCategories: mockCategories.slice(0, 8)
-      .map(category => ({ id: category.id, translationKey: category.label, iconName: category.icon })),
+      .map(category => ({ id: category.id, translationKey: category.label })),
     commonServices: [...counts.entries()]
       .map(([id, entry]) => ({
         id,

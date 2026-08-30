@@ -2,7 +2,7 @@ import type { ComponentProps } from 'react';
 import type MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import type { TranslationKey } from '@/src/i18n/translations';
 
-export type Category = { id: string; label: TranslationKey; icon: ComponentProps<typeof MaterialIcons>['name']; description: TranslationKey };
+export type Category = { id: string; label: TranslationKey; description: TranslationKey };
 export type PricingType='fixed'|'starting'|'hourly'|'inspection'|'quote';
 export type Service = { id:string;
   /**

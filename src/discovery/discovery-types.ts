@@ -106,7 +106,7 @@ export type DiscoverySearchResult = {
 };
 
 export type DiscoveryFilterMetadata = {
-  categories: { id: string; translationKey: string; iconName: string }[];
+  categories: { id: string; translationKey: string }[];
   governorates: string[];
   languages: string[];
   pricingTypes: string[];
@@ -117,7 +117,7 @@ export type DiscoveryFilterMetadata = {
 
 export type DiscoverySuggestions = {
   recentSearches: string[];
-  suggestedCategories: { id: string; translationKey: string; iconName: string }[];
+  suggestedCategories: { id: string; translationKey: string }[];
   /** Ranked by how many discoverable workers offer the service. Never labelled
    * "popular" in the interface: Warsha has no traffic data and will not invent
    * a popularity signal. */
