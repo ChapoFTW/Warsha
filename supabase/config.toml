@@ -7,7 +7,7 @@ extra_search_path = ["public", "extensions"]
 major_version = 15
 [db.seed]
 enabled = true
-sql_paths = ["./seed.sql"]
+sql_paths = ["./seed.sql", "./seed-discovery-fixture.sql"]
 [auth]
 enabled = true
 site_url = "http://localhost:8081"

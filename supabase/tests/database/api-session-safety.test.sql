@@ -20,7 +20,7 @@
 
 begin;
 
-select plan(4);
+select plan(8);
 
 -- ---------------------------------------------------------------------------
 -- 1. No client-reachable function carries an unqualified DELETE
@@ -83,6 +83,50 @@ select ok(
    join pg_namespace n on n.oid = p.pronamespace
    where n.nspname = 'public' and p.proname = 'search_providers'),
   'AND IT EMPTIES ITS WORKING SET WITH A WHERE CLAUSE THE API SESSION ACCEPTS'
+);
+
+-- ---------------------------------------------------------------------------
+-- Storage: no public bucket, and the retired one stays retired
+-- ---------------------------------------------------------------------------
+-- `avatars` was created public with a `public_media_read` policy that let anon
+-- read every object in it. Hardening dropped the policies and flipped it
+-- private, but left the bucket, so the inventory carries a bucket no client can
+-- use and every audit has to re-investigate. `profile-images` is the live path.
+
+select is_empty(
+  $$ select id from storage.buckets where public order by 1 $$,
+  'NO STORAGE BUCKET IS PUBLIC'
+);
+
+select is_empty(
+  $$
+  select policyname from pg_policies
+  where schemaname = 'storage' and tablename = 'objects'
+    and (coalesce(qual,'') || coalesce(with_check,'')) like '%''avatars''%'
+  order by 1
+  $$,
+  'the retired avatars bucket has no policies and gains none'
+);
+
+select isnt_empty(
+  $$
+  select policyname from pg_policies
+  where schemaname = 'storage' and tablename = 'objects'
+    and (coalesce(qual,'') || coalesce(with_check,'')) like '%profile-images%'
+  $$,
+  'AND profile-images IS THE BUCKET THAT ACTUALLY CARRIES THE POLICIES'
+);
+
+-- The attachments table is scaffolding, and it must stay unreachable until it
+-- is wired deliberately rather than drifting open.
+select is_empty(
+  $$
+  select grantee from information_schema.role_table_grants
+  where table_schema = 'public' and table_name = 'marketplace_request_attachments'
+    and grantee in ('anon','authenticated')
+  order by 1
+  $$,
+  'deferred attachment scaffolding is not reachable by a client role'
 );
 
 select * from finish();

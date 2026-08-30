@@ -94,11 +94,26 @@ values ('b4000000-0000-4000-8000-000000000001', 'Cairo', 'Maadi', 15);
 insert into storage.objects(bucket_id, name)
 values ('profile-images', 'b3000000-0000-4000-8000-000000000002/avatar/profile.jpg');
 
+-- Asserting a literal 1 here was only correct while the global seed produced no
+-- discoverable providers at all -- and that emptiness was itself the blind spot
+-- that let `search_providers` raise on every call unnoticed. The property this
+-- assertion is reaching for does not depend on how many providers exist: anon
+-- sees the profiles of discoverable providers, and no others. So the expected
+-- number is computed from the data before the role drops to anon.
+select set_config(
+  'warsha.expected_visible_profiles',
+  (select count(*)::text
+   from public.provider_profiles pp
+   join public.profiles pr on pr.id = pp.user_id
+   where private.is_provider_publicly_discoverable(pp.id)),
+  true
+);
+
 set local role anon;
 select is(
   (select count(*)::integer from public.profiles),
-  1,
-  'anonymous visitors see exactly the discoverable provider profile'
+  current_setting('warsha.expected_visible_profiles')::integer,
+  'ANONYMOUS VISITORS SEE EXACTLY THE DISCOVERABLE PROVIDER PROFILES, AND NO OTHERS'
 );
 select is(
   (select count(*)::integer from public.profiles where id = 'b3000000-0000-4000-8000-000000000002'),

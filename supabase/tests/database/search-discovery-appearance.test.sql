@@ -532,5 +532,44 @@ select ok((select count(*) from private.operational_log_events
   where event_key = 'discovery.search_recorded') > 0,
   'the search event itself is recorded through the existing observability authority');
 
+-- ---------------------------------------------------------------------------
+-- The fixture must be able to be found
+-- ---------------------------------------------------------------------------
+-- Every one of the twenty original seeded providers failed
+-- `is_provider_publicly_discoverable`, and failed at the first join: `user_id`
+-- was null. So local discovery returned an empty list to every query, and an
+-- empty list is indistinguishable from a broken one. That is precisely how
+-- `search_providers` raised on every call for as long as it did -- nobody had
+-- ever seen it return a provider.
+--
+-- `supabase/seed-discovery-fixture.sql` builds providers that genuinely satisfy
+-- the eligibility rules, and providers that genuinely do not. The rules
+-- themselves are untouched: this asserts the fixture, never the predicate.
+
+select cmp_ok(
+  (select count(*) from public.provider_profiles
+   where private.is_provider_publicly_discoverable(id)),
+  '>=', 1::bigint,
+  'THE SEEDED FIXTURE PRODUCES AT LEAST ONE DISCOVERABLE PROVIDER'
+);
+
+select cmp_ok(
+  (select count(*) from public.provider_profiles p
+   where p.id::text like 'd2000000%' and not private.is_provider_publicly_discoverable(p.id)),
+  '>=', 2::bigint,
+  'and providers that must be excluded are present to prove exclusion'
+);
+
+-- Distance work needs coordinates, and none of the original service areas had
+-- any, so radius filtering and nearest sorting could not be exercised at all.
+select cmp_ok(
+  (select count(*) from public.provider_service_areas a
+   join public.provider_profiles p on p.id = a.provider_id
+   where a.latitude is not null and a.longitude is not null
+     and private.is_provider_publicly_discoverable(p.id)),
+  '>=', 2::bigint,
+  'AND A DISCOVERABLE PROVIDER CARRIES COORDINATES, SO DISTANCE IS TESTABLE'
+);
+
 select * from finish();
 rollback;
