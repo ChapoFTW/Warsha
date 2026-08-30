@@ -45,9 +45,17 @@ const GOVERNED_BRAND_FILES = new Set(['src/brand/mark-geometry.ts']);
  * Files allowed to import the static dark palette, each for a stated reason.
  * `app/+html.tsx` is rendered at export time and has no React tree to read a
  * hook from; the appearance modules define the palettes themselves.
+ *
+ * `AppErrorBoundary` is the same case for the opposite reason. Expo Router
+ * renders it in place of the tree below when that tree throws — which is every
+ * Warsha provider, the appearance context among them. A crash screen that reads
+ * the context it is standing in for is a blank screen with extra steps, so it
+ * reads the palette as a module instead. Light unconditionally, because the
+ * preference lives in the provider that is not there.
  */
 const STATIC_PALETTE_ALLOWED = new Set([
   'app/+html.tsx',
+  'components/warsha/AppErrorBoundary.tsx',
   'constants/theme.ts',
   'constants/appearance.ts',
   'src/appearance/appearance-context.tsx',
