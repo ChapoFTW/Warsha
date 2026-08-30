@@ -89,12 +89,17 @@ export function WarshaIcon({
 function renderElement(element: WarshaIconElement, index: number, ink: string) {
   const fill = element.fill === 'currentColor' ? ink : 'none';
   const stroke = element.stroke === 'none' ? 'none' : ink;
-  const shared = { key: index, fill, stroke, transform: element.transform };
+  // `key` is deliberately NOT part of `shared`. React does not read a key out
+  // of a spread object -- it warns and falls back to no key at all, so a list
+  // of icon elements reconciles by position instead of identity. It is passed
+  // directly on each element below.
+  const shared = { fill, stroke, transform: element.transform };
 
   switch (element.tag) {
     case 'rect':
       return (
         <Rect
+          key={index}
           {...shared}
           x={element.x}
           y={element.y}
@@ -105,10 +110,10 @@ function renderElement(element: WarshaIconElement, index: number, ink: string) {
         />
       );
     case 'circle':
-      return <Circle {...shared} cx={element.cx} cy={element.cy} r={element.r} />;
+      return <Circle key={index} {...shared} cx={element.cx} cy={element.cy} r={element.r} />;
     case 'ellipse':
-      return <Ellipse {...shared} cx={element.cx} cy={element.cy} rx={element.rx} ry={element.ry} />;
+      return <Ellipse key={index} {...shared} cx={element.cx} cy={element.cy} rx={element.rx} ry={element.ry} />;
     default:
-      return <Path {...shared} d={element.d} />;
+      return <Path key={index} {...shared} d={element.d} />;
   }
 }
