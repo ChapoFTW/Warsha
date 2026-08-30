@@ -6,9 +6,9 @@ insert into public.service_categories(id,translation_key,description_key,icon_na
 ('barber','barber','barberDescription','content-cut',110),('hairdressing','hairdressing','hairdressingDescription','face-retouching-natural',120),('personal-styling','personalStyling','personalStylingDescription','checkroom',130)
 on conflict(id) do update set translation_key=excluded.translation_key,description_key=excluded.description_key,icon_name=excluded.icon_name,sort_order=excluded.sort_order;
 
-insert into public.services(id,category_id,name,pricing_type,price_egp,duration_label) values
-('10000000-0000-4000-8000-000000000001','plumbing','Home inspection','inspection',180,'30–45 min'),('10000000-0000-4000-8000-000000000002','plumbing','Leak repair','starting',320,'1–2 hours'),('10000000-0000-4000-8000-000000000003','electrical','Electrical inspection','inspection',220,'45 min'),('10000000-0000-4000-8000-000000000004','cleaning','Deep cleaning','starting',650,'4–6 hours'),('10000000-0000-4000-8000-000000000005','ac','AC cleaning','fixed',275,'1 hour')
-on conflict(id) do update set name=excluded.name,pricing_type=excluded.pricing_type,price_egp=excluded.price_egp,duration_label=excluded.duration_label;
+insert into public.services(id,category_id,name,pricing_type,price_egp) values
+('10000000-0000-4000-8000-000000000001','plumbing','Home inspection','inspection',180),('10000000-0000-4000-8000-000000000002','plumbing','Leak repair','starting',320),('10000000-0000-4000-8000-000000000003','electrical','Electrical inspection','inspection',220),('10000000-0000-4000-8000-000000000004','cleaning','Deep cleaning','starting',650),('10000000-0000-4000-8000-000000000005','ac','AC cleaning','fixed',275)
+on conflict(id) do update set name=excluded.name,pricing_type=excluded.pricing_type,price_egp=excluded.price_egp;
 
 with provider_seed as (
   select n,((substr(md5('warsha-provider-'||n),1,8)||'-'||substr(md5('warsha-provider-'||n),9,4)||'-4'||substr(md5('warsha-provider-'||n),14,3)||'-8'||substr(md5('warsha-provider-'||n),18,3)||'-'||substr(md5('warsha-provider-'||n),21,12))::uuid) id

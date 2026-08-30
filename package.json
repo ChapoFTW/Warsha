@@ -14,7 +14,7 @@
     "test:wps008-alignment": "node --no-warnings --experimental-strip-types scripts/wps008-alignment.test.mts",
     "test:device-p1": "node --no-warnings --experimental-strip-types scripts/device-p1-regressions.test.mts",
     "test:brand": "node --no-warnings --experimental-strip-types scripts/brand-system.test.mts",
-      "test:worker-auth": "node --no-warnings --experimental-strip-types scripts/worker-auth-flow.test.mts",
+    "test:worker-auth": "node --no-warnings --experimental-strip-types scripts/worker-auth-flow.test.mts",
     "test:customer-email-confirmation": "node --no-warnings --experimental-strip-types scripts/customer-email-confirmation.test.mts",
     "test:qa-preview": "node --no-warnings --experimental-strip-types scripts/qa-preview-pipeline.test.mts",
     "qa:status": "node scripts/qa-release.mjs status",
@@ -105,9 +105,9 @@
     "automation:govern": "node scripts/warsha-automation-governance.mjs",
     "test:automation-authority": "node --no-warnings --experimental-strip-types scripts/automation-authority.test.mts",
     "test:native-admin-boundary": "node --no-warnings --experimental-strip-types scripts/native-admin-boundary.test.mts",
-  "test:notification-catalogue": "node --no-warnings --experimental-strip-types scripts/notification-catalogue.test.mts",
-  "test:financial-notifications": "node --no-warnings --experimental-strip-types scripts/financial-notifications.test.mts",
-  "test:identity-extraction": "node --no-warnings --experimental-strip-types scripts/identity-extraction.test.mts"
+    "test:notification-catalogue": "node --no-warnings --experimental-strip-types scripts/notification-catalogue.test.mts",
+    "test:financial-notifications": "node --no-warnings --experimental-strip-types scripts/financial-notifications.test.mts",
+    "test:identity-extraction": "node --no-warnings --experimental-strip-types scripts/identity-extraction.test.mts"
   },
   "dependencies": {
     "@expo-google-fonts/cairo": "^0.4.2",
@@ -154,7 +154,10 @@
     "react-native-worklets": "0.5.1"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@playwright/test": "^1.62.1",
     "@types/react": "~19.1.0",
+    "axe-core": "^4.13.0",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~10.0.0",
     "typescript": "~5.9.2"

@@ -86,7 +86,8 @@ export default function ProviderProfileScreen() {
                 professionalCertificateVerified={provider.professionalCertificateVerified}
               />
               <AppText style={styles.muted}>
-                {professionLabel(provider.profession, language)} — {provider.location}
+                {serviceMetaLine([professionLabel(provider.profession, language),
+                  provider.location], ' — ')}
               </AppText>
             </View>
           </View>
@@ -243,8 +244,7 @@ function ServiceRow({ service }: { service: Service }) {
       <View>
         <AppText style={styles.strong}>{catalogueServiceLabel(service, language)}</AppText>
         <AppText style={styles.muted}>
-          {serviceMetaLine([service.duration,
-            servicePricingLabels[language][service.pricingType]], ' · ')}
+          {servicePricingLabels[language][service.pricingType]}
         </AppText>
       </View>
       <View style={styles.inline}>

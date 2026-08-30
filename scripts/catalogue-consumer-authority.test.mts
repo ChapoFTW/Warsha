@@ -323,29 +323,48 @@ for (const file of ['app/onboarding/worker.tsx', 'app/worker/profile.tsx'] as co
 // ---------------------------------------------------------------------------
 // A separator with nothing on one side of it
 // ---------------------------------------------------------------------------
-// `public.services.duration_label` is set for five demo rows and null for all
-// 171 catalogued services, and `mapService` turns that null into ''. Both
-// render sites interpolated it beside a separator, so for essentially every
-// real service the provider profile read " · Quote" and the booking picker
-// read "Fix a leaking pipe — ". The separator belongs to the join.
+// `public.services.duration_label` was null for all 171 catalogued services and
+// carried free-text English for five demo rows. Both render sites interpolated
+// it beside a separator, so a customer read " \u00b7 Quote" on the provider
+// profile and "Fix a leaking pipe \u2014 " on the booking picker.
+//
+// The duration concept is now retired (202608300004): Warsha quotes duration
+// per job, in minutes, entered by the worker. So the fix is no longer a guard
+// around a value that is usually missing -- the value is gone. What remains is
+// the rule the bug taught, applied where a nullable value IS still rendered
+// beside a separator: `provider_profiles.location_label` is nullable and the
+// adapter coerces null to ''.
 
-check(serviceMetaLine(['', 'Quote'], ' · ') === 'Quote',
-  'A MISSING DURATION TAKES ITS SEPARATOR WITH IT');
-check(serviceMetaLine(['1–2 hours', 'Quote'], ' · ') === '1–2 hours · Quote',
-  'and a duration that exists is still joined to the pricing label');
-check(serviceMetaLine(['Fix a leaking pipe', ''], ' — ') === 'Fix a leaking pipe',
-  'the booking picker does not trail an em dash into nothing');
-check(serviceMetaLine([null, undefined], ' · ') === '',
-  'and a line with no parts at all is empty rather than punctuation');
-check(serviceMetaLine([' ', 'Quote'], ' · ') === 'Quote',
+check(serviceMetaLine(['', 'Quote'], ' \u00b7 ') === 'Quote',
+  'A MISSING PART TAKES ITS SEPARATOR WITH IT');
+check(serviceMetaLine(['Plumber', 'Nasr City'], ' \u2014 ') === 'Plumber \u2014 Nasr City',
+  'and two present parts are still joined');
+check(serviceMetaLine(['Plumber', ''], ' \u2014 ') === 'Plumber',
+  'THE PROFESSION LINE DOES NOT TRAIL A DASH INTO AN EMPTY LOCATION');
+check(serviceMetaLine([null, undefined], ' \u00b7 ') === '',
+  'a line with no parts at all is empty rather than punctuation');
+check(serviceMetaLine([' ', 'Quote'], ' \u00b7 ') === 'Quote',
   'whitespace is not a part');
 
-for (const site of ['app/provider/[id].tsx', 'app/booking/new/[providerId].tsx']) {
+const providerScreen = readFileSync('app/provider/[id].tsx', 'utf8');
+check(/serviceMetaLine\(\[professionLabel/.test(providerScreen),
+  'the provider profile composes profession and location through the shared join');
+
+// --- the retired attribute stays retired ----------------------------------
+// A row value the compiler cannot see is exactly how the original defect
+// survived, so this is asserted against the source rather than the type.
+
+for (const site of ['app/provider/[id].tsx', 'app/booking/new/[providerId].tsx',
+  'src/data/adapters/supabase-adapter.ts', 'src/data/marketplace-types.ts']) {
   const source = readFileSync(site, 'utf8');
-  check(/serviceMetaLine\(/.test(source),
-    `${site} composes its service line through the shared authority`);
-  check(!/\{service\.duration\}\s*·|— \{item\.duration\}/.test(source),
-    `${site} NO LONGER INTERPOLATES A DURATION BESIDE A BARE SEPARATOR`);
+  check(!/duration_label/.test(source),
+    `${site} DOES NOT READ THE RETIRED duration_label COLUMN`);
+  check(!/\bduration\b\s*[:.]/.test(source),
+    `${site} carries no service duration attribute`);
 }
+
+const seed = readFileSync('supabase/seed.sql', 'utf8');
+check(!/duration_label/.test(seed),
+  'AND THE SEED NO LONGER WRITES ENGLISH DISPLAY TEXT INTO THE CATALOGUE');
 
 console.log(`Catalogue consumer authority: ${checks} checks passed.`);

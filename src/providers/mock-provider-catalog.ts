@@ -68,7 +68,6 @@ export async function syncMockProviderCatalog(accountId = 'mock-user') {
     translationKey: item.translationKey,
     price: 0,
     pricingType: 'quote',
-    duration: '',
     available: true,
   } satisfies Service);
   provider.portfolio = portfolio.filter(item => item.status === 'published').map(item => ({

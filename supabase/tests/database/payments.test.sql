@@ -1,6 +1,6 @@
 begin;
 
-select plan(103);
+select plan(107);
 
 -- Schema, ACLs, RLS, and publication boundaries.
 select has_table('public', 'financial_booking_payments', 'minor-unit payments table exists'); -- 1
@@ -771,6 +771,68 @@ select is(
   125.00::numeric,
   'accepted booking price breakdown remains arithmetically consistent'
 ); -- 101
+
+-- ---------------------------------------------------------------------------
+-- The payout surface is a backend control, not a disabled button
+-- ---------------------------------------------------------------------------
+-- `request_provider_withdrawal` validated the amount, the key, the provider,
+-- the destination and the balance, and never asked whether payouts were
+-- switched on. The only thing stopping a request while `payout_mode` was
+-- `disabled` was `withdrawalsEnabled` in `get_my_provider_earnings`, which
+-- `app/provider-earnings.tsx` uses to disable a button. Anyone posting to
+-- PostgREST went straight past it and put a withdrawal into the ledger that no
+-- payout surface could settle.
+
+select set_config('request.jwt.claim.sub', '92000000-0000-0000-0000-000000000001', true);
+
+update private.payment_configuration set payout_mode = 'disabled';
+select throws_ok(
+  format(
+    $$select public.request_provider_withdrawal(2000, %L::uuid, 'withdrawal-guard-disabled')$$,
+    (select value::jsonb->>'id' from payment_test_state where key = 'destination-one')
+  ),
+  '55000',
+  'Withdrawals are not available',
+  'A DISABLED PAYOUT SURFACE REFUSES A NEW WITHDRAWAL IN THE BACKEND'
+); -- 102
+
+-- The guard sits after the idempotency replay on purpose: switching payouts off
+-- must not make a provider's existing request unreadable to them.
+select is(
+  (
+    select public.request_provider_withdrawal(
+      5000,
+      (select (value::jsonb->>'id')::uuid from payment_test_state where key = 'destination-one'),
+      'withdrawal-idempotency-one'
+    )->>'id'
+  ),
+  (select value::jsonb->>'id' from payment_test_state where key = 'withdrawal-one'),
+  'and an existing withdrawal stays readable while payouts are off'
+); -- 103
+
+-- Maintenance mode is the kill switch, and it closes the surface by itself:
+-- `payment_surface_environment` returns 'disabled' regardless of the mode.
+update private.payment_configuration
+  set payout_mode = 'mock', maintenance_mode = true, maintenance_reason = 'audit probe';
+select throws_ok(
+  format(
+    $$select public.request_provider_withdrawal(2000, %L::uuid, 'withdrawal-guard-maintenance')$$,
+    (select value::jsonb->>'id' from payment_test_state where key = 'destination-one')
+  ),
+  '55000',
+  'Withdrawals are not available',
+  'MAINTENANCE MODE CLOSES THE PAYOUT SURFACE EVEN IN MOCK'
+); -- 104
+
+update private.payment_configuration
+  set maintenance_mode = false, maintenance_reason = null;
+select lives_ok(
+  format(
+    $$select public.request_provider_withdrawal(2000, %L::uuid, 'withdrawal-guard-restored')$$,
+    (select value::jsonb->>'id' from payment_test_state where key = 'destination-one')
+  ),
+  'and an open mock payout surface still accepts a withdrawal'
+); -- 105
 
 select * from finish();
 rollback;
