@@ -571,5 +571,52 @@ select cmp_ok(
   'AND A DISCOVERABLE PROVIDER CARRIES COORDINATES, SO DISTANCE IS TESTABLE'
 );
 
+-- ---------------------------------------------------------------------------
+-- The search speaks the languages the customers do
+-- ---------------------------------------------------------------------------
+-- `search_providers` matched `provider_profiles.search_document` (display_name,
+-- profession_key, about, location_label), the provider's skills and
+-- specialties, `services.name` and `service_categories.id`. Every one of those
+-- is Latin text, and the Arabic and French service vocabulary lived only in
+-- `src/services/specific-services.ts` on the client, where the query could not
+-- reach it.
+--
+-- So the search worked in English and returned nothing in Arabic, in a
+-- marketplace whose customers speak Arabic first. 202608310003 imported the
+-- words and 202608310004 taught the query to match them.
+
+select cmp_ok(
+  (select count(*) from public.services where name_ar is not null and name_fr is not null),
+  '>=', 150::bigint,
+  'the catalogue carries Arabic and French service names');
+
+select is(
+  (select count(*)::integer from public.service_categories
+   where name_ar is null or name_fr is null),
+  0,
+  'and every category has both');
+
+select is(
+  ((public.search_providers('سباكة', '{}'::jsonb, 'rating', 5, 0))->>'totalCount')::integer,
+  ((public.search_providers('plumbing', '{}'::jsonb, 'rating', 5, 0))->>'totalCount')::integer,
+  'AN ARABIC SERVICE SEARCH FINDS WHAT THE ENGLISH ONE FINDS');
+
+select cmp_ok(
+  ((public.search_providers('كهرباء', '{}'::jsonb, 'rating', 5, 0))->>'totalCount')::integer,
+  '>=', 1,
+  'and a second Arabic term finds its professional too');
+
+select is(
+  ((public.search_providers('Plomberie', '{}'::jsonb, 'rating', 5, 0))->>'totalCount')::integer,
+  ((public.search_providers('plumbing', '{}'::jsonb, 'rating', 5, 0))->>'totalCount')::integer,
+  'AND FRENCH FINDS THE SAME');
+
+-- A term nobody offers still finds nobody. Matching more words must not turn
+-- the search into something that always returns everyone.
+select is(
+  ((public.search_providers('نجارة', '{}'::jsonb, 'rating', 5, 0))->>'totalCount')::integer,
+  0,
+  'a service no discoverable provider offers still returns nothing');
+
 select * from finish();
 rollback;
