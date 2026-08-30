@@ -175,6 +175,12 @@ function ThemedRoot() {
   );
 }
 
+/**
+ * Expo Router renders this in place of the tree below when that tree throws.
+ * Until it existed, an uncaught error was a blank screen nobody heard about.
+ */
+export { AppErrorBoundary as ErrorBoundary } from '@/components/warsha/AppErrorBoundary';
+
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
     Inter_400Regular,

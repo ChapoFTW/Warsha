@@ -20,7 +20,7 @@
 
 begin;
 
-select plan(10);
+select plan(14);
 
 -- ---------------------------------------------------------------------------
 -- 1. No client-reachable function carries an unqualified DELETE
@@ -212,6 +212,49 @@ select is_empty(
   $$,
   'NO CLIENT-REACHABLE PATH REPORTS A MISSING RECORD AS A SERVER ERROR'
 );
+
+-- ---------------------------------------------------------------------------
+-- A client can say that it broke, and cannot say anything else
+-- ---------------------------------------------------------------------------
+-- Warsha had no way to learn that a client had failed: no error boundary on
+-- either surface, no unhandled-rejection handler, and no endpoint to report to.
+-- An uncaught render error was a blank screen and the first report of it was a
+-- customer describing it.
+--
+-- The receiving end takes an error class, a component and a surface, and
+-- nothing else. Not the message, because `operational_payload_safe` refuses a
+-- key called `message` outright -- an operations log is read by staff and a
+-- client error message is unbounded text from somebody's device.
+
+select has_function('public', 'report_client_error',
+  array['text', 'text', 'text', 'boolean'],
+  'a client can report that it failed');
+
+-- Authenticated only. Granting it to `anon` was tried and rejected by
+-- `client-role-authority`, which asserts exactly nine anon-executable functions
+-- and names them -- all nine reads. A write does not belong on that surface,
+-- and its rate-limit bucket would be shared across every anonymous caller.
+select ok(
+  not has_function_privilege('anon', 'public.report_client_error(text,text,text,boolean)', 'execute'),
+  'AND THE ANONYMOUS SURFACE STAYS READ-ONLY: THIS WRITE IS NOT ON IT');
+
+select throws_ok(
+  $$select public.report_client_error('pirate', 'TypeError', 'X', false)$$,
+  '22023',
+  'Unknown surface',
+  'an unrecognised surface is refused');
+
+-- The function must not be able to become a channel for free text. It accepts
+-- no message parameter at all, which is the only way to be sure.
+select is_empty(
+  $$
+  select p.proname
+  from pg_proc p
+  join pg_namespace n on n.oid = p.pronamespace
+  where n.nspname = 'public' and p.proname = 'report_client_error'
+    and pg_get_function_arguments(p.oid) ~* '(message|body|note|content|stack|detail)'
+  $$,
+  'AND IT TAKES NO MESSAGE, NO STACK AND NO FREE-FORM DETAIL');
 
 select * from finish();
 rollback;
