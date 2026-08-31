@@ -353,6 +353,15 @@ export const secretInventory: readonly SecretRecord[] = [
   { key: 'EXPO_PUBLIC_SUPABASE_URL', classification: 'public_client', environments: ['local','development','staging','production'], owner: 'Operations Manager', storage: 'EAS environment variables and local .env', rotation: 'Changes only with the project', clientBundleAllowed: true },
   { key: 'EXPO_PUBLIC_SUPABASE_ANON_KEY', classification: 'public_client', environments: ['local','development','staging','production'], owner: 'Operations Manager', storage: 'EAS environment variables and local .env', rotation: 'Rotate with the project API keys', clientBundleAllowed: true },
   { key: 'EXPO_PUBLIC_ADMIN_SURFACE', classification: 'public_client', environments: ['local','development','staging'], owner: 'Security Administrator', storage: 'EAS build profile', rotation: 'Not a secret; a build switch', clientBundleAllowed: true },
+  // The web surface reads its own pair. Vercel builds from this repository on
+  // every push to main, and Next.js inlines `NEXT_PUBLIC_*` at build time, so a
+  // Vercel environment missing these produces a web app that renders and cannot
+  // reach Supabase at all. They are the same project and the same publishable
+  // key as the Expo pair above -- a different variable name, not a second
+  // credential -- and they are recorded separately because provisioning a web
+  // environment reads this inventory, not eas.json.
+  { key: 'NEXT_PUBLIC_SUPABASE_URL', classification: 'public_client', environments: ['local','development','staging','production'], owner: 'Operations Manager', storage: 'Vercel project environment variables and local web/.env.local', rotation: 'Changes only with the project', clientBundleAllowed: true },
+  { key: 'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY', classification: 'public_client', environments: ['local','development','staging','production'], owner: 'Operations Manager', storage: 'Vercel project environment variables and local web/.env.local', rotation: 'Rotate with the project API keys', clientBundleAllowed: true },
   { key: 'SUPABASE_SERVICE_ROLE_KEY', classification: 'server_only', environments: ['local','development','staging','production'], owner: 'Security Administrator', storage: 'Operator shell only; never in CI, never in a bundle', rotation: 'Supabase dashboard; rotate on any suspicion', clientBundleAllowed: false },
   { key: 'SUPABASE_DB_PASSWORD', classification: 'server_only', environments: ['development','staging','production'], owner: 'Security Administrator', storage: 'Password manager', rotation: 'Supabase dashboard', clientBundleAllowed: false },
   { key: 'SUPABASE_ACCESS_TOKEN', classification: 'build_only', environments: ['staging','production'], owner: 'Security Administrator', storage: 'GitHub environment secret', rotation: 'Supabase account tokens', clientBundleAllowed: false },
