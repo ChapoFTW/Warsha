@@ -64,3 +64,8 @@ tmp/
 /*-debug.txt
 .devport
 devlog.txt
+
+# Audit outputs, written into the repository root by the accessibility
+# and route-crawl scripts on every run.
+a11y-report.json
+crawl-chromium.json

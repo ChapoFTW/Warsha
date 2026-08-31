@@ -133,7 +133,11 @@ for (const [name, url] of [
 
 for (const file of ['/robots.txt', '/sitemap.xml']) {
   const res = await page.goto(BASE + file, { waitUntil: 'domcontentloaded' });
-  const body = await page.evaluate(() => document.body.innerText.slice(0, 220));
+  // `document.body` is null for an XML document: Chromium renders the sitemap
+  // through its XML viewer rather than as HTML. Reading `.innerText` off it
+  // threw, and the audit died on a sitemap that was being served perfectly.
+  const body = await page.evaluate(() =>
+    (document.body?.innerText ?? document.documentElement?.textContent ?? '').slice(0, 220));
   console.log(`${res && res.status() === 200 ? 'ok' : '!!'} ${file.padEnd(16)} ${res?.status()}`
     + `  ${body.replace(/\s+/g, ' ').slice(0, 120)}`);
 }
