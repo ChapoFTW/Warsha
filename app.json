@@ -51,6 +51,7 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "com.warsha.app",
+      "blockedPermissions": ["android.permission.RECORD_AUDIO"],
       "config": {
         "googleMaps": {
           "apiKey": "$GOOGLE_MAPS_ANDROID_RENDER_KEY"
