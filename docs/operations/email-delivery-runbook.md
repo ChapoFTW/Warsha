@@ -40,20 +40,38 @@ delivery dependency inside the signup transaction.
 None of these can be skipped, and the second and third are not engineering
 tasks.
 
-### Gate 1 — a domain Warsha controls
+### Gate 1 — a domain Warsha controls — **CLEARED**
 
-**Warsha owns no domain.** This is already recorded as blocker `G33` in
-`docs/launch/READINESS-GAP-REGISTER.md` and as `R20` (state: **NO**) in
-`docs/launch/GO-NO-GO-CRITERIA.md`, owned by the Operations Manager. The only
-domain-shaped string in the repository is `auth.warsha.invalid`, a reserved
-RFC 2606 `.invalid` name deliberately chosen for synthetic worker identities so
-that it can never resolve or receive mail.
+**Warsha owns `usewarsha.com`.** This paragraph used to say the opposite, and
+that was true when it was written. Verified 2026-09-01, from outside:
+
+| Check | Result |
+| --- | --- |
+| `https://usewarsha.com/en` | `200`, valid certificate |
+| Authoritative nameservers | `chance.ns.cloudflare.com` — DNS is under Warsha's control |
+| Live hosts | `usewarsha.com`, `app.usewarsha.com`, `admin.usewarsha.com` |
+| `MX` records | **none** |
+| `TXT` / SPF | **none** |
+
+So the domain exists and its DNS is editable, which is the whole of Gate 1. What
+is *not* done is mail configuration: there are no MX records and no SPF record,
+so nothing can send as `@usewarsha.com` and nothing would pass authentication if
+it tried. That is Gate 2's work, not Gate 1's.
+
+`G33` in `docs/launch/READINESS-GAP-REGISTER.md` and `R20` in
+`docs/launch/GO-NO-GO-CRITERIA.md` still record "no domain" and are now stale on
+that point. They should be narrowed to the part that remains: **no sending
+domain is configured**.
+
+`auth.warsha.invalid` stays exactly as it is. It is a reserved RFC 2606 name
+chosen so that synthetic worker identities can never resolve or receive mail,
+and owning a real domain does not change that decision.
 
 Resend will not send to arbitrary recipients from an unverified domain. Its
 shared `onboarding@resend.dev` sender delivers **only to the Resend account
 owner's own address** — the same restriction that makes the Supabase built-in
-mailer unusable. Buying the domain is therefore the whole unblock, and it also
-clears `G33` for deep links and policy URLs.
+mailer unusable. Verifying a sending subdomain is therefore the remaining
+unblock.
 
 ### Gate 2 — Resend account, domain verification, API key
 
@@ -248,3 +266,47 @@ Requirements the template must keep:
 - **Email confirmation stays on.** Turning it off would make delivery problems
   invisible rather than fixed.
 - **Production.** A separate project, configured separately, when it exists.
+
+---
+
+## Verified state, 2026-09-01
+
+Measured, not assumed. Four different things are routinely called "email works",
+and only two of them are true.
+
+| | State | Evidence |
+| --- | --- | --- |
+| **Code verified** | **YES** | Signup and recovery were driven against the local stack; GoTrue rendered both templates and delivered them to the local catcher. Subjects: "Confirm your email address", "Reset your password". Both links carried the correct `type` (`signup` / `recovery`) and a `redirect_to` matching `site_url`. |
+| **Provider configured** | **NO** | No custom SMTP. Hosted `warsha-development` still uses Supabase's built-in mailer: two per hour, project team members only. |
+| **Delivery verified** | **LOCAL ONLY** | Delivery was observed end to end against the local mail catcher. Nothing has been sent to a real inbox from a hosted project, and nothing should be until a provider exists. |
+| **External config required** | **YES** | See the gates above. |
+
+### What the local run proves and does not prove
+
+It proves the parts that live in this repository: the templates render, GoTrue
+is configured to send on both events, the confirmation and recovery token types
+are right, and the redirect is taken from `site_url` rather than invented.
+
+It proves nothing about deliverability. A message that reaches a local catcher
+has not passed SPF, DKIM, DMARC, a reputation filter, or an Egyptian mailbox
+provider's spam heuristics. Those are what Gate 2 and Gate 3 buy.
+
+### The hosted redirect allowlist — unverified, and how to check it
+
+`supabase/config.toml` configures the **local** stack only, and says so. The
+hosted project keeps its own redirect allowlist, and if
+`https://app.usewarsha.com/**` is not in it, GoTrue refuses the redirect and
+every confirmation and recovery link looks broken to the person who clicked it.
+
+The Supabase CLI has no read command for this — `supabase config` offers only
+`push`, which would overwrite the hosted configuration from the local file and
+must not be run. So this is an owner check:
+
+1. Supabase dashboard → project `warsha-development` → **Authentication → URL Configuration**.
+2. **Site URL** should be `https://app.usewarsha.com`.
+3. **Redirect URLs** must include, at minimum:
+   - `https://app.usewarsha.com/**`
+   - `warsha://**` and `exp://**` for the phone
+
+Until that is confirmed, treat hosted confirmation and recovery links as
+**unverified**, whatever the local run shows.

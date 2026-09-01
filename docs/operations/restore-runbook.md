@@ -110,3 +110,111 @@ Run it once before launch and quarterly after.
 - A notification already read.
 - A payment the provider already settled.
 - Trust. Tell people what happened.
+
+---
+
+## The restore drill that HAS been run, 2026-09-01
+
+The staging drill above is still **NOT RUN**, and it still blocks P11 — it needs
+a second Supabase project, and Warsha has exactly one. What was run is the layer
+underneath it: whether a Warsha dump actually restores into an empty database
+and comes back correct. That question is answerable without a second project,
+and it had never been answered.
+
+### Method
+
+Isolated by construction. Nothing hosted was touched, and nothing was
+overwritten.
+
+1. `pg_dump -Fc` of the full local database (schema + data + migration ledger).
+2. `create database warsha_restore_drill` — a fresh, empty database in the same
+   local cluster.
+3. `pg_restore --no-owner --no-privileges` into it.
+4. Compared object inventories and ran representative queries.
+5. `drop database warsha_restore_drill`, deleted the dump, confirmed both gone.
+
+### Result
+
+| | Source | Restored |
+| --- | --- | --- |
+| Tables (`public` + `private`) | 240 | 240 |
+| Functions (`public` + `private`) | 672 | 672 |
+| RLS policies (`public`) | 119 | 119 |
+| Migration ledger rows | 97 | 97 |
+| `public.services` | 176 | 176 |
+| `private.notification_event_catalog` | 108 | 108 |
+| `private.notification_push_copy` | 30 | 30 |
+| `private.staff_feature_flags` | 30 | 30 |
+| `public.legal_document_versions` | 26 | 26 |
+
+**RLS survived**: 128 of 128 `public` tables have row-level security enabled in
+the restored copy. A `SECURITY DEFINER` function
+(`private.notification_category`) executed correctly against it.
+
+### The one finding, and it matters
+
+`pg_restore` reported exactly two errors, both the same:
+
+```
+ERROR: permission denied for table secrets
+COPY vault.secrets (...) FROM stdin
+```
+
+**Supabase Vault does not come back with the database.** Not because the drill
+was done wrongly — `vault.secrets` is managed and not writable even by
+`postgres` — but because it is a genuinely separate restore path. Anybody
+following this runbook and watching row counts match would conclude the restore
+was complete, and every Edge Function secret would still be missing.
+
+So step 4 of **Secrets** below is not optional and is not a formality.
+
+### What this drill does NOT establish
+
+- That a **Supabase** backup restores. Supabase restores a whole cluster from
+  its own snapshot; this exercised `pg_dump`/`pg_restore` on Warsha's schema,
+  which is the artifact and the procedure, not the platform's mechanism.
+- Any **RTO**. The drill ran against a local dataset of a few megabytes.
+- **Storage objects.** Buckets are not in a database dump at all.
+- **Point-in-time recovery.** Whether PITR is even available depends on the
+  project's plan, which is an owner question.
+
+## Recovery order, after any restore
+
+Numbered because the order is load-bearing: applying migrations before the
+secrets are back leaves Edge Functions failing in ways that look like migration
+faults.
+
+1. **Database.** Restore, then confirm the migration ledger row count equals the
+   number of files in `supabase/migrations/`. They must be equal. If the ledger
+   is short, the restore predates migrations that have been applied and the
+   forward chain must be pushed before anything else runs.
+2. **Schema reconciliation.** `npx supabase db push --linked --dry-run` must
+   report an empty list. Anything it wants to push is drift between the restore
+   point and the repository.
+3. **Verification.** `npm run db:test` against the restored database. 3345
+   pgTAP assertions, including every RLS contract.
+4. **Secrets.** Vault does **not** come back with the database. Re-set every
+   Edge Function secret from `docs/operations/secret-rotation-runbook.md`:
+   `GOOGLE_CLOUD_VISION_SERVICE_ACCOUNT`, `GOOGLE_MAPS_SERVER_KEY`,
+   `WARSHA_DEVELOPMENT_AUTOMATION_TOKEN`, and — once push is activated —
+   `EXPO_ACCESS_TOKEN`. Verify each published digest rather than trusting the
+   upload; see the encoding trap in that runbook.
+5. **Edge Functions.** Redeploy all of them:
+   `location-proxy`, `privacy-export`, `push-dispatch`, `vision-extract`,
+   `warsha-automation`, `worker-auth`. A function deployed against the previous
+   database state is not automatically wrong, but it has not been proven right.
+6. **Storage.** Buckets and objects are outside the database dump entirely.
+   Confirm `privacy-exports`, `booking-attachments`, `dispute-evidence` and
+   `verification-documents` exist with their policies before anybody uploads.
+7. **Web and native configuration.** Vercel environment variables are not part
+   of a database restore. If the project reference changed,
+   `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` must be
+   updated for Production, Preview and Development, and the mobile build needs
+   the matching `EXPO_PUBLIC_*` values and a new binary or OTA.
+8. **Governance state.** Feature flags, kill switches and provider activations
+   live in the database and come back with it — but confirm them explicitly with
+   `npm run automation:govern state`. A restore that silently re-enables a
+   provider somebody disabled during an incident is its own incident.
+9. **Incident validation.** Sign in as a customer and as a worker. Create one
+   booking. Send one message. Open the privacy centre. Confirm the admin console
+   loads and one audited staff action records. Only then close the incident.

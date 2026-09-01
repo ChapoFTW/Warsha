@@ -118,7 +118,12 @@
     "test:native-admin-boundary": "node --no-warnings --experimental-strip-types scripts/native-admin-boundary.test.mts",
     "test:notification-catalogue": "node --no-warnings --experimental-strip-types scripts/notification-catalogue.test.mts",
     "test:financial-notifications": "node --no-warnings --experimental-strip-types scripts/financial-notifications.test.mts",
-    "test:identity-extraction": "node --no-warnings --experimental-strip-types scripts/identity-extraction.test.mts"
+    "test:identity-extraction": "node --no-warnings --experimental-strip-types scripts/identity-extraction.test.mts",
+    "test:android-permissions": "node --no-warnings --experimental-strip-types scripts/android-release-permissions.test.mts",
+    "test:push-delivery": "node --no-warnings --experimental-strip-types scripts/push-delivery.test.mts",
+    "test:network-failure": "node --no-warnings --experimental-strip-types scripts/network-failure.test.mts",
+    "test:operational-monitoring": "node --no-warnings --experimental-strip-types scripts/operational-monitoring.test.mts",
+    "test:web-build-output": "node --no-warnings --experimental-strip-types scripts/web-build-output.test.mts"
   },
   "dependencies": {
     "@expo-google-fonts/cairo": "^0.4.2",
@@ -142,6 +147,7 @@
     "expo-linking": "~8.0.12",
     "expo-localization": "~17.0.9",
     "expo-location": "~19.0.8",
+    "expo-notifications": "~0.32.17",
     "expo-router": "~6.0.24",
     "expo-secure-store": "~15.0.8",
     "expo-splash-screen": "~31.0.13",

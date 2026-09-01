@@ -54,6 +54,10 @@ export const DETERMINISTIC_TEST_SCRIPTS = [
   'test:state-persistence',
   'test:automation-authority',
   'test:identity-extraction',
+  'test:android-permissions',
+  'test:push-delivery',
+  'test:network-failure',
+  'test:operational-monitoring',
   'test:client-error-reporting',
   'test:timezone',
   'test:native-admin-boundary',
@@ -348,6 +352,10 @@ export function planValidation(impact, options = {}) {
       add(npmStep('rtl-direction', 'test:rtl-direction', 'Arabic direction must remain correct.'));
     }
     add(npmStep('web-build', 'web:build', 'The deployable Next.js artifact must compile.'));
+    // Immediately after, and only here: these assertions read `web/.next`, so
+    // they belong to the step that produces it rather than to the deterministic
+    // suite, which must stay self-contained from a clean checkout.
+    add(npmStep('web-build-output', 'test:web-build-output', 'The compiled output must carry the language, direction and routes the source promised.'));
   }
 
   if (impact.domains.auth) {
