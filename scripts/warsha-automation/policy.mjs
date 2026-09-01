@@ -207,6 +207,34 @@ export function classifyChanges(changes, options = {}) {
       impact.reasons.push(`${path}: iOS native source/configuration`);
       continue;
     }
+    /*
+     * A config plugin rewrites the generated native project.
+     *
+     * `plugins/warsha-android-permissions.js` edits the Android manifest during
+     * prebuild, which is as native an input as `app.json` — and until this rule
+     * existed it fell through to "no authoritative rule; review required",
+     * which is the safe answer but not an answer. Marked for both platforms
+     * rather than for Android alone: the directory is for config plugins, and
+     * the next one may touch iOS.
+     */
+    if (path.startsWith('plugins/')) {
+      markMobile(impact);
+      impact.androidNative = true;
+      impact.iosNative = true;
+      impact.reasons.push(`${path}: Expo config plugin; rewrites the generated native project`);
+      continue;
+    }
+
+    /*
+     * The example environment file documents variable NAMES and holds no value.
+     * It is documentation about configuration, not configuration.
+     */
+    if (path === '.env.example') {
+      impact.testsTooling = true;
+      impact.reasons.push(`${path}: documented environment variable inventory`);
+      continue;
+    }
+
     if (['app.json', 'app.config.js', 'eas.json'].includes(path)) {
       markMobile(impact);
       impact.androidNative = true;
