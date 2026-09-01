@@ -241,7 +241,24 @@ for (const category of notificationCategories) {
 // only way a push exists is a notification row the client cannot insert.
 
 match(dispatch, /exp\.host\/--\/api\/v2\/push\/send/, 'the Edge Function is the one thing that calls a provider');
-match(dispatch, /presented !== serviceRole/, 'AND IT REFUSES ANYBODY WITHOUT THE SERVICE ROLE KEY');
+// Two accepted proofs, and a signed-in person can produce neither. The role
+// claim is the durable one: provisioning warsha-production showed the value
+// Supabase injects as SUPABASE_SERVICE_ROLE_KEY matches none of the four keys
+// the dashboard hands out, so an equality alone refused every caller including
+// the scheduler the function exists for.
+match(dispatch, /presented === serviceRole \|\| roleClaim\(presented\) === 'service_role'/,
+  'AND IT REFUSES ANYBODY WHO IS NEITHER THE SERVICE ROLE NOR HOLDING ITS KEY');
+match(dispatch, /if \(!authorised\) return json\(\{ error: 'forbidden' \}, 403\)/,
+  'refusing with 403 before it reads a body or touches the queue');
+// The role claim is only trustworthy because the gateway verified the signature
+// first, so this function must never be added to the verify_jwt exceptions.
+const functionConfig = read('supabase/config.toml');
+const jwtExceptions = [...functionConfig.matchAll(/\[functions\.([a-z-]+)\]\s*verify_jwt = false/g)]
+  .map((m) => m[1]);
+equal(jwtExceptions.includes('push-dispatch'), false,
+  'PUSH-DISPATCH KEEPS verify_jwt, WHICH IS WHAT MAKES THE ROLE CLAIM VERIFIED');
+equal(jwtExceptions.sort(), ['warsha-automation', 'worker-auth'],
+  'and only the two functions that authenticate their own callers are exempt');
 notMatch(dispatch, /\.schema\('private'\)/, 'it reaches the database through public wrappers, not the private schema');
 match(dispatch, /warsha_push_claim_batch/, 'claiming work is a wrapper call');
 notMatch(dispatch, /p_user_id|recipient|user_id/, 'and nothing in it names a recipient');

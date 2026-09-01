@@ -33,10 +33,13 @@
  * ---------------------------------------------------------------------------
  * Authorisation
  *
- * The caller must present the service role key. That is a deliberate choice
- * over `verify_jwt`: this function must never be reachable by a signed-in
- * person, because the ability to run it is the ability to drain somebody
- * else's queue. A scheduler holds the key; a client never does.
+ * The caller must prove it holds SERVER credentials — either the injected
+ * service-role value, or a gateway-verified JWT whose `role` claim is
+ * `service_role`. This function must never be reachable by a signed-in person,
+ * because the ability to run it is the ability to drain somebody else's queue.
+ * A scheduler holds such a credential; a client never does. See the block above
+ * the check for why the role claim, and not an equality alone, is the durable
+ * form of that test.
  */
 
 const CORS = {
@@ -110,15 +113,50 @@ Deno.serve(async (request) => {
   const serviceRole = env('SUPABASE_SERVICE_ROLE_KEY');
   if (!url || !serviceRole) return json({ error: 'not_configured' }, 503);
 
-  // Constant-length comparison is not the control here — the key is a bearer
-  // token compared in full, and an attacker who can guess it can call every
-  // other service-role surface anyway. What matters is that nothing but the
-  // service role gets past this line.
+  /*
+   * Only a caller holding server credentials may drain the queue.
+   *
+   * The first version of this compared the presented bearer to
+   * `SUPABASE_SERVICE_ROLE_KEY` and nothing else. That looked airtight and was
+   * unusable: provisioning warsha-production showed that the value Supabase
+   * INJECTS under that name matches none of the four keys the dashboard offers
+   * — not the legacy `service_role` JWT, not `sb_secret_…` — so the equality
+   * could not be satisfied by anybody, and the function refused every caller
+   * including the scheduler it exists for. Failing closed is right; failing
+   * closed against everyone is a function that does not work.
+   *
+   * The role claim is the durable check. `verify_jwt` is true for this
+   * function (`supabase/config.toml` names only `worker-auth` and
+   * `warsha-automation` as exceptions), so the gateway has already verified the
+   * signature before this code runs; reading `role` from an already-verified
+   * token is safe, and it is key-form agnostic — a rotated key, a legacy JWT
+   * and a future format all carry the same claim.
+   *
+   * The exact-match path is kept as well, for a caller that genuinely holds the
+   * injected value or presents a non-JWT secret key once the gateway accepts
+   * one. Either proof is sufficient; neither alone is required.
+   */
   const authorization = request.headers.get('authorization') ?? '';
   const presented = authorization.toLowerCase().startsWith('bearer ')
     ? authorization.slice(7).trim()
     : '';
-  if (presented !== serviceRole) return json({ error: 'forbidden' }, 403);
+
+  /** The `role` claim of an already-gateway-verified JWT, or null. */
+  const roleClaim = (token: string): string | null => {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    try {
+      const pad = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+      const payload = JSON.parse(atob(pad + '='.repeat((4 - pad.length % 4) % 4)));
+      return typeof payload?.role === 'string' ? payload.role : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const authorised = presented !== '' &&
+    (presented === serviceRole || roleClaim(presented) === 'service_role');
+  if (!authorised) return json({ error: 'forbidden' }, 403);
 
   let requestedLimit: number | null = null;
   try {
