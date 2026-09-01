@@ -1,4 +1,31 @@
 <!--
+  ============================================================================
+  NOT THE DEPLOYED TEMPLATE. This is a design that was never applied.
+  ============================================================================
+
+  Checked against both projects on 2026-09-01. What Supabase Auth actually
+  renders is `supabase/templates/confirm-signup.html`, which is a different
+  design: a light theme, a <div> layout and a black call-to-action, 1748
+  characters against this file's 5243.
+
+  The two agree on everything that matters for correctness -- bilingual with
+  Arabic first, `{{ .ConfirmationURL }}` as the only variable, inline styles,
+  per-block `dir` -- and disagree on everything visual.
+
+  This file is kept because it is the better-documented of the two and carries
+  reasoning the live one does not: why Arabic leads, why the link must not be
+  `{{ .SiteURL }}`, why mail clients force inline styles. Two things it has and
+  the live template does not are worth a decision rather than a silent loss:
+
+    * a plain-text fallback link, for the clients where the button does not
+      render at all;
+    * a footer saying the address is not monitored.
+
+  Adopting this design, or folding those two pieces into the live one, is a
+  product decision and was deliberately NOT made while synchronising Production
+  -- the instruction was to match Development, not to redesign it.
+-->
+<!--
   Warsha — Confirm signup (Supabase Auth → Email Templates → Confirm signup)
 
   Bilingual by necessity, not by preference. Supabase Auth renders one template

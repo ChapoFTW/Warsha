@@ -310,3 +310,57 @@ must not be run. So this is an owner check:
 
 Until that is confirmed, treat hosted confirmation and recovery links as
 **unverified**, whatever the local run shows.
+
+---
+
+## Auth email templates — verified state, 2026-09-01
+
+Read from both projects through the Management API; the LIVE configuration is
+the authority, not this repository.
+
+| Auth email | Development | Production (before) | Production (after) |
+| --- | --- | --- | --- |
+| Confirm signup | **custom** | Supabase default | **custom, synchronised** |
+| Invite user | Supabase default | Supabase default | Supabase default |
+| Reset password | Supabase default | Supabase default | Supabase default |
+| Magic link | Supabase default | Supabase default | Supabase default |
+| Change email | Supabase default | Supabase default | Supabase default |
+| Reauthentication | Supabase default | Supabase default | Supabase default |
+
+**Warsha has exactly one custom auth email.** The "You've been invited" subject
+seen in Production is the Supabase default — and it is the default in
+Development too, so there was nothing to copy. Nothing was invented to fill the
+gap.
+
+Subject, both projects:
+`أكد بريدك الإلكتروني في ورشة | Confirm your Warsha email`
+
+Content: `supabase/templates/confirm-signup.html`, byte-identical in both.
+
+### How Production is configured
+
+`[remotes.production]` in `supabase/config.toml` declares the intended state.
+It is complete and safe to `config push` **only** with `RESEND_SMTP_PASSWORD`
+exported — `config push` owns the whole auth configuration, and an undeclared
+`[auth.email.smtp]` would send `enabled = false` and take the Resend mailer
+down. The 2026-09-01 change was applied through a Management API PATCH of two
+fields instead, and every other field was diffed afterwards to prove nothing
+else moved.
+
+### Localisation
+
+Supabase Auth renders **one template per email type** and cannot branch on the
+recipient's language: the chosen language lives in
+`raw_user_meta_data.preferred_language`, which templates cannot read. Warsha's
+answer is one bilingual template, Arabic first because the audience is Egyptian.
+
+**French is absent.** Warsha's product supports EN/AR/FR, and this email is
+AR+EN. That is a real gap, it predates this work, and it exists in Development
+too — it was not introduced by the Production sync.
+
+### Link verification
+
+`generate_link` for all three flows resolves to
+`ekgwzljpcxpxnklzxuvj.supabase.co/auth/v1/verify` with
+`redirect_to=https://app.usewarsha.com`. No Development project ref, no
+localhost, and the only template variable is `{{ .ConfirmationURL }}`.

@@ -51,3 +51,72 @@ verify_jwt = false
 verify_jwt = false
 [storage]
 enabled = true
+
+# ---------------------------------------------------------------------------
+# warsha-production
+# ---------------------------------------------------------------------------
+# Everything above configures the LOCAL Docker stack. Its site_url is
+# http://localhost:8081 and its redirect list is full of localhost origins, so
+# pushing the top-level [auth] block at a hosted project would point Production
+# authentication at a developer's laptop. That is why this block exists: the
+# CLI applies a [remotes.*] section only to the project whose ref matches, and
+#  reads THIS.
+#
+# ## Before running config push, read this
+#
+#  owns the WHOLE auth configuration for the target, not the
+# fields that happen to have changed. Anything this block does not declare is
+# sent as the schema default -- and for [auth.email.smtp] the default is
+# , which would switch off Production's working Resend mailer
+# and take confirmation, recovery and invitation email down with it.
+#
+# So the SMTP section below is declared in full and deliberately, and the one
+# value that must not live in a repository is read from the environment:
+#
+#     export RESEND_SMTP_PASSWORD=...        # the Resend API key
+#     npx supabase config push --project-ref ekgwzljpcxpxnklzxuvj
+#
+# Without that variable exported the push will send an empty password. Set it,
+# or do not push.
+#
+# The confirmation template and subject were applied on 2026-09-01 through the
+# Management API instead, precisely because that is surgical -- two fields, no
+# possibility of disturbing SMTP. This block records the intended state so the
+# next change can be a reviewed diff rather than a dashboard edit.
+[remotes.production]
+project_id = "ekgwzljpcxpxnklzxuvj"
+
+[remotes.production.auth]
+enabled = true
+# Verified live on the project, not copied from Development, whose allow list is
+# a narrower set of specific callback paths.
+site_url = "https://app.usewarsha.com"
+additional_redirect_urls = [
+  "https://usewarsha.com/**",
+  "https://app.usewarsha.com/**",
+  "https://admin.usewarsha.com/**",
+  "warsha://**",
+  "exp://**",
+]
+
+[remotes.production.auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = true
+
+[remotes.production.auth.email.smtp]
+enabled = true
+host = "smtp.resend.com"
+port = 465
+user = "resend"
+pass = "env(RESEND_SMTP_PASSWORD)"
+admin_email = "noreply@mail.usewarsha.com"
+sender_name = "Warsha"
+
+# The one custom template Warsha has. Development's live configuration is the
+# authority for its content -- see supabase/templates/confirm-signup.html --
+# and every other auth email is still the Supabase default in BOTH projects,
+# so there is nothing else here to declare.
+[remotes.production.auth.email.template.confirmation]
+subject = "أكد بريدك الإلكتروني في ورشة | Confirm your Warsha email"
+content_path = "./templates/confirm-signup.html"
