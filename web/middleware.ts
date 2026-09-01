@@ -55,6 +55,22 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   /*
+   * Health endpoints belong to the deployment, not to a language or a product.
+   *
+   * Without this they would be rewritten into `/en/api/health` on the public
+   * host and into `/app/api/health` on the application host — three different
+   * answers to one question, two of which are 404. An uptime monitor needs one
+   * address that works on whichever host it was pointed at.
+   *
+   * They are also the only unauthenticated routes Warsha serves that are not
+   * pages, so keeping them out of the locale machinery keeps that machinery
+   * about pages.
+   */
+  if (pathname === '/api/health' || pathname === '/api/ready') {
+    return NextResponse.next();
+  }
+
+  /*
    * Host decides which product is served.
    *
    * `app.` and `admin.` are separate origins on purpose. A browser isolates

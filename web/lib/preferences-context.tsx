@@ -1,5 +1,6 @@
 'use client';
 
+import { GlobalErrorReporting } from '@/components/global-error-reporting';
 import {
   createContext,
   useCallback,
@@ -215,7 +216,14 @@ export function WarshaPreferencesProvider({
     [appearance, hydrated, locale, setAppearance, setLocale],
   );
 
-  return <PreferencesContext.Provider value={value}>{children}</PreferencesContext.Provider>;
+  return (
+    <PreferencesContext.Provider value={value}>
+      {/* The one client boundary all three web trees share, which makes it the
+          one place global error reporting can be installed exactly once. */}
+      <GlobalErrorReporting />
+      {children}
+    </PreferencesContext.Provider>
+  );
 }
 
 export function useWarshaPreferences(): PreferencesValue {
