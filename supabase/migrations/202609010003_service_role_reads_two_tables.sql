@@ -1,0 +1,98 @@
+-- Two SELECT grants that Warsha has always relied on and never asked for.
+--
+-- ===========================================================================
+-- What broke, and why it only broke on a NEW project
+-- ===========================================================================
+--
+-- Supabase changed the default privileges it ships in the `public` schema.
+-- The two projects, dumped side by side on 2026-09-01:
+--
+--   warsha-development (created 2026-07-19)
+--     ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+--       GRANT ALL ON TABLES    TO service_role;
+--       GRANT ALL ON FUNCTIONS TO service_role;
+--       GRANT ALL ON SEQUENCES TO service_role;
+--
+--   warsha-production (created 2026-09-01)
+--     ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+--       GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLES TO service_role;
+--     -- and nothing at all for FUNCTIONS or SEQUENCES
+--
+-- `REFERENCES,TRIGGER,TRUNCATE,MAINTAIN` is precisely "ALL minus
+-- SELECT,INSERT,UPDATE,DELETE". So on a project created today, `service_role`
+-- cannot read a single row of any `public` table, and PostgREST says so:
+--
+--   403 {"code":"42501","hint":"Grant the required privileges to the current
+--        role with: GRANT SELECT ON public.profiles TO service_role"}
+--
+-- None of this was ever expressed in a Warsha migration. Every `service_role`
+-- privilege the application actually depends on was arriving implicitly, from a
+-- platform default, and the day the platform changed that default the
+-- dependency became visible by breaking.
+--
+-- ===========================================================================
+-- Why this grants two tables and not a hundred and twenty-eight
+-- ===========================================================================
+--
+-- Development's `service_role` has `GRANT ALL` on all 128 `public` tables,
+-- because that is what the old default handed it. Reproducing that in
+-- Production would be restoring a blanket privilege the platform deliberately
+-- withdrew, on the strength of "Development has it" — which is not a reason.
+--
+-- So the six Edge Functions were read instead, and every path they take to the
+-- database was enumerated:
+--
+--   location-proxy      RPC only  (edge_provider_runtime, edge_record_provider_health)
+--   privacy-export      RPC only  (warsha_privacy_export_*) + storage + auth
+--   push-dispatch       RPC only  (warsha_push_*)
+--   warsha-automation   RPC only  (warsha_automation_platform_environment)
+--   vision-extract      RPC (warsha_ocr_*) + ONE table read
+--   worker-auth         RPC (cancel_worker_auth_registration) + ONE table read
+--
+-- Every RPC in that list is already granted to `service_role` by the migration
+-- that created it, and all nineteen were verified present in Production. The
+-- entire gap is two `select('id')` calls:
+--
+--   vision-extract   `.from('provider_profiles').select('id')
+--                       .eq('user_id', …).is('deleted_at', null)`
+--                    — resolving which worker is asking, before spending a
+--                      paid OCR call on them.
+--
+--   worker-auth      `.from('profiles').select('id').eq('phone', phone)`
+--                    — telling a worker whose signup failed that the number is
+--                      already in use, rather than "something went wrong".
+--
+-- Both are reads. Neither writes. So this grants SELECT on two tables and
+-- nothing else, which leaves Production STRICTLY narrower than Development
+-- rather than restoring parity by widening.
+--
+-- Column-level grants were considered and rejected. `.eq('phone', …)` and
+-- `.is('deleted_at', …)` need SELECT on the filtered columns as well as the
+-- projected one, so the column list would have to track every future filter,
+-- and this repository has already been caught once by column-level grant drift.
+-- A wrong column list fails at runtime, in an Edge Function, on a path nobody
+-- exercises until a worker's signup collides.
+--
+-- ===========================================================================
+-- What this does NOT do
+-- ===========================================================================
+--
+--   * It does not grant INSERT, UPDATE or DELETE to `service_role` anywhere.
+--   * It does not touch `anon` or `authenticated`. Those two were compared
+--     grant-for-grant between a clean chain and Production and are IDENTICAL
+--     (41 and 496 respectively) — the client-facing security surface never
+--     depended on the platform default.
+--   * It does not restore the withdrawn default privilege, so every table
+--     added after this one starts closed to `service_role` and has to ask,
+--     here, in writing.
+--
+-- Idempotent, and a no-op on Development, where `service_role` already holds
+-- ALL on both tables.
+
+grant select on public.profiles to service_role;
+grant select on public.provider_profiles to service_role;
+
+comment on table public.profiles is
+  'service_role holds SELECT here so worker-auth can report "phone already in '
+  'use" instead of a generic failure. It holds no write privilege on this '
+  'table; every write goes through a definer-rights function instead.';
