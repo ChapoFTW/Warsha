@@ -239,7 +239,7 @@ const supabaseRepository: Repository = {
   async markAllRead(_accountId, mode) { await rpc('mark_all_notifications_read', { p_mode: mode }); },
   async archive(_accountId, mode, id) { await rpc('archive_notification', { p_notification_id: id, p_mode: mode }); },
   async preferences() { return await rpc<NotificationPreferences>('get_my_notification_preferences'); },
-  async updatePreferences(_accountId, value) { return await rpc<NotificationPreferences>('update_my_notification_preferences', { p_preferences: { categories: value.categories, genericPreviews: value.genericPreviews, quietHours: value.quietHours } }); },
+  async updatePreferences(_accountId, value) { return await rpc<NotificationPreferences>('update_my_notification_preferences', { p_preferences: { categories: value.categories, genericPreviews: value.genericPreviews, quietHours: value.quietHours, pushEnabled: value.pushEnabled } }); },
   async resolveRoute(_accountId, mode, id) { return await rpc<NotificationRoute>('resolve_notification_route', { p_notification_id: id, p_mode: mode }); },
 };
 

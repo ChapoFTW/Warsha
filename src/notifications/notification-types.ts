@@ -47,8 +47,14 @@ export type QuietHours = { enabled: boolean; start?: string; end?: string; timez
 export type NotificationPreferences = {
   categories: Record<NotificationCategory, boolean>;
   inAppEnabled: true;
-  pushEnabled: false;
-  pushAvailable: false;
+  /**
+   * Whether this person asked for push, and whether this deployment can send
+   * it. Both were the literal `false` until push delivery existed; they are
+   * booleans now because the same build runs against a project with delivery
+   * switched on and one without.
+   */
+  pushEnabled: boolean;
+  pushAvailable: boolean;
   genericPreviews: boolean;
   quietHours: QuietHours;
 };

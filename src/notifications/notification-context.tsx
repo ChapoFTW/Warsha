@@ -8,6 +8,7 @@ import { dataErrorKey } from '@/src/data/data-errors';
 import type { TranslationKey } from '@/src/i18n/translations';
 import { useProviderFoundation } from '@/src/providers/provider-context';
 import { realtimeService } from '@/src/realtime/realtime-service';
+import { notificationDestination } from './notification-destination';
 import { useEngagementText } from './notification-engagement-translations';
 import { notificationAccountId } from './notification-policy';
 import { notificationRepository } from './notification-repository';
@@ -106,22 +107,10 @@ export function NotificationProvider({ children }: PropsWithChildren) {
       const route = await notificationRepository.resolveRoute(accountId, notificationMode, item.id);
       if (!item.readAt) await markRead(item.id);
       if (route.status !== 'ok') { Alert.alert(copy.text('notifications'), copy.text(route.status === 'no_action' ? 'noAction' : route.status)); return; }
-      const id = route.resourceId;
-      switch (route.routeType) {
-        case 'marketplace_request': if (id) router.push({ pathname: '/marketplace-request/[id]', params: { id } }); break;
-        case 'worker_opportunities': router.push('/worker/requests'); break;
-        case 'worker_quote': if (id) router.push({ pathname: '/worker/requests/[id]', params: { id } }); break;
-        case 'booking': if (id) router.push(notificationMode === 'worker' ? { pathname: '/worker/jobs/[id]', params: { id } } : { pathname: '/booking/[id]', params: { id } }); break;
-        case 'conversation': if (id) router.push({ pathname: '/conversation/[bookingId]', params: { bookingId: id } }); break;
-        case 'provider_profile': if (id) router.push({ pathname: '/provider/[id]', params: { id } }); break;
-        case 'booking_payment': if (id) router.push({ pathname: '/booking/[id]', params: { id, focusPayment: '1' } }); break;
-        case 'worker_earnings': router.push('/provider-earnings'); break;
-        case 'verification': router.push('/worker/verification'); break;
-        case 'booking_review': if (id) router.push({ pathname: '/booking/[id]', params: { id, focusReview: '1' } }); break;
-        case 'booking_dispute': if (id) router.push({ pathname: '/booking/[id]', params: { id, focusDispute: '1' } }); break;
-        case 'preferences': router.push('/notification-preferences'); break;
-        case 'support_case': if (id) router.push({ pathname: '/support/case/[id]', params: { id } }); break;
-      }
+      // One mapping, shared with the push tap handler. A second `switch` here
+      // would be a second answer to "what does a dispute notification open".
+      const destination = notificationDestination({ routeType: route.routeType, resourceId: route.resourceId, mode: notificationMode });
+      if (destination) router.push(destination as never);
     } finally { openLock.current.delete(item.id); }
   }, [accountId, copy, markRead, notificationMode]);
   const loadMore = useCallback(async () => { if (!accountId || loadingMore || !hasMore) return; const target = scope; setLoadingMore(true); try { const last = itemsRef.current.at(-1); const page = await notificationRepository.list(accountId, notificationMode, { offset: itemsRef.current.length, before: last?.lastEventAt, beforeId: last?.id, archived, category }); if (scopeRef.current !== target) return; setItems(current => merge([...current, ...page.items])); setLoadedScope(target); setHasMore(page.hasMore); } catch (reason) { if (scopeRef.current === target) { logNotificationError('notification pagination', reason); setError(dataErrorKey(reason)); } } finally { if (mounted.current && scopeRef.current === target) setLoadingMore(false); } }, [accountId, archived, category, hasMore, loadingMore, notificationMode, scope]);

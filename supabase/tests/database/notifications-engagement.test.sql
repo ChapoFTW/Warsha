@@ -99,7 +99,7 @@ select is(public.get_my_notification_preferences()->'quietHours'->>'start','22:0
 select is(public.get_my_notification_preferences()->'quietHours'->>'end','06:00','quiet end persists');
 select is(public.get_my_notification_preferences()->>'pushAvailable','false','preference projection does not claim push availability');
 select throws_ok($$select public.update_my_notification_preferences('{"quietHours":{"enabled":true,"start":"22:00","end":"22:00","timezone":"Africa/Cairo"}}')$$,'22023','Invalid quiet hours','equal quiet-hour endpoints are rejected');
-select throws_ok($$select public.register_push_token('ExponentPushToken[fixture-token-014]','android','1.0.0','fixture')$$,'55000','Push token registration is disabled','token registration fails closed');
+select throws_ok($$select public.register_push_token('ExponentPushToken[fixture-token-014]','android','1.0.0','fixture')$$,'55000','Push registration is unavailable','token registration still fails closed while the provider is off');
 reset role;
 
 insert into public.notifications(user_id,type,title,body,data,dedupe_key)

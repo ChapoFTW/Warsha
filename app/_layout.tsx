@@ -25,6 +25,7 @@ import { ConfigurationError } from '@/components/warsha/ConfigurationError';
 import { GlobalPreferenceControls } from '@/components/warsha/GlobalPreferenceControls';
 import { LocalDataMigrationGate } from '@/components/warsha/LocalDataMigrationGate';
 import { NotificationBanner } from '@/components/warsha/NotificationBanner';
+import { PushNotificationSync } from '@/components/warsha/PushNotificationSync';
 import { ProviderModeOverlay } from '@/components/warsha/ProviderModeOverlay';
 import { fontFamilies } from '@/constants/theme';
 import { AddressProvider } from '@/src/addresses/address-context';
@@ -168,6 +169,7 @@ function ThemedRoot() {
         </View>
         </AuthGate>
         <NotificationBanner />
+        <PushNotificationSync />
         <ProviderModeOverlay />
         <StatusBar style={statusBarStyle(scheme)} />
       </View>

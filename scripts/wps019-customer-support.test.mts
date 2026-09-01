@@ -412,8 +412,15 @@ has(rootLayout, /Stack\.Screen name="help\/index"/, 'the help centre index is re
 has(rootLayout, /Stack\.Screen name="support\/index"/, 'the support index is registered as a route');
 has(readFileSync('app/(tabs)/profile.tsx', 'utf8'), /router\.push\('\/help'\)/, 'the profile tab reaches the help centre');
 has(readFileSync('app/(tabs)/profile.tsx', 'utf8'), /router\.push\('\/support'\)/, 'the profile tab reaches support cases');
-has(readFileSync('src/notifications/notification-context.tsx', 'utf8'),
+// The mapping moved out of the notification context and into
+// `notification-destination.ts` when push notifications arrived, because a push
+// tap is a second way into the same screens and a second `switch` would have
+// been a second answer. The property is unchanged and is asserted against the
+// authority rather than against its old location.
+has(readFileSync('src/notifications/notification-destination.ts', 'utf8'),
   /case 'support_case':/, 'a support notification opens the case it points at');
+has(readFileSync('src/notifications/notification-context.tsx', 'utf8'),
+  /notificationDestination\(/, 'and the in-app list reads that one mapping');
 
 // The staff surface is capability-gated in the client too, and says plainly
 // that the client gate is not the security boundary.

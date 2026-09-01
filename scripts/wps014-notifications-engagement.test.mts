@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { isQuietTime, notificationAccountId, notificationDefinition } from '../src/notifications/notification-policy.ts';
-import { externalNotificationPreview, pushCapability, pushDeliveryPolicy, simulateMockPush } from '../src/notifications/notification-push-adapter.ts';
+import { externalNotificationPreview, pushDeliveryPolicy, pushPreviewCopy, readPushCapability, unknownPushCapability } from '../src/notifications/notification-push-adapter.ts';
 import { notificationCategories } from '../src/notifications/notification-types.ts';
 import { legacyNotificationEventCopy } from '../src/notifications/notification-copy.ts';
 
@@ -89,15 +89,47 @@ equal(isQuietTime(new Date(2026, 7, 2, 18, 0), '09:00', '17:00'), false, 'same-d
 equal(isQuietTime(new Date(), '22:00', '22:00'), false, 'equal endpoints fail closed');
 equal(isQuietTime(new Date(), 'bad', '06:00'), false, 'malformed time fails closed');
 
-equal(pushCapability.available, false, 'push capability is unavailable');
-equal(pushCapability.provider, 'disabled', 'push provider is disabled');
-equal(pushCapability.tokenRegistration, false, 'token registration is disabled');
-equal(pushCapability.delivery, false, 'delivery is disabled');
-equal(pushCapability.scheduler, false, 'scheduler is disabled');
-equal(pushDeliveryPolicy({ priority: 'critical', quietHoursActive: false, pushPreference: true }).state, 'disabled', 'even critical push fails closed without provider');
-equal(simulateMockPush('messages').state, 'simulation_only', 'Mock push is explicitly simulation only');
-equal(simulateMockPush('messages').delivered, false, 'Mock push never claims delivery');
-notMatch(pushAdapter, /fetch\(|axios|expo-notifications|ExponentPushToken|fcm|apns|onesignal/i, 'push adapter has no provider import or network request');
+// WPS-014 hard-coded push as five `false` values and asserted them here. Push
+// delivery now exists (`202609010001_push_delivery_authority.sql`), so what is
+// asserted is no longer "it is off" but the two properties that replaced it:
+// capability comes from the SERVER, and the client still fails closed until the
+// server says otherwise.
+equal(readPushCapability(null).provider, 'disabled', 'a client that has not asked assumes no provider');
+equal(readPushCapability({ provider: 'expo', deliveryAvailable: true }).deliveryAvailable, true, 'and takes the server’s word when it has');
+equal(readPushCapability({ provider: 'disabled', deliveryAvailable: true }).deliveryAvailable, false,
+  'DELIVERY IS NEVER CLAIMED WITHOUT A PROVIDER, WHATEVER THE PAYLOAD SAYS');
+equal(pushDeliveryPolicy({ priority: 'critical', quietHoursActive: false, pushPreference: true }).state, 'disabled',
+  'even a critical push fails closed while capability is unknown');
+equal(pushDeliveryPolicy({ priority: 'critical', quietHoursActive: true, pushPreference: true, capability: { ...unknownPushCapability, provider: 'expo', deliveryAvailable: true } }).state, 'eligible',
+  'a critical push still goes during quiet hours');
+equal(pushDeliveryPolicy({ priority: 'informational', quietHoursActive: true, pushPreference: true, capability: { ...unknownPushCapability, provider: 'expo', deliveryAvailable: true } }).state, 'delayed',
+  'AN INFORMATIONAL ONE IS DELAYED RATHER THAN DISCARDED');
+equal(pushDeliveryPolicy({ priority: 'critical', quietHoursActive: false, pushPreference: false, capability: { ...unknownPushCapability, provider: 'expo', deliveryAvailable: true } }).state, 'suppressed',
+  'and somebody who did not ask for push gets none');
+// The lock-screen vocabulary is category-generic in all three languages, and
+// the same thirty strings the database renders from.
+for (const language of ['en', 'ar', 'fr'] as const) {
+  for (const category of notificationCategories) {
+    const preview = pushPreviewCopy[language][category];
+    ok(preview.title.length > 0 && preview.body.length > 0, `${language}.${category} has a lock-screen preview`);
+    notMatch(preview.body, /@|\+20|card|wallet|address|filename/i, `${language}.${category} preview carries no private value`);
+  }
+}
+// The adapter is still policy only. The device SDK is in `push-registration.ts`
+// and the network call is in the `push-dispatch` Edge Function, because a
+// client that could send a push could send one to somebody else.
+// Comments are stripped first: the header explains why Expo Push Service was
+// chosen over APNs and FCM directly, and naming a thing you are not doing is
+// documentation. What must be absent is the code.
+const pushAdapterCode = pushAdapter.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+notMatch(pushAdapterCode, /fetch\(|axios|from 'expo-notifications'|fcm|apns|onesignal/i,
+  'THE PUSH ADAPTER STILL HAS NO PROVIDER IMPORT AND NO NETWORK REQUEST');
+// And the module that does import the SDK never sends: only the Edge Function
+// talks to a provider, because a client that could send could send to anybody.
+const registration = read('src/notifications/push-registration.ts')
+  .replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+match(registration, /from 'expo-notifications'/, 'the device module is the one that imports the SDK');
+notMatch(registration, /fetch\(|exp\.host|axios/i, 'AND IT STILL CANNOT SEND A PUSH TO ANYBODY');
 match(reminderSimulation, /review_unlocked: \{ policyKey: 'review_opportunity', delayHours: 48 \}/, 'review reminder simulation uses a conservative delay');
 match(reminderSimulation, /maxAttempts: 2 as const/, 'Mock reminder simulation caps attempts');
 match(translations, /booking_approaching: 'Your confirmed booking is approaching\.'/,'English reminder copy is explicit');

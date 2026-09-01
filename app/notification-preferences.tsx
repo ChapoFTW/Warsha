@@ -38,7 +38,7 @@ export default function NotificationPreferencesScreen() {
     <Section title={copy.text('inApp')} body={copy.text('inAppAlways')}>
       {categories.map(category => <Toggle key={category} label={copy.category(category)} value={mandatory.has(category) ? true : value.categories[category]} disabled={mandatory.has(category)} isRTL={isRTL} onChange={enabled => setValue(current => ({ ...current, categories: { ...current.categories, [category]: enabled } }))}/>) }
     </Section>
-    <Section title={copy.text('push')} body={copy.text('pushUnavailable')}><Toggle label={copy.text('push')} value={false} disabled isRTL={isRTL} onChange={() => undefined}/></Section>
+    <Section title={copy.text('push')} body={copy.text(value.pushAvailable ? 'pushAvailableBody' : 'pushUnavailable')}><Toggle label={copy.text('push')} value={value.pushEnabled} disabled={!value.pushAvailable} isRTL={isRTL} onChange={pushEnabled => setValue(current => ({ ...current, pushEnabled }))}/></Section>
     <Section title={copy.text('quietHours')} body={copy.text('quietHoursBody')}>
       <Toggle label={copy.text('quietHours')} value={value.quietHours.enabled} isRTL={isRTL} onChange={enabled => setValue(current => ({ ...current, quietHours: { ...current.quietHours, enabled } }))}/>
       {value.quietHours.enabled ? <View style={[styles.timeRow, isRTL && styles.reverse]}><TimeField label={copy.text('start')} value={value.quietHours.start ?? ''} onChange={start => setValue(current => ({ ...current, quietHours: { ...current.quietHours, start } }))}/><TimeField label={copy.text('end')} value={value.quietHours.end ?? ''} onChange={end => setValue(current => ({ ...current, quietHours: { ...current.quietHours, end } }))}/></View> : null}

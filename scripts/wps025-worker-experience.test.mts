@@ -488,6 +488,7 @@ const profile = read('app', 'worker', 'profile.tsx');
 const jobList = read('components', 'warsha', 'ProviderJobsContent.tsx');
 const jobDetails = read('app', 'provider-job', '[id].tsx');
 const notifications = read('src', 'notifications', 'notification-context.tsx');
+const notificationDestinations = read('src', 'notifications', 'notification-destination.ts');
 check(!money.includes('new Intl.NumberFormat'), 'worker earnings never pass BigInt to Intl.NumberFormat');
 check(money.includes('(value / 100n).toString()'), 'earnings retain BigInt arithmetic through the presentation boundary');
 check(money.includes("'\\u066C'"), 'Arabic money grouping is produced from the exact decimal string');
@@ -503,8 +504,14 @@ check(profile.includes("useState('')"), 'editable profile numeric inputs start b
 check(read('app', 'provider-mode.tsx').includes('<Redirect href="/worker" />'), 'legacy provider mode redirects to worker home');
 check(jobList.includes("pathname:'/worker/jobs/[id]'"), 'worker job cards use the canonical worker path');
 check(jobDetails.includes("'work_in_progress'"), 'active lifecycle jobs keep their visible action surface');
-check(notifications.includes("pathname: '/worker/jobs/[id]'"), 'worker booking notifications use the canonical job path');
-check(notifications.includes("pathname: '/worker/requests/[id]'"), 'worker quote notifications use the canonical request path');
+// The routing table moved out of the notification context and into
+// `notification-destination.ts` when push notifications arrived: a push tap is
+// a second way into the same screens, and two `switch` statements would have
+// been two answers to "where does a worker's booking notification go". The
+// canonical-path property is unchanged and is asserted where it now lives.
+check(notificationDestinations.includes("pathname: '/worker/jobs/[id]'"), 'worker booking notifications use the canonical job path');
+check(notificationDestinations.includes("pathname: '/worker/requests/[id]'"), 'worker quote notifications use the canonical request path');
+check(notifications.includes('notificationDestination('), 'and the in-app notification list reads that one table');
 check(read('app', 'worker', 'jobs', '[id].tsx').includes("../../provider-job/[id]"), 'canonical job details reuse the hardened job authority');
 check(read('app', 'worker', 'requests', '[id].tsx').includes("../../worker-quote/[id]"), 'canonical request details reuse the hardened quote authority');
 
