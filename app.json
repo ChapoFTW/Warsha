@@ -13,10 +13,6 @@
     "userInterfaceStyle": "automatic",
     "backgroundColor": "#080808",
     "primaryColor": "#080808",
-    "notification": {
-      "icon": "./assets/images/warsha-current-approved-notification.png",
-      "color": "#2FBF71"
-    },
     "extra": {
       "supportsRTL": true,
       "router": {},
@@ -51,7 +47,11 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "com.warsha.app",
-      "blockedPermissions": ["android.permission.RECORD_AUDIO"],
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.RECEIVE_BOOT_COMPLETED"
+      ],
       "config": {
         "googleMaps": {
           "apiKey": "$GOOGLE_MAPS_ANDROID_RENDER_KEY"
@@ -96,6 +96,15 @@
           "microphonePermission": false
         }
       ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/warsha-current-approved-notification.png",
+          "color": "#2FBF71",
+          "defaultChannel": "warsha-default",
+          "enableBackgroundRemoteNotifications": false
+        }
+      ],
       "expo-secure-store",
       [
         "expo-camera",
@@ -114,7 +123,8 @@
           "isAndroidBackgroundLocationEnabled": false,
           "isAndroidForegroundServiceEnabled": false
         }
-      ]
+      ],
+      "./plugins/warsha-android-permissions"
     ],
     "experiments": {
       "typedRoutes": false,
