@@ -1,5 +1,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
+import { createBoundedFetch, resolveRequestTimeouts } from '../../src/data/request-policy.ts';
+
 /**
  * Configuration is read once, loudly.
  *
@@ -28,6 +30,14 @@ export function createBrowserClient(): SupabaseClient {
   );
 
   return createClient(url, key, {
+    // The same bounded fetch the mobile client uses, from the same module. A
+    // browser tab that stalls mid-request has exactly the mobile problem: a
+    // promise that never settles and a control that never stops spinning.
+    global: {
+      fetch: createBoundedFetch({
+        timeouts: resolveRequestTimeouts(process.env as Record<string, string | undefined>),
+      }),
+    },
     auth: {
       // The session lives in this tab's storage and is refreshed in the
       // background, which is what makes a reload land on the same account
