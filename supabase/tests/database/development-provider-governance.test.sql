@@ -80,9 +80,43 @@ select is((select audience from private.staff_feature_flags
 select ok((select 'development' = any(environments) from private.external_providers
            where provider_key = 'google_maps_platform'),
   'Google Maps is registered as development-compatible');
-select ok((select not ('production' = any(environments)) from private.external_providers
+-- This asserted the opposite until 2026-09-01, and correctly: there was no
+-- Production project and no Production server key, so a provider claiming
+-- production compatibility could only have been an accident.
+--
+-- warsha-production now exists and holds its own GOOGLE_MAPS_SERVER_KEY,
+-- distinct from Development's, so 202609010004 declares the capability
+-- deliberately. What replaces the old assertion is the invariant that actually
+-- protects anybody now: PERMITTED IS NOT ENABLED.
+select ok((select 'production' = any(environments) from private.external_providers
            where provider_key = 'google_maps_platform'),
-  'Google Maps does not become production-compatible');
+  'Google Maps is registered as production-compatible');
+
+-- Gate 2 of private.provider_enabled. A clean replay must not arrive already
+-- active, or the migration chain itself would be the activation.
+select isnt((select current_status from private.external_providers
+             where provider_key = 'google_maps_platform'), 'active',
+  'BUT A CLEAN REPLAY DOES NOT ARRIVE WITH MAPS ACTIVE');
+
+-- Gate 4. An absent row is off, and it must stay absent: seeding an enabled
+-- production flag from a migration would be an activation with no actor, no
+-- reason and no audit row.
+select is((select count(*)::integer from private.staff_feature_flags
+           where flag_key = 'location_provider' and environment = 'production'), 0,
+  'AND NO MIGRATION SEEDS A PRODUCTION LOCATION FLAG');
+
+-- The status correction in 202609010004 is guarded on
+-- platform_environment() = 'production', so a local replay keeps the honest
+-- seeded value rather than claiming a credential it does not have.
+select is((select current_status from private.external_providers
+           where provider_key = 'google_maps_platform'),
+  'implemented_awaiting_credential',
+  'and a local replay still reports that it is waiting for a credential');
+
+-- OCR was not swept along. The Maps migration names one provider on purpose.
+select ok((select not ('production' = any(environments)) from private.external_providers
+           where provider_key = 'google_cloud_vision'),
+  'GOOGLE CLOUD VISION IS STILL NOT PRODUCTION-COMPATIBLE');
 select is((select current_status from private.external_providers
            where provider_key = 'google_maps_platform'),
   'implemented_awaiting_credential', 'the migration does not activate Google Maps');
