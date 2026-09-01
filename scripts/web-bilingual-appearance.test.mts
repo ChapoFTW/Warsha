@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import {
@@ -25,10 +25,6 @@ function equal(actual: unknown, expected: unknown, message: string) {
   assert.deepEqual(actual, expected, message);
   checks += 1;
 }
-
-const BUILT = 'web/.next/server/app';
-const built = (path: string) => readFileSync(join(BUILT, path), 'utf8');
-const hasBuild = existsSync(BUILT);
 
 // --- One preference model, shared with mobile -------------------------------
 // The web must not invent a second definition of "the user chose this".
@@ -491,32 +487,13 @@ check(/setHydrated\(true\)/.test(preferenceStore) && /useEffect/.test(preference
 check(/initialLocale/.test(preferenceStore),
   'THE LANGUAGE IS DECIDED BEFORE THE FIRST RENDER, NOT CORRECTED AFTER IT');
 
-// --- Built output: the promise actually shipped -----------------------------
-if (hasBuild) {
-  const en = built('en.html');
-  const ar = built('ar.html');
-  const fr = built('fr.html');
-  check(/<html lang="en" dir="ltr"/.test(en), 'the built English page declares ltr');
-  check(/<html lang="ar" dir="rtl"/.test(ar), 'THE BUILT ARABIC PAGE DECLARES RTL');
-  check(/<html lang="fr" dir="ltr"/.test(fr), 'the built French page declares ltr');
-  check(/[؀-ۿ]/.test(ar), 'the built Arabic page contains Arabic text');
-  check(!/Get it fixed, at a price you agreed first/.test(ar),
-    'NO ENGLISH MARKETING COPY LEAKS INTO THE ARABIC PAGE');
-  check(/hrefLang="ar"/i.test(en) && /hrefLang="en"/i.test(ar),
-    'each language advertises the other, and both routes exist');
-  for (const locale of ['en', 'ar', 'fr']) {
-    check(existsSync(join(BUILT, locale, 'legal', 'privacy-policy.html')),
-      `the ${locale} legal reader is generated`);
-    for (const slug of PAGE_SLUGS) {
-      check(existsSync(join(BUILT, locale, `${slug}.html`)),
-        `/${locale}/${slug} is generated`);
-    }
-  }
-  const arLegal = built('ar/legal/privacy-policy.html');
-  check(/<html lang="ar" dir="rtl"/.test(arLegal),
-    'the Arabic legal document is right-to-left');
-} else {
-  console.log('  (built output absent — run `npm run web:build` for full coverage)');
-}
+// --- Built output lives with the build that produces it ---------------------
+// These assertions used to sit here behind `if (existsSync('web/.next/...'))`,
+// which meant this file had two different coverages depending on whether
+// somebody had run `web:build` in that working copy — and reported success
+// either way. They now have their own authority, `test:web-build-output`, which
+// runs after `web:build` and fails loudly when the artifact is absent. Nothing
+// in THIS file reads generated state any more, so it is deterministic from a
+// clean checkout.
 
 console.log(`Web bilingual + appearance regressions: ${checks} checks passed.`);
