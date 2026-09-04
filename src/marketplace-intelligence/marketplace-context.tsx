@@ -1,4 +1,5 @@
 import { createContext,PropsWithChildren,useCallback,useContext,useEffect,useMemo,useState } from 'react';
+import { AppState } from 'react-native';
 import { useAuth } from '@/src/auth/auth-context';
 import { realtimeService } from '@/src/realtime/realtime-service';
 import { marketplaceRepository } from './marketplace-repository';
@@ -35,6 +36,23 @@ export function MarketplaceIntelligenceProvider({children}:PropsWithChildren){
    * one poll failed makes the screen look broken for no gain.
    */
   const reloadOfferCapacity=useCallback(async()=>{try{setOfferCapacity(await marketplaceRepository.workerOfferCapacity())}catch{/* the server refuses the submission if this is stale */}},[]);
+  /*
+   * Identity change clears before it loads.
+   *
+   * `reloadOfferCapacity` deliberately keeps the previous value when a fetch
+   * fails, because a transient network error should not blank a number the
+   * worker is looking at. That is right during a session and WRONG across two:
+   * after sign-out the fetch fails, the old value survives, and the next
+   * account to use the device is shown the previous worker's capacity. The same
+   * argument applies to the invitation list.
+   *
+   * So the state is emptied synchronously whenever the account changes, before
+   * anything is requested for the new one. There is no window in which one
+   * identity's data is on screen under another identity's session.
+   */
+  useEffect(()=>{
+    setInvitations([]);setOfferCapacity(null);setCapabilities(null);
+  },[mode,user?.id]);
   useEffect(()=>{let active=true;setLoading(true);setError(false);marketplaceRepository.capabilities().then(value=>{if(active)setCapabilities(value)}).catch(()=>{if(active){setCapabilities(null);setError(true)}}).finally(()=>{if(active)setLoading(false)});void reloadInvitations();void reloadOfferCapacity();return()=>{active=false}},[mode,user?.id,reloadInvitations,reloadOfferCapacity]);
   /*
    * One subscription, two things to refresh.
@@ -52,6 +70,23 @@ export function MarketplaceIntelligenceProvider({children}:PropsWithChildren){
    * customer cancelled the request -- writes to `worker_quotes`, and
    * `cancel_marketplace_request` writes there too.
    */
+  /*
+   * Coming back to the app is the third way to find out.
+   *
+   * Bookings, notifications and provider jobs all did this; the marketplace did
+   * not, and relied on the screen's own focus effect instead. That covers a
+   * navigation and misses a phone that has been asleep for an hour — the socket
+   * is gone, the events that arrived while it was down were never delivered,
+   * and the screen was already focused so nothing re-runs. A worker opens the
+   * app to a list of invitations that expired overnight.
+   */
+  useEffect(()=>{
+    const subscription=AppState.addEventListener('change',state=>{
+      if(state!=='active')return;
+      void reloadInvitations();void reloadOfferCapacity();
+    });
+    return()=>subscription.remove();
+  },[reloadInvitations,reloadOfferCapacity]);
   useEffect(()=>{
     if(mode==='supabase'&&!user)return;
     const reconcile=()=>{void reloadInvitations();void reloadOfferCapacity()};

@@ -125,7 +125,9 @@
     "test:network-failure": "node --no-warnings --experimental-strip-types scripts/network-failure.test.mts",
     "test:operational-monitoring": "node --no-warnings --experimental-strip-types scripts/operational-monitoring.test.mts",
     "test:web-build-output": "node --no-warnings --experimental-strip-types scripts/web-build-output.test.mts",
-    "test:auth-validation": "node --no-warnings --experimental-strip-types scripts/auth-validation-matrix.test.mts"
+    "test:auth-validation": "node --no-warnings --experimental-strip-types scripts/auth-validation-matrix.test.mts",
+    "test:session-teardown": "node --no-warnings --experimental-strip-types scripts/session-teardown.test.mts",
+    "test:realtime-coverage": "node --no-warnings --experimental-strip-types scripts/realtime-coverage.test.mts"
   },
   "dependencies": {
     "@expo-google-fonts/cairo": "^0.4.2",

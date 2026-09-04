@@ -81,6 +81,8 @@ export const DETERMINISTIC_TEST_SCRIPTS = [
   'test:password-recovery',
   'test:automation',
   'test:auth-validation',
+  'test:session-teardown',
+  'test:realtime-coverage',
 ];
 
 const NATIVE_DEPENDENCY_PREFIXES = [

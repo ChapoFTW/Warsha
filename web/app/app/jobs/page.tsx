@@ -10,6 +10,9 @@ import { AppShell } from '@/components/app-shell';
 import { LifecycleBadge } from '@/components/lifecycle-badge';
 import { appCopy } from '@/lib/app-copy';
 import { CallCounterparty } from '@/components/call-counterparty';
+import { realtimeChannels } from '@/src/realtime/realtime-channels';
+import { useWarshaRealtime } from '@/lib/use-warsha-realtime';
+import { useSession } from '@/components/session-provider';
 import { isFinished, parseBookings, type Booking } from '@/lib/customer';
 import { customerNavigation } from '@/lib/nav';
 import { intlLocale, type Locale } from '@/lib/preferences';
@@ -43,6 +46,7 @@ export default function JobsPage() {
   const locale = useAppLocale();
   const words = appCopy[locale] as Record<string, string>;
 
+  const userId = useSession().session?.user.id ?? null;
   const [bookings, setBookings] = useState<Booking[] | null>(null);
   const [failed, setFailed] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
@@ -70,6 +74,15 @@ export default function JobsPage() {
   }, []);
 
   useEffect(() => { void load(); }, [load]);
+
+  /* Booking lifecycle, live. A worker marking themselves on the way, arrived,
+     started or finished reaches the customer's screen without a refresh — and
+     so does the Call action, which re-asks the server whenever the status it
+     was given changes. */
+  useWarshaRealtime(
+    userId ? realtimeChannels.customerBookings(userId) : null,
+    () => { void load(); },
+  );
 
   const [active, past] = useMemo(() => {
     const rows = bookings ?? [];

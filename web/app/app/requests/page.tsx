@@ -19,6 +19,9 @@ import {
   parseServices,
   type Service,
 } from '@/lib/customer';
+import { realtimeChannels } from '@/src/realtime/realtime-channels';
+import { useWarshaRealtime } from '@/lib/use-warsha-realtime';
+import { useSession } from '@/components/session-provider';
 import { customerNavigation } from '@/lib/nav';
 import { intlLocale, type Locale } from '@/lib/preferences';
 import { supabase } from '@/lib/supabase';
@@ -77,6 +80,7 @@ export default function RequestsPage() {
   const locale = useAppLocale();
   const words = appCopy[locale] as Record<string, string>;
 
+  const userId = useSession().session?.user.id ?? null;
   const [rows, setRows] = useState<Row[] | null>(null);
   const [services, setServices] = useState<Service[]>([]);
   const [failed, setFailed] = useState(false);
@@ -98,6 +102,14 @@ export default function RequestsPage() {
   }, []);
 
   useEffect(() => { void load(); }, [load]);
+
+  /* The list of a customer's own requests, and any quote on any of them. A
+     worker submitting a quote changes the count this page shows without the
+     customer doing anything. */
+  useWarshaRealtime(
+    userId ? realtimeChannels.customerMarketplaceRequests(userId) : null,
+    () => { void load(); },
+  );
 
   return (
     <AppShell navigation={customerNavigation(words)} mode={words.modeCustomer}>
@@ -179,6 +191,7 @@ function RequestDetail({
   const [request, setRequest] = useState<MarketplaceRequestDetail | null>(null);
   const [quotes, setQuotes] = useState<Quote[] | null>(null);
   const [sort, setSort] = useState<QuoteSort>('best_value');
+  const detailUserId = useSession().session?.user.id ?? null;
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<CustomerFailure | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -197,6 +210,14 @@ function RequestDetail({
   }, [requestId, sort]);
 
   useEffect(() => { void load(); }, [load]);
+
+  /* An open request re-reads itself, its quotes and its deadlines whenever any
+     of them move. This is the case the review named: the customer has the page
+     open, a worker submits a quote, and the quote appears. */
+  useWarshaRealtime(
+    detailUserId ? realtimeChannels.customerMarketplaceRequests(detailUserId) : null,
+    () => { void load(); },
+  );
 
   /**
    * Choose and wait for the worker to confirm.

@@ -25,6 +25,9 @@ import { cataloguedServiceReferenceLabel } from '@/src/services/specific-service
 import { bookingLifecycleSemantic } from '@/src/lifecycle/lifecycle-presentation';
 
 import styles from '@/components/product-surface.module.css';
+import { realtimeChannels } from '@/src/realtime/realtime-channels';
+import { useWarshaRealtime } from '@/lib/use-warsha-realtime';
+import { useSession } from '@/components/session-provider';
 import { CallCounterparty } from '@/components/call-counterparty';
 
 /** Provider-owned booking list and the exact lifecycle transitions the RPCs permit. */
@@ -35,6 +38,10 @@ export default function WorkerJobsPage() {
   const [bookings, setBookings] = useState<WorkerBooking[] | null>(null);
   const [failed, setFailed] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
+  /* The provider id is discovered by `load`, so the subscription can only be
+     established after the first successful load. Held here rather than re-read
+     from `get_my_worker_profile` a second time. */
+  const [providerId, setProviderId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setFailed(false);
@@ -56,9 +63,19 @@ export default function WorkerJobsPage() {
       .order('created_at', { ascending: false })
       .limit(50);
     if (error) setFailed(true);
-    else setBookings(parseWorkerBookings(data));
+    else {
+      setBookings(parseWorkerBookings(data));
+      setProviderId(providerId);
+    }
   }, []);
   useEffect(() => { void load(); }, [load]);
+
+  /* A customer accepting a reschedule, cancelling, or confirming reaches the
+     worker's screen without a refresh. */
+  useWarshaRealtime(
+    providerId ? realtimeChannels.providerJobs(providerId) : null,
+    () => { void load(); },
+  );
 
   const [active, past] = useMemo(() => {
     const rows = bookings ?? [];

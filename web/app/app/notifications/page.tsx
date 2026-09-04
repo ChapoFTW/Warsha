@@ -3,6 +3,9 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { AppShell, useAccount } from '@/components/app-shell';
+import { realtimeChannels } from '@/src/realtime/realtime-channels';
+import { useWarshaRealtime } from '@/lib/use-warsha-realtime';
+import { useSession } from '@/components/session-provider';
 import { appCopy } from '@/lib/app-copy';
 import { customerNavigation, workerNavigation } from '@/lib/nav';
 import { intlLocale, type Locale } from '@/lib/preferences';
@@ -60,6 +63,7 @@ export default function NotificationsPage() {
   const [category, setCategory] = useState<string>('');
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
+  const userId = useSession().session?.user.id ?? null;
 
   const load = useCallback(async (append: NotificationCursor) => {
     setBusy(true);
@@ -84,6 +88,14 @@ export default function NotificationsPage() {
   }, [mode, category]);
 
   useEffect(() => { void load(null); }, [load]);
+
+  /* A new notification appears in the list without a refresh. Only the first
+     page is refetched: appending pages is a reader's scroll position and must
+     not be discarded because a notification arrived at the top. */
+  useWarshaRealtime(
+    userId ? realtimeChannels.notifications(userId) : null,
+    () => { void load(null); },
+  );
 
   const markRead = async (id: string) => {
     // Optimistic: the row is already read from the reader's point of view the

@@ -19,6 +19,8 @@ import {
   type WorkerQuote,
 } from '@/lib/worker';
 import { workerCopy, type WorkerWords } from '@/lib/worker-copy';
+import { realtimeChannels } from '@/src/realtime/realtime-channels';
+import { useWarshaRealtime } from '@/lib/use-warsha-realtime';
 import { requestWorkLabel } from '@/src/marketplace-intelligence/request-work-label';
 import {
   isWorkerOpenOfferLimitError,
@@ -86,6 +88,22 @@ export default function WorkerOpportunitiesPage() {
     if (parsedCapacity) setCapacity(parsedCapacity);
   }, []);
   useEffect(() => { void load(); }, [load]);
+
+  /*
+   * The page keeps itself current.
+   *
+   * Both bindings are filtered to this worker's own provider id, which is only
+   * known once capacity has answered — before that there is nothing to
+   * subscribe to and the hook is handed null rather than an unfiltered channel.
+   *
+   * `load` refetches invitations AND capacity together, which is what makes
+   * "a customer rejected one of your offers" turn into both a changed list and
+   * a released slot without the worker touching anything.
+   */
+  useWarshaRealtime(
+    capacity?.providerId ? realtimeChannels.workerMarketplaceInvitations(capacity.providerId) : null,
+    () => { void load(); },
+  );
 
   const selected = invitations?.find((item) => item.id === openId) ?? null;
   const { active: activeInvitations, history: historicalInvitations } = partitionInvitationLifecycle(invitations ?? []);
