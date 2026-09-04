@@ -9,6 +9,7 @@ import {
 import { AppShell } from '@/components/app-shell';
 import { LifecycleBadge } from '@/components/lifecycle-badge';
 import { appCopy } from '@/lib/app-copy';
+import { CallCounterparty } from '@/components/call-counterparty';
 import { isFinished, parseBookings, type Booking } from '@/lib/customer';
 import { customerNavigation } from '@/lib/nav';
 import { intlLocale, type Locale } from '@/lib/preferences';
@@ -146,6 +147,14 @@ function JobDetail({
         <Fact label={words.jobsAddress} value={booking.addressSnapshot} />
         <Fact label={booking.finalPrice ? words.jobsFinalPrice : words.jobsEstimate}
           value={`${booking.finalPrice ?? booking.estimatedPrice} ${words.currencyEgp}`} />
+      </div>
+
+      {/* The Call action decides for itself whether to exist: it asks the
+          server whether this booking is in a state where a call is
+          appropriate. Nothing on this page holds a telephone number. */}
+      <div className={styles.actions}>
+        <CallCounterparty bookingId={booking.id} counterpartyRole="worker"
+          locale={locale} bookingStatus={booking.status} />
       </div>
 
       {booking.status === 'rescheduling_requested' ? (

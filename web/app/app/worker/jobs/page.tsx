@@ -25,6 +25,7 @@ import { cataloguedServiceReferenceLabel } from '@/src/services/specific-service
 import { bookingLifecycleSemantic } from '@/src/lifecycle/lifecycle-presentation';
 
 import styles from '@/components/product-surface.module.css';
+import { CallCounterparty } from '@/components/call-counterparty';
 
 /** Provider-owned booking list and the exact lifecycle transitions the RPCs permit. */
 export default function WorkerJobsPage() {
@@ -122,6 +123,14 @@ function WorkerJobDetail({ booking, locale, appWords, words, onClose, onChanged 
         <Fact label={words.workerJobCustomer} value={booking.customerName} />
         <Fact label={words.workerJobAddress} value={booking.address} />
         <Fact label={words.workerJobPrice} value={`${booking.finalPrice ?? booking.estimatedPrice} ${appWords.currencyEgp}`} />
+      </div>
+
+      {/* The worker's side of the same rule, from the same two RPCs. The
+          control removes itself when the job is not in a state where a call is
+          appropriate, and this page never holds a telephone number. */}
+      <div className={styles.actions}>
+        <CallCounterparty bookingId={booking.id} counterpartyRole="customer"
+          locale={locale} bookingStatus={booking.status} />
       </div>
 
       {booking.status === 'pending_provider_approval' ? (
