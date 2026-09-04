@@ -12,7 +12,8 @@ import { useAuth } from '@/src/auth/auth-context';
 import { authMessageKey, sanitizeAuthError } from '@/src/auth/auth-errors';
 import { authOutcomeText } from '@/src/auth/auth-outcome-copy';
 import { recoveryFailurePresentation } from '@/src/auth/email-confirmation';
-import { passwordRequirements } from '@/src/auth/password-policy';
+import { PasswordRequirementList } from '@/components/warsha/PasswordRequirementList';
+import { passwordMeetsPolicy, passwordFailureKey } from '@/src/auth/password-policy';
 import { useLocalization } from '@/src/i18n/localization';
 import { getSupabaseClient } from '@/src/lib/supabase';
 
@@ -32,13 +33,17 @@ export default function ResetPasswordScreen() {
   // The rules live in `src/auth/password-policy.ts` so the web asks for the
   // same password this screen will demand. The keys are translation keys, so
   // the list below is both the check and the explanation.
-  const requirements = useMemo(() => passwordRequirements(password), [password]);
-  const passwordValid = requirements.every((requirement) => requirement.met);
+  const passwordValid = passwordMeetsPolicy(password);
   const passwordsMatch = password === confirmation && confirmation.length > 0;
 
   const submit = async () => {
     if (!passwordValid || !passwordsMatch || busy) {
-      setMessage(!passwordsMatch && confirmation.length > 0 ? t('passwordMismatch') : t('passwordRequirements'));
+      // The specific rule that is still outstanding, from the shared policy,
+      // rather than the whole sentence again. "Passwords do not match" wins
+      // when it applies, because that is the more actionable of the two.
+      setMessage(!passwordsMatch && confirmation.length > 0
+        ? t('passwordMismatch')
+        : t(passwordFailureKey(password) ?? 'passwordRequirements'));
       return;
     }
     setBusy(true);
@@ -92,14 +97,11 @@ export default function ResetPasswordScreen() {
             <AppText style={styles.body}>{t('resetPasswordBody')}</AppText>
             <PasswordField label={t('newPassword')} value={password} onChangeText={setPassword} visible={showPassword} onToggle={() => setShowPassword((current) => !current)} rtl={isRTL} showLabel={t('showPassword')} hideLabel={t('hidePassword')} />
             <PasswordField label={t('confirmPassword')} value={confirmation} onChangeText={setConfirmation} visible={showConfirmation} onToggle={() => setShowConfirmation((current) => !current)} rtl={isRTL} showLabel={t('showPassword')} hideLabel={t('hidePassword')} />
-            <View accessibilityLabel={t('passwordRequirements')} style={styles.requirements}>
-              {requirements.map((requirement) => (
-                <View key={requirement.key} style={[styles.requirementRow, isRTL && styles.reverse]}>
-                  <MaterialIcons name={requirement.met ? 'check-circle' : 'radio-button-unchecked'} size={17} color={requirement.met ? colors.success : colors.textMuted}/>
-                  <AppText style={[styles.requirement, requirement.met && styles.met]}>{t(requirement.key)}</AppText>
-                </View>
-              ))}
-            </View>
+            {/* The checklist is shared with signup now. It was written here
+                and nowhere else, so the screen that asks somebody to CHOOSE a
+                password had no idea what the rules were and could only refuse
+                the result. */}
+            <PasswordRequirementList password={password} />
             {confirmation.length > 0 && !passwordsMatch ? <AppText accessibilityRole="alert" style={styles.error}>{t('passwordMismatch')}</AppText> : null}
             {message ? <AppText accessibilityRole="alert" style={styles.error}>{message}</AppText> : null}
             <Pressable accessibilityRole="button" accessibilityLabel={t('resetPasswordAccessibility')} disabled={busy || !passwordValid || !passwordsMatch} onPress={() => void submit()} style={({ pressed }) => [styles.primary, (busy || !passwordValid || !passwordsMatch) && styles.disabled, pressed && styles.pressed]}>
