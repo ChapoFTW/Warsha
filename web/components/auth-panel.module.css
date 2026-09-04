@@ -131,7 +131,22 @@
 }
 
 .submit:disabled { opacity: 0.45; cursor: not-allowed; }
-.submit:not(:disabled):hover { filter: brightness(1.08); }
+
+/* The single action that completes an authentication form. It gets exactly the
+   feedback every other primary action in Warsha gets — no more, because signing
+   in is not a moment that wants celebrating, and no less, because this is the
+   most consequential button on the page. */
+.submit:not(:disabled):hover {
+  filter: brightness(1.08);
+  transform: translateY(var(--lift-control));
+  box-shadow: var(--lift-shadow);
+}
+
+.submit:not(:disabled):active {
+  transform: translateY(var(--press-control)) scale(var(--press-scale));
+  box-shadow: none;
+  transition-duration: var(--motion-press);
+}
 
 .error {
   font-size: 14px;
@@ -151,7 +166,12 @@
   font-weight: 650;
   text-decoration: underline;
   text-underline-offset: 3px;
+  text-decoration-color: var(--border-strong);
 }
+
+/* A link in a sentence: the underline firms up, the sentence stays still. */
+.link:hover { text-decoration-color: currentcolor; }
+.link:active { transform: none; }
 
 .note {
   font-size: 13.5px;

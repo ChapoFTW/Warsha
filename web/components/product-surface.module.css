@@ -52,10 +52,34 @@
   gap: 12px;
 }
 
+/*
+ * A card answers a pointer, but only when it is something you can act on.
+ *
+ * These are rendered as both `<div>` and `<button>`/`<a>` depending on the
+ * surface, and a static card that lifts under the mouse is a promise the page
+ * cannot keep. So the lift is attached to the interactive forms and the border
+ * response to all of them: everything acknowledges the pointer, only the things
+ * that go somewhere move.
+ */
 .card {
   border: 1px solid var(--border); border-radius: var(--radius-sm);
   padding: 14px; display: grid; gap: 6px; background: var(--canvas);
   text-align: start;
+}
+
+.card:hover { border-color: var(--border-strong); }
+
+a.card:hover,
+button.card:hover {
+  transform: translateY(var(--lift-surface));
+  box-shadow: var(--lift-shadow);
+}
+
+a.card:active,
+button.card:active {
+  transform: translateY(0);
+  box-shadow: none;
+  transition-duration: var(--motion-press);
 }
 
 .cardName { font-size: 15.5px; font-weight: 700; color: var(--text-primary); }
@@ -67,6 +91,11 @@
   font-size: 11.5px; font-weight: 600; padding: 3px 8px; border-radius: 999px;
   border: 1px solid var(--border); color: var(--text-secondary); white-space: nowrap;
 }
+
+/* Most chips are labels. The ones that are controls say so by being one, and
+   those get the same press the rest of the product gives. */
+button.chip:hover,
+a.chip:hover { border-color: var(--border-strong); color: var(--text-primary); }
 
 .chipStrong { background: var(--brand); color: var(--brand-ink); border-color: transparent; }
 
@@ -81,7 +110,15 @@
   font-size: 15.5px; font-weight: 700; color: var(--text-primary);
   cursor: pointer; padding: 0; text-align: start;
   text-decoration: underline; text-underline-offset: 3px;
+  text-decoration-color: var(--border-strong);
 }
+
+/* A title inside a row is a link in a sentence, not a button: the underline
+   firms up and nothing moves. Excluded from the global `:active` translate for
+   the same reason — text that shifts as you click a word inside it reads as a
+   glitch. */
+.rowTitle:hover { text-decoration-color: currentcolor; }
+.rowTitle:active { transform: none; }
 
 .rowMeta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 
@@ -228,7 +265,12 @@
   font: inherit; width: 100%; padding: 10px; cursor: pointer; text-align: start;
   display: grid; gap: 3px;
 }
+.searchOption button:hover { background: var(--canvas); }
 .searchOption button span { color: var(--text-muted); font-size: 13px; }
+
+/* The suggestion list opens with the same four pixels every other Warsha
+   disclosure uses — `data-warsha-open="fast"`, set on the element, because it
+   is a listbox under a field and must never delay the next keystroke. */
 
 .inlineLink { color: var(--text-primary); text-underline-offset: 3px; font-weight: 600; }
 
@@ -246,6 +288,14 @@
   background: var(--canvas); border: 1px solid var(--border);
   border-radius: var(--radius-sm); padding: 10px 12px; min-height: 44px; width: 100%;
 }
+
+/* A field answers the pointer before it answers the keyboard. The focus ring
+   itself is untouched — `:focus-visible` in globals.css is the accessibility
+   contract and nothing here may soften it — this only gives the border
+   somewhere to travel from. */
+.input:hover:not(:disabled),
+.select:hover:not(:disabled),
+.textarea:hover:not(:disabled) { border-color: var(--border-strong); }
 
 .textarea { resize: vertical; line-height: 1.6; min-height: 96px; }
 
@@ -266,6 +316,20 @@
   display: inline-flex; align-items: center; justify-content: center;
 }
 
+/*
+ * The three roles share one feedback, because they are one control wearing
+ * three coats: a pixel of lift under a pointer, back past resting on press,
+ * both on the tokens from globals.css. A disabled control does neither — it is
+ * not refusing to move, it has nothing to say.
+ */
+.action:hover:not(:disabled) {
+  filter: brightness(1.08);
+  transform: translateY(var(--lift-control));
+  box-shadow: var(--lift-shadow);
+}
+
+.action:active:not(:disabled) { box-shadow: none; }
+
 .action:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .secondary {
@@ -278,6 +342,13 @@
   justify-content: center;
 }
 
+.secondary:hover:not(:disabled) {
+  border-color: var(--border-strong);
+  background: var(--surface);
+  color: var(--text-primary);
+  transform: translateY(var(--lift-control));
+}
+
 .secondary:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .danger {
@@ -288,6 +359,15 @@
   padding: var(--control-pad-md); min-height: var(--control-h-md); cursor: pointer;
   display: inline-flex; align-items: center; justify-content: center;
 }
+/* Destructive is the same shape as secondary and only its colour says what it
+   does — so its hover says the same thing, in its own colour. */
+.danger:hover:not(:disabled) {
+  border-color: var(--status-error-border);
+  background: var(--status-error-background);
+  color: var(--status-error-text);
+  transform: translateY(var(--lift-control));
+}
+
 .danger:disabled { opacity: 0.45; cursor: not-allowed; }
 
 /*
@@ -334,6 +414,8 @@
   padding: 16px; display: grid; gap: 8px; background: var(--canvas);
 }
 
+.quote:hover { border-color: var(--border-strong); }
+
 .quoteChosen { border-color: var(--text-primary); border-inline-start-width: 3px; }
 
 .quoteHead {
@@ -368,6 +450,13 @@
 
 .categoryCard .cardName,
 .categoryCard .cardMeta { grid-column: 2; }
+
+/* The ground under the mark warms when the row is hovered. The mark's own
+   geometry never changes — the approved icon family is not animated, and a
+   category card that made its icon dance would be exactly the decoration this
+   pass exists to avoid. */
+a.card:hover .categoryIcon,
+button.card:hover .categoryIcon { background: var(--surface); }
 
 .categoryIcon {
   grid-column: 1;

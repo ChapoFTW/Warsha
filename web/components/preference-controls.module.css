@@ -104,6 +104,7 @@
 
 .menuItem:hover {
   color: var(--text-primary);
+  background: var(--canvas);
 }
 
 /* The chosen state is driven by aria-checked, so the visual and the accessible

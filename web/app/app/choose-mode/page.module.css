@@ -39,7 +39,20 @@
   color: var(--text-primary);
 }
 
-.choice:hover { border-color: var(--brand); }
+/* The single most consequential choice a new account makes, so it is a card
+   that behaves like one: it lifts under a pointer and settles back past resting
+   when clicked, with the shared surface travel rather than its own. */
+.choice:hover {
+  border-color: var(--brand);
+  transform: translateY(var(--lift-surface));
+  box-shadow: var(--lift-shadow);
+}
+
+.choice:active {
+  transform: translateY(0);
+  box-shadow: none;
+  transition-duration: var(--motion-press);
+}
 
 .choiceTitle { font-size: 18px; font-weight: 750; }
 .choiceBody { font-size: 14.5px; line-height: 1.65; color: var(--text-secondary); }

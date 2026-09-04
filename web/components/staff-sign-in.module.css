@@ -98,7 +98,20 @@
 }
 
 .submit:disabled { opacity: 0.45; cursor: not-allowed; }
-.submit:not(:disabled):hover { filter: brightness(1.08); }
+/* The staff sign-in is the one console surface that is a page rather than a
+   tool, so it takes the product's primary-action feedback. Everything past this
+   screen is operational and deliberately quieter. */
+.submit:not(:disabled):hover {
+  filter: brightness(1.08);
+  transform: translateY(var(--lift-control));
+  box-shadow: var(--lift-shadow);
+}
+
+.submit:not(:disabled):active {
+  transform: translateY(var(--press-control)) scale(var(--press-scale));
+  box-shadow: none;
+  transition-duration: var(--motion-press);
+}
 
 .error {
   font-size: 14px;

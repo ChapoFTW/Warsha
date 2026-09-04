@@ -32,6 +32,12 @@
 
 .submit:disabled { opacity: 0.45; cursor: not-allowed; }
 
+/* The console's primary action. Brightness and the global press translate, and
+   nothing else: staff software should acknowledge a click, not perform one.
+   No lift and no shadow — that is the marketing site's register. */
+.submit:not(:disabled):hover { filter: brightness(1.08); }
+
+
 /* Wide data scrolls inside its own container; the page never scrolls sideways. */
 .scroll { overflow-x: auto; }
 
@@ -103,6 +109,7 @@
   border: 1px solid var(--border); border-radius: var(--radius-sm);
   padding: var(--control-pad-md); min-height: var(--control-h-md); cursor: pointer;
 }
+.pagerButton:hover:not(:disabled) { border-color: var(--border-strong); background: var(--surface); }
 .pagerButton:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .pagerPosition { font-size: 13.5px; color: var(--text-muted); }
@@ -112,8 +119,17 @@
   appearance: none; font: inherit; font-size: 14px; font-weight: 600;
   color: var(--text-primary); background: transparent; border: 0;
   padding: 0; cursor: pointer; text-decoration: underline;
-  text-underline-offset: 3px;
+  text-underline-offset: 3px; text-decoration-color: var(--border-strong);
 }
+
+/* Operational software, so the feedback stops at legibility. A staff member
+   scanning a table of two hundred rows needs to know which one the pointer is
+   on; they do not need it to lift, and two hundred lifting rows would be the
+   marketing motion this console is deliberately excluded from. */
+.rowLink:hover { text-decoration-color: currentcolor; }
+.rowLink:active { transform: none; }
+
+.table tbody tr:hover td { background: var(--canvas); }
 
 /* A standing note about what a surface deliberately will not show. */
 .notice {

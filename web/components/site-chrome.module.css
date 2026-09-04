@@ -58,24 +58,47 @@
   min-width: 0;
 }
 
+/* The rule under a navigation link grows rather than appearing whole.
+   `transform: scaleX` on a pseudo-element, so the browser composites two pixels
+   and reflows nothing. It grows from the centre outwards, which is deliberate:
+   `transform-origin` has no logical keywords, so growing from the reading edge
+   would mean a hard-coded `left` here and a mirrored override for Arabic. A
+   centre origin is the same gesture in both directions and needs neither.
+
+   The transparent 2px border became 2px of padding: same box height, one fewer
+   thing drawing a line under the link. */
 .navLink {
+  position: relative;
   font-size: 14px;
   line-height: 1.4;
   color: var(--text-secondary);
-  padding: 4px 0;
-  border-bottom: 2px solid transparent;
+  padding: 4px 0 6px;
   white-space: nowrap;
   flex-shrink: 0;
 }
 
+.navLink::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--brand);
+  transform: scaleX(0);
+  transition: transform var(--motion-standard) var(--ease-standard);
+}
+
 .navLink:hover {
   color: var(--text-primary);
-  border-bottom-color: var(--brand);
+}
+
+.navLink:hover::after,
+.navLink[aria-current='page']::after {
+  transform: scaleX(1);
 }
 
 .navLink[aria-current='page'] {
   color: var(--text-primary);
-  border-bottom-color: var(--brand);
 }
 
 /* --- The collapse ---------------------------------------------------------
@@ -98,8 +121,14 @@
 
 .menuButton:hover {
   border-color: var(--border-strong);
+  background: var(--surface-raised);
 }
 
+/* The disclosure opens. The gesture is `data-warsha-open` in globals.css — four
+   pixels and an opacity on the standard curve, and it is one object so it moves
+   as one rather than staggering its links. It cannot be declared here: a CSS
+   Module would rename the keyframe reference and the panel would appear
+   instantly while looking, in the source, as though it did not. */
 .navPanel {
   position: absolute;
   inset-inline-start: var(--gutter);
@@ -123,6 +152,11 @@
 
 .navPanelLink:hover {
   background: var(--surface);
+}
+
+.navPanelLink:active {
+  transform: translateY(var(--press-control)) scale(var(--press-scale));
+  transition-duration: var(--motion-press);
 }
 
 .navPanelLink[aria-current='page'] {
@@ -170,8 +204,19 @@
   align-items: center;
 }
 
+/* The one call to action in the header. It lifts by a pixel and returns past
+   its resting place on press — the same feedback the marketing hero's primary
+   action gives, from the same tokens, so the two never disagree. */
 .cta:hover {
   filter: brightness(1.08);
+  transform: translateY(var(--lift-control));
+  box-shadow: var(--lift-shadow);
+}
+
+.cta:active {
+  transform: translateY(var(--press-control)) scale(var(--press-scale));
+  box-shadow: none;
+  transition-duration: var(--motion-press);
 }
 
 /* 900px is where the two priority links and both account actions fit
@@ -247,6 +292,8 @@
 .footerLink:hover {
   color: var(--text-primary);
 }
+
+/* A footer link is a link, not a control: it changes colour and stays put. */
 
 .footerBase {
   max-width: var(--page-max);

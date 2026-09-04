@@ -1,7 +1,8 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
+import { PressableSurface } from '@/components/warsha/PressableSurface';
 import { AppText } from '@/components/warsha/Typography';
 import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
 import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
@@ -133,7 +134,7 @@ function TradeAccordion<T extends CatalogueServiceRow>({
 
   return (
     <View style={styles.section}>
-      <Pressable
+      <PressableSurface
         accessibilityRole={collapsible ? 'button' : 'header'}
         accessibilityLabel={`${trade}. ${summary}`}
         accessibilityState={collapsible ? { expanded, disabled: Boolean(disabled) } : undefined}
@@ -152,7 +153,7 @@ function TradeAccordion<T extends CatalogueServiceRow>({
             color={colors.textMuted}
           />
         ) : null}
-      </Pressable>
+      </PressableSurface>
 
       {expanded ? (
         <View style={styles.body}>
@@ -160,7 +161,7 @@ function TradeAccordion<T extends CatalogueServiceRow>({
             <AppText style={styles.summaryEmpty}>{wt.text('noServicesAvailable')}</AppText>
           ) : (
             <>
-              <Pressable
+              <PressableSurface
                 accessibilityRole="checkbox"
                 accessibilityState={{ checked: all, disabled: Boolean(disabled) }}
                 accessibilityLabel={wt.text('selectAllServices')}
@@ -173,12 +174,12 @@ function TradeAccordion<T extends CatalogueServiceRow>({
                   color={colors.textPrimary}
                 />
                 <AppText style={styles.selectAllLabel}>{wt.text('selectAllServices')}</AppText>
-              </Pressable>
+              </PressableSurface>
               {section.services.map(service => {
                 const checked = section.selectedServiceIds.includes(service.id);
                 const label = catalogueServiceLabel(service, language);
                 return (
-                  <Pressable
+                  <PressableSurface
                     key={service.id}
                     accessibilityRole="checkbox"
                     accessibilityState={{ checked, disabled: Boolean(disabled) }}
@@ -192,7 +193,7 @@ function TradeAccordion<T extends CatalogueServiceRow>({
                       color={colors.textPrimary}
                     />
                     <AppText style={styles.optionLabel}>{label}</AppText>
-                  </Pressable>
+                  </PressableSurface>
                 );
               })}
             </>

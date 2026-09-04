@@ -39,13 +39,40 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   background: var(--surface);
-  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+  /* Was `160ms ease` and `-2px`, written before there were tokens to write it
+     with. Same intent, now the product's own curve and the product's own
+     surface travel, so this card and every other card in Warsha lift by the
+     same amount at the same speed. */
+  transition:
+    border-color var(--motion-fast) var(--ease-standard),
+    background var(--motion-fast) var(--ease-standard),
+    box-shadow var(--motion-fast) var(--ease-standard),
+    transform var(--motion-standard) var(--ease-standard);
 }
 
 .card:hover {
   border-color: var(--border-strong);
   background: var(--surface-raised);
-  transform: translateY(-2px);
+  transform: translateY(var(--lift-surface));
+  box-shadow: var(--lift-shadow);
+}
+
+.card:active {
+  transform: translateY(0);
+  box-shadow: none;
+  transition-duration: var(--motion-press);
+}
+
+/* The ground under the category mark warms with the card. The mark itself is
+   never animated: the approved icon family is a set of drawings, not a set of
+   effects. */
+.card:hover .cardIcon {
+  background: var(--surface);
+}
+
+/* The little "see the category" line under each card firms up with it. */
+.card:hover .cardAction {
+  border-bottom-color: var(--text-primary);
 }
 
 .cardCopy {
@@ -96,6 +123,18 @@
   margin-top: 8px;
   max-width: 62ch;
   color: var(--text-secondary);
+}
+
+.ctaAction:hover {
+  filter: brightness(1.08);
+  transform: translateY(var(--lift-control));
+  box-shadow: var(--lift-shadow);
+}
+
+.ctaAction:active {
+  transform: translateY(var(--press-control)) scale(var(--press-scale));
+  box-shadow: none;
+  transition-duration: var(--motion-press);
 }
 
 .ctaAction {

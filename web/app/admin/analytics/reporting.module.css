@@ -4,6 +4,9 @@
 .field { display: grid; gap: 6px; color: var(--text-secondary); font-size: 13px; font-weight: 650; }
 .field input, .field select { min-height: var(--control-h-md); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 8px 10px; background: var(--surface); color: var(--text-primary); font: inherit; }
 .primary { min-height: var(--control-h-md); border: 0; border-radius: var(--radius-sm); padding: var(--control-pad-md); background: var(--brand); color: var(--brand-ink); font-weight: 800; cursor: pointer; }
+/* Console restraint: brightness and the shared press translate, no lift. */
+.primary:hover:not(:disabled) { filter: brightness(1.08); }
+.field input:hover, .field select:hover { border-color: var(--border-strong); }
 .primary:disabled { opacity: .45; cursor: not-allowed; }
 .failure { color: var(--danger); font-weight: 650; }
 .period { color: var(--text-muted); font-size: 13px; }

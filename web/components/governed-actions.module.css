@@ -45,7 +45,7 @@
   text-align: start;
 }
 
-.choice:hover:not(:disabled) { border-color: var(--border-strong); }
+.choice:hover:not(:disabled) { border-color: var(--border-strong); background: var(--surface); }
 .choice:disabled { opacity: 0.42; cursor: not-allowed; }
 
 .choiceOn { background: var(--brand); color: var(--brand-ink); border-color: transparent; }
@@ -122,6 +122,12 @@
 }
 
 .submit:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* The console's primary action. Brightness and the global press translate, and
+   nothing else: staff software should acknowledge a click, not perform one.
+   No lift and no shadow — that is the marketing site's register. */
+.submit:not(:disabled):hover { filter: brightness(1.08); }
+
 
 .cancel {
   appearance: none;

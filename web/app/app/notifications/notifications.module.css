@@ -58,6 +58,20 @@
   text-decoration: underline; text-underline-offset: 3px;
 }
 
+
+/* The primary action, with the product's shared feedback. Same tokens as the
+   marketing site's call to action and the same as every other `.action` in the
+   application, so the three never disagree. */
+.action:hover:not(:disabled) {
+  filter: brightness(1.08);
+  transform: translateY(var(--lift-control));
+  box-shadow: var(--lift-shadow);
+}
+
+.action:active:not(:disabled) { box-shadow: none; }
+
+.textAction:hover:not(:disabled) { color: var(--text-primary); }
+
 .action {
   appearance: none; border: 0; font: inherit; font-size: var(--control-font-md); font-weight: 700;
   color: var(--brand-ink); background: var(--brand); border-radius: var(--radius-sm);

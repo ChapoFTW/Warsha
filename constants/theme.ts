@@ -82,12 +82,56 @@ export const typography = {
   caption: { fontSize: 11, lineHeight: 16, letterSpacing: 0.8 } satisfies TextStyle,
 } as const;
 
-/** Calm state-change motion. Never use bounce, overshoot, or decorative rotation. */
+/**
+ * The Warsha motion authority.
+ *
+ * One table, six ideas, and no component is allowed a seventh. Motion here is
+ * a response to the person using the product, never decoration: nothing loops,
+ * nothing overshoots, nothing rotates for effect, and nothing delays an action
+ * the user has already asked for.
+ *
+ * `quick`/`standard`/`deliberate` are the original three and keep their names
+ * and their values, because they are already spelled into components and into
+ * `scripts/*.test.mts`. The additions name the two states the product was
+ * silently missing — the instant a finger lands, and the state a reduced-motion
+ * reader is entitled to — plus the emphasised step between an interaction and
+ * a brand moment.
+ *
+ * The web restates these in `web/app/globals.css`; `test:web-brand` asserts the
+ * two tables agree, exactly as it already does for colour.
+ */
 export const motion = {
+  /** Reduced motion, and any change that must not be watched. */
+  instant: 0,
+  /** Press-down. The fastest thing in the product: it must feel like contact. */
+  press: 110,
+  /** A hover, a focus ring, a tonal change. */
   quick: 150,
+  /** The default for an interaction: a lift, a menu, a state swap. */
   standard: 220,
+  /** A transition that deserves to be noticed — a panel, a section entering. */
+  emphasised: 320,
+  /** Brand-scale. Reserved for the mark; never for a button. */
   deliberate: 500,
   easing: [0.4, 0, 0.2, 1] as const,
+} as const;
+
+/**
+ * How a pressable answers a finger.
+ *
+ * Scale, not bounce. 0.98 is deliberately almost imperceptible as a number and
+ * completely legible as a feeling; anything below about 0.96 reads as a toy.
+ * The tonal dip carries most of the work — scale alone is invisible on a small
+ * control, opacity alone is invisible on a large one, so every Warsha pressable
+ * gets both and neither is loud.
+ */
+export const pressFeedback = {
+  /** A whole card or tile: large surface, so it may travel slightly more. */
+  surfaceScale: 0.978,
+  /** A button or a chip: small surface, so it barely moves. */
+  controlScale: 0.986,
+  /** Applied on top of whatever the resting opacity already is. */
+  opacity: 0.82,
 } as const;
 
 /** Dark-resolved elevation. Themed screens use `useThemedElevation()` instead. */

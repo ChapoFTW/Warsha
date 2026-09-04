@@ -87,7 +87,7 @@ export function AccountMenu({
       </button>
 
       {open ? (
-        <div ref={panel} className={styles.accountPanel} role="menu" aria-label={label}>
+        <div ref={panel} className={styles.accountPanel} role="menu" aria-label={label} data-warsha-open="">
           {links.map((item) => {
             const active = pathname.startsWith(item.href);
             return (

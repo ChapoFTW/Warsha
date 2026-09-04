@@ -1,7 +1,7 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
 import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
@@ -13,6 +13,7 @@ import type { DiscoveryProviderCard } from '@/src/discovery/discovery-types';
 import { useLocalization } from '@/src/i18n/localization';
 import { professionLabel } from '@/src/providers/profession-taxonomy';
 
+import { PressableSurface } from './PressableSurface';
 import { AppText } from './Typography';
 
 /**
@@ -42,8 +43,9 @@ export function DiscoveryResultCard({ provider }: { provider: DiscoveryProviderC
     : `${provider.reviewCount} ${provider.reviewCount === 1 ? dt.text('oneReviewLabel') : dt.text('reviewsLabel')}`;
 
   return (
-    <Pressable
+    <PressableSurface
       accessibilityRole="button"
+      feedback="surface"
       accessibilityLabel={`${provider.displayName}. ${provider.isAvailable ? dt.text('availableNow') : dt.text('unavailableNow')}. ${reviews}`}
       onPress={open}
       style={({ pressed }) => [styles.card, isRTL && styles.reverse, pressed && styles.pressed]}>
@@ -90,7 +92,7 @@ export function DiscoveryResultCard({ provider }: { provider: DiscoveryProviderC
         </View>
       </View>
 
-      <Pressable
+      <PressableSurface
         accessibilityRole="button"
         accessibilityState={{ selected: saved }}
         accessibilityLabel={saved ? dt.text('removeFavourite') : dt.text('addFavourite')}
@@ -102,8 +104,8 @@ export function DiscoveryResultCard({ provider }: { provider: DiscoveryProviderC
         }}
         style={styles.favourite}>
         <MaterialIcons name={saved ? 'favorite' : 'favorite-border'} size={20} color={colors.textPrimary} />
-      </Pressable>
-    </Pressable>
+      </PressableSurface>
+    </PressableSurface>
   );
 }
 

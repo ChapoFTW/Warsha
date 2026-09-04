@@ -35,17 +35,33 @@
   margin-inline-end: auto;
 }
 
+/* The same growing rule the public header uses, for the same reason: the two
+   navigations are different components on different origins and a reader moving
+   between them should not be able to tell that they were written twice. Centre
+   origin, so Arabic needs no mirrored rule. */
 .navLink {
+  position: relative;
   font-size: 14px;
   color: var(--text-secondary);
-  padding: 4px 0;
-  border-bottom: 2px solid transparent;
+  padding: 4px 0 6px;
   white-space: nowrap;
   flex-shrink: 0;
 }
 
-.navLink:hover { color: var(--text-primary); border-bottom-color: var(--brand); }
-.navLinkActive { color: var(--text-primary); border-bottom-color: var(--brand); }
+.navLink::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--brand);
+  transform: scaleX(0);
+  transition: transform var(--motion-standard) var(--ease-standard);
+}
+
+.navLink:hover { color: var(--text-primary); }
+.navLink:hover::after, .navLinkActive::after { transform: scaleX(1); }
+.navLinkActive { color: var(--text-primary); }
 
 .spacer { margin-inline-end: auto; }
 
@@ -95,7 +111,7 @@
   align-items: center;
 }
 
-.signOut:hover { border-color: var(--border-strong); }
+.signOut:hover { border-color: var(--border-strong); background: var(--surface-raised); }
 
 .main {
   max-width: 1180px;
@@ -208,8 +224,13 @@
   white-space: nowrap;
 }
 
-.accountTrigger:hover { border-color: var(--border-strong); }
+.accountTrigger:hover { border-color: var(--border-strong); background: var(--surface-raised); }
+.accountTrigger[aria-expanded='true'] { border-color: var(--border-strong); }
 
+/* Opens rather than appears — `data-warsha-open`, the same gesture the public
+   site's disclosure uses, so one movement serves every menu Warsha has. The
+   panel is anchored from `inset-inline-end`, so it opens toward the middle of
+   the screen in both directions and the motion never runs off an edge. */
 .accountPanel {
   position: absolute;
   top: calc(100% + 8px);
@@ -242,6 +263,12 @@
 
 .accountLink:hover,
 .accountSignOut:hover { background: var(--surface-raised); color: var(--text-primary); }
+
+.accountLink:active,
+.accountSignOut:active {
+  transform: translateY(var(--press-control)) scale(var(--press-scale));
+  transition-duration: var(--motion-press);
+}
 .accountLinkActive { color: var(--text-primary); font-weight: var(--control-weight-strong); }
 
 /* Session control, not a destination: a rule separates it from the places you

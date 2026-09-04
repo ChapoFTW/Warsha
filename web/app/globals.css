@@ -113,6 +113,55 @@
   --page-max: 1180px;
   --gutter: clamp(16px, 4vw, 40px);
 
+  /* --- Motion -------------------------------------------------------------
+
+     The same six ideas `constants/theme.ts` declares for mobile, restated for
+     the web the way the palette is: the values are the authority on both sides
+     and `test:web-brand` asserts the two tables agree, so a duration cannot
+     drift on one platform without failing on the other.
+
+     Before these existed the web had no `transition` declaration anywhere. Six
+     hover rules existed and every one of them snapped: the colour was correct
+     and the change was instantaneous, which is why a perfectly well-designed
+     page still felt like a printed picture of itself.
+
+     Motion is a response, never decoration. Nothing here loops, overshoots or
+     rotates, and nothing delays an action the reader has already asked for. */
+  --motion-press: 110ms;      /* contact — the fastest thing in the product */
+  --motion-fast: 150ms;       /* a hover, a focus ring, a tonal change */
+  --motion-standard: 220ms;   /* the default: a lift, a menu, a state swap */
+  --motion-emphasis: 320ms;   /* worth noticing: a panel, a section entering */
+  --motion-brand: 500ms;      /* the mark, and only the mark */
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* How far a pointer-driven surface moves. A button lifts by one pixel and a
+     card by two: the larger the surface, the further it may travel before the
+     movement becomes something you watch rather than feel. Press returns it
+     past its resting place, which is what "pressed" means. */
+  --lift-control: -1px;
+  --lift-surface: -2px;
+  --press-control: 1px;
+  --press-scale: 0.994;
+
+  /* Restrained depth, in the language Warsha already speaks: a shadow that is
+     nearly a shade rather than a drop. Never animated per frame — it is part
+     of the same transition as the lift, so the compositor pays for it once. */
+  --lift-shadow: 0 6px 18px rgb(0 0 0 / 22%);
+
+  /* --- Ink that sits on a photograph --------------------------------------
+
+     Not a theme colour. These resolve to the same two values in light, dark
+     and system, for the reason the mobile `imageScrim` token gives: the thing
+     underneath is a photograph, so what has to stay readable on it does not
+     depend on which appearance the reader chose. Every value is the dark
+     palette's own ink, at strengths measured against the veiled photograph
+     rather than picked. */
+  --on-photo-ink: #FAFAFA;
+  --on-photo-ink-soft: rgb(250 250 250 / 90%);
+  --on-photo-inverse: #080808;
+  --on-photo-line: rgb(250 250 250 / 34%);
+  --on-photo-ground: rgb(250 250 250 / 12%);
+
   color-scheme: dark;
 }
 
@@ -251,12 +300,173 @@ svg {
   inset-inline-start: 0;
 }
 
+/* --- One transition, everything that answers a pointer ---------------------
+
+   Declared once, on the elements that are actually interactive, rather than
+   repeated in seventeen CSS modules that would then drift apart. A transition
+   costs nothing until a property changes, so this is free on every element
+   that never changes one.
+
+   Only compositable properties and the two cheap paint properties are listed.
+   Nothing here transitions a layout property, so no hover can cause a reflow.
+   `filter` is included because the brand call to action uses `brightness()`
+   for its hover, and without it that one control alone would still snap. */
+a,
+button,
+summary,
+label,
+input,
+select,
+textarea,
+[role='button'],
+[role='tab'],
+[role='menuitem'],
+[tabindex] {
+  transition:
+    background-color var(--motion-fast) var(--ease-standard),
+    border-color var(--motion-fast) var(--ease-standard),
+    color var(--motion-fast) var(--ease-standard),
+    box-shadow var(--motion-fast) var(--ease-standard),
+    outline-color var(--motion-fast) var(--ease-standard),
+    filter var(--motion-fast) var(--ease-standard),
+    opacity var(--motion-fast) var(--ease-standard),
+    transform var(--motion-standard) var(--ease-standard);
+}
+
+/* A real control returns *past* its resting place when pressed, and it does so
+   faster than it lifted: contact should be immediate, recovery should settle.
+   Inline text links are excluded — a sentence that moves as you click a word
+   inside it is a defect, not feedback. */
+button:not(:disabled):active,
+[role='button']:not([aria-disabled='true']):active,
+input[type='submit']:not(:disabled):active,
+input[type='button']:not(:disabled):active {
+  transform: translateY(var(--press-control)) scale(var(--press-scale));
+  transition-duration: var(--motion-press);
+}
+
+/* --- Entry motion ----------------------------------------------------------
+
+   Six pixels and an opacity, staggered by fifty milliseconds, finished inside
+   a third of a second. It exists so a page arrives rather than appearing, and
+   for no other reason: nothing here moves a second time, nothing loops, and
+   nothing that animates is waiting for the animation before it can be used —
+   opacity and transform do not intercept a pointer.
+
+   THE GESTURES LIVE HERE, ON ATTRIBUTES, RATHER THAN IN THE STYLESHEETS THAT
+   USE THEM. That is not a preference; a CSS Module renames every animation it
+   references, so `animation: warsha-rise` inside `page.module.css` compiles to
+   `page_warsha-rise__hash` — a name no keyframe answers to, and an animation
+   that silently never runs. The first browser check of this pass caught exactly
+   that. Declaring the gesture once here and opting in with `data-warsha-enter`
+   fixes the scoping, and is the better architecture anyway: one definition of
+   "a thing arriving", available to any surface on any origin. */
+@keyframes warsha-rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* A disclosure opening. Same idea, shorter distance, no stagger: a menu is a
+   single object and should behave like one. */
+@keyframes warsha-open {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* The two gestures, as opt-in attributes.
+
+   `data-warsha-enter` takes a stagger step rather than a delay, so a surface
+   says "I am the third line of this hero" instead of inventing 140ms. Four
+   steps is the ceiling on purpose: a fifth would be a cascade, and the point of
+   a stagger is that the last line has landed before the reader's eye finishes
+   travelling to it — not that they watch a sequence.
+
+   `data-warsha-open` is every disclosure Warsha has: the public navigation
+   panel, the account menu, the address suggestion list. One gesture, so a
+   reader who has learned how one menu behaves has learned all of them. */
+@media (prefers-reduced-motion: no-preference) {
+  [data-warsha-enter] {
+    animation: warsha-rise var(--motion-emphasis) var(--ease-standard) both;
+  }
+
+  [data-warsha-enter='1'] { animation-delay: 40ms; }
+  [data-warsha-enter='2'] { animation-delay: 90ms; }
+  [data-warsha-enter='3'] { animation-delay: 140ms; }
+  [data-warsha-enter='4'] { animation-delay: 190ms; }
+
+  [data-warsha-open] {
+    animation: warsha-open var(--motion-standard) var(--ease-standard) both;
+  }
+
+  /* A list under a text field must never delay the next keystroke, so it opens
+     at the fast step rather than the standard one. */
+  [data-warsha-open='fast'] {
+    animation-duration: var(--motion-fast);
+  }
+}
+
+/* --- Section entry ---------------------------------------------------------
+
+   Driven by `components/reveal.tsx`, which sets these attributes after
+   hydration and only on a section that is still below the fold. Unmarked
+   content — server-rendered, JavaScript off, reduced motion, or already on
+   screen — matches neither selector and is simply visible, which is the whole
+   safety property: the stylesheet can only animate something that has been
+   marked, so it can never be the reason a section fails to appear. */
+@media (prefers-reduced-motion: no-preference) {
+  [data-reveal='pending'] {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  [data-reveal='shown'] {
+    animation: warsha-rise var(--motion-emphasis) var(--ease-standard) both;
+  }
+}
+
+/* --- Reduced motion --------------------------------------------------------
+
+   Duration alone was not enough. An animation with `fill-mode: both` and a
+   150ms delay still hides its element for 150ms after the duration has been
+   crushed to nothing, so a reader who asked for less motion was shown a blank
+   hero instead of a still one. Delays go to zero as well, and the tokens are
+   redefined so anything reading them — including a future component that
+   animates in JavaScript — gets the same answer.
+
+   Nothing is hidden, nothing is removed, and every state change still happens.
+   It stops being watchable, which is what the setting asks for. */
 @media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-press: 0.01ms;
+    --motion-fast: 0.01ms;
+    --motion-standard: 0.01ms;
+    --motion-emphasis: 0.01ms;
+    --motion-brand: 0.01ms;
+    --lift-control: 0px;
+    --lift-surface: 0px;
+    --press-control: 0px;
+    --press-scale: 1;
+  }
+
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
     transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
     scroll-behavior: auto !important;
   }
 }

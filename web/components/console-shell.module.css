@@ -55,7 +55,7 @@
   white-space: nowrap;
 }
 
-.signOut:hover { border-color: var(--border-strong); }
+.signOut:hover { border-color: var(--border-strong); background: var(--surface); }
 
 .main {
   padding: clamp(20px, 3vw, 34px) clamp(16px, 4vw, 34px) 64px;

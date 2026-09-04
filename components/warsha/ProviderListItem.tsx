@@ -1,7 +1,7 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
 import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
@@ -12,6 +12,7 @@ import { useLocalization } from '@/src/i18n/localization';
 import { professionLabel } from '@/src/providers/profession-taxonomy';
 
 import { ProviderTrustIndicators } from './ProviderTrustIndicators';
+import { PressableSurface } from './PressableSurface';
 import { AppText } from './Typography';
 
 export function ProviderListItem({ provider }: { provider: Provider }) {
@@ -21,10 +22,14 @@ export function ProviderListItem({ provider }: { provider: Provider }) {
   const { user, mode } = useAuth();
   const { isFavourite, toggleFavourite } = useLocalPreferences();
   return (
-    <Pressable
+    /* The row is the whole target, so it is the thing that answers. The
+       favourite control inside it is its own pressable and gets its own,
+       smaller response — a heart is a control, not a surface. */
+    <PressableSurface
       accessibilityRole="button"
+      feedback="surface"
       onPress={() => router.push({ pathname: '/provider/[id]', params: { id: provider.id } })}
-      style={[styles.card, isRTL && styles.reverse]}>
+      style={({ pressed }) => [styles.card, isRTL && styles.reverse, pressed && styles.cardPressed]}>
       <Image source={{ uri: provider.image }} contentFit="cover" style={styles.image} />
       <View style={styles.body}>
         <View style={[styles.nameRow, isRTL && styles.reverse]}>
@@ -53,7 +58,7 @@ export function ProviderListItem({ provider }: { provider: Provider }) {
           <AppText style={styles.price}>{t('startsAt')} {provider.price} EGP</AppText>
         </View>
       </View>
-      <Pressable
+      <PressableSurface
         accessibilityLabel={t('toggleFavourite')}
         hitSlop={8}
         onPress={(event) => {
@@ -64,13 +69,14 @@ export function ProviderListItem({ provider }: { provider: Provider }) {
         }}
         style={styles.favourite}>
         <MaterialIcons name={isFavourite(provider.id) ? 'favorite' : 'favorite-border'} size={20} color={colors.textPrimary} />
-      </Pressable>
-    </Pressable>
+      </PressableSurface>
+    </PressableSurface>
   );
 }
 
 const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   card: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg, padding: spacing.lg, borderRadius: radii.lg, borderWidth: 1, borderColor: colors.borderSoft, backgroundColor: colors.surface },
+  cardPressed: { backgroundColor: colors.cardPressed, borderColor: colors.borderDefault },
   reverse: { flexDirection: 'row-reverse' },
   image: { width: 86, height: 110, borderRadius: radii.md, backgroundColor: colors.surfaceElevated },
   body: { flex: 1, gap: 5 },

@@ -1,7 +1,6 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import type { ComponentProps, ReactNode } from 'react';
+import { useState, type ComponentProps, type ReactNode } from 'react';
 import {
-  Pressable,
   StyleSheet,
   TextInput,
   View,
@@ -15,6 +14,7 @@ import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-con
 import { useLocalization } from '@/src/i18n/localization';
 
 import { BrandLoadingMark } from './BrandMark';
+import { PressableSurface } from './PressableSurface';
 import { AppText } from './Typography';
 
 type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
@@ -43,16 +43,20 @@ export function BrandButton({
       ? colors.error
       : colors.textPrimary;
   return (
-    <Pressable
+    /* `PressableSurface` rather than `Pressable`: the scale and the tonal dip
+       are the shared authority, so every Warsha button answers a finger the
+       same way and none of them has to remember how. */
+    <PressableSurface
       accessibilityRole="button"
       accessibilityLabel={props.accessibilityLabel ?? label}
       accessibilityState={{ disabled: Boolean(isDisabled), busy: loading }}
       disabled={isDisabled}
+      fade={!isDisabled}
       {...props}
       style={({ pressed }) => [
         styles.button,
         styles[`button_${variant}`],
-        pressed && !isDisabled && styles.pressed,
+        pressed && !isDisabled && variant !== 'primary' && styles.pressed,
         isDisabled && styles.disabled,
         typeof style === 'function' ? style({ pressed }) : style,
       ]}>
@@ -64,7 +68,7 @@ export function BrandButton({
           <AppText style={[styles.buttonLabel, { color: foreground }]}>{label}</AppText>
         </View>
       )}
-    </Pressable>
+    </PressableSurface>
   );
 }
 
@@ -88,11 +92,26 @@ export function BrandTextField({
   helper,
   style,
   multiline,
+  onFocus,
+  onBlur,
   ...props
 }: TextInputProps & { label?: string; error?: string; helper?: string }) {
   const colors = useThemeColors();
   const styles = useThemedStyles(makeStyles);
   const { isRTL } = useLocalization();
+  /*
+   * A field on Android and iOS had no focused state at all: the caret appeared
+   * and nothing else changed, so on a form of six identical boxes the only
+   * thing saying which one the keyboard was typing into was the keyboard. The
+   * web has had `:focus-visible` since the beginning; this is that contract,
+   * expressed the way React Native expresses it.
+   *
+   * The border, not a ring: a ring around a rounded rectangle on a small screen
+   * is a second rectangle. The error border always wins — a field can be
+   * focused and wrong at the same time, and being wrong is the more urgent of
+   * the two, which is why it is ordered last.
+   */
+  const [focused, setFocused] = useState(false);
   return (
     <View style={styles.fieldGroup}>
       {label ? <AppText style={styles.fieldLabel}>{label}</AppText> : null}
@@ -101,10 +120,13 @@ export function BrandTextField({
         multiline={multiline}
         placeholderTextColor={colors.textMuted}
         accessibilityLabel={props.accessibilityLabel ?? label}
+        onFocus={(event) => { setFocused(true); onFocus?.(event); }}
+        onBlur={(event) => { setFocused(false); onBlur?.(event); }}
         style={[
           styles.field,
           multiline && styles.fieldMultiline,
           isRTL && styles.fieldRTL,
+          focused && styles.fieldFocused,
           error && styles.fieldError,
           { fontFamily: brandFontFamily(isRTL) },
           style,
@@ -214,7 +236,12 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   button_danger: { backgroundColor: colors.errorSoft, borderColor: colors.error },
   buttonContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm },
   buttonLabel: { fontSize: 14, lineHeight: 20, fontWeight: typography.semibold, textAlign: 'center' },
-  pressed: { opacity: 0.72 },
+  /* The ground moves as well as the surface, but only where there is room for
+     it to. A quiet or ghost button has no fill of its own, so gaining one is
+     the clearest thing it can say; a filled button already reads as solid and
+     a rim appearing on press would be a new edge rather than a response. Scale
+     and opacity come from the shared primitive either way. */
+  pressed: { backgroundColor: colors.surfacePressed, borderColor: colors.borderStrong },
   disabled: { opacity: 0.42 },
   reverse: { flexDirection: 'row-reverse' },
   card: { backgroundColor: colors.surface, borderRadius: radii.md, padding: spacing.lg },
@@ -234,6 +261,7 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   fieldMultiline: { minHeight: 112, textAlignVertical: 'top' },
   fieldRTL: { textAlign: 'right', writingDirection: 'rtl' },
+  fieldFocused: { borderColor: colors.borderFocus, backgroundColor: colors.surfaceElevated },
   fieldError: { borderColor: colors.error },
   errorText: { ...typography.caption, color: colors.error },
   helperText: { ...typography.caption, color: colors.textMuted },

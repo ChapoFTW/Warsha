@@ -285,7 +285,13 @@ export function classifyChanges(changes, options = {}) {
       continue;
     }
 
-    if (path.startsWith('app/') || path.startsWith('components/') || path.startsWith('constants/')) {
+    // `hooks/` belongs here for exactly the same reason the other three do: it
+    // is shared client code that Android and iOS both run. It was missing, so
+    // every file in it fell through to `reviewRequired` and the planner warned
+    // instead of classifying — which is a planner that cannot answer the one
+    // question it exists to answer, on a directory that has existed for a while.
+    if (path.startsWith('app/') || path.startsWith('components/')
+      || path.startsWith('constants/') || path.startsWith('hooks/')) {
       impact.sharedJsTs = true;
       markMobile(impact);
       impact.reasons.push(`${path}: shared Android/iOS application code`);

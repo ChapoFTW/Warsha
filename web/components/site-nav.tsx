@@ -103,7 +103,7 @@ export function SiteNav({
       </button>
 
       {open ? (
-        <div id="warsha-nav-panel" ref={panel} className={styles.navPanel}>
+        <div id="warsha-nav-panel" ref={panel} className={styles.navPanel} data-warsha-open="">
           {links.map((item) => (
             <Link
               key={item.href}

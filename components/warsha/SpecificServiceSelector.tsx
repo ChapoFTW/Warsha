@@ -1,8 +1,9 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Modal, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { PressableSurface } from '@/components/warsha/PressableSurface';
 import { AppText } from '@/components/warsha/Typography';
 import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
 import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
@@ -80,7 +81,7 @@ export function SpecificServiceSelector({
   return (
     <View style={styles.field}>
       <AppText style={styles.fieldLabel}>{copy.label}</AppText>
-      <Pressable
+      <PressableSurface
         accessibilityRole="button"
         accessibilityLabel={copy.label + '. ' + value}
         accessibilityState={{ disabled: unavailable, expanded: visible }}
@@ -92,19 +93,19 @@ export function SpecificServiceSelector({
           {value}
         </AppText>
         <MaterialIcons name="keyboard-arrow-down" size={24} color={colors.textMuted} />
-      </Pressable>
+      </PressableSurface>
 
       <Modal visible={visible} animationType="slide" onRequestClose={() => setVisible(false)}>
         <SafeAreaView style={styles.modalSafe}>
           <View style={[styles.header, isRTL && styles.reverse]}>
             <AppText accessibilityRole="header" style={styles.title}>{copy.label}</AppText>
-            <Pressable
+            <PressableSurface
               accessibilityRole="button"
               accessibilityLabel={closeLabel}
               onPress={() => setVisible(false)}
               style={styles.close}>
               <MaterialIcons name="close" size={24} color={colors.textPrimary} />
-            </Pressable>
+            </PressableSurface>
           </View>
           <ScrollView contentContainerStyle={styles.list} keyboardShouldPersistTaps="handled">
             {/* Leaving it open is a first-class answer, so it reads as the
@@ -146,7 +147,7 @@ function Option({
   const styles = useThemedStyles(makeStyles);
   const { isRTL } = useLocalization();
   return (
-    <Pressable
+    <PressableSurface
       accessibilityRole="radio"
       accessibilityState={{ checked }}
       accessibilityLabel={label}
@@ -155,7 +156,7 @@ function Option({
       <MaterialIcons name={icon} size={23} color={colors.textPrimary} />
       <AppText style={styles.optionLabel}>{label}</AppText>
       {checked ? <MaterialIcons name="check" size={22} color={colors.textPrimary} /> : null}
-    </Pressable>
+    </PressableSurface>
   );
 }
 

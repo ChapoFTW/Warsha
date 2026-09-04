@@ -4,6 +4,7 @@ import Link from 'next/link';
 
 import heroImage from '@/assets/hero/warsha-hero-electrician.png';
 
+import { Reveal } from '@/components/reveal';
 import { SiteFooter, SiteHeader } from '@/components/site-chrome';
 import { copy } from '@/lib/copy';
 import { isLocale, type Locale } from '@/lib/preferences';
@@ -50,13 +51,36 @@ export default async function HomePage({
       <SiteHeader locale={typed} />
 
       <main id="main">
+        {/* The hero is one composition, not two columns.
+
+            The copy and the photograph are siblings rather than nested, because
+            above 900px they occupy the same grid cell: the picture runs the
+            full width and height of the section and the type sits in the empty
+            half of the room the photograph already contains. Below 900px the
+            same two elements are two stacked rows — copy on the canvas, picture
+            as a full-bleed band — because a phone-width crop tall enough to
+            carry the copy would cut the work out of the frame.
+
+            The copy comes first in the document in both cases. It is the
+            heading of the page and it is what a screen reader should meet
+            first; the stack order on desktop is a paint decision, not a reading
+            one, and is made in the stylesheet.
+
+            The photograph is never mirrored for Arabic. Flipping a record of a
+            real moment would put the screwdriver in the man's left hand and the
+            socket on the wrong wall — so the picture is direction-neutral by
+            construction and the copy stays over the room in both directions.
+            The stylesheet explains that choice in full. */}
         <section className={styles.hero}>
           <div className={styles.heroInner}>
+            {/* Four steps of the shared entry gesture. The markup says which
+                line it is; globals.css decides what a step is worth, so the
+                hero cannot drift away from every other Warsha entry. */}
             <div className={styles.heroText}>
-              <p className={styles.eyebrow}>{words.heroEyebrow}</p>
-              <h1 className={styles.heroTitle}>{words.heroTitle}</h1>
-              <p className={styles.heroBody}>{words.heroBody}</p>
-              <div className={styles.heroActions}>
+              <p className={styles.eyebrow} data-warsha-enter="1">{words.heroEyebrow}</p>
+              <h1 className={styles.heroTitle} data-warsha-enter="2">{words.heroTitle}</h1>
+              <p className={styles.heroBody} data-warsha-enter="3">{words.heroBody}</p>
+              <div className={styles.heroActions} data-warsha-enter="4">
                 <Link href={localeHref(typed, '/create-account')} className={styles.primaryCta}>
                   {words.heroPostJob}
                 </Link>
@@ -65,47 +89,46 @@ export default async function HomePage({
                 </Link>
               </div>
             </div>
+          </div>
 
-            {/* The second column: the work itself.
-                This replaced a 520px Warsha mark. The header already carries
-                the brand; repeating it here at display scale filled space
-                without saying anything, and a home-services marketplace should
-                show a person doing the work rather than its own logo again.
-
-                The subject sits on the right of the frame with the room open to
-                the left, so `object-position` keeps him in view as the column
-                narrows instead of cropping him out — see the stylesheet. The
-                photograph is never mirrored for Arabic: the column order
-                reverses, the picture does not. Flipping a real photograph puts
-                the screwdriver in the wrong hand. */}
-            <div className={styles.heroVisual}>
-              <Image
-                src={heroImage}
-                alt={words.heroImageAlt}
-                className={styles.heroPhoto}
-                sizes="(max-width: 720px) 100vw, (max-width: 1100px) 50vw, 46vw"
-                priority
-                placeholder="blur"
-              />
-            </div>
+          <div className={styles.heroVisual} data-warsha-enter="">
+            <Image
+              src={heroImage}
+              alt={words.heroImageAlt}
+              className={styles.heroPhoto}
+              /* Full-bleed at every breakpoint now, so the browser is told so
+                 rather than being handed the old column fractions and asked to
+                 pick a file half the width it actually needs. */
+              sizes="100vw"
+              priority
+              placeholder="blur"
+            />
           </div>
         </section>
 
+        {/* The three sections below the hero arrive as they are reached —
+            each as one object, not as a cascade of individually animating
+            cards. A staggered grid of four steps would be an animation to
+            watch; a section that has simply finished arriving by the time you
+            look at it is not noticed at all, which is the point. */}
         <section className={styles.section} aria-labelledby="how">
-          <h2 id="how" className={styles.sectionTitle}>{words.howTitle}</h2>
-          <p className={styles.sectionLead}>{words.howLead}</p>
-          <ol className={styles.steps}>
-            {steps.map((step, index) => (
-              <li key={step.title} className={styles.step}>
-                <span className={styles.stepNumber} aria-hidden="true">{index + 1}</span>
-                <h3 className={styles.stepTitle}>{step.title}</h3>
-                <p className={styles.stepBody}>{step.body}</p>
-              </li>
-            ))}
-          </ol>
+          <Reveal>
+            <h2 id="how" className={styles.sectionTitle}>{words.howTitle}</h2>
+            <p className={styles.sectionLead}>{words.howLead}</p>
+            <ol className={styles.steps}>
+              {steps.map((step, index) => (
+                <li key={step.title} className={styles.step}>
+                  <span className={styles.stepNumber} aria-hidden="true">{index + 1}</span>
+                  <h3 className={styles.stepTitle}>{step.title}</h3>
+                  <p className={styles.stepBody}>{step.body}</p>
+                </li>
+              ))}
+            </ol>
+          </Reveal>
         </section>
 
         <section className={`${styles.section} ${styles.workerBand}`} aria-labelledby="workers">
+          <Reveal>
           <div className={styles.workerGrid}>
             <div>
               <p className={styles.eyebrow}>{words.workerEyebrow}</p>
@@ -126,9 +149,11 @@ export default async function HomePage({
               ))}
             </ul>
           </div>
+          </Reveal>
         </section>
 
         <section className={styles.section} aria-labelledby="legal">
+          <Reveal>
           <h2 id="legal" className={styles.sectionTitle}>{words.legalHomeTitle}</h2>
           <p className={styles.sectionLead}>{words.legalHomeLead}</p>
           <div className={styles.legalGrid}>
@@ -145,6 +170,7 @@ export default async function HomePage({
               </Link>
             ))}
           </div>
+          </Reveal>
         </section>
       </main>
 

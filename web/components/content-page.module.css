@@ -78,6 +78,13 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   padding: 24px;
+  transition: border-color var(--motion-fast) var(--ease-standard);
+}
+
+/* An explanatory card is a statement, not a control. The border acknowledges
+   the pointer and nothing moves, because there is nowhere for a click to go. */
+.card:hover {
+  border-color: var(--border-strong);
 }
 
 .cardTitle {

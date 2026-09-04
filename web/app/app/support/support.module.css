@@ -50,6 +50,32 @@
 .case { padding-bottom: 12px; border-bottom: 1px solid var(--border); }
 .case:last-child { border-bottom: 0; padding-bottom: 0; }
 
+
+/* The primary action, with the product's shared feedback. Same tokens as the
+   marketing site's call to action and the same as every other `.action` in the
+   application, so the three never disagree. */
+.action:hover:not(:disabled) {
+  filter: brightness(1.08);
+  transform: translateY(var(--lift-control));
+  box-shadow: var(--lift-shadow);
+}
+
+.action:active:not(:disabled) { box-shadow: none; }
+
+.secondary:hover:not(:disabled) {
+  border-color: var(--border-strong);
+  background: var(--surface);
+  color: var(--text-primary);
+  transform: translateY(var(--lift-control));
+}
+
+/* A case title is a link in a list, so the underline answers and the row stays
+   where it is. */
+.caseOpen:hover { color: var(--text-primary); text-decoration: underline; text-underline-offset: 3px; }
+.caseOpen:active { transform: none; }
+
+.historySummary:hover { color: var(--text-primary); }
+
 .caseOpen {
   appearance: none; border: 0; background: transparent; font: inherit;
   font-size: 15.5px; font-weight: 700; color: var(--text-primary);

@@ -154,7 +154,7 @@ export function AddressSearch({
         />
       </label>
       {suggestions.length > 0 ? (
-        <ul id={listId} role="listbox" className={styles.searchSuggestions}>
+        <ul id={listId} role="listbox" className={styles.searchSuggestions} data-warsha-open="fast">
           {suggestions.map((suggestion, index) => (
             <li
               id={`${listId}-${index}`}

@@ -1,9 +1,10 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Modal, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BrandButton, BrandTextField } from '@/components/warsha/BrandUI';
+import { PressableSurface } from '@/components/warsha/PressableSurface';
 import { AppText } from '@/components/warsha/Typography';
 import { WarshaIcon } from '@/components/warsha/WarshaIcon';
 import { professionIconName } from '@/src/brand/warsha-icons';
@@ -49,7 +50,7 @@ export function ProfessionSelector({
       {selected.length ? (
         <View style={[styles.chips, isRTL && styles.reverse]}>
           {selected.map(key => (
-            <Pressable
+            <PressableSurface
               key={key}
               accessibilityRole="button"
               accessibilityLabel={`${wt.text('removeProfession')} ${professionLabel(key, language)}`}
@@ -58,7 +59,7 @@ export function ProfessionSelector({
               <WarshaIcon name={professionIconName(key)} size="md" />
               <AppText style={styles.chipLabel}>{professionLabel(key, language)}</AppText>
               <MaterialIcons name="close" size={18} color={colors.textPrimary} />
-            </Pressable>
+            </PressableSurface>
           ))}
         </View>
       ) : null}
@@ -73,13 +74,13 @@ export function ProfessionSelector({
         <SafeAreaView style={styles.modalSafe}>
           <View style={[styles.modalHeader, isRTL && styles.reverse]}>
             <AppText accessibilityRole="header" style={styles.title}>{wt.text('professionPlural')}</AppText>
-            <Pressable
+            <PressableSurface
               accessibilityRole="button"
               accessibilityLabel={wt.text('close')}
               onPress={() => setVisible(false)}
               style={styles.close}>
               <MaterialIcons name="close" size={24} color={colors.textPrimary} />
-            </Pressable>
+            </PressableSurface>
           </View>
           <BrandTextField
             accessibilityLabel={wt.text('searchProfessions')}
@@ -92,7 +93,7 @@ export function ProfessionSelector({
             {listProfessions(language, query).map(profession => {
               const checked = pending.includes(profession.key);
               return (
-                <Pressable
+                <PressableSurface
                   key={profession.key}
                   accessibilityRole="checkbox"
                   accessibilityState={{ checked }}
@@ -109,7 +110,7 @@ export function ProfessionSelector({
                       than a word. */}
                   <WarshaIcon name={professionIconName(profession.key)} size="lg" />
                   <AppText style={styles.optionLabel}>{profession[language]}</AppText>
-                </Pressable>
+                </PressableSurface>
               );
             })}
           </ScrollView>

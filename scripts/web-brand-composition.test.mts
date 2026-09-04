@@ -94,34 +94,62 @@ check(/Escape/.test(nav) && /trigger\.current\?\.focus\(\)/.test(nav),
 check(/aria-label=\{words\.navMenu\}/.test(nav),
   'the menu button is labelled in the reader’s language');
 
-// --- Hero uses both columns -------------------------------------------------
-// Measured before the fix: the headline occupied 557px of a 1440px viewport
-// and the rest of the row was empty.
+// --- The hero is one composition, not two blocks ----------------------------
+// What this replaced: the photograph sat in its own column with the page gutter
+// around all four of its edges, so it read as a rectangle pasted beside the
+// text rather than as the hero. The two-column split, and the mask gradient
+// that tried to soften the seam it created, are both deliberately gone.
 check(/heroVisual/.test(home) && /heroText/.test(home),
-  'the hero is a deliberate two-column composition');
-// The photograph carries environment as well as the subject, so it takes
-// marginally the larger share: text 47%, image 53%.
-check(/grid-template-columns: minmax\(0, 0\.47fr\) minmax\(0, 0\.53fr\)/.test(heroCss),
-  'THE PHOTOGRAPH GETS THE LARGER COLUMN, SINCE IT CARRIES THE CONTEXT');
+  'the hero still names its picture and its copy separately');
+// They are siblings now, not nested: above 900px they occupy the same grid
+// cell, which is what makes the picture the composition rather than a column
+// inside it.
+check(/grid-area: hero/.test(heroCss),
+  'THE PHOTOGRAPH AND THE COPY SHARE ONE GRID CELL, SO THE PICTURE IS THE HERO');
+check(/justify-self: left/.test(heroCss),
+  'the copy is placed over the room rather than on a reading edge, because the photograph is never mirrored');
+
+// --- No gradient. Anywhere. -------------------------------------------------
+// Warsha has a no-gradient rule and a mask gradient is a gradient wearing a
+// different name. The previous hero dissolved one edge with `mask-image` and
+// feathered two more; every one of those is forbidden here now, which is a
+// strictly stronger assertion than the one it replaces.
+for (const forbidden of ['mask-image', 'mask-composite', 'linear-gradient', 'radial-gradient', 'conic-gradient', 'backdrop-filter', 'blur(']) {
+  check(!heroCss.includes(forbidden),
+    `NO ${forbidden.toUpperCase()} IN THE HERO — WARSHA DOES NOT FADE, FEATHER OR BLUR`);
+}
+// The contrast treatment is one flat colour, not a transition. A gradient here
+// would have a direction, and a direction would have to be mirrored in Arabic.
+check(/background: rgb\(8 8 8 \/ \d+%\)/.test(heroCss),
+  'the veil is a single flat wash of the canvas ink');
+check((heroCss.match(/background: rgb\(8 8 8 \/ \d+%\)/g) ?? []).length === 2,
+  'at exactly two strengths: one where type sits on the picture and one where it does not');
+
+// --- The crop still reaches the work ---------------------------------------
 // The rejected version cropped a landscape photograph into a 4:5 portrait,
 // which cut the work out of the frame and left half a person.
 check(!/aspect-ratio: 4 \/ 5/.test(heroCss),
   'NO PORTRAIT CROP OF A LANDSCAPE PHOTOGRAPH SURVIVES ANYWHERE');
-for (const landscape of ['16 / 10', '3 / 2', '2 / 1']) {
+for (const landscape of ['16 / 10', '2 / 1']) {
   check(heroCss.includes(`aspect-ratio: ${landscape}`),
-    `the hero uses the landscape ratio ${landscape} at one of its breakpoints`);
+    `the stacked composition uses the landscape ratio ${landscape} at one of its breakpoints`);
 }
+// Above 900px the picture takes whatever height the copy asks for, so it has no
+// declared ratio at all — `cover` is what keeps it from stretching there.
+check(/aspect-ratio: auto/.test(heroCss),
+  'and the full-bleed composition declares no ratio, because the layout gives it one');
 // The crop must reach the right of the frame, where his hands and the socket
 // are; anything below ~70% shows the man without the work.
 const positions = [...heroCss.matchAll(/object-position:\s*(\d+)%/g)].map((m) => Number(m[1]));
 check(positions.length >= 4, 'the crop is tuned at every breakpoint');
 check(positions.every((p) => p >= 70),
   'EVERY CROP REACHES THE WORK, NOT JUST THE WORKER');
-// The blend: the empty-room side dissolves, and the subject is never faded.
-check(/mask-image/.test(heroCss) && /mask-composite/.test(heroCss),
-  'the photograph is masked into the page rather than sitting on it as a card');
-check(!/border-radius/.test(heroCss.slice(heroCss.indexOf('.heroVisual'), heroCss.indexOf('.eyebrow'))),
-  'and is not treated as a rounded card');
+// No card treatment survives: a photograph with visible edges inside a page is
+// a picture of a photograph.
+const visualBlock = heroCss.slice(heroCss.indexOf('.heroVisual'), heroCss.indexOf('.eyebrow'));
+check(!/border-radius/.test(visualBlock), 'and is not treated as a rounded card');
+check(!/box-shadow/.test(visualBlock) && !/border:/.test(visualBlock),
+  'nor given a border or a shadow, which would draw the edge back on');
 // The hero visual is a photograph now, not a decorative mark, so it is
 // informative and carries real localized alt text rather than aria-hidden.
 check(/alt={words.heroImageAlt}/.test(home),
@@ -159,6 +187,78 @@ check(token(lightBlock, '--brand') === lightColors.brandMark.toLowerCase(),
 // somebody redesigned the brand rather than polishing it.
 check(!/#f5c542|#ffb800|#ffc107|#e0a800/i.test(globals + chromeCss + heroCss),
   'no accent colour was introduced alongside the monochrome identity');
+
+// --- One motion table, two platforms ----------------------------------------
+// The palette is already asserted equal on both sides above. Motion is the same
+// kind of value and needs the same protection: a duration that drifts on one
+// platform is a product where a button on the phone and the same button in the
+// browser answer a finger at different speeds, and nobody would ever file that
+// as a bug.
+//
+// Before this pass the web had no `transition` declaration at all — six hover
+// rules, every one of them snapping — so there was nothing to keep in step.
+const globalsCss = readWeb('app', 'globals.css');
+const motionToken = (name: string) =>
+  new RegExp(String.raw`--motion-${name}:\s*([0-9.]+)ms;`).exec(globalsCss)?.[1] ?? null;
+
+// `constants/theme.ts` is read as text rather than imported, for the same
+// reason `constants/appearance.ts` is imported and it is not: theme imports its
+// palette without a file extension, which Node's type stripper will not
+// resolve. Parsing the numbers out is the honest way to compare two tables that
+// live on two platforms.
+const themeSource = readFileSync(join('constants', 'theme.ts'), 'utf8');
+const nativeMotion = (name: string) =>
+  Number(new RegExp(String.raw`\b${name}: (\d+),`).exec(themeSource)?.[1] ?? NaN);
+const nativeEasing = /easing: \[([^\]]+)\]/.exec(themeSource)?.[1].split(',').map((v) => v.trim()) ?? [];
+
+for (const [name, expected] of [
+  ['press', nativeMotion('press')],
+  ['fast', nativeMotion('quick')],
+  ['standard', nativeMotion('standard')],
+  ['emphasis', nativeMotion('emphasised')],
+  ['brand', nativeMotion('deliberate')],
+] as const) {
+  check(Number(motionToken(name)) === expected,
+    `the web --motion-${name} is the mobile motion value (${expected}ms), not a second opinion`);
+}
+check(nativeMotion('standard') === 220 && nativeEasing.length === 4,
+  'the mobile motion table parsed as expected, so the comparison above means something');
+const bezier = `cubic-bezier(${nativeEasing.join(', ')})`;
+check(globalsCss.includes(`--ease-standard: ${bezier}`),
+  'ONE EASING CURVE, AND IT IS THE ONE constants/theme.ts DECLARES');
+
+// Motion is a response, not decoration. These are the shapes Warsha has ruled
+// out, and a stylesheet is where one of them would reappear first.
+for (const banned of ['cubic-bezier(0.68', 'infinite', 'alternate', 'rotate(']) {
+  check(!globalsCss.includes(banned) && !heroCss.includes(banned) && !chromeCss.includes(banned),
+    `NO ${banned} — WARSHA DOES NOT BOUNCE, LOOP OR ROTATE`);
+}
+const controlScale = Number(/controlScale: ([0-9.]+),/.exec(themeSource)?.[1] ?? NaN);
+const surfaceScale = Number(/surfaceScale: ([0-9.]+),/.exec(themeSource)?.[1] ?? NaN);
+check(controlScale > 0.97 && controlScale < 1 && surfaceScale > 0.96 && surfaceScale < controlScale,
+  'the native press scale stays imperceptible as a number and legible as a feeling, and a surface travels further than a control');
+
+// --- Reduced motion is honoured, delays included ----------------------------
+// Crushing the duration is not enough on its own. An animation with a fill mode
+// and a 190ms delay still hides its element for 190ms after the duration has
+// gone to zero, so a reader who asked for less motion was shown a blank hero
+// instead of a still one.
+const reduced = globalsCss.slice(globalsCss.indexOf('@media (prefers-reduced-motion: reduce)'));
+check(/animation-duration: 0\.01ms !important/.test(reduced), 'reduced motion collapses every duration');
+check(/animation-delay: 0ms !important/.test(reduced), 'AND EVERY DELAY, OR THE HERO IS BLANK INSTEAD OF STILL');
+check(/transition-delay: 0ms !important/.test(reduced), 'transitions lose their delays too');
+check(/--motion-standard: 0\.01ms/.test(reduced) && /--lift-control: 0px/.test(reduced),
+  'and the tokens themselves collapse, so anything reading them agrees');
+
+// The section reveal must never be the reason content fails to appear.
+const reveal = readWeb('components', 'reveal.tsx');
+check(/prefers-reduced-motion: reduce/.test(reveal),
+  'the reveal opts out of its own observer under reduced motion');
+check(/getBoundingClientRect\(\)\.top < window\.innerHeight/.test(reveal),
+  'a section already on screen is never hidden in order to be revealed');
+check(/boundingClientRect\.top < 0/.test(reveal) && /100000px/.test(reveal),
+  'A SECTION SCROLLED PAST WITHOUT INTERSECTING STILL ARRIVES, RATHER THAN STAYING INVISIBLE');
+check(/observer\.disconnect\(\)/.test(reveal), 'and it happens once, not every time it re-enters');
 
 // --- Browser and share branding --------------------------------------------
 check(existsSync(join('web', 'app', 'icon.png')),

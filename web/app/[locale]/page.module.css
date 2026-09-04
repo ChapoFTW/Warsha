@@ -1,129 +1,196 @@
+/* ===========================================================================
+   THE HERO
+   ===========================================================================
+
+   What was wrong, precisely: the photograph was a rectangle in a column beside
+   a rectangle of text. Two static blocks, a hard vertical seam between a
+   near-black ground and a brightly lit room, and — because the section carried
+   the page gutter — a band of empty canvas around all four of the picture's
+   edges. That band is what made it read as *pasted*: a photograph with visible
+   edges inside a page is a picture of a photograph.
+
+   The previous attempt to fix that dissolved one edge with a two-stop mask
+   gradient and feathered the other two. It is gone. Warsha does not use
+   gradients, and a feathered edge is a gradient wearing a different name — it
+   also cannot survive a theme change honestly, because a mask fades to
+   whatever happens to be behind it.
+
+   The composition instead:
+
+     1. THE PHOTOGRAPH IS THE HERO. At 900px and above the picture and the copy
+        occupy the same grid cell, so the image runs the full width and height
+        of the section — under the header, out to both viewport edges, down to
+        the rule that ends the hero. It has no edges inside the page, because
+        it has no edges at all.
+
+     2. THE COPY SITS IN THE ROOM. In the approved frame the electrician
+        occupies roughly 55-92% of the width and the left half is an almost
+        empty wall. That emptiness is not a defect in the photograph; it is
+        where the type goes. Nothing is cropped to make room for text — the
+        room was already there.
+
+     3. ONE FLAT VEIL, NOT A FADE. The photograph is a brightly lit interior and
+        Warsha's ground is near-black; the seam was loud because the luminance
+        gap was enormous. A single uniform wash of the canvas ink over the whole
+        image closes that gap at every point equally. It is one colour, not a
+        transition: there is no direction to it, nothing to mirror in Arabic,
+        and no edge for it to betray.
+
+     4. THE PICTURE JOINS THE PALETTE. A restrained desaturation, and nothing
+        else. Warsha is monochrome; a photograph that is not asked to belong to
+        that will always look imported.
+
+   RTL. The copy stays over the room in both directions. This is the one place
+   in the product where a physical side is correct: the negative space is a fact
+   about the photograph, the photograph is never mirrored — flipping it would
+   put the screwdriver in the man's left hand — so the type goes where the room
+   is whichever way the page reads. Everything *inside* the copy block is
+   direction-driven as usual, so Arabic sets right-aligned within a block that
+   happens to sit on the left, exactly as an Arabic magazine lays type into the
+   empty half of a photograph. There is not a single physical margin below.
+
+   Mobile keeps its own composition, because the desktop one does not survive:
+   a phone-width crop tall enough to hold the copy would cut the work out of
+   the frame, which is the mistake a rejected 4:5 crop already made once. The
+   copy sits on the canvas and the picture is a full-bleed landscape band
+   beneath it — edge to edge, so the only edges it has are horizontal ones that
+   line up with the page's own rules, and the veil steps back because nothing is
+   being read on top of it there. */
+
 .hero {
-  /* Was clamp(44px,7vw,88px)/clamp(40px,6vw,72px). The hero ran past the fold
-     on a 1440x900 screen, so the closed-testing note and the top of the next
-     section fell below it. */
-  padding: clamp(32px, 4.5vw, 56px) var(--gutter) clamp(32px, 4vw, 52px);
+  position: relative;
+  isolation: isolate;
+  display: grid;
   border-bottom: 1px solid var(--border);
   background: var(--canvas);
   overflow: hidden;
+
+  /* The hero's own ink. Below 900px the copy is on the canvas and these are
+     simply the theme; at 900px and above it is on a photograph and they become
+     the fixed on-photo values, for the reason the mobile `imageScrim` token
+     gives — what has to stay readable over a picture cannot depend on which
+     appearance the reader chose. Every hero rule reads these, so the switch
+     happens in one place instead of in nine. */
+  --hero-ink: var(--text-primary);
+  --hero-ink-soft: var(--text-secondary);
+  --hero-accent: var(--brand);
+  --hero-cta-bg: var(--brand);
+  --hero-cta-ink: var(--brand-ink);
+  --hero-line: var(--border);
+  --hero-quiet-ground: var(--surface);
 }
 
 .heroInner {
+  grid-area: hero;
+  z-index: 1;
+  width: 100%;
   max-width: var(--page-max);
   margin: 0 auto;
+  padding: clamp(32px, 4.5vw, 56px) var(--gutter) clamp(32px, 4vw, 52px);
   display: grid;
-  grid-template-columns: 1fr;
-  gap: clamp(32px, 5vw, 56px);
-  align-items: center;
+  align-content: center;
 }
 
 .heroText {
   min-width: 0;
 }
 
-/* --- The second column: the photograph ------------------------------------
-   A 520px Warsha mark used to sit here at 14% opacity. The header already
-   carries the brand, so this column now shows the work instead.
-
-   The subject stands on the right of the frame with the room open to his left,
-   which is what makes the crop behaviour below work: as the column narrows the
-   visible window keeps his side of the picture and sacrifices empty room,
-   rather than the other way round. Nothing is ever stretched — the image is
-   always `object-fit: cover` inside a box with a declared aspect ratio, so the
-   only thing that changes across breakpoints is which part of the frame is
-   visible.
-
-   The photograph is never mirrored. Under `dir="rtl"` the grid reverses and
-   the column moves to the other side, but a photograph is a record of a real
-   moment: flipping it would put the screwdriver in the man's left hand and the
-   socket on the wrong wall. Direction-neutral by construction. */
+/* --- The photograph -------------------------------------------------------
+   No card, no radius, no border, no shadow, no mask. `cover` inside a box the
+   layout has already decided, so the picture can neither stretch nor move the
+   page; the only thing that changes across breakpoints is which part of the
+   frame is visible. */
 .heroVisual {
+  grid-area: hero;
   position: relative;
-  /* Mobile: a landscape band under the copy. */
+  z-index: 0;
+  /* Mobile and tablet: a landscape band under the copy, full-bleed. */
   aspect-ratio: 16 / 10;
   width: 100%;
-  /* No card. The photograph dissolves into the canvas on the room side rather
-     than ending on a rounded rectangle, so it reads as part of the page.
-
-     The fade is always on the EMPTY-ROOM edge, never the worker's. That is a
-     deliberate departure from "fade the edge nearest the text": in Arabic the
-     grid reverses and the text-facing edge becomes the worker's side, and
-     fading him is explicitly forbidden and would be worse. So the transition
-     runs copy -> environment -> worker in English and worker -> environment ->
-     page in Arabic; in both the man and the repair stay completely sharp.
-
-     Two stops only, no vignette, no overlay, no colour. */
-  --hero-fade: linear-gradient(
-    to right,
-    transparent 0%,
-    rgba(0, 0, 0, 0.35) 9%,
-    #000 26%
-  );
-  /* A second, much shallower pass on the horizontal edges. Without it the
-     picture still read as a rectangular card: one soft side and three crisp
-     ones is still a rectangle. 6% top and bottom is enough to stop the edge
-     announcing itself and nowhere near enough to touch the subject, who sits
-     in the middle third. */
-  --hero-feather: linear-gradient(
-    to bottom,
-    transparent 0%,
-    rgba(0, 0, 0, 0.55) 7%,
-    #000 16%,
-    #000 84%,
-    rgba(0, 0, 0, 0.55) 93%,
-    transparent 100%
-  );
-  mask-image: var(--hero-fade), var(--hero-feather);
-  -webkit-mask-image: var(--hero-fade), var(--hero-feather);
-  /* Both masks must apply, not stack: intersect keeps a pixel only where both
-     say it is visible. */
-  mask-composite: intersect;
-  -webkit-mask-composite: source-in;
 }
 
 .heroPhoto {
   width: 100%;
   height: 100%;
-  /* cover inside a declared ratio: fills the box, keeps proportions, cannot
-     stretch or squash. */
   object-fit: cover;
-  /* The crop is chosen from the source composition, not guessed. In the
-     approved frame (1717x916) the man occupies roughly 55-87% of the width and
-     his hands, the screwdriver and the socket sit at roughly 82-96%. So the
-     visible window must reach ~96% or the work disappears and only a torso
-     remains — which is exactly what the rejected 4:5 crop did.
-
-     At 16/10 the visible width is 1.6/1.874 = 85% of the frame; an
-     object-position of 78% puts that window at roughly 12-97%, which holds the
-     man, the socket he is working on, and a good part of the room. */
+  /* The crop is read off the source composition, not guessed. In the approved
+     frame (1717x916) the man occupies roughly 55-87% of the width and his
+     hands, the screwdriver and the socket sit at roughly 82-96%, so the visible
+     window has to reach ~96% or the work disappears and a torso remains. */
   object-position: 78% center;
+  /* Warsha is monochrome. Pulling most of the colour out of the picture is what
+     makes it belong to the palette rather than sit in front of it. This is a
+     one-off composite, not an animated filter: the browser pays for it once. */
+  filter: saturate(0.78) contrast(1.02);
 }
+
+/* --- The veil -------------------------------------------------------------
+   One flat colour over the whole frame. Not a gradient, not a vignette, not a
+   blur: `rgb(8 8 8 / 60%)` is the canvas ink at a strength measured against the
+   photograph rather than chosen by eye.
+
+   The measurement, so the next person does not have to redo it: the wall behind
+   the copy sits near #EDE9E3, and 60% of #080808 over it lands at #646464 —
+   5.9:1 against `--on-photo-ink` and 5.0:1 against `--on-photo-ink-soft`, both
+   past WCAG AA for body text, with the brightest part of the frame (the sunlit
+   floor) still clearing it. The same wash puts the man himself around #303030,
+   so he stays clearly darker than the wall behind him and reads as a figure
+   rather than a silhouette.
+
+   Below 900px no type sits on the picture, so the veil steps back to 40%: the
+   photograph is the subject there rather than the ground, and darkening it
+   further would be decoration. It does not disappear, because a brightly lit
+   room ending against a near-black page is the same luminance clash this whole
+   composition exists to remove — just rotated ninety degrees. One treatment,
+   two strengths, and the strength follows what the picture is being asked to
+   do. */
+.heroVisual::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgb(8 8 8 / 40%);
+}
+
+/* --- Entry ----------------------------------------------------------------
+   The gesture is not declared here. It lives on `data-warsha-enter` in
+   globals.css, because a CSS Module renames every animation it references and
+   `animation: warsha-rise` in this file would compile to a name no keyframe
+   answers to — an animation that silently never runs, which is precisely what
+   the first browser check of this pass caught. The markup asks for a stagger
+   step; the authority decides what a step is.
+
+   Six pixels, an opacity, fifty milliseconds between one line and the next, and
+   the whole thing over in a third of a second. Nothing moves twice, and nothing
+   is waiting for it: opacity and transform do not intercept a pointer, so both
+   calls to action are clickable on the first frame. Reduced motion removes it
+   entirely, delay included. */
 
 .eyebrow {
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.09em;
   text-transform: uppercase;
-  color: var(--brand);
+  color: var(--hero-accent);
   margin-bottom: 14px;
 }
 
 .heroTitle {
-  /* Was clamp(34px, 6vw, 62px) with the browser default line-height. Still the
-     loudest thing on the page, but it no longer needs most of the left half of
-     a 900px-tall viewport to say four words. */
   font-size: clamp(35px, 5.05vw, 55px);
   line-height: 1.08;
   font-weight: 850;
   letter-spacing: -0.03em;
   max-width: 16ch;
+  color: var(--hero-ink);
 }
 
 .heroBody {
   margin-top: 20px;
   font-size: clamp(16px, 1.6vw, 19px);
-  color: var(--text-secondary);
-  max-width: 56ch;
+  color: var(--hero-ink-soft);
+  /* Narrower than the 56ch it was. On the photograph the measure is what keeps
+     the copy inside the empty half of the room rather than running toward the
+     man, and a 44ch measure is the better read anyway. */
+  max-width: 44ch;
 }
 
 .heroActions {
@@ -133,19 +200,38 @@
   gap: var(--space-action-between);
 }
 
+/* --- Calls to action ------------------------------------------------------
+   The same two controls appear in the hero and in the worker band, so they read
+   their colours from the hero's local tokens with the page tokens as the
+   fallback: inside the hero they are on-photo values, outside it they resolve
+   to the theme and the declaration is unchanged.
+
+   The feedback is the shared one — lift on hover, past resting on press, both
+   on the standard curve from globals.css. `will-change` is deliberately absent:
+   promoting two buttons for the life of the page to save a few milliseconds
+   once is the wrong trade. */
 .primaryCta {
   display: inline-flex;
   align-items: center;
   font-size: 16px;
   font-weight: 700;
-  color: var(--brand-ink);
-  background: var(--brand);
+  color: var(--hero-cta-ink, var(--brand-ink));
+  background: var(--hero-cta-bg, var(--brand));
   padding: 14px 28px;
   border-radius: var(--radius-sm);
+  border: 1px solid transparent;
 }
 
 .primaryCta:hover {
   filter: brightness(1.08);
+  transform: translateY(var(--lift-control));
+  box-shadow: var(--lift-shadow);
+}
+
+.primaryCta:active {
+  transform: translateY(var(--press-control)) scale(var(--press-scale));
+  box-shadow: none;
+  transition-duration: var(--motion-press);
 }
 
 .secondaryCta {
@@ -153,23 +239,33 @@
   align-items: center;
   font-size: 16px;
   font-weight: 700;
-  color: var(--text-primary);
+  color: var(--hero-ink, var(--text-primary));
   padding: 14px 28px;
   border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-  background: var(--surface);
+  border: 1px solid var(--hero-line, var(--border));
+  background: var(--hero-quiet-ground, var(--surface));
 }
 
 .secondaryCta:hover {
-  border-color: var(--text-muted);
+  border-color: var(--hero-ink, var(--text-muted));
+  transform: translateY(var(--lift-control));
+}
+
+.secondaryCta:active {
+  transform: translateY(var(--press-control)) scale(var(--press-scale));
+  transition-duration: var(--motion-press);
 }
 
 .heroNote {
   margin-top: 26px;
   font-size: 13.5px;
-  color: var(--text-muted);
+  color: var(--hero-ink-soft);
   max-width: 52ch;
 }
+
+/* ===========================================================================
+   THE REST OF THE PAGE
+   =========================================================================== */
 
 .section {
   max-width: var(--page-max);
@@ -206,6 +302,16 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   padding: 24px;
+  transition:
+    border-color var(--motion-fast) var(--ease-standard),
+    transform var(--motion-standard) var(--ease-standard);
+}
+
+/* A step is a statement, not a control: it does not lift, because lifting is
+   what Warsha's pressable things do and nothing here can be pressed. The border
+   answering the pointer is enough to say the page is alive. */
+.step:hover {
+  border-color: var(--border-strong);
 }
 
 .stepNumber {
@@ -263,6 +369,11 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   padding: 20px 22px;
+  transition: border-color var(--motion-fast) var(--ease-standard);
+}
+
+.workerItem:hover {
+  border-color: var(--border-strong);
 }
 
 .legalGrid {
@@ -282,8 +393,19 @@
   padding: 18px 20px;
 }
 
+/* This one *is* a link, so it lifts. Two pixels rather than one: a card is a
+   larger surface and needs slightly more travel before the movement registers
+   at all. */
 .legalCard:hover {
   border-color: var(--brand);
+  transform: translateY(var(--lift-surface));
+  box-shadow: var(--lift-shadow);
+}
+
+.legalCard:active {
+  transform: translateY(0);
+  box-shadow: none;
+  transition-duration: var(--motion-press);
 }
 
 .legalTitle {
@@ -296,6 +418,33 @@
   color: var(--text-muted);
 }
 
+/* Marketing call-to-action group.
+   Separation belongs to the group, not to the button: the same `.primaryCta`
+   appears inside compact contexts where a large top margin would be wrong. */
+.ctaGroup {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-action-between);
+  margin-top: var(--space-action-gap);
+}
+
+/* ===========================================================================
+   BREAKPOINTS
+   =========================================================================== */
+
+/* Below 900px the hero is two stacked rows: copy on the canvas, then the
+   picture as a band. The band is deliberately outside the gutter — a full-bleed
+   image has no vertical edges to look pasted. */
+.hero {
+  grid-template-areas: 'copy' 'hero';
+  grid-template-rows: auto auto;
+}
+
+.heroInner {
+  grid-area: copy;
+}
+
 @media (min-width: 720px) {
   .steps {
     grid-template-columns: repeat(2, 1fr);
@@ -305,22 +454,72 @@
   }
 }
 
-@media (min-width: 900px) {
-  .heroInner {
-    /* Text 47%, photograph 53%: the picture carries environment as well as
-       the subject, so it earns marginally the larger share. */
-    grid-template-columns: minmax(0, 0.47fr) minmax(0, 0.53fr);
-  }
+/* Tablet: the band is wider than the phone's, so a gentler crop keeps both the
+   subject and a good deal of the room. */
+@media (min-width: 720px) and (max-width: 899px) {
   .heroVisual {
-    /* Landscape. The rejected version used 4/5 portrait here, which cropped the
-       frame to 47% of its width and cut the work out of the picture. */
-    aspect-ratio: 16 / 10;
+    aspect-ratio: 2 / 1;
   }
   .heroPhoto {
-    object-position: 76% center;
+    object-position: 74% center;
   }
 }
 
+/* Desktop: one composition. The picture and the copy share a single grid cell,
+   so the photograph fills the section and the type sits in the room. */
+@media (min-width: 900px) {
+  .hero {
+    grid-template-areas: 'hero';
+    grid-template-rows: auto;
+  }
+
+  .heroInner {
+    grid-area: hero;
+    /* Tall enough for an art-directed frame, short enough that the section
+       below it is still visible on a 1440x900 laptop — which is the constraint
+       that shortened this hero once already. */
+    min-height: clamp(500px, 72vh, 700px);
+    padding-block: clamp(56px, 7vh, 96px);
+  }
+
+  .heroText {
+    /* The room is the left half of the frame, so the copy claims a little under
+       half the page and stops. `left` rather than `start`: this is the one
+       measurement in the product that is genuinely physical, because the
+       photograph beneath it is never mirrored. See the note at the top. */
+    justify-self: left;
+    max-width: min(46%, 560px);
+  }
+
+  .heroVisual {
+    /* No declared ratio here — the picture fills whatever height the copy asks
+       for, which is what makes it the composition rather than an element in it.
+       `cover` still guarantees it can neither stretch nor squash. */
+    aspect-ratio: auto;
+    height: 100%;
+  }
+
+  .heroPhoto {
+    object-position: 76% center;
+  }
+
+  /* Type sits on the picture from here up, so the veil takes its measured
+     strength. See the note above it for the numbers. */
+  .heroVisual::after {
+    background: rgb(8 8 8 / 60%);
+  }
+
+  /* On the photograph, and only there. */
+  .hero {
+    --hero-ink: var(--on-photo-ink);
+    --hero-ink-soft: var(--on-photo-ink-soft);
+    --hero-accent: var(--on-photo-ink);
+    --hero-cta-bg: var(--on-photo-ink);
+    --hero-cta-ink: var(--on-photo-inverse);
+    --hero-line: var(--on-photo-line);
+    --hero-quiet-ground: var(--on-photo-ground);
+  }
+}
 
 @media (min-width: 1040px) {
   .steps {
@@ -335,39 +534,14 @@
   }
 }
 
-/* Tablet and small laptop: the column is beside the copy but still wide, so a
-   gentler crop keeps both the subject and some of the room. */
-@media (min-width: 720px) and (max-width: 899px) {
-  .heroVisual {
-    /* The column is full width here and sits under the copy, so a wide band
-       reads well and keeps plenty of room around the subject. */
-    aspect-ratio: 2 / 1;
-  }
-  .heroPhoto {
-    object-position: 74% center;
-  }
-}
-
-/* Wide desktop: the full frame reads comfortably, so the crop relaxes further
-   towards the centre and the negative space on the left does real work. */
+/* Wide desktop: the frame reads comfortably, so the crop relaxes towards the
+   centre and the room does real work. Still past 70%, which is where the hands,
+   the screwdriver and the socket are. */
 @media (min-width: 1280px) {
-  .heroVisual {
-    /* Widest screens can afford the most of the frame: 3/2 shows 80% of the
-       source width, so the room around the work reads as a real home. */
-    aspect-ratio: 3 / 2;
-  }
   .heroPhoto {
     object-position: 80% center;
   }
-}
-
-/* Marketing call-to-action group.
-   Separation belongs to the group, not to the button: the same `.primaryCta`
-   appears inside compact contexts where a large top margin would be wrong. */
-.ctaGroup {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-action-between);
-  margin-top: var(--space-action-gap);
+  .heroText {
+    max-width: min(44%, 600px);
+  }
 }
