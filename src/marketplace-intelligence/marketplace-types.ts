@@ -1,3 +1,5 @@
+import type { WorkerOfferCapacity } from './worker-offer-capacity';
+
 export type MarketplaceFlowKind='browse_worker'|'get_quotes'|'emergency'|'rescue'|'comeback';
 export type MarketplaceRequestStatus='draft'|'matching'|'collecting_quotes'|'customer_reviewing'|'selection_pending_confirmation'|'worker_confirmed'|'converted_to_booking'|'rescue_matching'|'cancelled'|'expired'|'closed';
 export type MarketplaceScheduleKind='asap'|'today'|'scheduled'|'flexible';
@@ -121,6 +123,8 @@ export interface MarketplaceIntelligenceRepository{
   selectQuote(requestId:string,quoteId:string,selectionVersion:number,idempotencyKey:string):Promise<string>;
   retryRequest(requestId:string,strategy:'retry'|'expand'|'schedule',idempotencyKey:string):Promise<string>;
   listInvitations(cursor?:string,limit?:number):Promise<QuoteInvitation[]>;
+  /** The caller's own open-offer capacity. Never another worker's — the RPC takes no id. */
+  workerOfferCapacity():Promise<WorkerOfferCapacity|null>;
   viewInvitation(id:string):Promise<void>;
   submitQuote(invitationId:string,terms:QuoteTerms,idempotencyKey:string):Promise<string>;
   reviseQuote(quoteId:string,terms:QuoteTerms,idempotencyKey:string):Promise<number>;

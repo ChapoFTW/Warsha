@@ -1,5 +1,6 @@
 import { getSupabaseClient } from '@/src/lib/supabase';
 import type { EmergencyPreview,MarketplaceCapabilities,MarketplaceIntelligenceRepository,MarketplaceRequest,QuoteInvitation,QuoteTerms,WorkerQuote } from './marketplace-types';
+import { parseWorkerOfferCapacity } from './worker-offer-capacity';
 
 async function rpc<T>(name:string,args:Record<string,unknown>={}){
   const{data,error}=await getSupabaseClient().rpc(name,args);
@@ -27,6 +28,7 @@ export const supabaseMarketplaceRepository:MarketplaceIntelligenceRepository={
   retryRequest:(requestId,strategy,key)=>rpc<string>('retry_marketplace_request',{p_request_id:requestId,p_strategy:strategy,p_idempotency_key:key}),
   async listInvitations(cursor,limit){return(await rpc<Record<string,unknown>[]>('get_worker_quote_invitations',{p_cursor:cursor??null,p_limit:limit??20})).map(mapInvitation)},
   viewInvitation:async id=>{await rpc('view_quote_invitation',{p_invitation_id:id})},
+  async workerOfferCapacity(){return parseWorkerOfferCapacity(await rpc<unknown>('get_worker_open_offer_capacity'))},
   submitQuote:(id,terms,key)=>rpc<string>('submit_worker_quote',{p_invitation_id:id,p_quote:terms,p_idempotency_key:key}),
   reviseQuote:(id,terms,key)=>rpc<number>('revise_worker_quote',{p_quote_id:id,p_quote:terms,p_idempotency_key:key}),
   declineInvitation:async(id,reason,key)=>{await rpc('decline_quote_invitation',{p_invitation_id:id,p_reason:reason,p_idempotency_key:key})},

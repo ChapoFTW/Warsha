@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScreenHeader } from '@/components/warsha/ScreenHeader';
 import { EmptyState, StateBadge } from '@/components/warsha/BrandUI';
 import { AppText } from '@/components/warsha/Typography';
+import { WorkerOfferCapacityNotice } from '@/components/warsha/WorkerOfferCapacity';
 import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
 import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
 import { useLocalization } from '@/src/i18n/localization';
@@ -21,7 +22,19 @@ export default function WorkerQuotesScreen(){
   const mt = useMarketplaceText();
   const { isRTL, language } = useLocalization();
   const { services: catalogue } = useMarketplaceData();
-  useFocusEffect(useCallback(() => { void market.reloadInvitations(); }, [market]));
+  /*
+   * Focus is the second freshness signal, not the first.
+   *
+   * Realtime keeps this screen current while it is open. Refetching on focus
+   * covers what realtime cannot: a socket that dropped while the phone slept, an
+   * event delivered to a channel that had already been torn down, a screen
+   * pushed and popped faster than a subscription settles. Both paths call the
+   * same loader, so neither can produce a state the other would not.
+   */
+  useFocusEffect(useCallback(() => {
+    void market.reloadInvitations();
+    void market.reloadOfferCapacity();
+  }, [market]));
 
   const { active: activeInvitations, history: historicalInvitations } = partitionInvitationLifecycle(market.invitations);
   const renderInvitation = (invitation: (typeof market.invitations)[number]) => (
@@ -46,6 +59,7 @@ export default function WorkerQuotesScreen(){
   return <SafeAreaView style={styles.safe}>
     <ScreenHeader title={mt('workerQuotes')}/>
     <ScrollView refreshControl={<RefreshControl refreshing={market.loading} onRefresh={() => void market.reloadInvitations()} tintColor={colors.white}/>} contentContainerStyle={[styles.content, isRTL && { direction: 'rtl' }]}>
+      <WorkerOfferCapacityNotice capacity={market.offerCapacity} />
       {market.loading ? <EmptyState title={mt('workerQuotes')} loading/> : market.invitations.length ? <>
         <AppText style={styles.sectionTitle}>{mt('activeInvitations')}</AppText>
         {activeInvitations.length ? activeInvitations.map(renderInvitation) : <EmptyState title={mt('noInvitations')} icon="inbox"/>}

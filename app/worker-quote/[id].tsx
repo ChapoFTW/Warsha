@@ -7,6 +7,7 @@ import { BrandLoadingMark as ActivityIndicator } from '@/components/warsha/Brand
 import { ScreenHeader } from '@/components/warsha/ScreenHeader';
 import { AppText } from '@/components/warsha/Typography';
 import { StateBadge } from '@/components/warsha/BrandUI';
+import { WorkerOfferCapacityNotice } from '@/components/warsha/WorkerOfferCapacity';
 import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
 import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
 import { useLocalization } from '@/src/i18n/localization';
@@ -21,6 +22,7 @@ import {
 } from '@/src/marketplace-intelligence/marketplace-translations';
 import { useMarketplaceData } from '@/src/data/marketplace-context';
 import type { QuoteInvitation, QuoteTerms } from '@/src/marketplace-intelligence/marketplace-types';
+import { isWorkerOpenOfferLimitError, workerIsAtOfferCapacity } from '@/src/marketplace-intelligence/worker-offer-capacity';
 import { invitationLifecycleSemantic, lifecycleBadgeTone } from '@/src/lifecycle/lifecycle-presentation';
 
 export default function WorkerQuoteDetail() {
@@ -67,9 +69,29 @@ export default function WorkerQuoteDetail() {
       if (invitation.quoteId) await market.reviseQuote(invitation.quoteId, { ...terms(), revisionReason: 'Updated before selection' });
       else await market.submitQuote(invitation.id, terms());
       router.back();
-    } catch { Alert.alert(mt('error')); }
+    } catch (reason) {
+      /*
+       * The limit gets its own sentence, and the count is refreshed before it
+       * is shown. A worker refused for capacity while the screen still says
+       * "8 of 10" learns two contradictory things at once; refetching first
+       * means the notice behind the alert already agrees with the refusal.
+       *
+       * Every other failure keeps the existing generic message. Widening this
+       * screen's error vocabulary is a separate piece of work and pretending
+       * otherwise here would leave half of it done.
+       */
+      if (isWorkerOpenOfferLimitError(reason)) {
+        await market.reloadOfferCapacity();
+        Alert.alert(mt('offerCapacityFull').replace('{limit}', String(market.offerCapacity?.limit ?? '')));
+      } else {
+        Alert.alert(mt('error'));
+      }
+    }
     finally { setSaving(false); }
   };
+  // A revision does not consume a new offer -- the quote already counts -- so
+  // capacity only blocks a first submission.
+  const blockedByCapacity = !invitation?.quoteId && workerIsAtOfferCapacity(market.offerCapacity);
 
   if (loading) return <Center><ActivityIndicator color={colors.white} /></Center>;
   if (!invitation) return <Center><AppText>{mt('error')}</AppText></Center>;
@@ -86,6 +108,7 @@ export default function WorkerQuoteDetail() {
         <AppText style={styles.muted}>{invitation.area.district}, {invitation.area.governorate}</AppText>
         <AppText style={styles.muted}>{marketplaceScheduleText(language, invitation.scheduleKind)} · {marketplacePaymentText(language, invitation.paymentCompatibility)}</AppText>
       </View>
+      {emergency ? null : <WorkerOfferCapacityNotice capacity={market.offerCapacity} />}
       {emergency
         ? <Pressable disabled={!actionable || saving} onPress={async () => {
             setSaving(true);
@@ -100,7 +123,13 @@ export default function WorkerQuoteDetail() {
             <Field label={`${mt('arrival')} (${mt('minutes')})`} value={eta} onChangeText={setEta} keyboardType="number-pad" rtl={isRTL} />
             <Field label={`${mt('duration')} (${mt('minutes')})`} value={duration} onChangeText={setDuration} keyboardType="number-pad" rtl={isRTL} />
             <Field label={mt('describe')} value={message} onChangeText={setMessage} multiline rtl={isRTL} />
-            <Pressable disabled={!actionable || saving || Number(price) <= 0} onPress={() => void send()} style={[styles.primary, (!actionable || Number(price) <= 0) && styles.disabled]}>
+            {/* Disabled at capacity, and the notice above says why. Disabling
+                without an explanation is how a control becomes a bug report. */}
+            <Pressable
+              accessibilityState={{ disabled: !actionable || saving || Number(price) <= 0 || blockedByCapacity }}
+              disabled={!actionable || saving || Number(price) <= 0 || blockedByCapacity}
+              onPress={() => void send()}
+              style={[styles.primary, (!actionable || Number(price) <= 0 || blockedByCapacity) && styles.disabled]}>
               {saving ? <ActivityIndicator color={colors.background} /> : <AppText style={styles.primaryText}>{invitation.quoteId ? mt('reviseQuote') : mt('sendQuote')}</AppText>}
             </Pressable>
             {['invited', 'viewed'].includes(invitation.status)

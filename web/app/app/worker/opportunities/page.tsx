@@ -21,6 +21,12 @@ import {
 import { workerCopy, type WorkerWords } from '@/lib/worker-copy';
 import { requestWorkLabel } from '@/src/marketplace-intelligence/request-work-label';
 import {
+  isWorkerOpenOfferLimitError,
+  parseWorkerOfferCapacity,
+  workerIsAtOfferCapacity,
+  type WorkerOfferCapacity,
+} from '@/src/marketplace-intelligence/worker-offer-capacity';
+import {
   invitationLifecycleSemantic,
   partitionInvitationLifecycle,
   quoteLifecycleSemantic,
@@ -55,19 +61,29 @@ export default function WorkerOpportunitiesPage() {
   const [services, setServices] = useState<Service[]>([]);
   const [failed, setFailed] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
+  const [capacity, setCapacity] = useState<WorkerOfferCapacity | null>(null);
 
   const load = useCallback(async () => {
     setFailed(false);
     const client = supabase();
-    const [{ data, error }, { data: catalogData, error: catalogError }] = await Promise.all([
+    const [{ data, error }, { data: catalogData, error: catalogError }, { data: capacityData }] = await Promise.all([
       client.rpc('get_worker_quote_invitations', { p_cursor: null, p_limit: 50 }),
       client.rpc('get_marketplace_catalog_v2'),
+      // Capacity is fetched here rather than derived from the invitations
+      // above: this page holds one page of invitations, and capacity counts
+      // every open quote this worker has, including ones on requests that are
+      // not in this list. A failure leaves the previous value rather than
+      // clearing it -- the database refuses the submission either way, and
+      // blanking the number makes the page look broken for no gain.
+      client.rpc('get_worker_open_offer_capacity'),
     ]);
     if (error || catalogError) setFailed(true);
     else {
       setInvitations(parseInvitations(data));
       setServices(parseServices(catalogData));
     }
+    const parsedCapacity = parseWorkerOfferCapacity(capacityData);
+    if (parsedCapacity) setCapacity(parsedCapacity);
   }, []);
   useEffect(() => { void load(); }, [load]);
 
@@ -79,8 +95,10 @@ export default function WorkerOpportunitiesPage() {
       <div className={styles.head}><h1 className={styles.title}>{words.opportunitiesTitle}</h1></div>
       <p className={styles.lead}>{words.opportunitiesLead}</p>
 
+      <OfferCapacityNotice capacity={capacity} words={words} />
+
       {selected ? <OpportunityDetail invitation={selected} services={services} locale={locale} appWords={appWords} words={words}
-        onClose={() => setOpenId(null)} onChanged={load} /> : null}
+        capacity={capacity} onClose={() => setOpenId(null)} onChanged={load} /> : null}
 
       <section className={styles.panel}>
         {failed ? (
@@ -133,14 +151,47 @@ function InvitationList({ title, invitations, services, locale, words, onOpen, e
   </section>;
 }
 
+/**
+ * How many requests this worker is waiting on, out of how many.
+ *
+ * Renders nothing when capacity does not apply -- an account with no provider
+ * profile, or a capacity the server has not answered for yet. A placeholder
+ * reading "0 of —" is a worse answer than silence, because a worker at their
+ * limit would read it as room.
+ *
+ * The limit in the sentence is the server's. Nothing in this file knows the
+ * number; `app_settings` holds the policy and changing it changes this line
+ * without a deploy.
+ *
+ * At capacity the notice becomes an alert and says what to do about it. The
+ * state is carried by `role`, by the words, and by the ground -- never by
+ * colour alone.
+ */
+function OfferCapacityNotice({ capacity, words }: { capacity: WorkerOfferCapacity | null; words: WorkerWords }) {
+  if (!capacity?.applies || capacity.limit === null || capacity.remaining === null) return null;
+  const full = workerIsAtOfferCapacity(capacity);
+  const value = words.offerCapacityValue
+    .replace('{used}', String(capacity.used))
+    .replace('{limit}', String(capacity.limit));
+  const detail = full
+    ? words.offerCapacityFull.replace('{limit}', String(capacity.limit))
+    : words.offerCapacityRemaining.replace('{remaining}', String(capacity.remaining));
+  return (
+    <p className={full ? styles.error : styles.note} role={full ? 'alert' : 'status'}>
+      <strong>{words.offerCapacityLabel}: {value}</strong>{' '}{detail}
+    </p>
+  );
+}
+
 function OpportunityDetail({
-  invitation, services, locale, appWords, words, onClose, onChanged,
+  invitation, services, locale, appWords, words, capacity, onClose, onChanged,
 }: {
   invitation: QuoteInvitation;
   services: Service[];
   locale: Locale;
   appWords: Record<string, string>;
   words: WorkerWords;
+  capacity: WorkerOfferCapacity | null;
   onClose: () => void;
   onChanged: () => Promise<void>;
 }) {
@@ -153,6 +204,7 @@ function OpportunityDetail({
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [limitReached, setLimitReached] = useState(false);
   const [done, setDone] = useState(false);
   const workLabel = requestWorkLabel(invitation, services, locale);
 
@@ -215,10 +267,23 @@ function OpportunityDetail({
     if (busy) return;
     setBusy(true);
     setFailed(false);
+    setLimitReached(false);
     setDone(false);
     const result = await operation();
-    if (result.error) setFailed(true);
-    else {
+    if (result.error) {
+      // The offer limit gets its own sentence. Everything else keeps the
+      // existing generic failure: widening this page's error vocabulary is a
+      // separate piece of work, and half-doing it here would leave two
+      // vocabularies to reconcile later.
+      if (isWorkerOpenOfferLimitError(result.error)) {
+        setLimitReached(true);
+        // Refresh the count before the message lands, so the notice above the
+        // form is not still claiming room while the form says there is none.
+        await onChanged();
+      } else {
+        setFailed(true);
+      }
+    } else {
       setDone(true);
       await onChanged();
       await loadQuote();
@@ -228,6 +293,9 @@ function OpportunityDetail({
 
   const actionable = ['invited', 'viewed'].includes(invitation.status)
     && Date.now() < Date.parse(invitation.expiresAt);
+  // A revision does not consume a new offer -- the quote already counts -- so
+  // capacity only blocks a first submission.
+  const blockedByCapacity = !quote && workerIsAtOfferCapacity(capacity);
 
   return (
     <section className={styles.panel} aria-label={workLabel}>
@@ -274,7 +342,8 @@ function OpportunityDetail({
         <QuoteForm draft={draft} setDraft={setDraft} words={words} disabled={busy}
           action={quote ? words.opportunityRevise : words.opportunityQuote}
           requiresRevisionReason={Boolean(quote)}
-          actionDisabled={!terms.valid || (Boolean(quote) && draft.revisionReason.trim().length < 3)}
+          actionDisabled={!terms.valid || blockedByCapacity
+            || (Boolean(quote) && draft.revisionReason.trim().length < 3)}
           onSubmit={() => void mutate(() => quote
             ? supabase().rpc('revise_worker_quote', {
               p_quote_id: quote.id, p_quote: terms.payload, p_idempotency_key: newWorkerKey('web-quote-revise'),
@@ -316,6 +385,11 @@ function OpportunityDetail({
         </div>
       ) : null}
 
+      {limitReached ? (
+        <p className={styles.error} role="alert">
+          {words.offerCapacityFull.replace('{limit}', String(capacity?.limit ?? ''))}
+        </p>
+      ) : null}
       {failed ? <p className={styles.error} role="alert">{words.opportunityActionFailed}</p> : null}
       {done ? <p className={styles.ok} role="status">{words.opportunityActionDone}</p> : null}
     </section>

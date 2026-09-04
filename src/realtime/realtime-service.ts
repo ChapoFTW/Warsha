@@ -3,7 +3,9 @@ import type { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/
 import { environment } from '@/src/config/environment';
 import { getSupabaseClient } from '@/src/lib/supabase';
 
-export type RealtimeTable = 'notifications' | 'bookings' | 'booking_status_history' | 'booking_attachments' | 'reviews' | 'review_responses' | 'review_attachments' | 'messages' | 'message_attachments' | 'conversation_members' | 'conversation_typing' | 'provider_verifications' | 'provider_profiles' | 'financial_booking_payments' | 'provider_earnings_ledger' | 'provider_withdrawal_requests' | 'financial_refunds' | 'marketplace_requests' | 'quote_invitations' | 'worker_quotes' | 'booking_operations' | 'booking_operation_events' | 'job_progress_media' | 'booking_additional_work_requests' | 'booking_return_visits' | 'disputes' | 'dispute_events';
+import { realtimeChannels, type RealtimeBinding, type RealtimeTable } from './realtime-channels';
+
+export type { RealtimeTable } from './realtime-channels';
 export type RealtimeChange = { table: RealtimeTable; event: 'INSERT' | 'UPDATE' | 'DELETE'; id?: string; bookingId?: string };
 export type RealtimeConnection = 'connected' | 'reconnecting' | 'error';
 export type RealtimeListener = (change: RealtimeChange) => void;
@@ -24,9 +26,18 @@ function rowId(payload: RealtimePostgresChangesPayload<Record<string, unknown>>)
   return typeof row.id === 'string' ? row.id : undefined;
 }
 
+/**
+ * The native transport.
+ *
+ * WHAT EACH CHANNEL WATCHES IS NOT DECIDED HERE. It comes from
+ * `realtime-channels.ts`, which the browser reads too, so a subscription cannot
+ * bind one set of tables on a phone and another in a tab. This file is the
+ * React Native half: the Expo Supabase client, the mock-mode short circuit, and
+ * the connection callback.
+ */
 function subscribeChannel(
   name: string,
-  bindings: { table: RealtimeTable; filter?: string }[],
+  bindings: readonly RealtimeBinding[],
   listener: RealtimeListener,
   connection?: (status: RealtimeConnection) => void,
 ): Unsubscribe {
@@ -48,86 +59,46 @@ function subscribeChannel(
   return () => { void client.removeChannel(channel); };
 }
 
+type Connection = (status: RealtimeConnection) => void;
+
+function bind(spec: { name: string; bindings: RealtimeBinding[] }) {
+  return (listener: RealtimeListener, connection?: Connection) =>
+    subscribeChannel(spec.name, spec.bindings, listener, connection);
+}
+
 export const realtimeService = {
-  marketplaceProviders(listener: RealtimeListener, connection?: (status: RealtimeConnection) => void) {
-    return subscribeChannel('marketplace-providers', [{ table: 'provider_profiles' }], listener, connection);
-  },
-  customerMarketplaceRequests(userId: string, listener: RealtimeListener, connection?: (status: RealtimeConnection) => void) {
-    return subscribeChannel(`marketplace-requests:${userId}`, [
-      { table: 'marketplace_requests', filter: `customer_id=eq.${userId}` },
-      { table: 'worker_quotes' },
-    ], listener, connection);
-  },
-  workerMarketplaceInvitations(providerId: string, listener: RealtimeListener, connection?: (status: RealtimeConnection) => void) {
-    return subscribeChannel(`marketplace-invitations:${providerId}`, [
-      { table: 'quote_invitations', filter: `provider_id=eq.${providerId}` },
-      { table: 'worker_quotes', filter: `provider_id=eq.${providerId}` },
-    ], listener, connection);
-  },
-  providerVerification(providerId: string, listener: RealtimeListener, connection?: (status: RealtimeConnection) => void) {
-    return subscribeChannel(`provider-verification:${providerId}`, [{ table: 'provider_verifications', filter: `provider_id=eq.${providerId}` }, { table: 'provider_profiles', filter: `id=eq.${providerId}` }], listener, connection);
-  },
-  notifications(userId: string, listener: RealtimeListener, connection?: (status: RealtimeConnection) => void) {
-    return subscribeChannel(`notifications:${userId}`, [{ table: 'notifications', filter: `user_id=eq.${userId}` }], listener, connection);
-  },
-  customerBookings(userId: string, listener: RealtimeListener, connection?: (status: RealtimeConnection) => void) {
-    return subscribeChannel(`customer-bookings:${userId}`, [{ table: 'bookings', filter: `customer_id=eq.${userId}` }], listener, connection);
-  },
-  providerJobs(providerId: string, listener: RealtimeListener, connection?: (status: RealtimeConnection) => void) {
-    return subscribeChannel(`provider-jobs:${providerId}`, [{ table: 'bookings', filter: `provider_id=eq.${providerId}` }], listener, connection);
-  },
-  providerFinances(providerId: string, listener: RealtimeListener, connection?: (status: RealtimeConnection) => void) {
-    return subscribeChannel(`provider-finances:${providerId}`, [
-      { table: 'provider_earnings_ledger', filter: `provider_id=eq.${providerId}` },
-      { table: 'provider_withdrawal_requests', filter: `provider_id=eq.${providerId}` },
-    ], listener, connection);
-  },
-  bookingPayment(bookingId: string, listener: RealtimeListener, connection?: (status: RealtimeConnection) => void) {
-    return subscribeChannel(`booking-payment:${bookingId}`, [
-      { table: 'financial_booking_payments', filter: `booking_id=eq.${bookingId}` },
-    ], listener, connection);
-  },
-  providerReviews(providerId: string, listener: RealtimeListener, connection?: (status: RealtimeConnection) => void) {
-    return subscribeChannel(`provider-reviews:${providerId}`, [{ table: 'reviews', filter: `provider_id=eq.${providerId}` }, { table: 'review_responses', filter: `provider_id=eq.${providerId}` }], listener, connection);
-  },
-  bookingReview(bookingId: string, listener: RealtimeListener, connection?: (status: RealtimeConnection) => void) {
-    return subscribeChannel(`booking-review:${bookingId}`, [{ table: 'reviews', filter: `booking_id=eq.${bookingId}` }], listener, connection);
-  },
-  reviewDetail(reviewId: string, listener: RealtimeListener, connection?: (status: RealtimeConnection) => void) {
-    return subscribeChannel(`review-detail:${reviewId}`, [{ table: 'reviews', filter: `id=eq.${reviewId}` }, { table: 'review_responses', filter: `review_id=eq.${reviewId}` }, { table: 'review_attachments', filter: `review_id=eq.${reviewId}` }], listener, connection);
-  },
-  bookingDetail(bookingId: string, listener: RealtimeListener, connection?: (status: RealtimeConnection) => void) {
-    return subscribeChannel(`booking-detail:${bookingId}`, [
-      { table: 'bookings', filter: `id=eq.${bookingId}` },
-      { table: 'booking_status_history', filter: `booking_id=eq.${bookingId}` },
-      { table: 'booking_attachments', filter: `booking_id=eq.${bookingId}` },
-    ], listener, connection);
-  },
-  bookingOperations(bookingId: string, listener: RealtimeListener, connection?: (status: RealtimeConnection) => void) {
-    return subscribeChannel(`booking-operations:${bookingId}`, [
-      { table: 'booking_operations', filter: `booking_id=eq.${bookingId}` },
-      { table: 'booking_operation_events', filter: `booking_id=eq.${bookingId}` },
-      { table: 'job_progress_media', filter: `booking_id=eq.${bookingId}` },
-      { table: 'booking_additional_work_requests', filter: `booking_id=eq.${bookingId}` },
-      { table: 'booking_return_visits', filter: `booking_id=eq.${bookingId}` },
-    ], listener, connection);
-  },
-  bookingDispute(bookingId: string, listener: RealtimeListener, connection?: (status: RealtimeConnection) => void) {
-    return subscribeChannel(`booking-dispute:${bookingId}`, [
-      { table: 'disputes', filter: `booking_id=eq.${bookingId}` },
-      { table: 'dispute_events', filter: `booking_id=eq.${bookingId}` },
-    ], listener, connection);
-  },
-  bookingConversation(bookingId: string, listener: RealtimeListener, connection?: (status: RealtimeConnection) => void) {
-    return subscribeChannel(`booking-conversation:${bookingId}`, [
-      { table: 'messages', filter: `booking_id=eq.${bookingId}` },
-      { table: 'conversation_typing', filter: `booking_id=eq.${bookingId}` },
-    ], listener, connection);
-  },
-  bookingConversationInbox(userId: string, listener: RealtimeListener, connection?: (status: RealtimeConnection) => void) {
-    return subscribeChannel(`booking-conversation-inbox:${userId}`, [
-      { table: 'conversation_members', filter: `user_id=eq.${userId}` },
-      { table: 'notifications', filter: `user_id=eq.${userId}` },
-    ], listener, connection);
-  },
+  marketplaceProviders: (listener: RealtimeListener, connection?: Connection) =>
+    bind(realtimeChannels.marketplaceProviders())(listener, connection),
+  customerMarketplaceRequests: (userId: string, listener: RealtimeListener, connection?: Connection) =>
+    bind(realtimeChannels.customerMarketplaceRequests(userId))(listener, connection),
+  workerMarketplaceInvitations: (providerId: string, listener: RealtimeListener, connection?: Connection) =>
+    bind(realtimeChannels.workerMarketplaceInvitations(providerId))(listener, connection),
+  providerVerification: (providerId: string, listener: RealtimeListener, connection?: Connection) =>
+    bind(realtimeChannels.providerVerification(providerId))(listener, connection),
+  notifications: (userId: string, listener: RealtimeListener, connection?: Connection) =>
+    bind(realtimeChannels.notifications(userId))(listener, connection),
+  customerBookings: (userId: string, listener: RealtimeListener, connection?: Connection) =>
+    bind(realtimeChannels.customerBookings(userId))(listener, connection),
+  providerJobs: (providerId: string, listener: RealtimeListener, connection?: Connection) =>
+    bind(realtimeChannels.providerJobs(providerId))(listener, connection),
+  providerFinances: (providerId: string, listener: RealtimeListener, connection?: Connection) =>
+    bind(realtimeChannels.providerFinances(providerId))(listener, connection),
+  bookingPayment: (bookingId: string, listener: RealtimeListener, connection?: Connection) =>
+    bind(realtimeChannels.bookingPayment(bookingId))(listener, connection),
+  providerReviews: (providerId: string, listener: RealtimeListener, connection?: Connection) =>
+    bind(realtimeChannels.providerReviews(providerId))(listener, connection),
+  bookingReview: (bookingId: string, listener: RealtimeListener, connection?: Connection) =>
+    bind(realtimeChannels.bookingReview(bookingId))(listener, connection),
+  reviewDetail: (reviewId: string, listener: RealtimeListener, connection?: Connection) =>
+    bind(realtimeChannels.reviewDetail(reviewId))(listener, connection),
+  bookingDetail: (bookingId: string, listener: RealtimeListener, connection?: Connection) =>
+    bind(realtimeChannels.bookingDetail(bookingId))(listener, connection),
+  bookingOperations: (bookingId: string, listener: RealtimeListener, connection?: Connection) =>
+    bind(realtimeChannels.bookingOperations(bookingId))(listener, connection),
+  bookingDispute: (bookingId: string, listener: RealtimeListener, connection?: Connection) =>
+    bind(realtimeChannels.bookingDispute(bookingId))(listener, connection),
+  bookingConversation: (bookingId: string, listener: RealtimeListener, connection?: Connection) =>
+    bind(realtimeChannels.bookingConversation(bookingId))(listener, connection),
+  bookingConversationInbox: (userId: string, listener: RealtimeListener, connection?: Connection) =>
+    bind(realtimeChannels.bookingConversationInbox(userId))(listener, connection),
 };
