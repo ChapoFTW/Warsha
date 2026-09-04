@@ -15,7 +15,8 @@ import {
   recoveryFailurePresentation,
   type AuthCallbackFailure,
 } from '@/src/auth/email-confirmation';
-import { passwordRequirements } from '@/src/auth/password-policy';
+import { PasswordRequirements } from '@/components/password-requirements';
+import { passwordMeetsPolicy } from '@/src/auth/password-policy';
 
 import type { Route } from 'next';
 
@@ -120,8 +121,7 @@ export default function ResetPasswordPage() {
     };
   }, [arrived]);
 
-  const requirements = passwordRequirements(password);
-  const policyMet = requirements.every((requirement) => requirement.met);
+  const policyMet = passwordMeetsPolicy(password);
   const matched = password === confirmation && confirmation.length > 0;
   const mismatch = confirmation.length > 0 && !matched;
 
@@ -195,18 +195,9 @@ export default function ResetPasswordPage() {
 
         {/* Every rule, always visible, each showing whether it is satisfied —
             rather than one sentence that only appears once the attempt has
-            already failed. */}
-        <ul className={styles.requirements} aria-label={words.passwordRequirements}>
-          {requirements.map((requirement) => (
-            <li
-              key={requirement.key}
-              className={requirement.met ? `${styles.requirement} ${styles.requirementMet}` : styles.requirement}
-            >
-              <span className={styles.tick} aria-hidden="true" />
-              {words[requirement.key]}
-            </li>
-          ))}
-        </ul>
+            already failed. Shared with signup, so the two cannot describe
+            different policies. */}
+        <PasswordRequirements password={password} words={words as unknown as Record<string, string>} />
 
         <SecretField
           label={words.confirmPassword}

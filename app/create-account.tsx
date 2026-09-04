@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BrandLockup } from '@/components/warsha/BrandMark';
 import { BrandButton, BrandTextField } from '@/components/warsha/BrandUI';
+import { PasswordRequirementList } from '@/components/warsha/PasswordRequirementList';
 import { SignupLegalAcceptance } from '@/components/warsha/SignupLegalAcceptance';
 import { AppText } from '@/components/warsha/Typography';
 import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
@@ -12,6 +13,7 @@ import { useThemedStyles } from '@/src/appearance/appearance-context';
 import { useAuth } from '@/src/auth/auth-context';
 import { authMessageKey } from '@/src/auth/auth-errors';
 import { isValidCustomerEmail } from '@/src/auth/auth-identifier';
+import { passwordMeetsPolicy } from '@/src/auth/password-policy';
 import { authOutcomeText } from '@/src/auth/auth-outcome-copy';
 import { useAuthText } from '@/src/auth/auth-translations';
 import { isValidPhone, normalizePhone } from '@/src/auth/phone-auth';
@@ -55,6 +57,18 @@ export default function CreateAccount() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  /*
+   * Validation appears after a field has been left, not while it is being
+   * typed into for the first time.
+   *
+   * A form that says "enter a valid email address" after the first keystroke is
+   * telling somebody they are wrong before they have had a chance to be right.
+   * `touched` is set on blur, so the message arrives at the moment the reader
+   * has finished with the field and is still looking at it — and from then on it
+   * updates live, which is what makes correcting a typo feel immediate rather
+   * than like a second rejection.
+   */
+  const [emailTouched, setEmailTouched] = useState(false);
   const [phone, setPhone] = useState('');
   const [signup, setSignup] = useState<SignupState>(signupIdle);
   const [commonLegalAccepted, setCommonLegalAccepted] = useState(false);
@@ -276,6 +290,10 @@ export default function CreateAccount() {
               label={t('email')}
               value={email}
               onChangeText={setEmail}
+              onBlur={() => setEmailTouched(true)}
+              error={emailTouched && email.trim().length > 0 && !isValidCustomerEmail(email)
+                ? t('emailInvalid')
+                : undefined}
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
@@ -289,6 +307,10 @@ export default function CreateAccount() {
             secureTextEntry
             textContentType="newPassword"
           />
+          {/* The rules, live, and the same component the reset screen uses. A
+              signup form that states the policy only by refusing the result is
+              a form somebody fails three times in a row. */}
+          <PasswordRequirementList password={password} />
           <BrandTextField
             label={at('phone')}
             value={phone}
@@ -320,8 +342,13 @@ export default function CreateAccount() {
             label={ot.text('createAccount')}
             loading={busy}
             disabled={
+              /* The password gate is the shared policy, not a length. It said
+                 `password.length < 6` while the reset screen demanded five
+                 rules -- so signup happily accepted a password that the same
+                 account could never set again. */
               busy || name.trim().length < 2
-              || (role === 'customer' && !isValidCustomerEmail(email)) || password.length < 6
+              || (role === 'customer' && !isValidCustomerEmail(email))
+              || !passwordMeetsPolicy(password)
               || !isValidPhone(normalizePhone(phone))
               || !signupLegalSelectionSatisfied(
                 role,

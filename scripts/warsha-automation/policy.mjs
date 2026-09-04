@@ -80,6 +80,7 @@ export const DETERMINISTIC_TEST_SCRIPTS = [
   'test:web-navigation',
   'test:password-recovery',
   'test:automation',
+  'test:auth-validation',
 ];
 
 const NATIVE_DEPENDENCY_PREFIXES = [

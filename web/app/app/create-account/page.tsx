@@ -3,7 +3,10 @@
 import { useState } from 'react';
 
 import { BrandLockup } from '@/components/brand-mark';
+import { PasswordRequirements } from '@/components/password-requirements';
 import { PreferenceFooter } from '@/components/preference-controls';
+import { isValidCustomerEmail } from '@/src/auth/auth-identifier';
+import { passwordMeetsPolicy } from '@/src/auth/password-policy';
 import { appCopy } from '@/lib/app-copy';
 import { signUpCustomer } from '@/lib/auth-actions';
 import { signupLegalDocuments, signupLegalManifest, type SignUpFailure } from '@/lib/signup';
@@ -66,6 +69,15 @@ export default function CreateAccountPage() {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [accepted, setAccepted] = useState(false);
+  /*
+   * Validation appears after a field has been left, not while it is first being
+   * typed into. Saying "that is not a valid email address" at the first
+   * keystroke tells somebody they are wrong before they have had a chance to be
+   * right; saying it on blur arrives when they have finished and are still
+   * looking at the field, and from then on it updates live so a correction is
+   * acknowledged immediately rather than reading as a second rejection.
+   */
+  const [emailTouched, setEmailTouched] = useState(false);
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<SignUpFailure | null>(null);
   const [done, setDone] = useState<'confirm' | 'ready' | null>(null);
@@ -75,9 +87,20 @@ export default function CreateAccountPage() {
   // operative text exists to accept. See `bodyLanguageFor`.
   const { language: acceptedLanguage } = bodyLanguageFor(locale);
 
+  // Both checks run again on submit as well as on blur, because a form can be
+  // submitted by a keyboard without either field ever being blurred.
+  const emailValid = isValidCustomerEmail(email);
+  const passwordValid = passwordMeetsPolicy(password);
+
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (busy) return;
+    // Client-side rejection before the network, so a malformed address is
+    // answered instantly rather than after a round trip that returns the same
+    // answer more slowly. `signUpCustomer` and GoTrue both still enforce their
+    // own rules -- this is the courtesy, not the boundary.
+    if (!emailValid) { setEmailTouched(true); setFailure('invalid_email'); return; }
+    if (!passwordValid) { setFailure('weak_password'); return; }
     if (!accepted) { setFailure('legal_not_accepted'); return; }
     setBusy(true);
     setFailure(null);
@@ -154,8 +177,14 @@ export default function CreateAccountPage() {
               spellCheck={false}
               value={email}
               onChange={(event) => setEmail(event.target.value)}
+              onBlur={() => setEmailTouched(true)}
+              aria-invalid={emailTouched && email.trim().length > 0 && !emailValid}
+              aria-describedby={emailTouched && email.trim().length > 0 && !emailValid ? 'signup-email-error' : undefined}
               disabled={busy}
             />
+            {emailTouched && email.trim().length > 0 && !emailValid ? (
+              <span id="signup-email-error" className={styles.error} role="alert">{words.emailInvalid}</span>
+            ) : null}
           </label>
 
           <label className={styles.field}>
@@ -184,7 +213,10 @@ export default function CreateAccountPage() {
               onChange={(event) => setPassword(event.target.value)}
               disabled={busy}
             />
-            <span className={styles.hint}>{words.signUpPasswordHint}</span>
+            {/* The rules, live, and the same component the reset page uses. A
+                signup form that states the policy only by refusing the result
+                is a form somebody fails three times in a row. */}
+            <PasswordRequirements password={password} words={words} />
           </label>
 
           {/* The documents are listed by name and version and linked to the
