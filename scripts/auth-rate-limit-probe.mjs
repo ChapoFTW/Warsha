@@ -24,6 +24,15 @@
  * and `token_verifications` each arrived intact. The sign-in brute-force limit
  * is the one that cannot be declared through this file at CLI 2.116.0.
  *
+ * ## LOCAL IS NOT HOSTED, AND THIS FILE ONLY SEES LOCAL
+ *
+ * That absence is a property of the local stack. The same probe against hosted
+ * Development returned 429 at attempt 33 — the platform applies its own
+ * roughly-30-per-five-minutes-per-IP limit there. So a clean run of this file
+ * means "the local container does not enforce it", never "the product is
+ * unprotected". `scripts/dev-auth-bruteforce-probe.mjs` is the one that measures
+ * the real thing.
+ *
  * It signs in with addresses that belong to nobody and a password that is wrong
  * on purpose, against a local container. It never touches a hosted project, and
  * there is no real account for it to lock out.

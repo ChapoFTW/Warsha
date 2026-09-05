@@ -66,21 +66,42 @@ token_verifications = 30
 # not claimed as verified.
 email_sent = 10
 
-# ## The one that is missing, and it is the important one
+# ## The one that cannot be declared here — and what actually protects it
 #
-# There is no key here for failed sign-in attempts. `sign_in_sign_ups = 30` was
-# tried and produced NO GoTrue setting at all on CLI 2.116.0 -- silently dropped,
-# like any unrecognised key. Forty consecutive failed password sign-ins against
-# the local stack returned forty 400s and not one 429, which is what that absence
-# looks like from outside.
+# There is no key in this section for failed sign-in attempts.
+# `sign_in_sign_ups = 30` was tried and produced NO GoTrue setting at all on CLI
+# 2.116.0 — silently dropped, like any unrecognised key — so Warsha cannot
+# declare that limit through this file.
 #
-# So the brute-force limit on sign-in is whatever the hosted platform applies by
-# default. Warsha does not declare it, cannot declare it through this file at
-# this CLI version, and this comment exists so that is a known gap rather than an
-# assumption. `private.rate_limit_policies` still declares `auth_sign_in` at 10
-# per 300 seconds per ACCOUNT, which is a different and complementary limit -- it
-# is marked `enforced_by = 'supabase_auth'` and is equally not enforced by
-# anything in this repository.
+# It does not follow that the surface is unprotected, and an earlier note here
+# came close to implying that. The two environments were measured separately:
+#
+#   local      40 consecutive failed password sign-ins returned forty 400s and
+#              not one 429. The local stack does not enforce this limit.
+#
+#   hosted     the same probe against warsha-development returned 400 until
+#              attempt 33 and then 429 — consistent with the platform default of
+#              roughly 30 per five minutes per IP. The protection is real, it is
+#              simply the platform's rather than ours, and it is invisible from a
+#              local container.
+#
+# So the honest statement is: this limit is active on the hosted projects at the
+# platform default, is not expressible in this file at this CLI version, and is
+# therefore not tuned by Warsha. `scripts/dev-auth-bruteforce-probe.mjs` is what
+# measured it and what would notice if it changed.
+#
+# `private.rate_limit_policies` separately declares `auth_sign_in` at 10 per 300
+# seconds per ACCOUNT. That is a different and complementary limit — per account
+# rather than per IP — and it is marked `enforced_by = 'supabase_auth'` because
+# nothing in this repository can apply it to GoTrue's own endpoint.
+#
+# Warsha's WORKER sign-in is a different story and is genuinely ours: it goes
+# through the `worker-auth` Edge Function, which calls
+# `private.enforce_rate_limit('worker_auth_sign_in')` before touching GoTrue.
+# Measured on Development: eleven wrong passwords against one account returns
+# 429 `rate_limited`, five wrong passwords still leave the correct password
+# working, and an unknown phone is answered exactly like a known one with a
+# wrong password.
 
 [auth.email]
 enable_signup = true
