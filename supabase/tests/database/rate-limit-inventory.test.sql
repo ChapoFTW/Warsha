@@ -32,7 +32,7 @@
 -- new policy cannot quietly claim an unverifiable owner that does not exist.
 
 begin;
-select plan(20);
+select plan(22);
 
 -- ---------------------------------------------------------------------------
 -- 1. Every claim of the shared limiter is true
@@ -172,5 +172,54 @@ select is(
      and p.prosrc like '%enforce_rate_limit(''worker_criminal_record_submit'')%'),
   1,
   'and it is the one carrying the rate limit');
+
+
+-- ---------------------------------------------------------------------------
+-- 6. The surface that gained a limit, driven end to end
+-- ---------------------------------------------------------------------------
+-- Section 4 proves the limiter refuses the caller past the boundary. It does not
+-- prove any particular surface is WIRED to it, and `reply_support_case` is the
+-- one that had no limit of any kind until 202609060004 — no domain rule, no
+-- configuration cap, nothing, while writing a message row per call.
+--
+-- So this drives the real RPC as a real customer, sixty-one times against a
+-- declared sixty per hour, rather than asserting that the function body contains
+-- a string.
+
+insert into auth.users(instance_id,id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at)
+values ('00000000-0000-0000-0000-000000000000','f6000000-0000-0000-0000-000000000001','authenticated','authenticated',
+        'flood-customer@test.local','',now(),'{}','{"display_name":"Flood Customer"}',now(),now());
+
+insert into public.support_tickets(id, requester_id, subject)
+values ('f6000000-0000-0000-0001-000000000001','f6000000-0000-0000-0000-000000000001','A case to reply to');
+
+select is((select max_events from private.rate_limit_policies where policy_key = 'support_case_reply'), 60,
+  'support_case_reply allows sixty replies per hour');
+
+select set_config('request.jwt.claim.sub','f6000000-0000-0000-0000-000000000001',true);
+
+create or replace function pg_temp.flood_replies(p_count integer)
+returns integer language plpgsql as $fn$
+declare i integer; accepted integer := 0;
+begin
+  for i in 1..p_count loop
+    begin
+      perform public.reply_support_case(
+        'f6000000-0000-0000-0001-000000000001',
+        'Reply number ' || i || ', which is a genuine sentence of support text.',
+        'flood-reply-' || i);
+      accepted := accepted + 1;
+    exception when sqlstate '53400' then
+      exit;
+    end;
+  end loop;
+  return accepted;
+end;
+$fn$;
+
+select is(pg_temp.flood_replies(61), 60,
+  'AND THE SIXTY-FIRST IS REFUSED — THE SURFACE IS ACTUALLY WIRED TO THE LIMITER');
+
+select set_config('request.jwt.claim.sub','',true);
 
 rollback;
