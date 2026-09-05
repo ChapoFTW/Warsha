@@ -1,3 +1,4 @@
+import { signedUrlSeconds } from '@/src/storage/signed-url-policy';
 import { environment } from '@/src/config/environment';
 import { getSupabaseClient } from '@/src/lib/supabase';
 import {
@@ -454,7 +455,7 @@ export const supportRepository = {
     const client = getSupabaseClient();
     const { data, error } = await client.storage
       .from(supportAttachmentBucket)
-      .createSignedUrl(storagePath, 300);
+      .createSignedUrl(storagePath, signedUrlSeconds('support-attachments'));
     if (error) throw error;
     return data?.signedUrl ?? null;
   },

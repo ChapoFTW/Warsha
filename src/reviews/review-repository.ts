@@ -1,3 +1,4 @@
+import { signedUrlSeconds } from '@/src/storage/signed-url-policy';
 import Storage from 'expo-sqlite/kv-store';
 import { File } from 'expo-file-system';
 
@@ -128,7 +129,7 @@ type Raw = Record<string, unknown>;
 async function hydrateReviewImages(rows: Raw[], exposePaths: boolean) {
   const refs = rows.flatMap(row => Array.isArray(row.image_refs) ? row.image_refs.map(String) : []);
   if (!refs.length) return rows.map(row => mapReview(row, new Map(), exposePaths));
-  const { data, error } = await getSupabaseClient().storage.from('review-attachments').createSignedUrls(refs, 900);
+  const { data, error } = await getSupabaseClient().storage.from('review-attachments').createSignedUrls(refs, signedUrlSeconds('review-attachments'));
   if (error) throw error;
   const urls = new Map(refs.map((path, index) => [path, data?.[index]?.signedUrl ?? '']));
   return rows.map(row => mapReview(row, urls, exposePaths));

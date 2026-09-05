@@ -1,3 +1,4 @@
+import { signedUrlSeconds } from '@/src/storage/signed-url-policy';
 import type { Category, Provider, PublicPortfolioItem, Service } from '@/src/data/marketplace-types';
 import { getSupabaseClient } from '@/src/lib/supabase';
 import { publicSpecialties } from '@/src/providers/profession-taxonomy';
@@ -90,8 +91,8 @@ async function hydrateMedia(catalog: MarketplaceCatalog): Promise<MarketplaceCat
   }));
   const client = getSupabaseClient();
   const [avatarResult, portfolioResult] = await Promise.all([
-    avatarRefs.length ? client.storage.from('profile-images').createSignedUrls(avatarRefs, 900) : Promise.resolve({ data: [], error: null }),
-    portfolioRefs.length ? client.storage.from('provider-portfolios').createSignedUrls(portfolioRefs, 900) : Promise.resolve({ data: [], error: null }),
+    avatarRefs.length ? client.storage.from('profile-images').createSignedUrls(avatarRefs, signedUrlSeconds('profile-images')) : Promise.resolve({ data: [], error: null }),
+    portfolioRefs.length ? client.storage.from('provider-portfolios').createSignedUrls(portfolioRefs, signedUrlSeconds('provider-portfolios')) : Promise.resolve({ data: [], error: null }),
   ]);
   if (avatarResult.error) throw avatarResult.error;
   if (portfolioResult.error) throw portfolioResult.error;

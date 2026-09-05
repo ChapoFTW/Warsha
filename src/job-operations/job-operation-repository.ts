@@ -1,3 +1,4 @@
+import { signedUrlSeconds } from '@/src/storage/signed-url-policy';
 import { File } from 'expo-file-system';
 import Storage from 'expo-sqlite/kv-store';
 
@@ -105,7 +106,7 @@ async function hydrateSignedMedia(media: ReturnType<typeof mapMedia>[]) {
   const client = getSupabaseClient();
   return Promise.all(media.map(async item => {
     if (!item.storagePath) return item;
-    const { data, error } = await client.storage.from('job-progress-media').createSignedUrl(item.storagePath, 3600);
+    const { data, error } = await client.storage.from('job-progress-media').createSignedUrl(item.storagePath, signedUrlSeconds('job-progress-media'));
     if (error) throw error;
     const { storagePath: _privatePath, ...safe } = item;
     return { ...safe, url: data.signedUrl };

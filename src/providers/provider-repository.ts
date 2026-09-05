@@ -1,3 +1,4 @@
+import { signedUrlSeconds, type SignedUrlBucket } from '@/src/storage/signed-url-policy';
 import { Directory, File, Paths } from 'expo-file-system';
 import Storage from 'expo-sqlite/kv-store';
 
@@ -27,7 +28,6 @@ import {
 
 const IMAGE_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
 const CERTIFICATE_MIME = ['application/pdf', 'image/jpeg', 'image/png'];
-const SIGNED_URL_SECONDS = 900;
 
 export interface ProviderRepository {
   load(accountId: string): Promise<ProviderDraft | null>;
@@ -375,9 +375,13 @@ async function authenticatedUser(accountId: string) {
   return data.user;
 }
 
-async function signedUrl(bucket: string, path: string) {
+// Typed against the policy rather than taking a `string`: each bucket gets its
+// own declared lifetime, and a bucket nobody has written a policy for does not
+// compile. An earlier version shared one constant across all three buckets here,
+// which happened to be correct only because all three declare 900.
+async function signedUrl(bucket: SignedUrlBucket, path: string) {
   if (!path) return '';
-  const { data, error } = await getSupabaseClient().storage.from(bucket).createSignedUrl(path, SIGNED_URL_SECONDS);
+  const { data, error } = await getSupabaseClient().storage.from(bucket).createSignedUrl(path, signedUrlSeconds(bucket));
   if (error) throw error;
   return data.signedUrl;
 }
@@ -399,7 +403,7 @@ async function loadSupabasePortfolio(accountId: string) {
   const items = (Array.isArray(data) ? data : []).map(value => mapPortfolio(value as Record<string, unknown>));
   const images = items.flatMap(item => item.images);
   if (!images.length) return items;
-  const { data: urls, error: signError } = await getSupabaseClient().storage.from('provider-portfolios').createSignedUrls(images.map(image => image.storagePath), SIGNED_URL_SECONDS);
+  const { data: urls, error: signError } = await getSupabaseClient().storage.from('provider-portfolios').createSignedUrls(images.map(image => image.storagePath), signedUrlSeconds('provider-portfolios'));
   if (signError) throw signError;
   const urlById = new Map(images.map((image, index) => [image.id, urls?.[index]?.signedUrl ?? '']));
   return items.map(item => ({ ...item, images: item.images.map(image => ({ ...image, previewUrl: urlById.get(image.id) ?? '' })) }));
@@ -412,7 +416,7 @@ async function loadSupabaseCertificates(accountId: string) {
   const items = (Array.isArray(data) ? data : []).map(value => mapCertificate(value as Record<string, unknown>));
   const withPath = items.filter(item => item.storagePath);
   if (!withPath.length) return items;
-  const { data: urls, error: signError } = await getSupabaseClient().storage.from('provider-certificates').createSignedUrls(withPath.map(item => item.storagePath!), SIGNED_URL_SECONDS);
+  const { data: urls, error: signError } = await getSupabaseClient().storage.from('provider-certificates').createSignedUrls(withPath.map(item => item.storagePath!), signedUrlSeconds('provider-certificates'));
   if (signError) throw signError;
   const urlById = new Map(withPath.map((item, index) => [item.id, urls?.[index]?.signedUrl ?? '']));
   return items.map(item => ({ ...item, previewUrl: urlById.get(item.id) }));

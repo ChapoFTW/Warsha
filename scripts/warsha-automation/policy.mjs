@@ -84,6 +84,7 @@ export const DETERMINISTIC_TEST_SCRIPTS = [
   'test:session-teardown',
   'test:realtime-coverage',
   'test:release-boundary',
+  'test:signed-url-policy',
 ];
 
 const NATIVE_DEPENDENCY_PREFIXES = [

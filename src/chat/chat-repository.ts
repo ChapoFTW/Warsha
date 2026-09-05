@@ -1,3 +1,4 @@
+import { signedUrlSeconds } from '@/src/storage/signed-url-policy';
 import { File } from 'expo-file-system';
 import Storage from 'expo-sqlite/kv-store';
 
@@ -220,7 +221,7 @@ async function signedMessages(rows: Record<string, unknown>[]) {
       : [];
     if (attachments.length) {
       const { data, error } = await client.storage.from(BUCKET)
-        .createSignedUrls(attachments.map((item) => String(item.storage_path)), 3600);
+        .createSignedUrls(attachments.map((item) => String(item.storage_path)), signedUrlSeconds('chat-attachments'));
       if (error) throw error;
       row.message_attachments = attachments.map((item, index) => ({ ...item, signed_url: data?.[index]?.signedUrl }));
     }

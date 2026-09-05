@@ -128,7 +128,8 @@
     "test:auth-validation": "node --no-warnings --experimental-strip-types scripts/auth-validation-matrix.test.mts",
     "test:session-teardown": "node --no-warnings --experimental-strip-types scripts/session-teardown.test.mts",
     "test:realtime-coverage": "node --no-warnings --experimental-strip-types scripts/realtime-coverage.test.mts",
-    "test:release-boundary": "node --no-warnings --experimental-strip-types scripts/release-boundary.test.mts"
+    "test:release-boundary": "node --no-warnings --experimental-strip-types scripts/release-boundary.test.mts",
+    "test:signed-url-policy": "node --no-warnings --experimental-strip-types scripts/signed-url-policy.test.mts"
   },
   "dependencies": {
     "@expo-google-fonts/cairo": "^0.4.2",

@@ -1,3 +1,4 @@
+import { signedUrlSeconds } from '@/src/storage/signed-url-policy';
 import { File } from 'expo-file-system';
 import Storage from 'expo-sqlite/kv-store';
 
@@ -108,7 +109,7 @@ async function signedEvidence(dispute: BookingDispute) {
   return Promise.all(dispute.evidence.map(async evidence => {
     const internal = evidence as DisputeEvidence & { storagePath?: string };
     if (!internal.storagePath) return evidence;
-    const { data, error } = await client.storage.from('dispute-evidence').createSignedUrl(internal.storagePath, 900);
+    const { data, error } = await client.storage.from('dispute-evidence').createSignedUrl(internal.storagePath, signedUrlSeconds('dispute-evidence'));
     if (error) throw error;
     const { storagePath: _privatePath, ...safe } = internal;
     return { ...safe, url: data.signedUrl };

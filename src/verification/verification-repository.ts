@@ -1,3 +1,4 @@
+import { signedUrlSeconds } from '@/src/storage/signed-url-policy';
 import { Directory, File, Paths } from 'expo-file-system';
 import Storage from 'expo-sqlite/kv-store';
 
@@ -311,7 +312,7 @@ async function loadSupabase(): Promise<ProviderVerification> {
   if (!withPaths.length) return mapped;
   const { data: signed, error: signedError } = await client.storage
     .from('verification-documents')
-    .createSignedUrls(withPaths.map(document => document.storagePath!), 900);
+    .createSignedUrls(withPaths.map(document => document.storagePath!), signedUrlSeconds('verification-documents'));
   if (signedError) throw signedError;
   const urls = new Map(
     withPaths.map((document, index) => [
