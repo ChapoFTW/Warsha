@@ -240,11 +240,36 @@ check(/password-policy/.test(webActions),
   'and the web action that performs the update');
 check(!/\/\[A-Z\]\/\.test\(password\)/.test(resetScreen),
   'so the mobile screen no longer carries its own copy of the rules');
+// The fifth rule joined on 2026-09-05. It is listed here for the same reason as
+// the other four: adding a rule to the policy and forgetting to translate it
+// leaves an Arabic reader looking at an English checklist item.
 for (const rule of ['passwordLengthRequirement', 'passwordUppercaseRequirement',
-  'passwordLowercaseRequirement', 'passwordNumberRequirement']) {
+  'passwordLowercaseRequirement', 'passwordNumberRequirement',
+  'passwordSpecialRequirement']) {
   check(policy.includes(rule), `the policy still states ${rule}`);
   check(webCopyHas(rule), `and the web says it in both languages: ${rule}`);
 }
+
+// --- The new password is typed twice ---------------------------------------
+// Step 9 of the flow: a password chosen once and mistyped is a password nobody
+// can use, and the account is now locked behind it. Both platforms require the
+// confirmation to match BEFORE the update is attempted, so the failure is a
+// sentence rather than a lockout.
+
+check(/passwordsMatch/.test(resetScreen) && /passwordMismatch/.test(resetScreen),
+  'the mobile reset screen requires the confirmation to match');
+check(/disabled=\{busy \|\| !passwordValid \|\| !passwordsMatch\}/.test(resetScreen),
+  'AND WILL NOT SUBMIT UNTIL IT DOES');
+check(/confirmation/.test(webReset) && /passwordMismatch|match/i.test(webReset),
+  'and so does the web one');
+
+// --- Repeated requests are coalesced ---------------------------------------
+// Somebody who presses Send twice should send one email, not two. This is a
+// courtesy on top of GoTrue's own rate limiting, not a replacement for it --
+// the server limit is the control, and it is a dashboard setting rather than
+// anything this repository can assert.
+check(/runAuthSingleFlight/.test(read('src/auth/auth-request-guard.ts')),
+  'simultaneous auth requests are coalesced into one');
 
 // Anti-enumeration, again, in the browser.
 const webRequest = stripComments(webActions.slice(
