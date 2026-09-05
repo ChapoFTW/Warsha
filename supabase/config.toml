@@ -27,6 +27,61 @@ additional_redirect_urls = [
   "http://localhost:3000/**",
   "https://app.usewarsha.com/**",
 ]
+# Anti-abuse limits for the identity provider itself.
+#
+# Warsha's own limiter in `private.rate_limit_policies` cannot reach these
+# surfaces: sign-in, sign-up, token refresh and verification are handled by
+# GoTrue before any SQL runs. Three policies in that table are marked
+# `enforced_by = 'supabase_auth'` for exactly that reason, and nothing in the
+# repository said what those limits were -- they were whatever the platform
+# defaulted to, unreviewed and unrecorded.
+#
+# ## Every value here was checked against the running container
+#
+# The CLI does NOT reject an unknown key in this section. A deliberate
+# `not_a_real_key = 99` was accepted in full, so a misspelling would leave a
+# block that reads like hardening and does nothing. Each key below was therefore
+# confirmed by reading what GoTrue actually received:
+#
+#     docker inspect supabase_auth_warsha --format '{{range .Config.Env}}{{println .}}{{end}}' | grep RATE_LIMIT
+#
+# `scripts/auth-rate-limit-probe.mjs` drives real failed sign-ins against the
+# local stack and reports where the limit bites. It needs a running container, so
+# it is not in the deterministic suite.
+[auth.rate_limit]
+# -> GOTRUE_RATE_LIMIT_SMS_SENT=10. Per hour. Warsha does not use phone OTP for
+# customers; this bounds the surface anyway.
+sms_sent = 10
+# -> GOTRUE_RATE_LIMIT_ANONYMOUS_USERS=10. Per hour per IP. Warsha creates no
+# anonymous users, so this is a floor rather than a working limit.
+anonymous_users = 10
+# -> GOTRUE_RATE_LIMIT_TOKEN_REFRESH=150. Per five minutes per IP.
+token_refresh = 150
+# -> GOTRUE_RATE_LIMIT_VERIFY=30. Per five minutes per IP. OTP and recovery-link
+# verification, which is the surface a stolen link would be replayed against.
+token_verifications = 30
+# -> GOTRUE_RATE_LIMIT_EMAIL_SENT, but NOT with this value locally: the CLI
+# forces 360000 on the local stack so developer mail testing is never throttled.
+# Declared here for the hosted projects, where it does apply, and deliberately
+# not claimed as verified.
+email_sent = 10
+
+# ## The one that is missing, and it is the important one
+#
+# There is no key here for failed sign-in attempts. `sign_in_sign_ups = 30` was
+# tried and produced NO GoTrue setting at all on CLI 2.116.0 -- silently dropped,
+# like any unrecognised key. Forty consecutive failed password sign-ins against
+# the local stack returned forty 400s and not one 429, which is what that absence
+# looks like from outside.
+#
+# So the brute-force limit on sign-in is whatever the hosted platform applies by
+# default. Warsha does not declare it, cannot declare it through this file at
+# this CLI version, and this comment exists so that is a known gap rather than an
+# assumption. `private.rate_limit_policies` still declares `auth_sign_in` at 10
+# per 300 seconds per ACCOUNT, which is a different and complementary limit -- it
+# is marked `enforced_by = 'supabase_auth'` and is equally not enforced by
+# anything in this repository.
+
 [auth.email]
 enable_signup = true
 double_confirm_changes = true

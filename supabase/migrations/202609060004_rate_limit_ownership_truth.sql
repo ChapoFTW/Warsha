@@ -108,7 +108,7 @@ CREATE OR REPLACE FUNCTION public.submit_my_criminal_record(p_storage_path text,
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
- SET search_path TO ''
+ set search_path = ''
 AS $function$
 declare
   v_user uuid := (select auth.uid());
@@ -178,7 +178,7 @@ CREATE OR REPLACE FUNCTION public.reply_support_case(p_case_id uuid, p_body text
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
- SET search_path TO ''
+ set search_path = ''
 AS $function$
 declare v_uid uuid := (select auth.uid()); v_ticket public.support_tickets%rowtype; v_is_staff boolean; v_existing uuid;
 begin

@@ -46,8 +46,18 @@ for (const file of files) {
     if (re.test(body)) failures.push(`${file}: ${why}; migrations are forward-only`);
   }
   // Every SECURITY DEFINER function must pin a search_path.
+  //
+  // Both spellings count, because both pin it. `set search_path = ''` is the
+  // convention here and what every hand-written migration uses, but
+  // `SET search_path TO ''` is what `pg_get_functiondef` emits — so a migration
+  // restated from a LIVE function definition, which is the safest way to add one
+  // line to a function that several migrations have already corrected, arrives in
+  // the `TO` form. Postgres stores both as `search_path=""` in `proconfig`; they
+  // are indistinguishable once applied. Matching only `=` failed such a migration
+  // for its punctuation while it was correctly pinned, and a check that raises a
+  // false alarm is a check somebody eventually loosens for the wrong reason.
   const definers = (body.match(/security\s+definer/gi) ?? []).length;
-  const pinned = (body.match(/set\s+search_path\s*=/gi) ?? []).length;
+  const pinned = (body.match(/set\s+search_path\s*(?:=|\bto\b)/gi) ?? []).length;
   if (definers > pinned) {
     failures.push(`${file}: ${definers} SECURITY DEFINER functions but only ${pinned} pinned search_path`);
   }
