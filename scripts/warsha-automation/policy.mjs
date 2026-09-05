@@ -83,6 +83,7 @@ export const DETERMINISTIC_TEST_SCRIPTS = [
   'test:auth-validation',
   'test:session-teardown',
   'test:realtime-coverage',
+  'test:release-boundary',
 ];
 
 const NATIVE_DEPENDENCY_PREFIXES = [
