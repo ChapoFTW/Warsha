@@ -7,6 +7,7 @@ import { BrandLoadingMark as ActivityIndicator } from '@/components/warsha/Brand
 import { ScreenHeader } from '@/components/warsha/ScreenHeader';
 import { AppText } from '@/components/warsha/Typography';
 import { StateBadge } from '@/components/warsha/BrandUI';
+import { RequestConversation } from '@/components/warsha/RequestConversation';
 import { WorkerOfferCapacityNotice } from '@/components/warsha/WorkerOfferCapacity';
 import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
 import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
@@ -31,7 +32,7 @@ export default function WorkerQuoteDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const market = useMarketplaceIntelligence();
   const mt = useMarketplaceText();
-  const { isRTL, language } = useLocalization();
+  const { isRTL, language, t } = useLocalization();
   const { services: catalogue } = useMarketplaceData();
   const [invitation, setInvitation] = useState<QuoteInvitation>();
   const [loading, setLoading] = useState(true);
@@ -109,6 +110,16 @@ export default function WorkerQuoteDetail() {
         <AppText style={styles.muted}>{marketplaceScheduleText(language, invitation.scheduleKind)} · {marketplacePaymentText(language, invitation.paymentCompatibility)}</AppText>
       </View>
       {emergency ? null : <WorkerOfferCapacityNotice capacity={market.offerCapacity} />}
+      {/* The conversation exists once an offer has been sent, and not before.
+          A worker who is only looking at the invitation has no relationship
+          with the customer, and the server refuses to open one — so the panel
+          is simply absent rather than present and broken. */}
+      {invitation.quoteId && market.offerCapacity?.providerId ? (
+        <View style={styles.card}>
+          <AppText accessibilityRole="header" style={styles.title}>{t('messageCustomer')}</AppText>
+          <RequestConversation requestId={invitation.requestId} providerId={market.offerCapacity.providerId} />
+        </View>
+      ) : null}
       {emergency
         ? <Pressable disabled={!actionable || saving} onPress={async () => {
             setSaving(true);

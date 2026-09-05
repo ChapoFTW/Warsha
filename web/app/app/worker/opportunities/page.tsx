@@ -34,6 +34,8 @@ import {
   quoteLifecycleSemantic,
 } from '@/src/lifecycle/lifecycle-presentation';
 
+import { RequestConversationPanel } from '@/components/request-conversation';
+
 import styles from '@/components/product-surface.module.css';
 
 type QuoteDraft = {
@@ -402,6 +404,26 @@ function OpportunityDetail({
             }))}>{words.opportunityDecline}</button>
         </div>
       ) : null}
+
+      {/* The conversation opens once an offer has been sent, and not before.
+          A worker only looking at the invitation has no relationship with the
+          customer and the server refuses to open one — this is that rule
+          expressed as a control that is simply not there yet.
+
+          The provider id is the worker's own, from the capacity answer. There
+          is no other worker's id anywhere on this page to get wrong. */}
+      {quote && capacity?.providerId ? (
+        <div className={styles.subpanel}>
+          <h3 className={styles.sectionTitle}>{words.messageCustomer}</h3>
+          <RequestConversationPanel
+            requestId={invitation.requestId}
+            providerId={capacity.providerId}
+            words={words as unknown as Record<string, string>}
+          />
+        </div>
+      ) : (
+        <p className={styles.note}>{words.messageCustomerHint}</p>
+      )}
 
       {limitReached ? (
         <p className={styles.error} role="alert">

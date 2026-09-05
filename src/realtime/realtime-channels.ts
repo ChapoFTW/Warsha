@@ -205,6 +205,20 @@ export const realtimeChannels = {
     ],
   }),
 
+  /**
+   * A conversation about a request, before there is a booking.
+   *
+   * Keyed on the request rather than the conversation id, because
+   * `messages.request_id` is the column a subscription can filter on and the
+   * client already knows the request. Row security still decides what reaches
+   * the socket: a worker who never quoted receives nothing from this channel
+   * even if they guess the name.
+   */
+  requestConversation: (requestId: string): RealtimeChannelSpec => ({
+    name: `request-conversation:${requestId}`,
+    bindings: [{ table: 'messages', filter: `request_id=eq.${requestId}` }],
+  }),
+
   bookingConversationInbox: (userId: string): RealtimeChannelSpec => ({
     name: `booking-conversation-inbox:${userId}`,
     bindings: [

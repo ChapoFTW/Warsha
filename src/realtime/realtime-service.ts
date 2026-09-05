@@ -99,6 +99,8 @@ export const realtimeService = {
     bind(realtimeChannels.bookingDispute(bookingId))(listener, connection),
   bookingConversation: (bookingId: string, listener: RealtimeListener, connection?: Connection) =>
     bind(realtimeChannels.bookingConversation(bookingId))(listener, connection),
+  requestConversation: (requestId: string, listener: RealtimeListener, connection?: Connection) =>
+    bind(realtimeChannels.requestConversation(requestId))(listener, connection),
   bookingConversationInbox: (userId: string, listener: RealtimeListener, connection?: Connection) =>
     bind(realtimeChannels.bookingConversationInbox(userId))(listener, connection),
 };

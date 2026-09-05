@@ -22,6 +22,7 @@ import {
 import { realtimeChannels } from '@/src/realtime/realtime-channels';
 import { useWarshaRealtime } from '@/lib/use-warsha-realtime';
 import { useSession } from '@/components/session-provider';
+import { RequestConversationPanel } from '@/components/request-conversation';
 import { customerNavigation } from '@/lib/nav';
 import { intlLocale, type Locale } from '@/lib/preferences';
 import { supabase } from '@/lib/supabase';
@@ -444,6 +445,20 @@ function RequestDetail({
                   ))}
                 </ul>
               ) : null}
+
+              {/* One conversation per quoting worker, opened on demand. The
+                  customer can ask this worker about this offer before choosing,
+                  and the same thread carries into the booking if they do. It is
+                  collapsed by default because a request with five quotes would
+                  otherwise be five open chats. */}
+              <details className={styles.messageDisclosure}>
+                <summary className={styles.messageSummary}>{words.messageWorker}</summary>
+                <RequestConversationPanel
+                  requestId={request.id}
+                  providerId={quote.providerId}
+                  words={words as unknown as Record<string, string>}
+                />
+              </details>
 
               {quote.id === request.selectedQuoteId ? (
                 <p className={styles.note}>{words.quoteChosen}</p>

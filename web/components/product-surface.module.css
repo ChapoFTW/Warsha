@@ -408,6 +408,70 @@ a.chip:hover { border-color: var(--border-strong); color: var(--text-primary); }
 
 .filters { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 16px; }
 
+/* A conversation folded away until it is wanted. A request with five quotes
+   must not be five open chats. */
+.messageDisclosure { margin-top: 10px; }
+
+.messageSummary {
+  cursor: pointer;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  list-style-position: inside;
+}
+
+.messageSummary:hover { color: var(--text-primary); }
+
+/*
+ * A conversation.
+ *
+ * A fixed-height scroller rather than a growing list: a thread that lengthens
+ * the page pushes the composer off the bottom of the screen, which is the one
+ * control the reader needs. Newest at the bottom, as every chat is.
+ *
+ * A message is a list item and the sender is carried by alignment AND by
+ * ground, never by side alone -- an alignment-only distinction disappears the
+ * moment somebody reads the page in Arabic, where the whole column flips.
+ */
+.conversation {
+  max-height: 320px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--space-sm) 0;
+}
+
+.messageMine,
+.messageTheirs {
+  max-width: 78%;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  font-size: 14.5px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+  /* Logical, so Arabic mirrors without a second rule. */
+  margin-inline-start: 0;
+}
+
+.messageMine {
+  margin-inline-start: auto;
+  background: var(--brand);
+  color: var(--brand-ink);
+}
+
+.messageTheirs {
+  margin-inline-end: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+}
+
+/* Sent, not yet acknowledged. Deliberately subtle: the message is almost
+   certainly fine, and a loud "pending" state on every line would make an
+   ordinary conversation look unreliable. */
+.messageMine[data-pending='true'] {
+  opacity: 0.62;
+}
+
 /* A quote. The price leads, because it is what the decision turns on. */
 .quote {
   border: 1px solid var(--border); border-radius: var(--radius-sm);
