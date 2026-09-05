@@ -26,7 +26,7 @@
 -- fixture problem to be worked around.
 
 begin;
-select plan(36);
+select plan(39);
 
 -- ---------------------------------------------------------------------------
 -- Two of everything
@@ -234,5 +234,54 @@ select ok(has_function_privilege('anon', 'public.search_providers(text,jsonb,tex
 select ok((select prosecdef from pg_proc p join pg_namespace n on n.oid = p.pronamespace
            where n.nspname = 'public' and p.proname = 'search_providers'),
   'and that function is SECURITY DEFINER, so the choice is the server''s');
+
+
+-- ---------------------------------------------------------------------------
+-- 7. What Realtime broadcasts is governed by the same policies
+-- ---------------------------------------------------------------------------
+-- Warsha publishes 26 tables to `supabase_realtime`, including messages,
+-- bookings, notifications, disputes and the financial ledgers. Realtime delivers
+-- a `postgres_changes` payload only to subscribers who could have SELECTed that
+-- row, which means the isolation proven above is also what governs the socket —
+-- but only while two things stay true, and neither is guaranteed by anything
+-- else in the repository.
+--
+-- First, row security must be ON for every published table. A published table
+-- without it has no policy to evaluate, so its changes go to every subscriber.
+-- The clients treat an event as a doorbell and refetch rather than reading the
+-- payload, which contains the blast radius, but a table broadcasting to everyone
+-- is still a table broadcasting to everyone.
+--
+-- Second, no published table may use REPLICA IDENTITY FULL. The default sends
+-- only the primary key for a delete or an update's old row; FULL sends the
+-- entire previous row, which is the one payload shape a policy on the NEW row
+-- cannot protect.
+
+select is(
+  (select coalesce(string_agg(c.relname, ', ' order by c.relname), '')
+   from pg_publication_tables pt
+   join pg_class c on c.relname = pt.tablename
+   join pg_namespace n on n.oid = c.relnamespace and n.nspname = pt.schemaname
+   where pt.pubname = 'supabase_realtime' and not c.relrowsecurity),
+  '',
+  'EVERY TABLE PUBLISHED TO REALTIME HAS ROW SECURITY ENABLED');
+
+select is(
+  (select coalesce(string_agg(c.relname, ', ' order by c.relname), '')
+   from pg_publication_tables pt
+   join pg_class c on c.relname = pt.tablename
+   join pg_namespace n on n.oid = c.relnamespace and n.nspname = pt.schemaname
+   where pt.pubname = 'supabase_realtime' and c.relreplident = 'f'),
+  '',
+  'AND NONE SENDS ITS PREVIOUS ROW CONTENTS — NO REPLICA IDENTITY FULL');
+
+-- Realtime publishes from `public` only. A publication reaching `private` would
+-- broadcast the staff access log, the rate-limit counters and the session
+-- attestations, none of which any client may read.
+select is(
+  (select coalesce(string_agg(distinct schemaname, ', '), '')
+   from pg_publication_tables where pubname = 'supabase_realtime' and schemaname <> 'public'),
+  '',
+  'and nothing outside the public schema is published at all');
 
 rollback;
