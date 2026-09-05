@@ -1193,5 +1193,33 @@ select is(
   0,
   'and no function still answers to p_size_bytes');
 
+
+-- ---------------------------------------------------------------------------
+-- The declared name is stored as typed, minus the typing accidents
+-- ---------------------------------------------------------------------------
+-- Found on hosted Development, not by reading: submitting
+-- '  محمد   أحمد  ' stored 'محمد   أحمد'. `btrim` removed the outer spaces and
+-- left the three in the middle, so the tidy value was a property of the client
+-- rather than of the column. A reviewer compares this string against a printed
+-- document, and two submissions differing only by invisible spacing read as two
+-- different names.
+
+select is(private.normalize_declared_name('  محمد   أحمد  '), 'محمد أحمد',
+  'AN ARABIC NAME IS TRIMMED AND ITS INTERNAL RUNS COLLAPSED');
+select is(private.normalize_declared_name('Chloé   Dupont'), 'Chloé Dupont',
+  'and a French name keeps its diacritics while losing the double space');
+select is(private.normalize_declared_name('ahmed hassan'), 'ahmed hassan',
+  'nothing is capitalised — the document is the authority, not Warsha');
+select is(private.normalize_declared_name(null), '',
+  'a null name normalizes to empty rather than null, so the length check is total');
+
+-- The length rule measures the normalized value, or a name of nothing but
+-- spaces would satisfy a 2..120 test.
+select is(pg_catalog.length(private.normalize_declared_name('a          b')), 3,
+  'AND THE LENGTH CHECK SEES THE COLLAPSED VALUE, NOT THE PADDING');
+
+select ok(not has_function_privilege('authenticated', 'private.normalize_declared_name(text)', 'execute'),
+  'the normalizer is not reachable from a client');
+
 select * from finish();
 rollback;
