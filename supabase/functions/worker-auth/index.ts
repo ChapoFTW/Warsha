@@ -7,6 +7,7 @@
  */
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
+import { workerPasswordMeetsPolicy } from '../_shared/worker-auth-password.ts';
 import {
   isWorkerPhone,
   normalizeWorkerPhone,
@@ -93,12 +94,31 @@ Deno.serve(async (request) => {
   const phone = normalizeWorkerPhone(rawPhone);
   const password = typeof body.password === 'string' ? body.password : '';
   if (!isWorkerPhone(phone)) return json({ code: 'invalid_phone' }, 400);
+  // A loose bound for BOTH actions. Sign-in must keep accepting whatever an
+  // existing worker already set, or tightening the policy would lock out the
+  // accounts it was meant to protect.
   if (password.length < 6 || password.length > 128) return json({ code: 'invalid_credentials' }, 400);
 
   const service = createClient(url, serviceRole, { auth: { persistSession: false } });
   const credentialAuth = createClient(url, publicKey, { auth: { persistSession: false } });
 
   if (body.action === 'register') {
+    /*
+     * Warsha's real password policy, applied where a password is CHOSEN.
+     *
+     * This path creates the account with `admin.createUser`, which bypasses
+     * GoTrue's `password_min_length` entirely — so before this check, neither
+     * the platform setting nor the app's checklist enforced anything here.
+     * Measured on Development: the app refuses `abc123` and registration
+     * accepted it, creating a real account with a session.
+     *
+     * Answered as `invalid_request` rather than a rule-by-rule explanation. The
+     * client already shows the checklist live and cannot submit a password that
+     * fails it, so a caller reaching this branch is not a person reading a form.
+     */
+    if (!workerPasswordMeetsPolicy(password)) {
+      return json({ code: 'weak_password' }, 400);
+    }
     const fullName = typeof body.fullName === 'string' ? body.fullName.trim() : '';
     const language = body.language === 'ar' || body.language === 'fr' ? body.language : 'en';
     const legalAcceptances = legalAcceptanceManifest(body.legalAcceptances);

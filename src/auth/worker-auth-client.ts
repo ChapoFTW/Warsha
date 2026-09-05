@@ -52,6 +52,12 @@ const WORKER_AUTH_FAILURES: Record<string, AuthFailure> = {
   // The client validates name and phone before calling, so a rejected shape
   // means this build and the broker disagree about the contract.
   invalid_request: 'authOutdatedClient',
+  // Same reasoning, and the reason it is not a password-specific message: the
+  // sign-up screen shows the five password rules as a live checklist and will
+  // not submit a password that fails them. Reaching this code means the build
+  // predates the policy the broker now enforces, so "update the app" is the
+  // accurate instruction and a rule-by-rule complaint would not be.
+  weak_password: 'authOutdatedClient',
   method_not_allowed: 'authOutdatedClient',
   unavailable: 'authServerError',
   signup_failed: 'authServerError',
