@@ -48,7 +48,12 @@ for (const dimension of ['professionalism','quality','punctuality','communicatio
 match(repository, /environment\.dataMode === 'supabase' \? supabase : mock/, 'repository mode selection is static');
 notMatch(repository, /catch\s*\([^)]*\)\s*\{[^}]*\bmock\./i, 'repository has no hidden Supabase-to-Mock fallback');
 match(repository, /file\.md5/, 'review photos use content fingerprints for safe immutable names');
-match(repository, /createSignedUrls\(refs, 900\)/, 'review images use expiring signed URLs');
+// The lifetime is no longer written here. `src/storage/signed-url-policy.ts` is
+// the single authority and `scripts/signed-url-policy.test.mts` fails on any
+// literal at a call site, so asserting the policy call is a stronger form of
+// the same requirement: the URL expires, and it expires by the declared rule.
+match(repository, /createSignedUrls\(refs, signedUrlSeconds\('review-attachments'\)\)/,
+  'review images use expiring signed URLs, with the lifetime read from the shared policy');
 match(repository, /5 \* 1024 \* 1024/, 'client enforces 5 MB image limit');
 match(repository, /\['image\/jpeg', 'image\/png', 'image\/webp'\]/, 'client MIME allowlist is exact');
 match(repository, /ownerAccountId/, 'Mock review editing is account-scoped');

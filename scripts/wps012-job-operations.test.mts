@@ -61,7 +61,9 @@ match(migration,/8388608/,'media is bounded to 8 MB');
 for(const mime of ['image/jpeg','image/png','image/webp','image/heic','image/heif'])match(migration,new RegExp(mime.replace('/','\\/')),`${mime} is server allowed`);
 match(migration,/is_safe_job_progress_path/,'server validates safe operation media paths');
 match(migration,/owner_id is distinct from uid::text/,'registration verifies Storage ownership');
-match(repository,/createSignedUrl\(item\.storagePath, 3600\)/,'client returns only expiring signed URLs');
+// Lifetime read from `src/storage/signed-url-policy.ts` rather than restated.
+match(repository,/createSignedUrl\(item\.storagePath, signedUrlSeconds\('job-progress-media'\)\)/,
+  'client returns only expiring signed URLs, with the lifetime read from the shared policy');
 notMatch(repository,/getPublicUrl/,'client never creates public progress URLs');
 match(repository,/file\.size > MAX_MEDIA_BYTES/,'client validates media size before upload');
 match(repository,/MEDIA_MIMES\.has/,'client validates media MIME before upload');

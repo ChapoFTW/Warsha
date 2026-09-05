@@ -93,7 +93,9 @@ match(migration, /grant select\(id,booking_id,opened_by/, 'case table grants exp
 notMatch(migration, /grant select on public\.disputes/, 'case table has no broad select grant');
 match(migration, /private\.can_read_registered_dispute_evidence/, 'private paths stay behind a scoped Storage helper');
 notMatch(repository, /getPublicUrl/, 'client never creates public evidence URLs');
-match(repository, /createSignedUrl\(internal\.storagePath, 900\)/, 'client uses 15-minute signed URLs');
+// Lifetime read from `src/storage/signed-url-policy.ts` rather than restated.
+match(repository, /createSignedUrl\(internal\.storagePath, signedUrlSeconds\('dispute-evidence'\)\)/,
+  'client uses the declared dispute-evidence signed-URL lifetime');
 match(repository, /MIMES\.has\(mime\)/, 'client validates MIME');
 match(repository, /file\.size > MAX_BYTES/, 'client validates file size');
 match(repository, /contentHash/, 'client supplies deterministic duplicate evidence identity');
