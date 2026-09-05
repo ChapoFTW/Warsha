@@ -13,6 +13,8 @@ import { useAuth } from '@/src/auth/auth-context';
 import { logDataError } from '@/src/data/data-errors';
 import { accountHydrationReady, canRefreshAccountInline } from '@/src/navigation/worker-route-policy';
 
+import { isRateLimited } from '@/src/launch/launch-types';
+import { CriminalRecordInputError, type CriminalRecordInput } from './criminal-record-submission';
 import { onboardingRepository } from './onboarding-repository';
 import {
   emptyOnboardingState,
@@ -40,6 +42,23 @@ import {
  * nothing renders for an account other than the loaded one.
  */
 
+/** The failures a screen needs to tell apart. Everything else is unavailable. */
+export type OnboardingFailure = 'rate_limited' | 'invalid_input' | 'unavailable' | null;
+
+/**
+ * Turn whatever was thrown into one of those.
+ *
+ * Done here rather than in a screen so the raw reason never leaves this module.
+ * `isRateLimited` is the shared authority — it matches SQLSTATE 53400 and the
+ * server's own sentence — and `CriminalRecordInputError` is the client refusing
+ * before it uploads.
+ */
+function classifyFailure(reason: unknown): Exclude<OnboardingFailure, null> {
+  if (isRateLimited(reason)) return 'rate_limited';
+  if (reason instanceof CriminalRecordInputError) return 'invalid_input';
+  return 'unavailable';
+}
+
 type OnboardingValue = {
   ready: boolean;
   refreshing: boolean;
@@ -49,6 +68,14 @@ type OnboardingValue = {
   candidates: IdentityCandidate[];
   route: RouteTarget;
   error: boolean;
+  /**
+   * Why the last action failed, already classified.
+   *
+   * A CLASSIFICATION and never the error itself, so no screen can render a
+   * SQLSTATE, an RPC name or a storage message by accident. `null` once an
+   * action succeeds.
+   */
+  lastFailure: OnboardingFailure;
   selectRole: (role: AccountRoleChoice, expectedAccountKey?: string) => Promise<boolean>;
   resumeCustomerSetup: (expectedAccountKey?: string) => Promise<boolean>;
   confirmAddress: (input: {
@@ -77,13 +104,7 @@ type OnboardingValue = {
     pageSide: 'front' | 'back';
   }) => Promise<boolean>;
   submitIdentity: () => Promise<boolean>;
-  submitCriminalRecord: (input: {
-    uri: string;
-    mimeType: string;
-    fileSizeBytes: number;
-    contentHash: string | null;
-    issueDate: string;
-  }) => Promise<boolean>;
+  submitCriminalRecord: (input: CriminalRecordInput) => Promise<boolean>;
   submitAppeal: (statement: string) => Promise<boolean>;
   reload: () => Promise<void>;
 };
@@ -101,6 +122,7 @@ export function OnboardingProvider({ children }: PropsWithChildren) {
   const [candidates, setCandidates] = useState<IdentityCandidate[]>([]);
   const [customerRecoveryEligible, setCustomerRecoveryEligible] = useState(false);
   const [error, setError] = useState(false);
+  const [lastFailure, setLastFailure] = useState<OnboardingFailure>(null);
 
   const generation = useRef(0);
   const loadedAccountRef = useRef<string | null>(null);
@@ -200,6 +222,7 @@ export function OnboardingProvider({ children }: PropsWithChildren) {
       const key = expectedAccountKey ?? accountRef.current;
       if (!key) return null;
       try {
+        setLastFailure(null);
         const result = await operation(key);
         // Registration can establish the Supabase session before React has
         // committed the corresponding AuthContext render. Its explicit user
@@ -211,6 +234,7 @@ export function OnboardingProvider({ children }: PropsWithChildren) {
         return result;
       } catch (reason) {
         logDataError(`onboarding.${label}`, reason);
+        setLastFailure(classifyFailure(reason));
         return null;
       }
     },
@@ -240,6 +264,7 @@ export function OnboardingProvider({ children }: PropsWithChildren) {
       candidates: loadedAccount === accountKey ? candidates : [],
       route: routeFor(loadedAccount === accountKey && !error ? visibleState : null, signedIn),
       error,
+      lastFailure,
       selectRole: async (role, expectedAccountKey) =>
         (await run(
           'selectRole',
@@ -270,7 +295,7 @@ export function OnboardingProvider({ children }: PropsWithChildren) {
         (await run('submitAppeal', (key) => onboardingRepository.submitAppeal(key, statement))) !== null,
       reload: load,
     }),
-    [accountReady, authLoading, accountKey, visibleCustomerRecoveryEligible, visibleState, loadedAccount, candidates, error, signedIn, refreshing, run, load],
+    [accountReady, authLoading, accountKey, visibleCustomerRecoveryEligible, visibleState, loadedAccount, candidates, error, lastFailure, signedIn, refreshing, run, load],
   );
 
   return <OnboardingContext.Provider value={value}>{children}</OnboardingContext.Provider>;

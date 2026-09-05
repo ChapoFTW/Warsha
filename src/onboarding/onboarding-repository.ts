@@ -5,6 +5,14 @@ import { customerSetupRecoveryEligible } from '@/src/auth/signup-machine';
 import { getSupabaseClient } from '@/src/lib/supabase';
 
 import {
+  CRIMINAL_RECORD_RPC,
+  CriminalRecordInputError,
+  buildCriminalRecordPayload,
+  criminalRecordStoragePath,
+  rejectionsFor,
+  type CriminalRecordInput,
+} from './criminal-record-submission';
+import {
   mockAcceptAgreements,
   mockConfirmAddress,
   mockConfirmIdentityFields,
@@ -199,18 +207,15 @@ export const onboardingRepository = {
 
   async submitCriminalRecord(
     accountKey: string | null,
-    input: {
-      uri: string;
-      mimeType: string;
-      fileSizeBytes: number;
-      contentHash: string | null;
-      issueDate: string;
-    },
+    input: CriminalRecordInput,
   ): Promise<OnboardingState> {
     if (environment.dataMode === 'mock') {
-      return mockSubmitCriminalRecord(
-        requireAccount(accountKey), input.mimeType, input.fileSizeBytes, input.issueDate,
-      );
+      return mockSubmitCriminalRecord(requireAccount(accountKey), {
+        mimeType: input.mimeType,
+        fileSizeBytes: input.fileSizeBytes,
+        issueDate: input.issueDate,
+        declaredName: input.declaredName,
+      });
     }
     const client = getSupabaseClient();
     const { data: auth, error: authError } = await client.auth.getUser();
@@ -219,22 +224,39 @@ export const onboardingRepository = {
     if (!file.exists || !file.size || file.size !== input.fileSizeBytes) {
       throw new Error('Invalid certificate file');
     }
-    const extension = input.mimeType === 'application/pdf' ? 'pdf'
-      : input.mimeType === 'image/png' ? 'png'
-        : input.mimeType === 'image/heic' ? 'heic' : 'jpg';
-    const path = `${auth.user.id}/certificate/${Date.now()}-${Math.random().toString(36).slice(2, 12)}.${extension}`;
+
+    // The path is built by the same module that builds the payload, because the
+    // server checks that its first segment is the caller's own id and so does
+    // the storage policy. Neither should be satisfied by a string assembled here.
+    const path = criminalRecordStoragePath(auth.user.id, input.mimeType);
+    const submission = {
+      userId: auth.user.id,
+      storagePath: path,
+      mimeType: input.mimeType,
+      fileSizeBytes: input.fileSizeBytes,
+      contentHash: input.contentHash,
+      issueDate: input.issueDate,
+      documentReference: input.documentReference ?? null,
+      declaredName: input.declaredName,
+    };
+
+    // Checked before the upload, not after it. A request the server would refuse
+    // must not leave an object behind in the most sensitive bucket Warsha has.
+    const rejections = rejectionsFor(submission);
+    if (rejections.length) throw new CriminalRecordInputError(rejections);
+
     const { error: uploadError } = await client.storage
       .from('worker-criminal-records')
       .upload(path, await file.arrayBuffer(), { contentType: input.mimeType, upsert: false });
     if (uploadError) throw uploadError;
-    const { error } = await client.rpc('submit_my_criminal_record', {
-      p_storage_path: path,
-      p_mime_type: input.mimeType,
-      p_size_bytes: input.fileSizeBytes,
-      p_issue_date: input.issueDate,
-      p_content_hash: input.contentHash,
-    });
+
+    const { error } = await client.rpc(
+      CRIMINAL_RECORD_RPC, buildCriminalRecordPayload(submission),
+    );
     if (error) {
+      // The row was never written, so the object is unreferenced. Removing it
+      // keeps a failed attempt from leaving a criminal record in storage that
+      // nothing points at and no retention rule covers.
       await client.storage.from('worker-criminal-records').remove([path]);
       throw error;
     }

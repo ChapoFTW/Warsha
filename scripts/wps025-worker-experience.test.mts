@@ -471,11 +471,32 @@ check(verificationScreen.includes('onboarding.recordCapture'), 'identity capture
 check(verificationScreen.includes('onboarding.confirmIdentityFields'), 'identity details use the established confirmation RPC path');
 check(verificationScreen.includes('verificationState.submit'), 'identity verification still submits through the verification authority');
 check(verificationScreen.includes('onboarding.submitIdentity'), 'worker identity lifecycle still submits through the onboarding authority');
-check(verificationScreen.match(/<OnboardingFieldMeta/g)?.length === 10, 'every identity and certificate input states whether it is required or optional and private');
+check(verificationScreen.match(/<OnboardingFieldMeta/g)?.length === 11, 'every identity and certificate input states whether it is required or optional and private');
 check(verificationScreen.includes('DocumentPicker.getDocumentAsync'), 'the certificate picker lives in the canonical flow');
 check(verificationScreen.includes('copyToCacheDirectory: true'), 'picked certificates remain readable by the File API');
 check(onboardingRepository.includes("from('worker-criminal-records')"), 'criminal records use the governed private storage bucket');
-check(onboardingRepository.includes('p_size_bytes: input.fileSizeBytes'), 'certificate submission uses the authoritative five-argument RPC');
+// This assertion used to read:
+//
+//   check(onboardingRepository.includes('p_size_bytes: input.fileSizeBytes'),
+//     'certificate submission uses the authoritative five-argument RPC');
+//
+// It was pinning the defect. There was no authoritative five-argument RPC —
+// `p_size_bytes` selected an overload created by mistake, which inserted a
+// column that does not exist, and criminal-record submission was broken for
+// every worker for four weeks. A test written against the broken payload is
+// worse than no test: it would have told whoever fixed it that they had broken
+// a contract.
+//
+// The replacement asserts the property that actually matters — the repository
+// builds its request through the one shared authority — and leaves the argument
+// names to `scripts/criminal-record-contract.test.mts`, which compares them
+// against the migration rather than against a string copied into a test.
+check(onboardingRepository.includes('buildCriminalRecordPayload'),
+  'criminal-record submission builds its payload through the shared authority');
+check(!onboardingRepository.includes('p_size_bytes'),
+  'AND NO LONGER SENDS THE KEY THAT SELECTED THE DEAD OVERLOAD');
+check(verificationScreen.includes("vt('declaredName')"),
+  'the worker is asked for the name printed on the criminal record');
 check(!onboardingRepository.includes('p_file_size_bytes'), 'the retired certificate RPC parameter is not used');
 check(!onboardingRepository.includes('p_declared_name'), 'no unsupported declared-name field is sent to the certificate RPC');
 check(!onboardingRepository.includes('p_document_reference'), 'no unsupported reference field is sent to the certificate RPC');

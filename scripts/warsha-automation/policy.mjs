@@ -85,6 +85,7 @@ export const DETERMINISTIC_TEST_SCRIPTS = [
   'test:realtime-coverage',
   'test:release-boundary',
   'test:signed-url-policy',
+  'test:criminal-record-contract',
 ];
 
 const NATIVE_DEPENDENCY_PREFIXES = [

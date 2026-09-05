@@ -356,8 +356,25 @@ try { mockStaffAdvance(A, 'active', 'Live'); } catch { refused = true; }
 check(refused, 'MOCK REFUSES TO ACTIVATE A WORKER WITH OUTSTANDING GATES');
 
 refused = false;
-try { mockSubmitCriminalRecord(A, 'application/pdf', 1000, '2026-01-01'); } catch { refused = true; }
+try {
+  mockSubmitCriminalRecord(A, {
+    mimeType: 'application/pdf', fileSizeBytes: 1000,
+    issueDate: '2026-01-01', declaredName: 'Warsha Worker',
+  });
+} catch { refused = true; }
 check(refused, 'MOCK REFUSES A CERTIFICATE BEFORE THE IDENTITY REVIEW ASKS FOR ONE');
+
+// The declared name is required in Mock exactly as it is on the server. A field
+// that is optional in Mock and required in Development is a field every demo
+// teaches people to leave out.
+refused = false;
+try {
+  mockSubmitCriminalRecord(A, {
+    mimeType: 'application/pdf', fileSizeBytes: 1000,
+    issueDate: '2026-01-01', declaredName: ' ',
+  });
+} catch { refused = true; }
+check(refused, 'MOCK REFUSES A CRIMINAL RECORD WITH NO DECLARED NAME');
 
 refused = false;
 try { mockSubmitIdentity(A); } catch { refused = true; }

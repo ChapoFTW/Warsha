@@ -129,6 +129,7 @@
     "test:session-teardown": "node --no-warnings --experimental-strip-types scripts/session-teardown.test.mts",
     "test:realtime-coverage": "node --no-warnings --experimental-strip-types scripts/realtime-coverage.test.mts",
     "test:release-boundary": "node --no-warnings --experimental-strip-types scripts/release-boundary.test.mts",
+    "test:criminal-record-contract": "node --no-warnings --experimental-strip-types scripts/criminal-record-contract.test.mts",
     "test:signed-url-policy": "node --no-warnings --experimental-strip-types scripts/signed-url-policy.test.mts"
   },
   "dependencies": {

@@ -1153,5 +1153,45 @@ select is((select enabled from private.rate_limit_policies
 
 reset role;
 
+
+-- ---------------------------------------------------------------------------
+-- The criminal-record entry point, as the catalog sees it
+-- ---------------------------------------------------------------------------
+-- `scripts/criminal-record-contract.test.mts` compares the client's argument
+-- keys against the migration text. This is the other end of the same contract,
+-- read from the live catalog instead: what a client will actually resolve
+-- against over PostgREST.
+--
+-- Both are needed. The migration is what the repository intends; `pg_proc` is
+-- what the database ended up with, and the four-week outage lived exactly in
+-- that gap — a second overload nobody meant to create, one word away from the
+-- real one, silently winning every client call because PostgREST resolves an
+-- overload by the keys in the request body.
+
+select is(
+  (select count(*)::integer from pg_catalog.pg_proc p
+   join pg_catalog.pg_namespace n on n.oid = p.pronamespace
+   where n.nspname = 'public' and p.proname = 'submit_my_criminal_record'),
+  1,
+  'THE CRIMINAL-RECORD SUBMITTER HAS EXACTLY ONE OVERLOAD');
+
+select is(
+  (select pg_catalog.array_to_string(p.proargnames, ',')
+   from pg_catalog.pg_proc p
+   join pg_catalog.pg_namespace n on n.oid = p.pronamespace
+   where n.nspname = 'public' and p.proname = 'submit_my_criminal_record'),
+  'p_storage_path,p_mime_type,p_file_size_bytes,p_content_hash,p_issue_date,p_document_reference,p_declared_name',
+  'AND ITS ARGUMENTS ARE EXACTLY WHAT THE CLIENT SENDS, IN ORDER');
+
+-- `p_size_bytes` is the key that selected the dead overload. Nothing in the
+-- database may answer to it again.
+select is(
+  (select count(*)::integer from pg_catalog.pg_proc p
+   join pg_catalog.pg_namespace n on n.oid = p.pronamespace
+   where n.nspname = 'public' and p.proname = 'submit_my_criminal_record'
+     and 'p_size_bytes' = any(p.proargnames)),
+  0,
+  'and no function still answers to p_size_bytes');
+
 select * from finish();
 rollback;

@@ -17,6 +17,7 @@ import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-con
 import { useLocalization } from '@/src/i18n/localization';
 import { useVerificationText } from '@/src/i18n/verification-translations';
 import { useOnboarding } from '@/src/onboarding/onboarding-context';
+import { isValidDeclaredName } from '@/src/onboarding/criminal-record-submission';
 import { useOnboardingText } from '@/src/onboarding/onboarding-translations';
 import {
   ACCEPTED_DOCUMENT_MIME_TYPES,
@@ -71,6 +72,10 @@ export default function WorkerVerificationJourney() {
   const [hasSkillCertificate, setHasSkillCertificate] = useState(false);
   const [certificate, setCertificate] = useState<CertificateFile | null>(null);
   const [certificateIssueDate, setCertificateIssueDate] = useState('');
+  const [declaredName, setDeclaredName] = useState('');
+  // Tracked separately from the value so an empty field the worker deliberately
+  // cleared is not helpfully refilled from their profile a render later.
+  const [declaredNameTouched, setDeclaredNameTouched] = useState(false);
   const [certificateAcknowledged, setCertificateAcknowledged] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
@@ -104,6 +109,27 @@ export default function WorkerVerificationJourney() {
       if (candidate.fieldKey === 'id_expiry_date' && fills(expiryDate)) setExpiryDate(candidate.candidateValue!);
     }
   }, [dateOfBirth, expiryDate, legalName, onboarding.candidates]);
+
+  /*
+   * The declared name is prefilled from the legal name the worker already
+   * confirmed on the identity step, purely as a convenience.
+   *
+   * Deliberately NOT wired into the `candidateFillsField` loop above. That loop
+   * is fed by OCR, and OCR must never be the authority for this field: the
+   * reviewer's whole job is to compare what the worker typed against what the
+   * document says, so a value the worker did not confirm would defeat the check
+   * it exists for. A confirmed legal name is a different thing — the worker
+   * already submitted it as their own.
+   *
+   * It fills once, only into an untouched empty field, and never replaces an
+   * edit. The criminal record may show a different spelling from the ID, and
+   * that difference is exactly what a reviewer needs to see.
+   */
+  useEffect(() => {
+    if (declaredNameTouched || declaredName) return;
+    const confirmed = legalName.trim();
+    if (confirmed.length >= 2) setDeclaredName(confirmed);
+  }, [declaredName, declaredNameTouched, legalName]);
 
   useEffect(() => {
     if (!verification) return;
@@ -293,9 +319,25 @@ export default function WorkerVerificationJourney() {
     setMessage('');
   };
 
+  /*
+   * idle -> validating -> submitting -> success, or a contextual error and a
+   * retry. `busy` is cleared on every path, including the ones that return
+   * early, so the button can never be left spinning on a screen the worker has
+   * to force-quit to escape.
+   *
+   * Nothing a database returns is shown. A rate-limit refusal reads from the
+   * shared EN/AR/FR error copy, a field problem names the field, and anything
+   * else falls back to the generic sentence — a worker must never be shown a
+   * SQLSTATE, an RPC name or a storage error.
+   */
   const submitCriminalRecord = async () => {
     if (!certificate || !certificateIssueDate.trim() || !certificateAcknowledged) {
       setMessage(wt.text('requiredFields'));
+      return;
+    }
+    if (!isValidDeclaredName(declaredName)) {
+      setDeclaredNameTouched(true);
+      setMessage(vt('declaredNameInvalid'));
       return;
     }
     if (new Date(certificateIssueDate).getTime() > Date.now()) {
@@ -304,20 +346,27 @@ export default function WorkerVerificationJourney() {
     }
     setBusy(true);
     setMessage('');
-    const ok = await onboarding.submitCriminalRecord({
-      uri: certificate.uri,
-      mimeType: certificate.mimeType,
-      fileSizeBytes: certificate.size,
-      contentHash: null,
-      issueDate: certificateIssueDate.trim(),
-    });
-    setBusy(false);
-    if (!ok) {
-      setMessage(ot.text('genericError'));
-      return;
+    try {
+      const ok = await onboarding.submitCriminalRecord({
+        uri: certificate.uri,
+        mimeType: certificate.mimeType,
+        fileSizeBytes: certificate.size,
+        contentHash: null,
+        issueDate: certificateIssueDate.trim(),
+        declaredName,
+      });
+      if (!ok) {
+        setMessage(
+          onboarding.lastFailure === 'rate_limited' ? t('authRateLimited')
+            : onboarding.lastFailure === 'invalid_input' ? vt('declaredNameInvalid')
+              : ot.text('genericError'));
+        return;
+      }
+      onboarding.reload();
+      router.replace('/onboarding/worker');
+    } finally {
+      setBusy(false);
     }
-    onboarding.reload();
-    router.replace('/onboarding/worker');
   };
 
   const identityType: IdentityType | null = step === 0 ? 'national_id_front' : step === 1 ? 'national_id_back' : null;
@@ -443,6 +492,15 @@ export default function WorkerVerificationJourney() {
             {certificate ? <StateBadge label={certificate.name} tone="success" compact /> : null}
             <OnboardingFieldMeta label={ot.text('certificateIssueDate')} required privateField purpose={wt.text('certificatePurpose')} />
             <BrandTextField label={ot.text('certificateIssueDate')} value={certificateIssueDate} onChangeText={setCertificateIssueDate} placeholder="YYYY-MM-DD" />
+            <OnboardingFieldMeta label={vt('declaredName')} required privateField purpose={wt.text('certificatePurpose')} />
+            <BrandTextField
+              label={vt('declaredName')}
+              value={declaredName}
+              onChangeText={value => { setDeclaredNameTouched(true); setDeclaredName(value); }}
+              helper={vt('declaredNameHelp')}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
             <OnboardingFieldMeta label={ot.text('certificateAcknowledge')} required privateField purpose={wt.text('certificatePurpose')} />
             <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: certificateAcknowledged }} onPress={() => setCertificateAcknowledged(value => !value)} style={styles.check}>
               <MaterialIcons name={certificateAcknowledged ? 'check-box' : 'check-box-outline-blank'} size={25} color={colors.textPrimary} />

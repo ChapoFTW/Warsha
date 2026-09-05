@@ -21,6 +21,11 @@ import type {
   WorkerState,
 } from './onboarding-types';
 import type { ProviderDraft } from '@/src/providers/provider-types';
+// Explicit `.ts`: this module is loaded directly by the WPS-023 regression
+// script under Node's type stripping, which resolves a relative VALUE import
+// only with its extension. The type-only imports above need none, because they
+// are erased before Node ever sees them.
+import { isValidDeclaredName } from './criminal-record-submission.ts';
 
 /**
  * Type-only import above, and the blank state restated below rather than
@@ -233,16 +238,24 @@ export function mockSubmitIdentity(accountKey: string): OnboardingState {
 
 export function mockSubmitCriminalRecord(
   accountKey: string,
-  mimeType: string,
-  sizeBytes: number,
-  issueDate: string,
+  input: {
+    mimeType: string;
+    fileSizeBytes: number;
+    issueDate: string;
+    declaredName: string;
+  },
 ): OnboardingState {
+  const { mimeType, fileSizeBytes: sizeBytes, issueDate } = input;
   const account = ensure(accountKey);
   if (!['image/jpeg', 'image/png', 'image/heic', 'application/pdf'].includes(mimeType)) {
     throw new Error('Unsupported document format');
   }
   if (sizeBytes <= 0 || sizeBytes > 8 * 1024 * 1024) throw new Error('Document is too large');
   if (new Date(issueDate).getTime() > Date.now()) throw new Error('Invalid issue date');
+  // The server refuses a declared name outside 2..120 characters after trimming.
+  // Mock mode enforces the same rule, or the field would appear optional to
+  // anyone developing against it and become required only in Development.
+  if (!isValidDeclaredName(input.declaredName)) throw new Error('Invalid declared name');
   // The ordering rule the server enforces through its state machine: a
   // certificate cannot be submitted until an identity review asked for one.
   if (account.state.workerState !== 'criminal_record_required'
