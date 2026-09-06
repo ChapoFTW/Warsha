@@ -1,0 +1,144 @@
+/* Enrolling your own authenticator.
+
+   Every colour is a semantic role from the theme, so this reads correctly in
+   light, dark and system without a single literal. */
+
+.panel {
+  margin: 0 0 var(--space-section-gap);
+  padding: var(--space-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  max-width: 640px;
+}
+
+.heading { margin: 0 0 var(--space-sm); font-size: 17px; font-weight: 700; color: var(--text-primary); }
+.subheading { margin: 0 0 var(--space-sm); font-size: 14px; font-weight: 700; color: var(--text-primary); }
+.note { margin: 0 0 var(--space-md); font-size: 14px; line-height: 1.6; color: var(--text-secondary); }
+.account { margin: 0 0 var(--space-md); font-size: 14px; color: var(--text-muted); }
+
+.failure {
+  margin: 0 0 var(--space-section-gap);
+  padding: var(--control-pad-sm);
+  border: 1px solid var(--status-error-border);
+  border-radius: var(--radius-sm);
+  background: var(--status-error-background);
+  color: var(--status-error-text);
+  font-size: 14px;
+  max-width: 640px;
+}
+
+/* QR beside the manual key on a wide screen, stacked on a narrow one. Wrapping
+   rather than a media query keeps it correct in both directions without the
+   stylesheet needing to know which way the page runs. */
+.enrolment {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-lg);
+  align-items: flex-start;
+  margin-bottom: var(--space-md);
+}
+
+.qr {
+  width: 200px;
+  height: 200px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  /* The code has to stay readable to a camera in dark mode, and a QR is only
+     scannable against a light ground. This is a functional surface, not a
+     themed one. */
+  background: var(--surface-raised);
+  padding: var(--space-sm);
+}
+
+.manual { flex: 1 1 240px; min-width: 240px; }
+
+/* Base32, in groups, always left-to-right — the key is not language and does
+   not reorder in an Arabic page. */
+.key {
+  margin: 0 0 var(--space-sm);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.keyGroup {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 15px;
+  letter-spacing: 0.12em;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--canvas);
+  color: var(--text-primary);
+}
+
+.form { display: grid; gap: var(--space-field-gap); max-width: 320px; }
+
+.label {
+  margin-bottom: calc(var(--space-field-label) - var(--space-field-help));
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.code {
+  font: inherit;
+  font-size: 20px;
+  letter-spacing: 0.32em;
+  text-align: center;
+  color: var(--text-primary);
+  background: var(--canvas);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: var(--control-pad-md);
+  min-height: var(--control-h-md);
+}
+
+.code:focus-visible, .action:focus-visible, .secondary:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.buttons {
+  display: flex;
+  gap: var(--space-action-between);
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: var(--space-action-gap);
+}
+
+.action {
+  appearance: none;
+  border: 0;
+  font: inherit;
+  font-size: var(--control-font-md);
+  font-weight: 700;
+  color: var(--brand-ink);
+  background: var(--brand);
+  border-radius: var(--radius-sm);
+  padding: var(--control-pad-md);
+  min-height: var(--control-h-md);
+  cursor: pointer;
+}
+
+.action:disabled { opacity: 0.45; cursor: not-allowed; }
+.action:not(:disabled):hover { filter: brightness(1.08); }
+
+.secondary {
+  appearance: none;
+  font: inherit;
+  font-size: var(--control-font-sm);
+  font-weight: var(--control-weight-quiet);
+  color: var(--text-primary);
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  padding: var(--control-pad-sm);
+  min-height: var(--control-h-sm);
+  cursor: pointer;
+}
+
+.secondary:disabled { opacity: 0.45; cursor: not-allowed; }

@@ -375,5 +375,51 @@ select is(
   0,
   'AND NO SECOND IDENTITY WAS SPENT ON THE GRANT ABOVE — the gap is real, not theoretical');
 
+-- ---------------------------------------------------------------------------
+-- 9. One staff member cannot obtain another's authenticator secret
+-- ---------------------------------------------------------------------------
+-- The console gained a first-party TOTP enrolment flow, so it is now worth
+-- asserting the other half of that promise from the database side: the seed
+-- lives in GoTrue's own tables, and nothing a staff member can call reaches it.
+--
+-- The client-side half — that the enrolling browser never sends the secret
+-- anywhere, and that `mfa.enroll` takes no account parameter so it cannot be
+-- aimed at somebody else — is proved in `scripts/staff-mfa-enrolment.test.mts`.
+-- This half proves that even a staff member with every capability Warsha
+-- defines has no route to another person's factor.
+
+select has_table('auth', 'mfa_factors', 'GoTrue owns the factor table');
+
+select is(
+  (select count(*)::integer from information_schema.role_table_grants
+   where table_schema = 'auth'
+     and table_name in ('mfa_factors', 'mfa_challenges')
+     and grantee in ('anon', 'authenticated', 'public')),
+  0,
+  'NO CLIENT ROLE HOLDS ANY PRIVILEGE ON THE FACTOR OR CHALLENGE TABLES');
+
+select is(has_table_privilege('authenticated', 'auth.mfa_factors', 'SELECT'), false,
+  'AN AUTHENTICATED STAFF SESSION CANNOT READ auth.mfa_factors AT ALL');
+select is(has_table_privilege('anon', 'auth.mfa_factors', 'SELECT'), false,
+  'and neither can an anonymous one');
+
+-- A SECURITY DEFINER function is the way a table nobody can read becomes a
+-- table everybody can read. None of Warsha's touch it.
+-- `prosrc` rather than `pg_get_functiondef`, which raises on an aggregate and
+-- would abort this file rather than assert anything.
+select is(
+  (select count(*)::integer from pg_catalog.pg_proc p
+   join pg_catalog.pg_namespace n on n.oid = p.pronamespace
+   where n.nspname in ('public', 'private')
+     and p.prosrc like '%mfa_factors%'),
+  0,
+  'NO WARSHA FUNCTION READS THE FACTOR TABLE — there is no definer route to a seed');
+
+select is(
+  (select count(*)::integer from pg_catalog.pg_views
+   where schemaname = 'public' and definition like '%mfa_factors%'),
+  0,
+  'and no public view republishes it');
+
 select * from finish();
 rollback;

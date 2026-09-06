@@ -84,8 +84,16 @@ for (const [rpc, capability] of Object.entries(RPC_CAPABILITY)) {
 
 // --- Capability-free staff may read the dashboard and internal manual -------
 const nobody = parseStaffSession({ isStaff: true, platformReady: true, capabilities: [] });
-equal(visibleAreas(nobody).map((a) => a.key), ['dashboard', 'help'],
+// `security` is the staff member's OWN second factor, and it is capability-free
+// on purpose: once `mfa_required` is on, every staff member needs `aal2`,
+// including one who holds nothing else. Gating the page that grants it behind a
+// capability would lock the least-privileged operator out of the console
+// entirely. It exposes no data and no other account — the enrolment API acts on
+// the caller's own session and takes no subject.
+equal(visibleAreas(nobody).map((a) => a.key), ['dashboard', 'security', 'help'],
   'A STAFF ACCOUNT WITH NO CAPABILITIES IS OFFERED ONLY NON-PRIVILEGED AREAS');
+check(mayEnter(nobody, '/security'),
+  'and their own security page is one of them, because aal2 is required of everybody');
 for (const href of ['/users', '/verification', '/staff', '/audit']) {
   check(!mayEnter(nobody, href), `${href} is not offered without its capability`);
 }
@@ -93,7 +101,7 @@ for (const href of ['/users', '/verification', '/staff', '/audit']) {
 const support = parseStaffSession({
   isStaff: true, platformReady: true, capabilities: ['safe_search'],
 });
-equal(visibleAreas(support).map((a) => a.key), ['dashboard', 'users', 'help'],
+equal(visibleAreas(support).map((a) => a.key), ['dashboard', 'users', 'security', 'help'],
   'a capability grants exactly its own area and no other');
 check(mayEnter(support, '/users'), 'the granted area is reachable');
 check(!mayEnter(support, '/staff'),
@@ -101,7 +109,11 @@ check(!mayEnter(support, '/staff'),
 check(!mayEnter(support, '/audit'), 'nor reading the audit log');
 
 const anonymous = parseStaffSession(null);
-equal(visibleAreas(anonymous).map((a) => a.key), ['dashboard', 'help'],
+// `security` joins `dashboard` and `help` as the capability-free areas. None of
+// the three is privileged — security is the viewer's own second factor and
+// exposes no other account — and reaching the console at all is StaffGate's
+// job, not this function's.
+equal(visibleAreas(anonymous).map((a) => a.key), ['dashboard', 'security', 'help'],
   'a non-staff session is offered nothing privileged');
 check(!mayEnter(anonymous, '/users'), 'a non-staff session may enter nothing');
 

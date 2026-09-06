@@ -32,6 +32,13 @@ export const CONSOLE_AREAS: readonly ConsoleArea[] = [
   // checked against its own capability by the RPC it calls.
   { key: 'providers', href: '/providers', capability: 'review_legal_governance' },
   { key: 'audit', href: '/audit', capability: 'view_audit_logs' },
+  // Your own second factor, and deliberately ungated. Every staff member needs
+  // `aal2` once `mfa_required` is on, including one who holds nothing else, so
+  // a capability here would lock the least-privileged operator out of the only
+  // page that could give them the assurance level the rest of the console
+  // demands. It exposes no data and no other account: the API it calls enrols
+  // on the caller's own session and takes no subject.
+  { key: 'security', href: '/security', capability: '' },
   { key: 'help', href: '/help', capability: '' },
 ];
 
