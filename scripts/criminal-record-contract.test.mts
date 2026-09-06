@@ -49,6 +49,16 @@ function check(condition: unknown, message: string) {
   checks += 1;
 }
 
+/**
+ * SQL comments removed before anything is matched.
+ *
+ * A migration header often quotes the very string it changed in order to explain
+ * why, so prose must not be mistaken for code in either direction: a discussion
+ * of the old signature is not a declaration, and a quotation of the old sentence
+ * is not the sentence still being sent.
+ */
+const stripComments = (sql: string) => sql.replace(/--[^\n]*/g, '');
+
 const MIGRATIONS = 'supabase/migrations';
 const files = readdirSync(MIGRATIONS).filter(name => name.endsWith('.sql')).sort();
 
@@ -68,7 +78,7 @@ for (const file of files) {
   // of the parameter list. Comments are stripped first so the prose in a
   // migration header cannot be mistaken for a declaration — several of these
   // files discuss this exact function at length.
-  const body = sql.replace(/--[^\n]*/g, '');
+  const body = stripComments(sql);
   const createPattern = new RegExp(
     `create\\s+(?:or\\s+replace\\s+)?function\\s+public\\.${CRIMINAL_RECORD_RPC}\\s*\\(([^)]*)\\)`,
     'gi',
@@ -238,5 +248,48 @@ const path = criminalRecordStoragePath('22222222-2222-4222-8222-222222222222', '
 check(path.startsWith('22222222-2222-4222-8222-222222222222/'),
   'THE STORAGE PATH BEGINS WITH THE OWNER\'S OWN ID, WHICH BOTH THE RPC AND THE POLICY REQUIRE');
 check(path.endsWith('.png'), 'and carries the extension for the declared type');
+
+
+// ---------------------------------------------------------------------------
+// 7. A criminal record is not a certificate
+// ---------------------------------------------------------------------------
+// Warsha collects genuine skill certificates too — different bucket, different
+// document type, different review path — so telling a worker "your certificate
+// was received" after they submitted a criminal record named the wrong
+// document, not merely an imprecise one.
+//
+// The vocabulary was already correct in Arabic and French. Only English called
+// it a certificate, and it did so in every layer at once, which is why this
+// checks the layers rather than one string.
+
+const notificationCopy = readFileSync('src/notifications/notification-copy.ts', 'utf8');
+const englishCriminalRecordCopy = [...notificationCopy.matchAll(
+  /criminal_record_[a-zA-Z]*:\s*'([^']*)'/g)].map(match => match[1]);
+
+check(englishCriminalRecordCopy.length > 0, 'the notification authority carries criminal-record copy');
+for (const sentence of englishCriminalRecordCopy) {
+  // Only Latin-script entries are English; the Arabic and French blocks match
+  // the same key pattern and were already correct.
+  if (!/^[-]+$/.test(sentence)) continue;
+  check(!/certificate/i.test(sentence),
+    `NO ENGLISH CRIMINAL-RECORD NOTIFICATION CALLS IT A CERTIFICATE: ${JSON.stringify(sentence)}`);
+}
+
+const onboardingCopy = readFileSync('src/onboarding/onboarding-copy.ts', 'utf8');
+check(!/your certificate/i.test(onboardingCopy),
+  'AND NEITHER DOES THE ONBOARDING COPY — no "your certificate" for a criminal record');
+check(!/certificateDeclaredName/.test(onboardingCopy),
+  'the orphan declared-name key is gone; that copy lives in the verification authority, which has French');
+
+// The sentence the database hands a worker, read from the migration that
+// actually defines the function today — `current.file`, already resolved above.
+// Comments stripped first: that migration's header QUOTES the old sentence in
+// order to explain why it changed, and a check that reads prose would fail on
+// the explanation for the fix it is verifying.
+const latestDefinition = stripComments(readFileSync(join(MIGRATIONS, current.file), 'utf8'));
+check(/criminal record was received/i.test(latestDefinition),
+  `AND THE SENTENCE THE SERVER SENDS SAYS CRIMINAL RECORD (${current.file})`);
+check(!/Your certificate was received/i.test(latestDefinition),
+  'not the one it used to send');
 
 console.log(`Criminal-record contract: ${checks} checks passed.`);

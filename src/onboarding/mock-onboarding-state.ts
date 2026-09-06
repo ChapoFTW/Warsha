@@ -265,7 +265,7 @@ export function mockSubmitCriminalRecord(
   account.state.gates.criminal_record_uploaded = true;
   account.state.certificateStatus = 'submitted';
   return transition(accountKey, 'criminal_record_submitted',
-    'Your certificate was received and is waiting for review.');
+    'Your criminal record was received and is waiting for review.');
 }
 
 export function mockSubmitAppeal(accountKey: string, statement: string): OnboardingState {
