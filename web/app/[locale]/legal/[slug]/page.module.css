@@ -119,21 +119,68 @@
   color: var(--text-secondary);
 }
 
-.otherLanguage {
+/*
+ * A row of language choices, not one control containing several.
+ *
+ * `.otherLanguage` used to be a single bordered pill with the anchors dropped
+ * straight inside it. With one alternative that read as a button. With two it
+ * read as "العربيةFrançais": no gap, one border around both, one hover state
+ * covering the pair, and a single tab stop that landed on whichever came first.
+ *
+ * The border and the padding belong to each option now, and the container only
+ * spaces them. `flex-wrap` matters at 320px, where three language names do not
+ * fit on one line.
+ */
+.languages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.language,
+.languageCurrent {
   display: inline-flex;
   align-items: center;
+  /* 40px is the hit target, not a decorative height. */
   min-height: 40px;
-  margin-top: 16px;
   padding: 0 14px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   font-size: 14px;
   font-weight: 650;
+  line-height: 1;
   color: var(--text-primary);
+  text-decoration: none;
+  transition: border-color var(--motion-quick) var(--ease-standard),
+    background-color var(--motion-quick) var(--ease-standard);
 }
 
-.otherLanguage:hover {
+.language:hover {
   border-color: var(--border-strong);
+}
+
+.language:focus-visible {
+  outline: 2px solid var(--text-primary);
+  outline-offset: 2px;
+}
+
+/*
+ * The page you are on. Filled rather than outlined, so "current" survives a
+ * greyscale screenshot and does not depend on colour alone.
+ */
+.languageCurrent {
+  background: var(--text-primary);
+  border-color: var(--text-primary);
+  color: var(--surface);
+  cursor: default;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .language,
+  .languageCurrent {
+    transition: none;
+  }
 }
 
 /*
