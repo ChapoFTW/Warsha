@@ -45,7 +45,23 @@ import {
   toLocalISODate,
 } from "@/src/utils/date-format";
 const TIMES = ["09:00", "11:00", "13:00", "15:00", "17:00"];
-const TRANSPORT = 75;
+
+/**
+ * The transportation fee when the service record does not carry one.
+ *
+ * Zero, for the same reason `EMERGENCY` below is zero. The server reads this
+ * from `provider_services.transportation_fee_egp` — `numeric(10,2) NOT NULL
+ * DEFAULT 0` — and applies it with no fallback of its own:
+ *
+ *   transport := service_row.transportation_fee_egp;
+ *
+ * This was 75, so a customer booking a service whose provider had configured no
+ * transportation fee was shown 75 EGP and an estimated total 75 EGP too high,
+ * and the server wrote a booking charging nothing for transport. Same defect as
+ * the surcharge, same fix: where the client cannot know the number, the honest
+ * default is the server's own.
+ */
+const TRANSPORT = 0;
 
 /**
  * The urgent-service surcharge when the service record does not carry one.
@@ -639,17 +655,33 @@ export default function NewBookingScreen() {
                   }
                   value={`${formatNumber(service.price, language)} ${t("currency")}`}
                 />
-                <Summary
-                  label={t("transportationFee")}
-                    value={`${formatNumber(pricing.transportationFee, language)} ${t("currency")}`}
-                />
-                {type === "emergency" ? (
+                {/* A fee line is shown when there is a fee. Printing
+                    "Transportation fee — 0" invites the reader to look for a
+                    charge that does not exist, and it is the line most likely
+                    to be zero now that the client no longer invents one. */}
+                {pricing.transportationFee > 0 ? (
                   <Summary
-                    label={t("emergencySurcharge")}
-                      value={`${formatNumber(pricing.emergencySurcharge, language)} ${t("currency")}`}
+                    label={t("transportationFee")}
+                    value={`${formatNumber(pricing.transportationFee, language)} ${t("currency")}`}
                   />
                 ) : null}
-                <Summary label={t("discount")} value="0 EGP" />
+                {pricing.emergencySurcharge > 0 ? (
+                  <Summary
+                    label={t("emergencySurcharge")}
+                    value={`${formatNumber(pricing.emergencySurcharge, language)} ${t("currency")}`}
+                  />
+                ) : null}
+                {/* This was the literal string "0 EGP", which is a hardcoded
+                    amount AND untranslated: an Arabic reader saw Latin digits
+                    and a Latin currency code in the middle of their own price
+                    summary. Formatted like every other line, and shown only
+                    when there is a discount to show. */}
+                {pricing.discount > 0 ? (
+                  <Summary
+                    label={t("discount")}
+                    value={`${formatNumber(pricing.discount, language)} ${t("currency")}`}
+                  />
+                ) : null}
                 <Summary
                   label={t("estimatedTotal")}
                   value={`${formatNumber(pricing.estimatedTotal, language)} ${t("currency")}`}

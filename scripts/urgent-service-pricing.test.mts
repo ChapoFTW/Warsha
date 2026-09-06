@@ -57,6 +57,39 @@ check(/const EMERGENCY = 0;/.test(screen),
 check(!/const EMERGENCY = 250/.test(screen),
   'and the 250 that disagreed with the server is gone');
 
+// ---------------------------------------------------------------------------
+// The transportation fee is the same defect, so it gets the same assertions.
+// ---------------------------------------------------------------------------
+
+const foundation = read('supabase', 'migrations', '202607200008_provider_foundation.sql');
+check(/transportation_fee_egp numeric\(10,2\) not null default 0/.test(foundation),
+  'the server default for transport is zero');
+check(/emergency_surcharge_egp numeric\(10,2\) not null default 0/.test(foundation),
+  'and so is the server default for the urgent surcharge');
+check(/transport := service_row\.transportation_fee_egp;/.test(migration),
+  'the booking RPC reads transport from the provider service row, with no fallback');
+
+check(/const TRANSPORT = 0;/.test(screen),
+  'THE CLIENT TRANSPORT FALLBACK IS ZERO, MATCHING THE SERVER DEFAULT');
+check(!/const TRANSPORT = 75/.test(screen),
+  'and the 75 that disagreed with the server is gone');
+
+// Every client fallback that feeds the estimated total must be zero, so the
+// total the customer agrees to is the total the server writes. This catches a
+// NEW invented default as well as the two that were there.
+const fallbacks = [...screen.matchAll(/^const ([A-Z_]+) = (\d+);$/gm)]
+  .filter(([, name]) => name !== 'TIMES');
+for (const [, name, value] of fallbacks) {
+  check(value === '0',
+    `client pricing fallback ${name} is zero, so the estimate matches the charge`);
+}
+
+// Mock money stays in mocks.
+const mockRepo = read('src', 'marketplace-intelligence', 'mock-marketplace-repository.ts');
+check(/surchargeMinor:\s*25000/.test(mockRepo),
+  'the 250 EGP figure still exists only in the mock repository');
+check(!/25000/.test(screen), 'and has not leaked into the booking screen');
+
 // ===========================================================================
 // 2. NO LOCALE INVENTS AN AMOUNT
 // ===========================================================================
@@ -130,5 +163,37 @@ check(/t\("emergencyWarning"\)\.replace\(\s*\n?\s*"\{amount\}"/.test(screen)
   'and interpolates the amount rather than trusting a constant in the string');
 check(/formatNumber\(pricing\.emergencySurcharge, language\)/.test(screen),
   'formatted with the reader’s own numerals');
+
+// ===========================================================================
+// 5. NO HARDCODED MONEY ANYWHERE THE CUSTOMER READS A PRICE
+// ===========================================================================
+
+// Matched against a `value=` attribute rather than anywhere in the file: a
+// comment explaining what the old literal WAS is prose, and a test that cannot
+// tell prose from code fails for the wrong reason.
+check(!/value="[^"]*\d[^"]*"/.test(screen),
+  'NO PRICE IS A HARDCODED STRING LITERAL — every value is computed and formatted');
+check(/pricing\.discount > 0/.test(screen),
+  'the discount line appears only when there is a discount');
+check(/pricing\.transportationFee > 0/.test(screen),
+  'AND A ZERO FEE IS NOT PRINTED AS THOUGH IT WERE A CHARGE');
+
+// Every MONEY value the summary renders goes through the locale formatter, so
+// an Arabic reader never sees Latin digits in their own price summary. Scoped
+// to money: an address line is not a price and does not want a number format.
+const moneyValues = [...screen.matchAll(/value=\{`\$\{([^}]+)\}/g)]
+  .map(([, expr]) => expr)
+  .filter((expr) => /pricing\.|service\.price/.test(expr));
+check(moneyValues.length >= 3, 'the summary renders several money values');
+for (const expr of moneyValues) {
+  check(/formatNumber\(/.test(expr),
+    `money value ${expr.slice(0, 44)} is formatted for the reader's locale`);
+}
+
+for (const locale of ['en', 'ar', 'fr'] as const) {
+  const transport = String(translations[locale].transportationFee);
+  check(!/\d/.test(transport) && !/[٠-٩]/.test(transport),
+    `${locale}.transportationFee is a label and names no amount`);
+}
 
 console.log(`Urgent-service pricing and copy: ${checks} checks passed.`);
