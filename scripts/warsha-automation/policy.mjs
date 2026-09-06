@@ -88,6 +88,7 @@ export const DETERMINISTIC_TEST_SCRIPTS = [
   'test:criminal-record-contract',
   'test:worker-auth-password-contract',
   'test:staff-mfa-enrolment',
+  'test:urgent-service-pricing',
 ];
 
 const NATIVE_DEPENDENCY_PREFIXES = [

@@ -131,6 +131,7 @@
     "test:release-boundary": "node --no-warnings --experimental-strip-types scripts/release-boundary.test.mts",
     "test:worker-auth-password-contract": "node --no-warnings --experimental-strip-types scripts/worker-auth-password-contract.test.mts",
     "test:staff-mfa-enrolment": "node --no-warnings --experimental-strip-types scripts/staff-mfa-enrolment.test.mts",
+    "test:urgent-service-pricing": "node --no-warnings --experimental-strip-types scripts/urgent-service-pricing.test.mts",
     "test:criminal-record-contract": "node --no-warnings --experimental-strip-types scripts/criminal-record-contract.test.mts",
     "test:signed-url-policy": "node --no-warnings --experimental-strip-types scripts/signed-url-policy.test.mts"
   },

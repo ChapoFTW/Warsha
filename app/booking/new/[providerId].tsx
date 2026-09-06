@@ -46,7 +46,25 @@ import {
 } from "@/src/utils/date-format";
 const TIMES = ["09:00", "11:00", "13:00", "15:00", "17:00"];
 const TRANSPORT = 75;
-const EMERGENCY = 250;
+
+/**
+ * The urgent-service surcharge when the service record does not carry one.
+ *
+ * Zero, and it has to be zero. The server computes this from
+ * `provider_services.emergency_surcharge_egp`, which is per provider per
+ * service and DEFAULTS TO 0 — see `202607200012`:
+ *
+ *   emergency := case when p_booking_type = 'emergency'
+ *                then service_row.emergency_surcharge_egp else 0 end;
+ *
+ * This constant used to be 250, which meant a customer whose chosen service had
+ * no configured surcharge was shown 250 EGP on the review screen and charged
+ * nothing, and the estimated total they agreed to was 250 EGP higher than the
+ * booking the server actually wrote. A price quoted to a customer must come
+ * from the same place the charge comes from, and where the client cannot know
+ * the number the honest default is the server's own.
+ */
+const EMERGENCY = 0;
 export default function NewBookingScreen() {
   const { providerId, serviceId } = useLocalSearchParams<{
     providerId: string;
@@ -513,8 +531,22 @@ export default function NewBookingScreen() {
               </View>
               {type === "emergency" ? (
                 <View style={styles.warning}>
+                  {/*
+                    * The surcharge named here is the one the server will
+                    * charge: `pricing.emergencySurcharge` comes from the
+                    * selected service, which is where
+                    * `provider_services.emergency_surcharge_egp` lands. It is
+                    * not a constant, because it is set per provider per
+                    * service and is frequently zero — and a warning that
+                    * announces a fee nobody charges is worse than no warning.
+                    */}
                   <AppText style={styles.warningText}>
-                    {t("emergencyWarning")}
+                    {pricing.emergencySurcharge > 0
+                      ? t("emergencyWarning").replace(
+                          "{amount}",
+                          `${formatNumber(pricing.emergencySurcharge, language)} ${t("currency")}`,
+                        )
+                      : t("emergencyWarningNoFee")}
                   </AppText>
                 </View>
               ) : (
