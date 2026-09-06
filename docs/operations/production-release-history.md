@@ -9,6 +9,95 @@ recorded here by SHA rather than by a branch.
 
 ---
 
+## 2026-09-06 — Production activation under single-operator governance
+
+**RELEASE_SHA**: `8fc1611`, CI green. Production migration head `202609060010`.
+
+The first governed activation batch executed by one authorised operator, at
+AAL2, with re-authentication inside the window. No second human was involved and
+none was required.
+
+### Google Maps
+
+Activated through the canonical path, in the order the RPC enforces: the
+`location_provider` flag was OFF at activation time (activation refuses while it
+is on), then the provider, then the flag.
+
+    current_status                     active
+    private.provider_enabled(...)      true
+    governanceMode                     single_operator
+    requiredApprovals                  1
+    authorizationBasis                 staff_authorisation
+
+Proven functional rather than merely recorded: a reverse geocode of Tahrir
+Square through `location-proxy` returned the correct Cairo address, in Arabic
+when asked in Arabic, as clean UTF-8 with 55 Arabic codepoints and no mojibake.
+
+### Thirteen Production feature flags enabled
+
+    location_provider              marketplace_activation
+    legal_centre                   account_deletion
+    privacy_center                 growth_referrals
+    data_export                    growth_promotions
+    worker_vetting                 staff_beta_tools
+    provisional_worker_activation  emergency_requests
+    identity_capture_camera
+
+`account_deletion` was previously recorded as blocked by the
+`legal_acceptances` immutability trigger. That was wrong: Warsha erasure runs
+`private.privacy_anonymize_account`, which UPDATEs rather than deletes, so the
+trigger never stood in its path. It blocks hard deletion only, which this flag
+does not gate.
+
+`emergency_requests` was held back one round and shipped only after its copy was
+corrected — see `69610b9` and `8fc1611`.
+
+### Still off, each for a genuinely absent dependency or by design
+
+| flag | why |
+|---|---|
+| `identity_extraction` | no `GOOGLE_CLOUD_VISION_SERVICE_ACCOUNT` in Production secrets |
+| `push_notifications` | no FCM credential; provisioning is a Firebase console action |
+| `online_payments`, `payouts` | no payment or payout provider onboarded |
+| `call_relay` | no telephony provider |
+| `legal_reconsent` | no published version requires re-consent |
+| `rescue_mode` | incident tool; ON *is* the abnormal state |
+| `authentication_gateway` | staged migration path |
+| `new_profile_ui`, `new_review_ui` | staged UI variants; a product choice, not a technical gate |
+
+### Three traps worth writing down
+
+Each cost a TOTP code before it was understood.
+
+1. **PowerShell variable names are case-insensitive.** A helper parameter `$b`
+   shadowed the base URL `$B`, so every request was built from the JSON body and
+   rejected as an invalid URI before a socket opened. Fourteen calls failed and
+   Production was untouched — a total failure, not a partial one.
+2. **`Invoke-RestMethod` encodes a string body as ISO-8859-1.** A reason
+   containing Arabic reached PostgREST as mojibake and returned "Empty or
+   invalid json". Reasons are ASCII now; a non-ASCII reason needs the body sent
+   as explicit UTF-8 bytes.
+3. **`staff_feature_flags_reason_check` caps a reason at 500 characters.** A
+   570-character reason raised 23514, which PostgREST returns as a bare 400 with
+   a body that must be read off the response stream to be seen at all.
+
+### Web deployment NOT updated — blocked
+
+The live web remains `dpl_9JrqXkHoWf3D2bd9NfqDZXykH2Sz` at `e9f8023`, three
+commits behind. `vercel deploy` returns "Not authorized": the Vercel CLI token
+in `com.vercel.cli/auth.json` has expired, and `vercel login` is an interactive
+browser flow.
+
+What is stale on the live console until someone re-authenticates and deploys:
+
+- `web/lib/providers.ts` still mirrors the old policy, so the providers page
+  would draw a second-approver step the backend no longer requires;
+- admin copy still says activation needs "two different people";
+- the corrected help articles are not published.
+
+The backend is authoritative and accepts a single operator regardless, so this
+is misleading rather than blocking, and Maps is already activated.
+
 ## 2026-09-06 — Warsha stops requiring a second human
 
 **RELEASE_SHA**: recorded below once CI is green.
