@@ -9,6 +9,79 @@ recorded here by SHA rather than by a branch.
 
 ---
 
+## 2026-09-06 — staff authority narrowed, and staff MFA enrolment shipped
+
+Two releases on one day, recorded separately because they rolled back
+separately.
+
+### Database — `202609060009`
+
+**RELEASE_SHA**: `dfb981c`, CI green. Applied to Development first, then
+Production after CI. Production migration head `202609060009`, verified: the new
+role carries exactly its three capabilities, there is exactly one
+`staff_grant_role` function, the bootstrap guard is present, and the role
+catalogue is 10.
+
+Adds `subprocessor_approver` — `manage_subprocessors`,
+`review_legal_governance`, `view_operations_home` — so seconding a provider
+activation no longer requires a role that also reads criminal records. Bounds
+`private.bootstrap_staff_role` to the initial two-identity quorum, after which
+it refuses and names `public.staff_grant_role`.
+
+Production had 1 staff identity when this applied, so bootstrap has exactly one
+use left. That use is the second approver.
+
+The break-glass boundary is unchanged and now documented: a database owner can
+still insert a grant directly, and such a grant reads as one with `granted_by`
+null.
+
+**Known gap, pinned by a test rather than closed.** `manage_staff_roles` is
+`dual_control` in the capability catalogue and `staff_grant_role` does not
+consume a second identity — the no-self-grant rule stands in for one. Closing it
+needs an approval queue the admin surface does not have, and needs two
+`manage_staff_roles` holders where Production has one. See the migration header.
+
+### Web — staff MFA enrolment
+
+**RELEASE_SHA**: `e9f8023`, CI green (run on `main`).
+
+| | |
+|---|---|
+| Staged deployment | `warsha-cvovdsuk4-warsha-development.vercel.app` |
+| Promoted deployment | `dpl_9JrqXkHoWf3D2bd9NfqDZXykH2Sz` |
+| Previous live (rollback target) | `dpl_9awEYdoozcqsbGXNsY2ivK4qsDWu`, built 2026-09-06 06:28 |
+
+Staged with `--skip-domain`, verified, then `vercel promote`. Automatic Git
+deployment stays disabled in `web/vercel.json`.
+
+Adds `/admin/security`, the first first-party way for a staff member to enrol a
+TOTP factor. Before this, `mfa.enroll` was called nowhere in the codebase: the
+console could challenge a factor and could not create one, so the only route to
+`aal2` was an administrator driving the API on somebody else's behalf.
+
+Verified after promotion, on all four domains at `e9f8023`: `/api/health`
+reporting the commit, `/api/ready` reporting `database: ok` and `auth: ok`, EN,
+AR (with `dir="rtl"`) and FR rendering, no Development project reference and no
+privileged credential in the served HTML. On the console host,
+`admin.usewarsha.com/security` returns 200 while `/nope` still returns 404 — the
+control that distinguishes "the route shipped" from "everything answers 200" —
+and `/staff` still works.
+
+Note for the next person: the admin surface is served ONLY on the `admin.` host,
+because `web/middleware.ts` rewrites by hostname. A preview deployment URL
+cannot answer for it — `/admin/*` there redirects to `/` like any non-admin
+host — so console routes are verified after promotion, not before.
+
+### Rollback for these two
+
+1. `vercel promote dpl_9awEYdoozcqsbGXNsY2ivK4qsDWu` returns the web to the
+   06:28 build, which has no `/admin/security`.
+2. The database migration is forward-only. `202609060009` adds a role and
+   narrows a function; nothing depends on it that a rollback of the web would
+   strand.
+
+---
+
 ## 2026-09-06 — first full Production release
 
 **RELEASE_SHA**: `11753aae81fdbca3fcb1200f6d200d39278a9bfd`
