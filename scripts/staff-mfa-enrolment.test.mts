@@ -6,7 +6,7 @@ import { appCopy } from '../web/lib/app-copy.ts';
 import { CONSOLE_AREAS, mayEnter, visibleAreas } from '../web/lib/console-areas.ts';
 import {
   codeLooksComplete, enrolmentGate, failureMessage, manualKeyGroups, normalizeCode,
-  reachedAal2, STAFF_FACTOR_NAME,
+  reachedAal2, rotationComplete, rotationFactorName, ROTATION_ORDER, STAFF_FACTOR_NAME,
 } from '../web/lib/staff-mfa.ts';
 
 /**
@@ -85,8 +85,14 @@ check(/forget\(\)/.test(page) && /setSecret\(null\)/.test(page),
 
 // Provider error text can quote the request that produced it, and during
 // enrolment that request carries the seed. So it is never rendered.
-check(!/error\.message|\{\s*error\s*\}|String\(error\)/.test(page),
+// Aimed at RENDERING provider text, not at destructuring it. `const { error }`
+// is how the client returns a failure and says nothing on screen; what must
+// never appear is the provider's own message reaching the page, because it can
+// quote the request that carried the seed.
+check(!/error\.message|String\(error\)|JSON\.stringify\(\s*error/.test(page),
   'PROVIDER ERROR TEXT IS NEVER RENDERED — it can quote the request that carried the seed');
+check(!/\{\s*\w*[Ee]rror\.message\s*\}/.test(page),
+  'and no error message is interpolated into the markup');
 check(/failureMessage\(/.test(page), 'failures are shown as fixed sentences from the copy table');
 
 // ===========================================================================
@@ -244,5 +250,143 @@ equal(failureMessage('not-aal2', words), words.mfaNotElevated, 'a session that d
 equal(failureMessage('unavailable', words), words.mfaUnavailable, 'and anything else is generic');
 check(STAFF_FACTOR_NAME.length > 0 && !/secret|key/i.test(STAFF_FACTOR_NAME),
   'the factor name is a label, not a hint about the key');
+
+// ===========================================================================
+// 11. REPLACING A FACTOR NEVER LEAVES THE ACCOUNT WITH NONE
+// ===========================================================================
+//
+// The exposed original factor could not be rotated: the page refuses to enrol
+// while a verified factor exists, and the only administrator IS the person
+// holding it. So rotation had to become a first-party flow, and the ONE thing
+// it must never do is remove the old factor before the new one works.
+//
+// With `mfa_required` on, an account with no verified factor cannot reach
+// `aal2`, and every staff gate needs `aal2`. A rotation that unenrolled first
+// would lock the operator out of the console INCLUDING the tools that would
+// turn the requirement off, and recovery would need a database-owner
+// procedure. That is why the order below is asserted as data.
+
+equal([...ROTATION_ORDER],
+  ['confirm-current', 'enrol-new', 'verify-new', 'prove-aal2', 'unenrol-old'],
+  'THE OLD FACTOR IS REMOVED LAST, AFTER THE NEW ONE HAS PROVEN ITSELF');
+check(ROTATION_ORDER.indexOf('unenrol-old') === ROTATION_ORDER.length - 1,
+  'and nothing at all happens after the removal');
+check(ROTATION_ORDER.indexOf('prove-aal2') < ROTATION_ORDER.indexOf('unenrol-old'),
+  'the session must reach aal2 BEFORE the old factor goes');
+check(ROTATION_ORDER.indexOf('confirm-current') === 0,
+  'and possession of the current factor is proven before anything is created');
+
+// --- The single removal site, and its guard ---------------------------------
+const unenrolCalls = (page.match(/mfa\.unenroll\(\{/g) ?? []).length;
+check(unenrolCalls >= 3,
+  'unenroll appears for: cancel, unmount, and the completed rotation');
+check(/THE ONLY PLACE THE OLD FACTOR IS REMOVED/.test(page),
+  'the removal site is marked as the only one');
+// The removal must sit behind BOTH the aal2 proof and the rotation mode.
+const removalIndex = page.indexOf('THE ONLY PLACE THE OLD FACTOR IS REMOVED');
+const aal2Index = page.indexOf('reachedAal2(level?.currentLevel)');
+check(aal2Index !== -1 && aal2Index < removalIndex,
+  'THE aal2 CHECK IS ABOVE THE REMOVAL IN THE SOURCE, NOT BESIDE IT');
+check(/rotation === 'scan-new' && oldFactorId && oldFactorId !== factorId/.test(page),
+  'and the removal refuses to run outside a rotation, or on the new factor itself');
+
+// --- A failed verification keeps the old factor -----------------------------
+check(/setFailure\(rotation === 'scan-new' \? 'old-kept' : 'code-rejected'\)/.test(page),
+  'A REJECTED NEW CODE REPORTS THAT NOTHING WAS REPLACED');
+const rejectedBranch = page.slice(page.indexOf("if (verifyError) {"),
+  page.indexOf("forget();", page.indexOf("if (verifyError) {")));
+check(!/unenroll/.test(rejectedBranch),
+  'AND THE FAILURE PATH REMOVES NOTHING — the old factor survives a bad code');
+
+// --- Coexistence is the point, not an accident ------------------------------
+equal(rotationComplete(['new-id'], 'new-id', 'old-id'), true,
+  'a rotation is complete when exactly one verified factor remains and it is the new one');
+equal(rotationComplete(['old-id', 'new-id'], 'new-id', 'old-id'), false,
+  'TWO VERIFIED FACTORS MEANS THE ROTATION IS MID-FLIGHT, NOT DONE');
+equal(rotationComplete([], 'new-id', 'old-id'), false,
+  'AND ZERO FACTORS IS NEVER A SUCCESSFUL OUTCOME');
+equal(rotationComplete(['old-id'], 'new-id', 'old-id'), false,
+  'nor is the old factor surviving alone');
+equal(rotationComplete(['same'], 'same', 'same'), false,
+  'and a factor cannot replace itself');
+check(/rotationComplete\(remaining, factorId, oldFactorId\)/.test(page),
+  'the page confirms the end state by listing factors again, not by assuming');
+
+// --- The new factor needs its own name --------------------------------------
+const name = rotationFactorName(new Date('2026-09-07T10:00:00Z'));
+equal(name, 'Warsha staff authenticator 2026-09-07', 'the replacement is dated');
+check(name !== STAFF_FACTOR_NAME,
+  'AND DIFFERS FROM THE EXISTING NAME, because both exist at once and the '
+  + 'identity provider refuses a duplicate friendly name');
+
+// --- Possession of the current factor authorises the rotation ---------------
+check(/challengeAndVerify\(\{[\s\S]{0,80}factorId: oldFactorId/.test(page),
+  'A REPLACEMENT BEGINS BY CHALLENGING THE FACTOR BEING RETIRED');
+check(/'current-rejected'/.test(page),
+  'and a wrong current code is reported without changing anything');
+const confirmBlock = page.slice(page.indexOf('const confirmCurrent'),
+  page.indexOf('const beginReplacement'));
+check(!/unenroll/.test(confirmBlock),
+  'the confirm step removes nothing at all');
+check(/mfa\.enroll\(\{/.test(confirmBlock),
+  'it enrols the new factor only after the current one answered');
+
+// --- Still nobody else's factor ---------------------------------------------
+// Extracted and compared rather than matched with a negative lookahead: `\s*`
+// can match empty, which lets a lookahead pass at the wrong offset and turns
+// the assertion into one that cannot fail.
+const unenrolArgs = [...page.matchAll(/unenroll\(\{\s*factorId:\s*([A-Za-z_$][\w$]*)/g)]
+  .map(([, id]) => id);
+check(unenrolArgs.length >= 3, 'every unenroll call site was found');
+for (const id of unenrolArgs) {
+  check(['stranded', 'oldFactorId'].includes(id),
+    `unenroll is called with ${id}, a factor id this session owns`);
+}
+check(!/userId|user_id|subject|onBehalf/i.test(confirmBlock),
+  'ANOTHER STAFF ACCOUNT CANNOT ROTATE THIS ONE — no account parameter exists');
+
+// --- The seed rules apply to the replacement too -----------------------------
+check(/setSecret\(data\.totp\.secret\)/.test(page),
+  'the replacement secret comes from the provider response');
+check((page.match(/forget\(\)/g) ?? []).length >= 3,
+  'and is dropped on success, on cancel, and on abandoning a replacement');
+
+// --- Every new word, in every language --------------------------------------
+const ROTATION_KEYS = [
+  'mfaReplaceTitle', 'mfaReplaceBody', 'mfaReplaceAction', 'mfaCurrentTitle',
+  'mfaCurrentBody', 'mfaCurrentCodeLabel', 'mfaCurrentAction', 'mfaReplaceScanTitle',
+  'mfaReplaceScanBody', 'mfaReplaceDoneTitle', 'mfaReplaceDoneBody',
+  'mfaCurrentRejected', 'mfaOldKept',
+] as const;
+for (const key of ROTATION_KEYS) {
+  check(appCopy.en[key]?.length > 0, `en.${key} exists`);
+  check(appCopy.ar[key]?.length > 0, `ar.${key} exists`);
+  check(appCopy.fr[key]?.length > 0, `fr.${key} exists`);
+  check(String(appCopy.ar[key]) !== String(appCopy.en[key]), `ar.${key} is localized`);
+  check(String(appCopy.fr[key]) !== String(appCopy.en[key]), `fr.${key} is localized`);
+  check(!/[A-Za-z]{4}/.test(String(appCopy.ar[key]).replace(/Warsha/g, '')),
+    `ar.${key} has no English left in it`);
+}
+// The reassurance is the whole point of these two, in every language.
+for (const locale of ['en', 'ar', 'fr'] as const) {
+  check(String(appCopy[locale].mfaOldKept).length > 20,
+    `${locale}.mfaOldKept explains that nothing was replaced`);
+  check(String(appCopy[locale].mfaCurrentRejected).length > 20,
+    `${locale}.mfaCurrentRejected explains that nothing was changed`);
+}
+
+// --- First-time enrolment is untouched --------------------------------------
+equal(enrolmentGate({ email: 'a@b.test', emailConfirmedAt: '2026-09-06T00:00:00Z' }, 0), 'ready',
+  'FIRST-TIME ENROLMENT STILL WORKS: a confirmed address with no factor may enrol');
+check(/friendlyName: STAFF_FACTOR_NAME/.test(page),
+  'and still enrols under the plain name, not the dated rotation name');
+check(/rotation === 'idle'/.test(page),
+  'the replacement offer is only shown when no rotation is already running');
+
+// The rotation code field is labelled and RTL-safe like the enrolment one.
+check(/htmlFor="mfa-current-code"/.test(page) && /id="mfa-current-code"/.test(page),
+  'the current-code field has a real label');
+check((page.match(/dir="ltr"/g) ?? []).length >= 3,
+  'and both code fields plus the setup key stay left-to-right inside an Arabic page');
 
 console.log(`Staff MFA enrolment: ${checks} checks passed.`);

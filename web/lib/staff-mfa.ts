@@ -20,6 +20,58 @@ import type { AppWords } from './app-copy.ts';
 export const STAFF_FACTOR_NAME = 'Warsha staff authenticator';
 
 /**
+ * The name a REPLACEMENT factor is enrolled under.
+ *
+ * It has to differ from every name the account already holds: GoTrue rejects a
+ * second factor with a friendly name already in use, and a rotation enrols the
+ * new factor while the old one is still there — which is the whole point, since
+ * an account must never be left with nothing.
+ *
+ * Dated rather than counted, so the surviving factor says when it was issued.
+ */
+export function rotationFactorName(now: Date): string {
+  return `${STAFF_FACTOR_NAME} ${now.toISOString().slice(0, 10)}`;
+}
+
+/**
+ * Where a replacement has got to.
+ *
+ * `confirm-current` exists because possession of the OLD factor is the thing
+ * that authorises a rotation. Verifying it also raises the session to `aal2`,
+ * so one step satisfies both "prove it is you" and "be at the assurance level
+ * this account requires" without depending on how the operator signed in.
+ */
+export type RotationStep = 'idle' | 'confirm-current' | 'scan-new' | 'verifying';
+
+/**
+ * The order is the safety property.
+ *
+ * Enrol, verify, PROVE aal2, and only then remove the old factor. Any earlier
+ * removal leaves a window where the account has no verified factor, and with
+ * `mfa_required` on that window is a lockout that needs a database-owner
+ * procedure to escape. There is no failure path in this module that removes the
+ * old factor before the new one has worked.
+ */
+export const ROTATION_ORDER = [
+  'confirm-current',
+  'enrol-new',
+  'verify-new',
+  'prove-aal2',
+  'unenrol-old',
+] as const;
+
+/** A replacement is only finished when ONE verified factor remains, and it is the new one. */
+export function rotationComplete(
+  verifiedFactorIds: readonly string[],
+  newFactorId: string,
+  oldFactorId: string,
+): boolean {
+  return verifiedFactorIds.length === 1
+    && verifiedFactorIds[0] === newFactorId
+    && newFactorId !== oldFactorId;
+}
+
+/**
  * What the account is allowed to do right now.
  *
  * `email-unconfirmed` is a refusal, not a warning. A factor enrolled against an
@@ -97,13 +149,19 @@ export type EnrolmentFailure =
   | 'start'
   | 'code-rejected'
   | 'not-aal2'
-  | 'unavailable';
+  | 'unavailable'
+  | 'current-rejected'
+  | 'old-kept';
 
 export function failureMessage(failure: EnrolmentFailure, words: AppWords): string {
   switch (failure) {
     case 'start': return words.mfaEnrolFailed;
     case 'code-rejected': return words.mfaCodeRejected;
     case 'not-aal2': return words.mfaNotElevated;
+    // Both rotation failures say the same reassuring thing in different words:
+    // the authenticator you are still holding continues to work.
+    case 'current-rejected': return words.mfaCurrentRejected;
+    case 'old-kept': return words.mfaOldKept;
     default: return words.mfaUnavailable;
   }
 }

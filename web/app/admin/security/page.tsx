@@ -6,8 +6,8 @@ import { ConsoleShell } from '@/components/console-shell';
 import { appCopy } from '@/lib/app-copy';
 import {
   codeLooksComplete, enrolmentGate, failureMessage, manualKeyGroups, normalizeCode,
-  reachedAal2, STAFF_FACTOR_NAME,
-  type AccountFacts, type EnrolmentFailure, type EnrolmentGate,
+  reachedAal2, rotationComplete, rotationFactorName, STAFF_FACTOR_NAME,
+  type AccountFacts, type EnrolmentFailure, type EnrolmentGate, type RotationStep,
 } from '@/lib/staff-mfa';
 import { supabase } from '@/lib/supabase';
 import { useAppLocale } from '@/lib/use-app-locale';
@@ -50,7 +50,7 @@ import styles from './page.module.css';
  * so cancelling — and unmounting mid-flow — unenrols it.
  */
 
-type Stage = 'loading' | 'gate' | 'showing' | 'verifying' | 'done';
+type Stage = 'loading' | 'gate' | 'showing' | 'verifying' | 'done' | 'replaced';
 
 export default function SecurityPage() {
   const locale = useAppLocale();
@@ -72,6 +72,13 @@ export default function SecurityPage() {
   const [busy, setBusy] = useState(false);
   const codeField = useRef<HTMLInputElement>(null);
 
+  // Replacement state. `oldFactorId` is the factor being retired; it is removed
+  // at exactly one point in this file, after the new factor has verified AND
+  // raised the session to aal2.
+  const [rotation, setRotation] = useState<RotationStep>('idle');
+  const [oldFactorId, setOldFactorId] = useState<string | null>(null);
+  const [currentCode, setCurrentCode] = useState('');
+
   // Kept in a ref so the unmount cleanup can see the current value without
   // re-running and unenrolling a factor that is still being used.
   const pendingFactor = useRef<string | null>(null);
@@ -88,9 +95,10 @@ export default function SecurityPage() {
     const facts: AccountFacts | null = user
       ? { email: user.email ?? null, emailConfirmedAt: user.email_confirmed_at ?? null }
       : null;
-    const verified = (factorData?.totp ?? []).filter((factor) => factor.status === 'verified').length;
+    const verifiedFactors = (factorData?.totp ?? []).filter((factor) => factor.status === 'verified');
     setAccount(facts);
-    setGate(enrolmentGate(facts, verified));
+    setGate(enrolmentGate(facts, verifiedFactors.length));
+    setOldFactorId(verifiedFactors[0]?.id ?? null);
     setStage('gate');
   }, []);
 
@@ -131,6 +139,72 @@ export default function SecurityPage() {
 
   useEffect(() => { if (stage === 'showing') codeField.current?.focus(); }, [stage]);
 
+  /**
+   * Step one of a replacement: prove possession of the factor being retired.
+   *
+   * `challengeAndVerify` against the CURRENT factor does two jobs at once. It
+   * establishes that whoever is asking for a rotation is holding the
+   * authenticator today — a password alone must not be enough to swap the
+   * second factor — and it raises this session to `aal2`, which is the level
+   * this account requires. Doing it here rather than reading the session's
+   * existing level means the flow does not depend on how the operator signed in.
+   */
+  const confirmCurrent = useCallback(async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (busy || !oldFactorId || !codeLooksComplete(currentCode)) return;
+    setBusy(true);
+    setFailure(null);
+    const client = supabase();
+    try {
+      const { error } = await client.auth.mfa.challengeAndVerify({
+        factorId: oldFactorId,
+        code: normalizeCode(currentCode),
+      });
+      if (error) { setFailure('current-rejected'); setBusy(false); return; }
+
+      const { data: level } = await client.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (!reachedAal2(level?.currentLevel)) {
+        setFailure('not-aal2'); setBusy(false); return;
+      }
+
+      // Only now is a second factor enrolled. The old one is still verified and
+      // still works, which is what keeps the account from ever having none.
+      const { data, error: enrolError } = await client.auth.mfa.enroll({
+        factorType: 'totp',
+        friendlyName: rotationFactorName(new Date()),
+      });
+      if (enrolError || !data) { setFailure('start'); setBusy(false); return; }
+      setCurrentCode('');
+      setFactorId(data.id);
+      setQrCode(data.totp.qr_code);
+      setSecret(data.totp.secret);
+      setRotation('scan-new');
+      setStage('showing');
+    } catch {
+      setFailure('unavailable');
+    }
+    setBusy(false);
+  }, [busy, currentCode, oldFactorId]);
+
+  const beginReplacement = useCallback(() => {
+    setFailure(null);
+    setCurrentCode('');
+    setRotation('confirm-current');
+  }, []);
+
+  const abandonReplacement = useCallback(async () => {
+    const stranded = factorId;
+    forget();
+    setFactorId(null);
+    setCurrentCode('');
+    setRotation('idle');
+    setFailure(null);
+    setStage('gate');
+    // Removes the UNVERIFIED new factor. The old one is untouched: it is only
+    // ever removed on the success path below.
+    if (stranded) await supabase().auth.mfa.unenroll({ factorId: stranded }).catch(() => undefined);
+  }, [factorId, forget]);
+
   const cancel = useCallback(async () => {
     const stranded = factorId;
     forget();
@@ -159,7 +233,10 @@ export default function SecurityPage() {
         code: normalizeCode(code),
       });
       if (verifyError) {
-        setFailure('code-rejected'); setStage('showing'); setBusy(false); return;
+        // A rotation that fails here changes NOTHING. The old factor was never
+        // touched, and the caller can retry or abandon.
+        setFailure(rotation === 'scan-new' ? 'old-kept' : 'code-rejected');
+        setStage('showing'); setBusy(false); return;
       }
 
       // Verified. The seed has no further purpose, so it stops existing here
@@ -174,6 +251,41 @@ export default function SecurityPage() {
         await readState().catch(() => undefined);
         return;
       }
+
+      // THE ONLY PLACE THE OLD FACTOR IS REMOVED, and it is reached only after
+      // the new factor has been verified AND has carried this session to aal2.
+      // Until this line runs the account holds two verified factors, which is
+      // the state that makes a rotation safe rather than a gamble.
+      if (rotation === 'scan-new' && oldFactorId && oldFactorId !== factorId) {
+        const { error: removeError } = await client.auth.mfa.unenroll({ factorId: oldFactorId });
+        if (removeError) {
+          // The new factor works; the old one merely outlived its welcome.
+          // Reporting rather than pretending, and the account is not at risk:
+          // it holds two working factors, not none.
+          setFailure('unavailable');
+          setStage('gate'); setBusy(false);
+          await readState().catch(() => undefined);
+          return;
+        }
+        const { data: after } = await client.auth.mfa.listFactors();
+        const remaining = (after?.totp ?? [])
+          .filter((f) => f.status === 'verified')
+          .map((f) => f.id);
+        if (!rotationComplete(remaining, factorId, oldFactorId)) {
+          setFailure('unavailable');
+          setStage('gate'); setBusy(false);
+          await readState().catch(() => undefined);
+          return;
+        }
+        setOldFactorId(factorId);
+        setFactorId(null);
+        setRotation('idle');
+        setStage('replaced');
+        setGate('already-enrolled');
+        setBusy(false);
+        return;
+      }
+
       setFactorId(null);
       setStage('done');
       setGate('already-enrolled');
@@ -182,7 +294,7 @@ export default function SecurityPage() {
       setStage('showing');
     }
     setBusy(false);
-  }, [busy, code, factorId, forget, readState]);
+  }, [busy, code, factorId, forget, readState, rotation, oldFactorId]);
 
   const groups = secret ? manualKeyGroups(secret) : [];
 
@@ -207,7 +319,14 @@ export default function SecurityPage() {
         </section>
       ) : null}
 
-      {stage === 'done' || (stage === 'gate' && gate === 'already-enrolled') ? (
+      {stage === 'replaced' ? (
+        <section className={styles.panel}>
+          <h2 className={styles.heading}>{words.mfaReplaceDoneTitle}</h2>
+          <p className={styles.note}>{words.mfaReplaceDoneBody}</p>
+        </section>
+      ) : null}
+
+      {stage === 'done' || (stage === 'gate' && gate === 'already-enrolled' && rotation === 'idle') ? (
         <section className={styles.panel}>
           <h2 className={styles.heading}>
             {stage === 'done' ? words.mfaDoneTitle : words.mfaEnrolledTitle}
@@ -215,6 +334,60 @@ export default function SecurityPage() {
           <p className={styles.note}>
             {stage === 'done' ? words.mfaDoneBody : words.mfaEnrolledBody}
           </p>
+
+          {/* Rotation lives here rather than behind an administrator, because
+              the person who needs to replace a factor is the person holding it,
+              and Warsha's only administrator is that same person. */}
+          <h3 className={styles.subheading}>{words.mfaReplaceTitle}</h3>
+          <p className={styles.note}>{words.mfaReplaceBody}</p>
+          <button
+            type="button"
+            className={styles.secondary}
+            onClick={beginReplacement}
+            disabled={busy || !oldFactorId}
+          >
+            {words.mfaReplaceAction}
+          </button>
+        </section>
+      ) : null}
+
+      {stage === 'gate' && rotation === 'confirm-current' ? (
+        <section className={styles.panel}>
+          <h2 className={styles.heading}>{words.mfaCurrentTitle}</h2>
+          <p className={styles.note}>{words.mfaCurrentBody}</p>
+          <form className={styles.form} onSubmit={(event) => void confirmCurrent(event)}>
+            <label className={styles.label} htmlFor="mfa-current-code">
+              {words.mfaCurrentCodeLabel}
+            </label>
+            <input
+              id="mfa-current-code"
+              className={styles.code}
+              value={currentCode}
+              onChange={(event) => setCurrentCode(event.target.value)}
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              maxLength={7}
+              dir="ltr"
+              required
+            />
+            <div className={styles.buttons}>
+              <button
+                type="submit"
+                className={styles.action}
+                disabled={busy || !codeLooksComplete(currentCode)}
+              >
+                {busy ? words.loading : words.mfaCurrentAction}
+              </button>
+              <button
+                type="button"
+                className={styles.secondary}
+                onClick={() => void abandonReplacement()}
+                disabled={busy}
+              >
+                {words.mfaCancelAction}
+              </button>
+            </div>
+          </form>
         </section>
       ) : null}
 
@@ -235,8 +408,12 @@ export default function SecurityPage() {
 
       {(stage === 'showing' || stage === 'verifying') && secret ? (
         <section className={styles.panel}>
-          <h2 className={styles.heading}>{words.mfaScanTitle}</h2>
-          <p className={styles.note}>{words.mfaScanBody}</p>
+          <h2 className={styles.heading}>
+            {rotation === 'scan-new' ? words.mfaReplaceScanTitle : words.mfaScanTitle}
+          </h2>
+          <p className={styles.note}>
+            {rotation === 'scan-new' ? words.mfaReplaceScanBody : words.mfaScanBody}
+          </p>
 
           <div className={styles.enrolment}>
             {/*
@@ -292,7 +469,12 @@ export default function SecurityPage() {
               >
                 {stage === 'verifying' ? words.loading : words.mfaConfirmAction}
               </button>
-              <button type="button" className={styles.secondary} onClick={() => void cancel()} disabled={busy}>
+              <button
+                type="button"
+                className={styles.secondary}
+                onClick={() => void (rotation === 'scan-new' ? abandonReplacement() : cancel())}
+                disabled={busy}
+              >
                 {words.mfaCancelAction}
               </button>
             </div>
