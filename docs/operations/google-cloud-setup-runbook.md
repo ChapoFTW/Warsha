@@ -287,9 +287,10 @@ provider_enabled(key) = registry says 'active'
    environment's state.
 6. **Reconcile the Subprocessor Register.** The intended activator requests
    `manage_subprocessors / sync_subprocessor_in_use /
-   google_maps_platform:<environment>:in_use`; a second person approves, and
-   `staff_sync_provider_status()` consumes that approval before changing the
-   subprocessor to `in_use`.
+   google_maps_platform:<environment>:in_use`, and
+   `staff_sync_provider_status()` consumes that authorization before changing the
+   subprocessor to `in_use`. Since `202609060010` one authorized operator
+   supplies it; no second person is involved.
 
 **Enabling a subprocessor is a material change to the Privacy Policy**: a new
 immutable version, a change summary, and renewed acceptance before it takes

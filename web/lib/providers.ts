@@ -15,11 +15,16 @@
  * enabled — turning the feature on first does not shortcut the process, it
  * blocks it.
  *
- * How many people the sequence needs is also the backend's. `required_approval
- * _count` answers it there and `requiredApprovalCount` mirrors it here, so a
- * pre-production backend draws a sequence one administrator can finish and a
- * public one draws the sequence that waits for a second identity. Neither
- * number is chosen by this module.
+ * How many people the sequence needs is also the backend's, and since
+ * 202609060010 the answer is one, everywhere. Warsha's policy is that ONE
+ * AUTHORISED OPERATOR MAY OPERATE WARSHA: a second staff identity is not a
+ * Warsha requirement in any environment. The capability catalogue is the
+ * authority — `private.approval_policy_for` reads it — and this module mirrors
+ * the result so the page can lay out a sequence before any RPC has answered.
+ *
+ * Dual control is not gone, only unused: a capability can opt back in, and the
+ * console still renders the request-and-approve steps when the backend reports
+ * that it needs them.
  */
 
 export const MAPS_PROVIDER_KEY = 'google_maps_platform';
@@ -32,25 +37,28 @@ export const ACTIVATION_CAPABILITY = 'manage_subprocessors';
 /**
  * How many distinct staff identities a governed action needs here.
  *
- * This mirrors `private.required_approval_count` and must keep mirroring it.
- * The database is the authority — every RPC re-derives the count and refuses on
- * its own terms — so the worst a drifting copy can do is draw the wrong number
- * of steps. It is duplicated rather than fetched-and-only-fetched because the
- * page has to lay out a sequence before any RPC has answered, and a sequence
- * that rearranges itself after the first response reads as a bug.
+ * One, in every environment, because no capability Warsha defines is
+ * `dual_control` any more. This mirrors `private.required_approval_count` and
+ * must keep mirroring it. The database remains the authority — every RPC
+ * re-derives the policy from the capability and refuses on its own terms — so
+ * the worst a drifting copy can do is draw the wrong number of steps.
  *
- * `null` is unknown, and unknown resolves to the stricter policy. A console
- * that has not yet learned which backend it is on must not offer the shorter
- * path on the assumption that it is the safe one.
+ * The environment argument is kept because callers pass it and because a future
+ * per-environment policy would arrive through this signature. It no longer
+ * changes the answer: which project a backend points at was always the wrong
+ * axis for how many people an action needs.
+ *
+ * A backend that REPORTS two, because a capability opted back into dual
+ * control, is still believed over this default — see `governanceFromPayload`.
  */
 export function requiredApprovalCount(environment: string | null): number {
-  return environment === 'development' ? 1 : 2;
+  return 1;
 }
 
-export type GovernanceMode = 'single_admin' | 'dual_control';
+export type GovernanceMode = 'single_operator' | 'dual_control';
 
 export function governanceMode(environment: string | null): GovernanceMode {
-  return requiredApprovalCount(environment) >= 2 ? 'dual_control' : 'single_admin';
+  return requiredApprovalCount(environment) >= 2 ? 'dual_control' : 'single_operator';
 }
 
 /**
@@ -337,10 +345,12 @@ export function parseDualControlQueue(value: unknown): DualControlRequest[] {
       subjectRef: str(row.subjectRef) ?? '',
       reason: str(row.reason) ?? '',
       environment: str(row.environment) ?? '',
-      // An older row predates the policy stamp. It reads as dual control,
-      // which is what every row written before the stamp existed actually was.
-      governanceMode: str(row.governanceMode) === 'single_admin'
-        ? 'single_admin' : 'dual_control',
+      // `single_admin` is the pre-202609060010 name for a one-person
+      // authorisation. Historical rows keep it in the database — they describe
+      // what was true when they were written — and it reads here as what it is.
+      // Anything else predates the policy stamp entirely and was dual control.
+      governanceMode: ['single_operator', 'single_admin'].includes(str(row.governanceMode) ?? '')
+        ? 'single_operator' : 'dual_control',
       requiredApprovals: typeof row.requiredApprovals === 'number'
         ? row.requiredApprovals : 2,
       requestedAt: str(row.requestedAt),
@@ -417,7 +427,7 @@ export function parseGovernancePolicy(
     ? reported : requiredApprovalCount(environment);
   return {
     requiredApprovals,
-    governanceMode: requiredApprovals >= 2 ? 'dual_control' : 'single_admin',
+    governanceMode: requiredApprovals >= 2 ? 'dual_control' : 'single_operator',
   };
 }
 

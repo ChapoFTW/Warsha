@@ -698,8 +698,8 @@
       "locale": "en",
       "title": "Admin portal: getting started",
       "summary": "Understand the separate staff portal, capabilities, reauthentication, dual control, privacy, and auditability.",
-      "version": 1,
-      "lastReviewedDate": "2026-08-21",
+      "version": 2,
+      "lastReviewedDate": "2026-09-06",
       "features": [
         "admin",
         "staff_auth",
@@ -814,8 +814,8 @@
       "locale": "en",
       "title": "Worker verification and enforcement",
       "summary": "Review evidence, record safe reasons, and understand approval, rejection, suspension, ban, and appeal boundaries.",
-      "version": 6,
-      "lastReviewedDate": "2026-09-05",
+      "version": 7,
+      "lastReviewedDate": "2026-09-06",
       "features": [
         "worker_vetting",
         "trust",
@@ -890,7 +890,7 @@
       "locale": "en",
       "title": "Staff roles, fresh authentication, and dual control",
       "summary": "Grant only reviewed roles, never self-escalate, and keep immutable evidence.",
-      "version": 11,
+      "version": 14,
       "lastReviewedDate": "2026-09-06",
       "features": [
         "staff_roles",
@@ -1086,8 +1086,8 @@
       "locale": "en",
       "title": "Warsha glossary",
       "summary": "Plain-language meanings for the words Warsha uses.",
-      "version": 1,
-      "lastReviewedDate": "2026-08-21",
+      "version": 2,
+      "lastReviewedDate": "2026-09-06",
       "features": [
         "glossary"
       ],
@@ -1402,8 +1402,8 @@
       "locale": "fr",
       "title": "Bien démarrer dans la console d’administration",
       "summary": "Comprenez la console, ses autorisations et les règles de sécurité avant d’agir.",
-      "version": 1,
-      "lastReviewedDate": "2026-08-21",
+      "version": 2,
+      "lastReviewedDate": "2026-09-06",
       "features": [
         "admin",
         "staff_auth",
@@ -1458,8 +1458,8 @@
       "locale": "fr",
       "title": "Vérification, suspension et mesures de sécurité",
       "summary": "Examinez les preuves et appliquez une mesure proportionnée avec une raison claire.",
-      "version": 6,
-      "lastReviewedDate": "2026-09-05",
+      "version": 7,
+      "lastReviewedDate": "2026-09-06",
       "features": [
         "worker_vetting",
         "trust",
@@ -1490,7 +1490,7 @@
       "locale": "fr",
       "title": "Rôles du personnel, authentification récente et double contrôle",
       "summary": "Accordez le minimum nécessaire tout en conservant une preuve complète.",
-      "version": 11,
+      "version": 13,
       "lastReviewedDate": "2026-09-06",
       "features": [
         "staff_roles",
@@ -1554,8 +1554,8 @@
       "locale": "fr",
       "title": "Incidents, récupération et actions gouvernées",
       "summary": "Réagissez en sécurité lorsqu’un fournisseur, un compte ou une autorité administrative est indisponible.",
-      "version": 1,
-      "lastReviewedDate": "2026-08-21",
+      "version": 2,
+      "lastReviewedDate": "2026-09-06",
       "features": [
         "incidents",
         "provider_governance",
@@ -1587,8 +1587,8 @@
       "locale": "fr",
       "title": "Glossaire Warsha",
       "summary": "Définitions simples des mots utilisés dans Warsha.",
-      "version": 1,
-      "lastReviewedDate": "2026-08-21",
+      "version": 2,
+      "lastReviewedDate": "2026-09-06",
       "features": [
         "glossary"
       ],

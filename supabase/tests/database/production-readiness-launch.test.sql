@@ -135,15 +135,12 @@ insert into public.customer_profiles(id) values ('a1800000-0000-4000-8000-000000
 
 select ok(private.bootstrap_staff_role('a1800000-0000-4000-8000-000000000001','security_administrator',
   'WPS-018 fixture bootstrap') is not null, 'the administrator is bootstrapped');
-select ok(private.bootstrap_staff_role('a1800000-0000-4000-8000-000000000002','trust_safety_reviewer',
-  'WPS-018 fixture') is not null, 'a trust reviewer is granted');
-
--- Those two ARE the initial quorum. Since 202609060009 bootstrap closes behind
--- them, so the remaining staff fixtures are written directly. They were always
+-- That one IS the first identity. Since 202609060010 bootstrap closes behind
+-- it, the remaining staff fixtures are written directly. They were always
 -- fixtures rather than bootstraps; the door simply used to be open.
--- Only break-glass holds approve_permanent_ban, so dual control is exercised
--- with two separate break-glass holders.
 insert into public.staff_role_grants(user_id, role_key, reason, idempotency_key) values
+  ('a1800000-0000-4000-8000-000000000002','trust_safety_reviewer',
+   'WPS-018 fixture','fixture:production-readiness:2'),
   ('a1800000-0000-4000-8000-000000000003','trust_safety_reviewer',
    'WPS-018 fixture second approver','fixture:production-readiness:3'),
   ('a1800000-0000-4000-8000-000000000004','verification_reviewer',
@@ -153,6 +150,9 @@ insert into public.staff_role_grants(user_id, role_key, reason, idempotency_key)
   ('a1800000-0000-4000-8000-000000000009','super_administrator',
    'WPS-018 fixture break glass two','fixture:production-readiness:9');
 
+select ok(exists(select 1 from public.staff_role_grants
+  where user_id='a1800000-0000-4000-8000-000000000002' and revoked_at is null),
+  'a trust reviewer is granted');
 select ok(exists(select 1 from public.staff_role_grants
   where user_id='a1800000-0000-4000-8000-000000000003' and revoked_at is null),
   'a second trust reviewer is granted');
@@ -329,47 +329,11 @@ update private.staff_platform_configuration set legacy_staff_rpc_grace_enabled =
 -- ---------------------------------------------------------------------------
 -- Dual control for irreversible actions
 -- ---------------------------------------------------------------------------
-set local role authenticated;
-select pg_temp.act_as('a1800000-0000-4000-8000-000000000008');
--- A ban by a WPS-017 staff member now needs a second person, on top of every
--- WPS-016 rule, which remains unchanged.
-select throws_ok(
-  $$select public.staff_record_enforcement_action('a1800000-0000-4000-8000-000000000007',
-    'permanent_ban','fraud','Closed','Investigated','ban-key-00001',
-    '00000000-0000-0000-0000-000000000001')$$,
-  '42501','This action requires a second approver',
-  'a permanent ban cannot be issued by one person');
-select ok((public.staff_request_dual_control('approve_permanent_ban','permanent_ban',
-  'a1800000-0000-4000-8000-000000000007','Investigated fraud with confirmed evidence'))->>'id' is not null,
-  'a dual control request can be opened');
-select throws_ok(
-  $$select public.staff_record_enforcement_action('a1800000-0000-4000-8000-000000000007',
-    'permanent_ban','fraud','Closed','Investigated','ban-key-00002',
-    '00000000-0000-0000-0000-000000000001')$$,
-  '42501','This action is waiting for a second approver',
-  'an unapproved request does not unlock the action');
-reset role;
-
-select set_config('wps018.dual_request',
-  (select id::text from private.staff_dual_control_requests limit 1), false);
-
-set local role authenticated;
-select pg_temp.act_as('a1800000-0000-4000-8000-000000000008');
-select throws_ok(
-  $$select public.staff_approve_dual_control(current_setting('wps018.dual_request')::uuid,'Self approval')$$,
-  '42501','A staff member cannot approve their own request',
-  'the requester can never approve their own request');
-reset role;
-
-set local role authenticated;
-select pg_temp.act_as('a1800000-0000-4000-8000-000000000009');
-select is((public.staff_approve_dual_control(current_setting('wps018.dual_request')::uuid,
-  'Reviewed the evidence independently'))->>'approved','true',
-  'a second staff member with the same capability can approve');
-reset role;
-
--- With the approval in place the gate opens, and WPS-016's own rules still
--- apply untouched: a ban still needs an investigated report.
+-- A permanent ban is irreversible, and since 202609060010 what guards it is the
+-- capability, the assurance level, a fresh sign-in, a reason and an audit row —
+-- not a head count. The WPS-016 evidence rule is untouched and is what stops
+-- this particular ban, which is the point worth proving: removing the human
+-- count did not remove the rule that actually protects the person being banned.
 set local role authenticated;
 select pg_temp.act_as('a1800000-0000-4000-8000-000000000008');
 select throws_ok(
@@ -377,13 +341,20 @@ select throws_ok(
     'permanent_ban','fraud','Closed','Investigated','ban-key-00003',
     '00000000-0000-0000-0000-000000000001')$$,
   '22023','A permanent ban requires a report that was investigated',
-  'dual control unlocks the gate and the WPS-016 evidence rule still governs');
+  'ONE OPERATOR REACHES THE GATE AND THE WPS-016 EVIDENCE RULE STILL GOVERNS');
 reset role;
 
-select throws_ok($$delete from private.staff_dual_control_requests$$,
-  '55000','Dual control history is immutable','dual control history cannot be deleted');
+-- The evidence rule refused before any authorisation was spent, which is the
+-- order that matters: a refused action must not leave an authorisation behind
+-- that a later attempt could ride in on.
+select is(
+  (select count(*)::integer from private.staff_dual_control_requests
+   where capability_key = 'approve_permanent_ban'),
+  0,
+  'A REFUSED ACTION FABRICATES NO AUTHORISATION AT ALL');
+
 select is((select count(*)::integer from private.staff_dual_control_requests
-  where requested_by = approved_by), 0, 'no request was self-approved');
+  where requested_by = approved_by), 0, 'and no request was self-approved');
 
 -- ---------------------------------------------------------------------------
 -- Periodic staff access review

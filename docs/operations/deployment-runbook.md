@@ -98,8 +98,9 @@ deployment step that follows automatically from a successful migration.
 
 ## Configuration activation
 
-Draft with a reason, a second person approves, confirm the value took effect in
-the **owning domain**, and confirm the immutable history recorded it.
+Draft with a reason, approve it as an authorized operator at a second factor
+with a recent sign-in, confirm the value took effect in the **owning domain**,
+and confirm the immutable history recorded it. No second person is required.
 
 ## Never
 

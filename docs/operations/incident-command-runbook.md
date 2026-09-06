@@ -76,8 +76,9 @@ Prefer the smallest restriction that stops the harm.
    restrict, never delete, and never touch existing bookings, conversations, or
    ledger rows. Clearing one restores the recorded prior state.
 2. **Feature flag** if the failure is in something newly released.
-3. **Configuration change** only if the value is genuinely wrong; that path needs
-   a second approver and is not an emergency tool.
+3. **Configuration change** only if the value is genuinely wrong; that path is
+   governed, audited and deliberately slower than a kill switch, and is not an
+   emergency tool.
 4. **Never** edit data to make a symptom go away. If data is wrong, that is a
    data-integrity incident with its own record.
 

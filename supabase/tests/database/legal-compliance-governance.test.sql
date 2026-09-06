@@ -589,12 +589,26 @@ select is((select count(*)::integer from private.data_inventory
 -- ---------------------------------------------------------------------------
 -- Capabilities follow the weight of the decision
 -- ---------------------------------------------------------------------------
-select is((select dual_control::integer from public.staff_capabilities
+-- Since 202609060010 the weight of a decision is carried by `high_risk` and
+-- `requires_reauth` rather than by a head count. Publishing legal text and
+-- changing a subprocessor are still the heaviest things a staff member can do,
+-- and they still demand the capability, aal2, a fresh sign-in, a reason and an
+-- audit row — they no longer demand a second employee Warsha does not have.
+select is((select approval_policy from public.staff_capabilities
            where capability_key='publish_legal_version'),
-  1, 'PUBLISHING A LEGAL VERSION REQUIRES A SECOND PERSON');
-select is((select dual_control::integer from public.staff_capabilities
+  'single_operator', 'PUBLISHING A LEGAL VERSION NEEDS ONE AUTHORISED OPERATOR');
+select is((select high_risk::integer from public.staff_capabilities
+           where capability_key='publish_legal_version'),
+  1, 'and it is still high risk');
+select is((select requires_reauth::integer from public.staff_capabilities
+           where capability_key='publish_legal_version'),
+  1, 'and still demands a fresh sign-in');
+select is((select approval_policy from public.staff_capabilities
            where capability_key='manage_subprocessors'),
-  1, 'ADDING A SUBPROCESSOR REQUIRES A SECOND PERSON');
+  'single_operator', 'ADDING A SUBPROCESSOR NEEDS ONE AUTHORISED OPERATOR');
+select is((select high_risk::integer from public.staff_capabilities
+           where capability_key='manage_subprocessors'),
+  1, 'and is still high risk with a fresh-sign-in requirement');
 select is((select high_risk::integer from public.staff_capabilities
            where capability_key='review_legal_governance'),
   0, 'reading the register carries no risk flag, because it returns no personal data');

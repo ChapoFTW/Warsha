@@ -942,29 +942,30 @@ const ready = {
 
 // --- The policy decides how many people, and one function decides the policy --
 //
-// Development is deliberately one authorised administrator: Warsha is under
-// active development, has one operator, and a control nobody can satisfy
-// honestly gets routed around rather than obeyed. Production is deliberately
-// unchanged. Both answers come from the same function, so they cannot drift
-// into two rules that each believe they are the real one.
-equal(requiredApprovalCount('development'), 1,
-  'DEVELOPMENT NEEDS ONE AUTHORISED ADMINISTRATOR');
-equal(requiredApprovalCount('local'), 2,
-  'A LOCAL RESET DOES NOT: IT IS THE REHEARSAL OF THE STRICTER CONFIGURATION');
-equal(requiredApprovalCount('production'), 2,
-  'PRODUCTION STILL NEEDS TWO DISTINCT STAFF IDENTITIES');
-equal(requiredApprovalCount('staging'), 2, 'and so does staging');
-equal(requiredApprovalCount(null), 2,
-  'AN UNKNOWN ENVIRONMENT RESOLVES TO THE STRICTER POLICY, NEVER THE SHORTER ONE');
-equal(governanceMode('development'), 'single_admin', 'the mode is named, not inferred');
-equal(governanceMode('production'), 'dual_control', 'and production keeps its name');
-for (const environment of ['production', 'staging', null]) {
-  check(activationStepsFor(requiredApprovalCount(environment)).includes('approvalGranted'),
-    'A PUBLIC ENVIRONMENT STILL DRAWS THE SECOND-APPROVER STEP');
+// Since 202609060010 the answer is one authorised operator, in every
+// environment. That is Warsha's policy, not a development shortcut: which
+// project a backend points at was always the wrong axis for how many people an
+// action needs, and the capability catalogue is now the authority.
+//
+// Dual control is not gone. The console still draws the request-and-approve
+// steps when the BACKEND reports that a capability needs them, which is the
+// assertion immediately below the environment ones.
+for (const environment of ['development', 'local', 'production', 'staging', null]) {
+  equal(requiredApprovalCount(environment), 1,
+    `${environment ?? 'an unknown environment'} needs one authorised operator`);
 }
+equal(governanceMode('development'), 'single_operator', 'the mode is named, not inferred');
+equal(governanceMode('production'), 'single_operator',
+  'AND PRODUCTION IS GOVERNED THE SAME WAY — a second human is not a Warsha requirement');
+
+// The console must still be able to DRAW dual control, or opting a capability
+// back in would silently produce a sequence nobody can finish.
+check(activationStepsFor(2).includes('approvalRequested')
+  && activationStepsFor(2).includes('approvalGranted'),
+  'A BACKEND THAT REPORTS TWO STILL DRAWS THE SECOND-APPROVER STEPS');
 check(!activationStepsFor(1).includes('approvalRequested')
   && !activationStepsFor(1).includes('approvalGranted'),
-  'SINGLE-ADMIN DRAWS NO STEP DESCRIBING AN APPROVER WHO IS NOT COMING');
+  'SINGLE-OPERATOR DRAWS NO STEP DESCRIBING AN APPROVER WHO IS NOT COMING');
 check(activationStepsFor(1).includes('activate')
   && activationStepsFor(1).includes('feature'),
   'while every other step of the sequence survives untouched');
@@ -975,8 +976,10 @@ equal(parseGovernancePolicy({ requiredApprovals: 2 }, 'development').requiredApp
   'the reported policy overrides the environment mirror');
 equal(parseGovernancePolicy({}, 'development').requiredApprovals, 1,
   'and an unreported policy falls back to it');
-equal(parseGovernancePolicy({ requiredApprovals: 7 }, null).requiredApprovals, 2,
-  'a count that is neither one nor two is refused rather than trusted');
+equal(parseGovernancePolicy({ requiredApprovals: 7 }, null).requiredApprovals, 1,
+  'a count that is neither one nor two is refused and the mirror is used instead');
+equal(parseGovernancePolicy({ requiredApprovals: 7 }, null).governanceMode, 'single_operator',
+  'and the refused count does not leak into the mode either');
 
 const pending = activationSteps(ready);
 equal(pending.environment, 'done', 'a bound development environment satisfies step one');

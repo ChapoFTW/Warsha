@@ -553,8 +553,8 @@
       "locale": "en",
       "title": "Warsha glossary",
       "summary": "Plain-language meanings for the words Warsha uses.",
-      "version": 1,
-      "lastReviewedDate": "2026-08-21",
+      "version": 2,
+      "lastReviewedDate": "2026-09-06",
       "features": [
         "glossary"
       ],
@@ -573,7 +573,7 @@
         "capability",
         "audit"
       ],
-      "body": "- **Customer:** a person using Warsha to request or book work.\n- **Worker / provider:** a person offering services after the required onboarding and approval. “Provider” is the internal data term; the product says Worker.\n- **Request:** a description of work sent to matching workers.\n- **Quote:** a worker's offer with price and terms.\n- **Job / booking:** the authoritative agreement and its progress. The product usually says Job; some stored authorities say Booking.\n- **Service area:** the approximate places a worker agrees to serve.\n- **Verification:** the governed review of required worker information.\n- **Product role:** Customer or Worker; what the account does in the product.\n- **Staff role:** a reviewed bundle of admin capabilities.\n- **Capability:** one server-checked admin permission.\n- **Fresh authentication:** proof that the operator authenticated recently; it does not add permission.\n- **Dual control:** a second, different authorized person must approve.\n- **Suspension:** an account or worker capability is stopped under a governed state.\n- **Ban:** a high-risk permanent enforcement action.\n- **Recovery:** a governed way to restore a valid state without rewriting history.\n- **Audit log:** append-only evidence of an action.\n- **Onboarding:** the required steps before the permanent experience.\n- **Address pin:** exact stored coordinates confirmed separately from editable address words.\n- **Default address:** the saved address Warsha selects first; it can be changed."
+      "body": "- **Customer:** a person using Warsha to request or book work.\n- **Worker / provider:** a person offering services after the required onboarding and approval. “Provider” is the internal data term; the product says Worker.\n- **Request:** a description of work sent to matching workers.\n- **Quote:** a worker's offer with price and terms.\n- **Job / booking:** the authoritative agreement and its progress. The product usually says Job; some stored authorities say Booking.\n- **Service area:** the approximate places a worker agrees to serve.\n- **Verification:** the governed review of required worker information.\n- **Product role:** Customer or Worker; what the account does in the product.\n- **Staff role:** a reviewed bundle of admin capabilities.\n- **Capability:** one server-checked admin permission.\n- **Fresh authentication:** proof that the operator authenticated recently; it does not add permission.\n- **Dual control:** an optional policy under which a second, different authorized person must approve. No Warsha permission uses it today; one authorized operator is the standard control.\n- **Suspension:** an account or worker capability is stopped under a governed state.\n- **Ban:** a high-risk permanent enforcement action.\n- **Recovery:** a governed way to restore a valid state without rewriting history.\n- **Audit log:** append-only evidence of an action.\n- **Onboarding:** the required steps before the permanent experience.\n- **Address pin:** exact stored coordinates confirmed separately from editable address words.\n- **Default address:** the saved address Warsha selects first; it can be changed."
     },
     {
       "id": "warsha-glossary",
@@ -880,8 +880,8 @@
       "locale": "fr",
       "title": "Glossaire Warsha",
       "summary": "Définitions simples des mots utilisés dans Warsha.",
-      "version": 1,
-      "lastReviewedDate": "2026-08-21",
+      "version": 2,
+      "lastReviewedDate": "2026-09-06",
       "features": [
         "glossary"
       ],
@@ -900,7 +900,7 @@
         "capacité",
         "audit"
       ],
-      "body": "- **Client :** personne qui utilise Warsha pour demander ou réserver un service.\n- **Professionnel / prestataire :** personne qui propose des services après l’onboarding et l’approbation nécessaires. Provider est le terme interne ; le produit dit Professionnel.\n- **Demande de service :** description d’un besoin envoyée aux professionnels correspondants.\n- **Devis :** offre d’un professionnel avec prix et conditions.\n- **Intervention / réservation :** accord officiel et suivi de son déroulement.\n- **Zone de service :** lieux approximatifs où un professionnel accepte d’intervenir.\n- **Vérification :** examen gouverné des informations requises du professionnel.\n- **Rôle produit :** Client ou Professionnel, c’est-à-dire l’usage du compte.\n- **Rôle du personnel :** ensemble révisé de capacités d’administration.\n- **Capacité :** autorisation administrative vérifiée par le serveur.\n- **Authentification récente :** preuve d’une connexion récente, sans permission supplémentaire.\n- **Double contrôle :** approbation obligatoire d’une deuxième personne autorisée distincte.\n- **Suspension :** arrêt gouverné d’un compte ou d’une capacité de travail.\n- **Bannissement :** mesure permanente à haut risque.\n- **Journal d’audit :** preuve ajoutée sans modification d’une action.\n- **Analyses :** métriques agrégées issues des autorités métier.\n- **Export :** fichier gouverné destiné à une analyse autorisée.\n- **Repère d’adresse :** coordonnées exactes confirmées séparément du texte modifiable."
+      "body": "- **Client :** personne qui utilise Warsha pour demander ou réserver un service.\n- **Professionnel / prestataire :** personne qui propose des services après l’onboarding et l’approbation nécessaires. Provider est le terme interne ; le produit dit Professionnel.\n- **Demande de service :** description d’un besoin envoyée aux professionnels correspondants.\n- **Devis :** offre d’un professionnel avec prix et conditions.\n- **Intervention / réservation :** accord officiel et suivi de son déroulement.\n- **Zone de service :** lieux approximatifs où un professionnel accepte d’intervenir.\n- **Vérification :** examen gouverné des informations requises du professionnel.\n- **Rôle produit :** Client ou Professionnel, c’est-à-dire l’usage du compte.\n- **Rôle du personnel :** ensemble révisé de capacités d’administration.\n- **Capacité :** autorisation administrative vérifiée par le serveur.\n- **Authentification récente :** preuve d’une connexion récente, sans permission supplémentaire.\n- **Double contrôle :** politique optionnelle imposant l’approbation d’une deuxième personne autorisée distincte. Aucune permission Warsha ne l’utilise aujourd’hui ; le contrôle standard est un opérateur autorisé.\n- **Suspension :** arrêt gouverné d’un compte ou d’une capacité de travail.\n- **Bannissement :** mesure permanente à haut risque.\n- **Journal d’audit :** preuve ajoutée sans modification d’une action.\n- **Analyses :** métriques agrégées issues des autorités métier.\n- **Export :** fichier gouverné destiné à une analyse autorisée.\n- **Repère d’adresse :** coordonnées exactes confirmées séparément du texte modifiable."
     }
   ]
 }

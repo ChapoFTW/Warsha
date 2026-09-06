@@ -347,11 +347,14 @@ select throws_ok(
   '42501', 'Automation governance is available in development only',
   'IT CANNOT SO MUCH AS READ PRODUCTION GOVERNANCE STATE');
 
--- And the human path in production is untouched by any of this.
-select is(private.required_approval_count(private.platform_environment(), null), 2,
-  'production still requires two distinct staff identities');
-select is(private.governance_mode(private.platform_environment(), null), 'dual_control',
-  'under the unchanged dual-control policy');
+-- And the human path in production is untouched by any of this. Since
+-- 202609060010 that path is one authorised operator rather than two identities:
+-- the automation boundary above is about WHICH ENVIRONMENT a machine principal
+-- may govern, and it did not move when the human count did.
+select is(private.required_approval_count(private.platform_environment(), null), 1,
+  'production is governed by one authorised operator');
+select is(private.governance_mode(private.platform_environment(), null), 'single_operator',
+  'under the single-operator policy, which is a human-count change and nothing else');
 
 select * from finish();
 rollback;

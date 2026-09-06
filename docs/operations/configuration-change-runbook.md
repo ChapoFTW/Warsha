@@ -48,9 +48,11 @@ draft ──submit──► pending_approval ──approve (different person)─
    objects, oversized strings, and anything that looks like a secret. If your
    payload is refused, the payload is wrong — do not look for a way around it.
 3. **Submit.** Everyone who can approve is notified.
-4. **Approve.** A **second person** approves and activates. The author can never
-   approve their own version; the database refuses it. Write an approval note
-   saying what you checked.
+4. **Approve.** An operator holding the approval capability approves and
+   activates, at a second factor, recently signed in, with an approval note
+   saying what they checked. Since `202609060010` this does NOT require a second
+   person — Warsha's policy is one authorized operator. The author-cannot-approve
+   rule is a separate control and still applies where the domain sets it.
 5. **Apply.** If the domain says `domain_runbook`, the owning specification's own
    path applies the value. The WPS-017 record is the approval and the audit
    trail, not the mechanism.

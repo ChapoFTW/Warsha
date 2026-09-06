@@ -360,33 +360,27 @@ select throws_ok(format($$select public.staff_activate_referral_program(%L,'self
   '42501',null,'THE CREATOR CANNOT ACTIVATE THEIR OWN REFERRAL PROGRAM');
 reset role;
 
-set local role authenticated;
-select pg_temp.act_as('a2100000-0000-4000-8000-000000000007');
-select throws_ok(format($$select public.staff_activate_referral_program(%L,'no approval yet')$$,
-  current_setting('warsha.test_program_id')),
-  '42501',null,'activation without a second approver is refused');
-select ok(public.staff_request_dual_control('approve_referral_program','activate_referral_program',
-  current_setting('warsha.test_program_id'),
-  'WPS-021 fixture program activation') is not null, 'the activator opens an approval request');
-reset role;
-
-select set_config('warsha.test_dual_id',
-  (select id::text from private.staff_dual_control_requests
-   where action_key='activate_referral_program' order by created_at desc limit 1), true);
-
-set local role authenticated;
-select pg_temp.act_as('a2100000-0000-4000-8000-000000000008');
-select ok(public.staff_approve_dual_control(
-  current_setting('warsha.test_dual_id')::uuid,
-  'Approved for WPS-021 fixture') is not null, 'a different staff member approves');
-reset role;
-
+-- Since 202609060010 `approve_referral_program` is single-operator, so one
+-- authorised staff member activates the programme without a second approver.
+-- The control that still applies is a DIFFERENT one and is asserted above: the
+-- creator may not activate their own programme, which is about separating
+-- authorship from approval rather than counting people.
 set local role authenticated;
 select pg_temp.act_as('a2100000-0000-4000-8000-000000000007');
 select ok(public.staff_activate_referral_program(
   current_setting('warsha.test_program_id')::uuid,
-  'Activating for WPS-021 fixture') is not null, 'the program activates with dual control satisfied');
+  'Activating for WPS-021 fixture') is not null,
+  'ONE AUTHORISED STAFF MEMBER ACTIVATES THE PROGRAM, WITH NO SECOND APPROVER');
 reset role;
+
+select is(
+  (select count(*)::integer from private.staff_dual_control_requests
+   where action_key = 'activate_referral_program'
+     and governance_mode = 'single_operator'
+     and approved_by is null
+     and consumed_at is not null),
+  1,
+  'and the authorisation is recorded as one operator, naming nobody else');
 
 select is((select status from public.referral_programs where program_key='launch_referral'),
   'active','the program is active');
@@ -615,29 +609,14 @@ select throws_ok(format($$select public.staff_activate_campaign(%L,'self approva
   '42501',null,'THE CREATOR CANNOT ACTIVATE THEIR OWN CAMPAIGN');
 reset role;
 
-set local role authenticated;
-select pg_temp.act_as('a2100000-0000-4000-8000-000000000007');
-select ok(public.staff_request_dual_control('approve_growth_campaign','activate_campaign',
-  current_setting('warsha.test_campaign_id'),
-  'WPS-021 fixture campaign activation') is not null, 'the activator opens an approval request');
-reset role;
-
-select set_config('warsha.test_dual_id',
-  (select id::text from private.staff_dual_control_requests
-   where action_key='activate_campaign' order by created_at desc limit 1), true);
-
-set local role authenticated;
-select pg_temp.act_as('a2100000-0000-4000-8000-000000000008');
-select ok(public.staff_approve_dual_control(
-  current_setting('warsha.test_dual_id')::uuid,
-  'Approved for WPS-021 fixture') is not null, 'a different staff member approves the campaign');
-reset role;
-
+-- `approve_growth_campaign` is single-operator since 202609060010, so one
+-- authorised staff member activates the campaign directly.
 set local role authenticated;
 select pg_temp.act_as('a2100000-0000-4000-8000-000000000007');
 select ok(public.staff_activate_campaign(
   current_setting('warsha.test_campaign_id')::uuid,
-  'Activating for WPS-021 fixture') is not null, 'the campaign activates');
+  'Activating for WPS-021 fixture') is not null,
+  'ONE AUTHORISED STAFF MEMBER ACTIVATES THE CAMPAIGN');
 reset role;
 
 update private.staff_feature_flags set enabled=true, audience='all'

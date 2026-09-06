@@ -94,9 +94,10 @@ re-issue under pressure.
 ## Configuration
 
 Never edit history. Prepare a rollback, which creates a **new corrective
-version** carrying the older payload, and let it follow the same approval path
-with a second person. If it is too urgent to wait for an approver, it is an
-incident and a kill switch, not a configuration change.
+version** carrying the older payload, and let it follow the same governed
+approval path. Since `202609060010` that path is one authorized operator with a
+second factor, a recent sign-in and a written reason. If it is too urgent even
+for that, it is an incident and a kill switch, not a configuration change.
 
 ## After every rollback
 

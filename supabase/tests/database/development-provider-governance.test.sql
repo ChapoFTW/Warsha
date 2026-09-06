@@ -194,15 +194,15 @@ on conflict do nothing;
 select ok(private.bootstrap_staff_role(
   'a2800000-0000-4000-8000-000000000001','security_administrator',
   'Development governance requester') is not null, 'the requester is authorized');
-select ok(private.bootstrap_staff_role(
-  'a2800000-0000-4000-8000-000000000002','super_administrator',
-  'Development governance second approver') is not null, 'the approver is authorized');
--- The two above are bootstraps because they ARE the initial quorum. Everything
--- past that is a fixture, and since 202609060009 bootstrap refuses once two
--- active identities exist, so these are written directly. That is the honest
+-- The one above is a bootstrap because it IS the first identity. Everything
+-- past that is a fixture, and since 202609060010 bootstrap refuses once ANY
+-- active identity exists — a single operator can now grant the rest through
+-- public.staff_grant_role — so these are written directly. That is the honest
 -- shape anyway: they were never bootstraps, they were test data using the
 -- bootstrap door because it was open.
 insert into public.staff_role_grants(user_id, role_key, reason, idempotency_key) values
+  ('a2800000-0000-4000-8000-000000000002','super_administrator',
+   'Development governance second approver','fixture:dev-provider-governance:2'),
   ('a2800000-0000-4000-8000-000000000003','security_administrator',
    'Expired approval requester','fixture:dev-provider-governance:3'),
   ('a2800000-0000-4000-8000-000000000004','security_administrator',
@@ -210,6 +210,9 @@ insert into public.staff_role_grants(user_id, role_key, reason, idempotency_key)
   ('a2800000-0000-4000-8000-000000000006','security_administrator',
    'Already active retry requester','fixture:dev-provider-governance:6');
 
+select ok(exists(select 1 from public.staff_role_grants
+  where user_id='a2800000-0000-4000-8000-000000000002' and revoked_at is null),
+  'the approver is authorized');
 select ok(exists(select 1 from public.staff_role_grants
   where user_id='a2800000-0000-4000-8000-000000000003' and revoked_at is null),
   'the expired-case requester is authorized');
@@ -352,7 +355,7 @@ select set_config('warsha.provider_approval',
 -- because there was no second person.
 select is((select governance_mode from private.staff_dual_control_requests
            where id = current_setting('warsha.provider_approval')::uuid),
-  'single_admin', 'the authorisation records the policy that produced it');
+  'single_operator', 'the authorisation records the policy that produced it');
 select is((select required_approvals from private.staff_dual_control_requests
            where id = current_setting('warsha.provider_approval')::uuid), 1::smallint,
   'and how many identities that policy asked for');
@@ -368,15 +371,15 @@ select ok((select consumed_at is not null from private.staff_dual_control_reques
            where id = current_setting('warsha.provider_approval')::uuid),
   'the authorisation is spent in the same step it was created');
 select is((select count(*)::integer from private.staff_audit_events
-           where action = 'single_admin_authorisation_consumed'
-             and safe_detail->>'governanceMode' = 'single_admin'
+           where action = 'single_operator_authorisation_consumed'
+             and safe_detail->>'governanceMode' = 'single_operator'
              and safe_detail->>'environment' = 'development'
              and actor_id = 'a2800000-0000-4000-8000-000000000001'), 1,
-  'AND THE AUDIT TRAIL SAYS SINGLE-ADMIN IN AS MANY WORDS');
+  'AND THE AUDIT TRAIL SAYS SINGLE-OPERATOR IN AS MANY WORDS');
 select is((select count(*)::integer from private.staff_audit_events
            where action = 'external_provider_activated'
              and safe_detail->>'providerKey' = 'google_maps_platform'
-             and safe_detail->>'governanceMode' = 'single_admin'), 1,
+             and safe_detail->>'governanceMode' = 'single_operator'), 1,
   'the activation audit records the policy it was governed by');
 
 -- Nobody may add a name afterwards. A record whose policy asked for one
@@ -507,7 +510,7 @@ select set_config('warsha.legal_approval',
      and subject_ref = 'privacy_policy:9.9:development'), true);
 select is((select governance_mode from private.staff_dual_control_requests
            where id = current_setting('warsha.legal_approval')::uuid),
-  'single_admin', 'and its authorisation records the single-admin policy');
+  'single_operator', 'and its authorisation records the single-operator policy');
 select ok((select approved_by is null and consumed_at is not null
            from private.staff_dual_control_requests
            where id = current_setting('warsha.legal_approval')::uuid),
@@ -578,7 +581,7 @@ select set_config('warsha.subprocessor_approval',
      and action_key = 'sync_subprocessor_in_use'), true);
 select is((select governance_mode from private.staff_dual_control_requests
            where id = current_setting('warsha.subprocessor_approval')::uuid),
-  'single_admin', 'promotion is authorised under the same recorded policy');
+  'single_operator', 'promotion is authorised under the same recorded policy');
 select ok((select approved_by is null and consumed_at is not null
            from private.staff_dual_control_requests
            where id = current_setting('warsha.subprocessor_approval')::uuid),

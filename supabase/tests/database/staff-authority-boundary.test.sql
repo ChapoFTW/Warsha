@@ -89,28 +89,49 @@ select is((select count(distinct user_id)::integer from public.staff_role_grants
 
 select ok(private.bootstrap_staff_role(
   'a3000000-0000-4000-8000-000000000001','security_administrator',
-  'First staff identity, establishing the dual-control quorum') is not null,
+  'First staff identity, because no administrator exists to grant it') is not null,
   'STAFF #1 CAN BE BOOTSTRAPPED — there is no administrator to grant them');
 
-select ok(private.bootstrap_staff_role(
-  'a3000000-0000-4000-8000-000000000002','subprocessor_approver',
-  'Second staff identity, completing the dual-control quorum') is not null,
-  'STAFF #2 CAN BE BOOTSTRAPPED — dual control needs two, so the door opens twice');
-
 select is((select count(distinct user_id)::integer from public.staff_role_grants
-           where revoked_at is null), 2,
-  'and the quorum is now two distinct identities');
+           where revoked_at is null), 1,
+  'and that is one identity');
+
+-- 202609060009 opened this door twice, because a governed grant consumed dual
+-- control and dual control needed two people. 202609060010 removed that: one
+-- authorised operator can grant everybody else through the governed path, so
+-- the circularity is one identity deep and the door closes after one.
+select throws_ok(
+  $$select private.bootstrap_staff_role(
+      'a3000000-0000-4000-8000-000000000002','subprocessor_approver',
+      'A second identity that must not come through this door')$$,
+  '42501', NULL,
+  'STAFF #2 CANNOT BE BOOTSTRAPPED — one operator can grant them properly');
 
 select throws_ok(
   $$select private.bootstrap_staff_role(
       'a3000000-0000-4000-8000-000000000003','security_administrator',
       'A third identity that must not come through this door')$$,
   '42501', NULL,
-  'STAFF #3 CANNOT BE ADDED THROUGH BOOTSTRAP — the door closed behind the quorum');
+  'AND NEITHER CAN STAFF #3 — the door closed behind the first identity');
+
+select is((select count(distinct user_id)::integer from public.staff_role_grants
+           where revoked_at is null), 1,
+  'and the refusals left no grant behind');
+
+-- The successor path, used immediately: the narrow role this file goes on to
+-- test arrives the way every staff identity now arrives.
+set local role authenticated;
+select pg_temp.act_as('a3000000-0000-4000-8000-000000000001');
+select is((public.staff_grant_role(
+  'a3000000-0000-4000-8000-000000000002','subprocessor_approver',
+  'Second staff identity, granted by one authorised operator','boundary-grant-2'))->>'duplicate',
+  'false',
+  'AND ONE OPERATOR GRANTS STAFF #2 THROUGH THE GOVERNED PATH, WITH NO SECOND PERSON');
+reset role;
 
 select is((select count(distinct user_id)::integer from public.staff_role_grants
            where revoked_at is null), 2,
-  'and the refusal left no grant behind');
+  'so there are two identities, and the second one has a named granter');
 
 -- A refusal that also broke retries would be a worse bug than the one it fixes.
 select is(
@@ -250,54 +271,33 @@ where flag_key = 'identity_extraction' and environment = 'local';
 update private.staff_kill_switches set active = false
 where switch_key = 'identity_extraction';
 
-select is(private.required_approval_count(private.platform_environment(), null), 2,
-  'the fixture environment is governed by dual control');
+select is(private.approval_policy_for('manage_subprocessors'), 'single_operator',
+  'subprocessor governance needs one authorised operator');
 
-set local role authenticated;
-select pg_temp.act_as('a3000000-0000-4000-8000-000000000001');
-
-select throws_ok(
-  $$select public.staff_activate_external_provider(
-      'google_cloud_vision','local','One identity must not activate a provider')$$,
-  '42501', 'This action requires a second approver',
-  'one identity cannot activate on its own');
-
-select ok(public.staff_request_dual_control(
-  'manage_subprocessors','activate_external_provider',
-  'google_cloud_vision:local','Raise the activation for a second identity to second') is not null,
-  'the administrator raises the request');
-reset role;
-
-select set_config('warsha.boundary_request',
-  (select id::text from private.staff_dual_control_requests
-   where subject_ref = 'google_cloud_vision:local'
-     and requested_by = 'a3000000-0000-4000-8000-000000000001'), true);
-
-set local role authenticated;
-select pg_temp.act_as('a3000000-0000-4000-8000-000000000001');
-select throws_ok(
-  $$select public.staff_approve_dual_control(
-      current_setting('warsha.boundary_request')::uuid, 'Seconding myself')$$,
-  '42501', 'A staff member cannot approve their own request',
-  'THE SAME IDENTITY CANNOT SATISFY BOTH SIDES OF DUAL CONTROL');
-reset role;
-
+-- The narrow role holds `manage_subprocessors`, and under single-operator
+-- policy holding it IS the authority. So the test of "is this role sufficient
+-- for the job" is no longer "can it second somebody else" — it is "can it do
+-- the job", which is a stronger question and the one that matters.
 set local role authenticated;
 select pg_temp.act_as('a3000000-0000-4000-8000-000000000002');
-select is((public.staff_approve_dual_control(
-  current_setting('warsha.boundary_request')::uuid,
-  'Prerequisites reviewed by the subprocessor approver'))->>'approved',
-  'true',
-  'THE NARROW ROLE CAN APPROVE A manage_subprocessors ACTION — it is sufficient for the job');
+select is((public.staff_activate_external_provider(
+  'google_cloud_vision','local',
+  'Activated by the subprocessor approver under single-operator governance'))->>'governanceMode',
+  'single_operator',
+  'THE NARROW ROLE ACTIVATES A PROVIDER ON ITS OWN — it is sufficient for the job');
 reset role;
 
-set local role authenticated;
-select pg_temp.act_as('a3000000-0000-4000-8000-000000000001');
-select is((public.staff_activate_external_provider(
-  'google_cloud_vision','local','Activate under preserved dual control'))->>'governanceMode',
-  'dual_control',
-  'and only then does the activation complete, recorded as dual control');
-reset role;
+select is((select current_status from private.external_providers
+           where provider_key = 'google_cloud_vision'), 'active',
+  'and the provider really is active');
+
+select is(
+  (select count(*)::integer from private.staff_audit_events
+   where action = 'single_operator_authorisation_consumed'
+     and actor_id = 'a3000000-0000-4000-8000-000000000002'
+     and safe_detail->>'secondApprover' is null),
+  1,
+  'recorded as one operator authorising it, naming no second approver');
 
 -- ---------------------------------------------------------------------------
 -- 7. Staff #3 arrives through the governed path, not through bootstrap
@@ -355,25 +355,36 @@ select is(
   'AND THERE IS EXACTLY ONE staff_grant_role — 202609060009 added no overload');
 
 -- ---------------------------------------------------------------------------
--- 8. The dual-control gap in role granting, pinned as it actually is
+-- 8. The metadata and the runtime now agree
 -- ---------------------------------------------------------------------------
--- `manage_staff_roles` is declared dual_control in the catalogue, and
--- `staff_grant_role` does not consume a second identity: the no-self-grant rule
--- stands in for one. That is a real gap, recorded in 202609060009 as an open
--- decision. It is asserted here so that closing it later is a deliberate change
--- to a test that says what the state was, rather than a silent drift.
+-- 202609060009 recorded an open gap here: `manage_staff_roles` was declared
+-- dual_control in the catalogue while `staff_grant_role` consumed no second
+-- identity, with the no-self-grant rule standing in for one. The catalogue said
+-- one thing and the code did another.
+--
+-- 202609060010 closed it by changing the declaration rather than the code: role
+-- administration is single-operator, which is what it always was in practice
+-- and what Warsha's policy now says it should be. Self-escalation stays blocked
+-- separately, by the no-self-grant rule, which is a different control and is
+-- asserted above.
+
+select is(
+  (select approval_policy from public.staff_capabilities
+   where capability_key = 'manage_staff_roles'),
+  'single_operator',
+  'ROLE ADMINISTRATION IS DECLARED SINGLE-OPERATOR');
 
 select is(
   (select dual_control from public.staff_capabilities
    where capability_key = 'manage_staff_roles'),
-  true,
-  'the catalogue declares role administration dual-control');
+  false,
+  'and the derived boolean agrees, because it is derived');
 
 select is(
   (select count(*)::integer from private.staff_dual_control_requests
    where action_key = 'grant_staff_role'),
   0,
-  'AND NO SECOND IDENTITY WAS SPENT ON THE GRANT ABOVE — the gap is real, not theoretical');
+  'AND NO SECOND IDENTITY WAS SPENT ON THE GRANTS ABOVE — as the catalogue now says');
 
 -- ---------------------------------------------------------------------------
 -- 9. One staff member cannot obtain another's authenticator secret

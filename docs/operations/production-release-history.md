@@ -9,6 +9,45 @@ recorded here by SHA rather than by a branch.
 
 ---
 
+## 2026-09-06 — Warsha stops requiring a second human
+
+**RELEASE_SHA**: recorded below once CI is green.
+
+The owner decided that ONE AUTHORIZED OPERATOR MAY OPERATE WARSHA. Migration
+`202609060010` makes the authority model say that instead of working around it.
+
+This SUPERSEDES every "requires a second approver" statement in the entries
+below. Those entries describe what was true when they were written and are left
+standing for that reason; they are not current operating guidance.
+
+| | old policy | new policy |
+|---|---|---|
+| who decides how many humans | `required_approval_count(environment, action)` | `staff_capabilities.approval_policy`, per capability |
+| the axis | which project the backend points at | what the action is |
+| production | 2 distinct staff identities | 1 authorized operator |
+| development | 1 | 1 |
+| capabilities marked dual control | 11 | 0 |
+| dual control available at all | yes | yes — unchanged, simply unused |
+
+Eleven capabilities were marked `dual_control` and only six of them had a
+runtime gate, so five claimed to need a second approver that no code ever asked
+for. `approval_policy` is now the single authority and `dual_control` survives
+as a GENERATED column derived from it, which is why the two can no longer
+disagree.
+
+Removed: a human-count dependency. NOT removed: capability, AAL2,
+re-authentication, staff revocation, environment binding, reasons, audit rows,
+provider readiness gates, kill switches, RLS, tenant isolation or rate limits.
+
+A single-operator authorization is recorded as exactly that — governance mode
+`single_operator`, one required approval, `approved_by` left NULL, audit action
+`single_operator_authorisation_consumed`. Nothing pretends a second approval
+occurred, and a table constraint prevents one being added later.
+
+Bootstrap now creates the FIRST staff identity only. Everybody after that
+arrives through `public.staff_grant_role`, which one operator can use and which
+records who did it — a better trail than a bootstrap grant, not a worse one.
+
 ## 2026-09-06 — staff authority narrowed, and staff MFA enrolment shipped
 
 Two releases on one day, recorded separately because they rolled back
