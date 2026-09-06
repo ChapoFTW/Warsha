@@ -1,0 +1,147 @@
+# Production release history
+
+What actually went live, when, and from which commit. One entry per Production
+release, newest first. This is the record a rollback starts from, so it names the
+previous artefact as well as the new one.
+
+Git has one branch. `origin/main` is the source authority; Production state is
+recorded here by SHA rather than by a branch.
+
+---
+
+## 2026-09-06 — first full Production release
+
+**RELEASE_SHA**: `11753aae81fdbca3fcb1200f6d200d39278a9bfd`
+CI green (run 34005643593, all four jobs). Working tree clean, local `main` equal
+to `origin/main` at release time.
+
+### Web
+
+| | |
+|---|---|
+| Vercel project | `warsha-web` (root directory `web`) |
+| Staged deployment | `dpl_HMTSjkFtMXuBXSFzFRVSe68REv93` |
+| Promoted deployment | `dpl_HMTSjkFtMXuBXSFzFRVSe68REv93` |
+| Previous live (rollback target) | `dpl_6vWpNE2Ckwa8nqNi2fFQxqhHVUfH`, built 2026-08-29 |
+| Live domains | usewarsha.com, www.usewarsha.com, app.usewarsha.com, admin.usewarsha.com |
+
+All four domains verified after promotion: HTTP 200, `/api/health` reporting
+`commit: 11753aa`, `/api/ready` reporting `database: ok` and `auth: ok`, the hero
+motion attribute present on the public domains, and no Development project
+reference in any served bundle. EN, AR and FR all render, with `dir="rtl"` on AR.
+
+Automatic Git deployment stays disabled in `web/vercel.json`. This release was an
+explicit `vercel deploy --prod` followed by `vercel promote`, which is the model
+`scripts/release-boundary.test.mts` exists to protect.
+
+**Environment correction made during this release.** Vercel Production was
+pointing `NEXT_PUBLIC_SUPABASE_URL` at the DEVELOPMENT project, so the first
+staged build talked to Development. Both variables were repointed at
+`ekgwzljpcxpxnklzxuvj`. Two traps worth knowing for next time:
+
+- values written through a PowerShell pipeline acquire a UTF-8 BOM, which makes
+  the URL invalid and shows up as `/api/ready` reporting both dependencies
+  unreachable while `/api/health` stays green. Write them with `printf '%s'`.
+- `NEXT_PUBLIC_*` values are inlined at build time, and Vercel reuses the build
+  cache. After changing one, deploy with `--force` or the old value survives in
+  an identically-hashed chunk.
+
+### Database
+
+Production migration ledger: **99 → 109**, latest `202609060007`, exact parity
+with the repository. Ten forward migrations applied in order, no seeds:
+
+```
+202609050001 202609050002 202609050003 202609060001 202609060002
+202609060003 202609060004 202609060005 202609060006 202609060007
+```
+
+No Development data was copied. `db push` reported `"seeds":[]`.
+
+Security invariants re-verified on Production after the migrations, all passing:
+0 public tables without RLS, 0 anon write grants, 0 PUBLIC table grants, 0 public
+storage buckets, 0 private-schema exposure to client roles, 0 realtime tables
+without RLS, 0 realtime tables with REPLICA IDENTITY FULL, exactly one
+`submit_my_criminal_record` overload, 44 rate-limit policies, the signed-URL
+bounds constraint present, the staff gate carrying revocation and MFA checks, and
+the discoverability trigger delete-safe.
+
+Anonymous hostile probe against Production: 15 sensitive tables all answered 401,
+zero rows leaked; every sensitive storage bucket listed 0 objects; a direct
+object download was refused.
+
+### Edge Functions
+
+All six deployed from RELEASE_SHA to `ekgwzljpcxpxnklzxuvj`, each one version
+bumped and ACTIVE: `worker-auth` v3, `location-proxy` v3, `privacy-export` v3,
+`push-dispatch` v4, `vision-extract` v3, `warsha-automation` v3. `verify_jwt`
+matches `config.toml` — false for `worker-auth` and `warsha-automation`, true for
+the rest.
+
+### Auth
+
+`password_min_length` was 6 on Production against Warsha's own policy of 8 and
+was PATCHed to 8 through the Management API, one field, nothing else touched.
+`password_required_characters` was deliberately left unset: Warsha's rule is "any
+non-alphanumeric", which GoTrue's explicit character-set model cannot express
+without rejecting passwords the app accepts.
+
+Verified and unchanged: site URL `https://app.usewarsha.com`, the redirect
+allowlist, SMTP configured, email confirmation required, TOTP enrol and verify
+enabled, `mfa_allow_low_aal` false, refresh-token rotation on, anonymous sign-up
+off.
+
+### Rollback
+
+Preferred order, least destructive first:
+
+1. `vercel promote dpl_6vWpNE2Ckwa8nqNi2fFQxqhHVUfH` — returns the web to the
+   2026-08-29 build. Note that build targets the DEVELOPMENT backend, which is
+   why it is a rollback of last resort rather than a comfortable one.
+2. Kill switches and feature flags for a specific capability.
+3. Edge Function redeploy from a previous SHA.
+4. Database migrations are forward-only. Do not reverse them; write a forward
+   migration that corrects the behaviour instead.
+
+### Not activated, and why
+
+Nothing here is disabled out of caution. Each item below has a specific,
+non-legal blocker, recorded truthfully:
+
+- **Feature flags, Maps, OCR activation** — every governed activation runs
+  through `private.require_staff_capability`, which requires a staff capability
+  holder AND an AAL2 session. Production has 0 active staff grants and
+  `mfa_required = true`. Activating would mean inventing a staff privilege or
+  fabricating MFA state. Blocked on a human enrolling TOTP and the documented
+  first-administrator bootstrap.
+- **Production feature-flag rows** — the flag table holds only `local`,
+  `development` and `staging` rows. No `production` rows exist. Creating them
+  belongs to the governed path above.
+- **Google Maps** — credential `GOOGLE_MAPS_SERVER_KEY` IS present in Production
+  Edge secrets and the provider row reads `configured_not_enabled`. Technically
+  ready; blocked only by the governed-activation boundary.
+- **OCR / Google Cloud Vision** — provider row reads
+  `implemented_awaiting_credential`. `GOOGLE_CLOUD_VISION_SERVICE_ACCOUNT` does
+  not exist in Production secrets. A genuinely missing credential, not a review
+  item.
+- **Mobile** — no production binary has ever been built for either platform. EAS
+  shows only `preview` and `development` Android builds and no iOS build at all,
+  and `eas.json` has an empty `submit.production`. An OTA would reach zero
+  devices. Requires a first native build plus Google Play and Apple account
+  actions.
+- **Push notifications** — depends on the native binary above.
+- **Payments and payouts** — no payment provider is configured. Cash-only remains
+  correct.
+- **`warsha-automation` on Production** — the function is deployed but
+  `WARSHA_DEVELOPMENT_AUTOMATION_TOKEN` does not exist in Production secrets, so
+  it refuses every caller. That is the intended posture: it is a Development
+  governance path.
+
+### Known defect, reported not fixed
+
+`public.legal_acceptances` carries `ON DELETE CASCADE` from `profiles` and a
+`BEFORE DELETE` trigger that raises "Acceptance history cannot be changed"
+unconditionally. The foreign key says these rows go when the account goes; the
+trigger says they may never go. The trigger wins and the whole account delete
+fails. Whether consent evidence should survive account deletion is a
+compliance decision, so it is recorded here rather than resolved.

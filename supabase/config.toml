@@ -195,4 +195,4 @@ sender_name = "Warsha"
 # so there is nothing else here to declare.
 [remotes.production.auth.email.template.confirmation]
 subject = "أكد بريدك الإلكتروني في ورشة | Confirm your Warsha email"
-content_path = "./templates/confirm-signup.html"
+content_path = "./supabase/templates/confirm-signup.html"
