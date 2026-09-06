@@ -91,6 +91,90 @@ allowlist, SMTP configured, email confirmation required, TOTP enrol and verify
 enabled, `mfa_allow_low_aal` false, refresh-token rotation on, anonymous sign-up
 off.
 
+### 2026-09-06, later — operations bootstrap and a corrected Maps diagnosis
+
+The first Production administrator now exists. `siefabdelghfar@gmail.com` holds
+`security_administrator` (granted `2026-09-06 04:14:34+00`, 18 capabilities),
+email is confirmed, and a TOTP factor is enrolled and verified, so an AAL2
+session is obtainable. MFA enforcement was proven at the same time: AAL2 read
+200, the same identity at AAL1 403 "Multi-factor authentication is required",
+anonymous 401.
+
+`202609060008` then created the 23 missing `production` feature-flag rows, all
+disabled.
+
+**Correction to that migration's own commentary.** It states "The block was never
+dual control. It was an empty table." The empty table was *a* block, and a real
+one, but it was not the only one and not the last one. Read in order, Maps
+activation in Production requires:
+
+| gate | state |
+|---|---|
+| provider status is activatable | `configured_not_enabled` — ok |
+| `production` in `environments` | present — ok |
+| server credential declared | `GOOGLE_MAPS_SERVER_KEY`, present in Edge secrets — ok |
+| feature-flag row exists for the environment | created by `202609060008` — ok |
+| that flag is **disabled** | disabled — ok, and it must stay that way |
+| kill switch exists and is inactive | `location_provider`, inactive — ok |
+| subprocessor `approved_not_integrated` | `google_maps_platform` — ok |
+| processing activity registered | `bookings_execution` — ok |
+| `private.consume_dual_control` succeeds | **REFUSED** |
+
+Every technical gate passes. The last one does not.
+`staff_activate_external_provider` gates on `manage_subprocessors`, whose
+`dual_control` is true, and `private.required_approval_count('production')`
+returns 2. With one staff identity `consume_dual_control` raises "This action
+requires a second approver" — and in Production it does not even leave a pending
+request behind, because the two-identity branch raises before creating one. A
+request row has to be created deliberately by `staff_request_dual_control` and
+then approved by a *different* staff user.
+
+So **Maps activation is blocked on a second Production staff identity**, not on
+MFA, not on a credential, and not on the flag table. No amount of
+re-authentication by the existing administrator will complete it. This is the
+control working as designed; the fix is a second administrator, not a change to
+the gate.
+
+Note the ordering trap: activation refuses to run while `location_provider` is
+enabled ("Disable the provider feature flag before activation"). The flag must
+stay OFF until the provider is active, then be opened. Turning it on early would
+lock Maps out of activation.
+
+`manage_feature_flags`, by contrast, has `dual_control` false, so a single
+administrator at AAL2 with reauthentication inside the 900-second window can
+govern flags on their own.
+
+### Verifications completed after release
+
+- **CI** — `Validate` is green on `6cf7560`, the tip of `origin/main`
+  (2026-09-06T04:52:53Z), as it is on every commit back through `6771182`.
+- **Android Production APK** — build `0120f1b0-7965-459b-a828-1cf39eee4b02`,
+  profile `production-apk`, channel `production`, runtime 1.0.0, version code 2,
+  from commit `8e52424`. The artefact was downloaded (136,778,756 bytes) and its
+  `assets/index.android.bundle` audited against the live key material of both
+  projects:
+
+  | key | in bundle |
+  |---|---|
+  | Production publishable | **yes — correct, this is the one that ships** |
+  | Production `service_role` (legacy) | no |
+  | Production secret (`sb_secret_`) | no |
+  | Development publishable / anon / service_role / secret | no |
+
+  The Production project ref appears once; the Development ref does not appear at
+  all. No `AIza` Google key, no service-account private key, no
+  `GOOGLE_MAPS_SERVER_KEY`, no PAT.
+
+  Two substring hits were false positives from Metro's string pool, where
+  adjacent unrelated literals concatenate. `EXPO_TOKEN` has no assigned value and
+  sits inside `MILLISECONDS_REGEX` + `PO_TOKEN` + `FCM_SERVER_CREDENTIAL`.
+  `sb_secret_` is followed by 26 characters containing 0 digits and readable
+  English, and matches no real key — a real secret key was tested for by exact
+  value and is absent.
+
+  Not yet verified: that the app launches and renders its icons on a device. That
+  needs an emulator or handset.
+
 ### Rollback
 
 Preferred order, least destructive first:
@@ -114,12 +198,18 @@ non-legal blocker, recorded truthfully:
   `mfa_required = true`. Activating would mean inventing a staff privilege or
   fabricating MFA state. Blocked on a human enrolling TOTP and the documented
   first-administrator bootstrap.
+  **SUPERSEDED** later the same day — see "operations bootstrap and a corrected
+  Maps diagnosis" above. The administrator and the AAL2 session now exist.
 - **Production feature-flag rows** — the flag table holds only `local`,
   `development` and `staging` rows. No `production` rows exist. Creating them
   belongs to the governed path above.
+  **SUPERSEDED** by `202609060008`: 23 `production` rows now exist, all disabled.
 - **Google Maps** — credential `GOOGLE_MAPS_SERVER_KEY` IS present in Production
   Edge secrets and the provider row reads `configured_not_enabled`. Technically
   ready; blocked only by the governed-activation boundary.
+  **STILL BLOCKED, and now precisely:** every technical gate passes; the
+  remaining one is dual control, which needs a *second* Production staff
+  identity. See the corrected diagnosis above.
 - **OCR / Google Cloud Vision** — provider row reads
   `implemented_awaiting_credential`. `GOOGLE_CLOUD_VISION_SERVICE_ACCOUNT` does
   not exist in Production secrets. A genuinely missing credential, not a review
