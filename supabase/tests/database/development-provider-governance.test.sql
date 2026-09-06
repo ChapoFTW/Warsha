@@ -98,12 +98,36 @@ select isnt((select current_status from private.external_providers
              where provider_key = 'google_maps_platform'), 'active',
   'BUT A CLEAN REPLAY DOES NOT ARRIVE WITH MAPS ACTIVE');
 
--- Gate 4. An absent row is off, and it must stay absent: seeding an enabled
--- production flag from a migration would be an activation with no actor, no
--- reason and no audit row.
+-- Gate 4, corrected on 2026-09-06 to the invariant it always meant.
+--
+-- This asserted that NO production location flag row may exist, on the reasoning
+-- that "an absent row is off, and it must stay absent". The reasoning is right
+-- about the danger and wrong about the remedy, and the two halves disagreed with
+-- the activation path:
+--
+--   `private.activate_external_provider_core` refuses a provider whose feature
+--   flag is MISSING for the environment, before it ever looks at whether the
+--   flag is on. So an absent row did not mean "off, safely" — it meant Maps
+--   could never be activated in Production at all. Warsha holds a Production
+--   Maps credential and declares production compatibility; the only thing
+--   standing between that and a governed activation was this empty row.
+--
+-- What actually protects anybody is the sentence the old comment already
+-- contained: a migration must not perform an activation with no actor, no
+-- reason and no audit row. That is about the flag being ENABLED, not about it
+-- existing. So the assertion now says exactly that, and says it for every
+-- production flag rather than only this one.
+--
+-- Enabling still goes through `staff_set_feature_flag`, which requires the
+-- capability, an AAL2 session and a written reason, and records the actor.
 select is((select count(*)::integer from private.staff_feature_flags
+           where environment = 'production' and enabled), 0,
+  'NO MIGRATION SEEDS AN ENABLED PRODUCTION FLAG — enabling needs an actor, a reason and an audit row');
+
+-- And the switch does exist, off, so a governed activation is reachable.
+select is((select enabled::integer from private.staff_feature_flags
            where flag_key = 'location_provider' and environment = 'production'), 0,
-  'AND NO MIGRATION SEEDS A PRODUCTION LOCATION FLAG');
+  'the production location flag exists and is OFF, which is what activation requires');
 
 -- The status correction in 202609010004 is guarded on
 -- platform_environment() = 'production', so a local replay keeps the honest
