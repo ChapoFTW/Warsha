@@ -38,6 +38,13 @@
       "channel": "production",
       "environment": "production",
       "env": {}
+    },
+    "production-apk": {
+      "extends": "production",
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      }
     }
   },
   "submit": {
