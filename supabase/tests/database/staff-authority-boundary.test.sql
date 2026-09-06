@@ -188,6 +188,14 @@ select throws_ok(
   'THE FEATURE-FLAG RPC REFUSES THE NARROW ROLE');
 
 select throws_ok(
+  $$select public.staff_publish_legal_version(
+      'terms_of_service','99.0','a'||repeat('0',63),'b'||repeat('0',63),
+      'material','Narrow role must not publish','لا يجوز',
+      current_date + 30,'Narrow role must not publish legal text')$$,
+  '42501', NULL,
+  'THE LEGAL PUBLICATION RPC REFUSES THE NARROW ROLE');
+
+select throws_ok(
   $$select public.staff_revoke_role(
       (select id from public.staff_role_grants
        where user_id = 'a3000000-0000-4000-8000-000000000001' limit 1),
