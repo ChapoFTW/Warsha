@@ -197,15 +197,28 @@ select ok(private.bootstrap_staff_role(
 select ok(private.bootstrap_staff_role(
   'a2800000-0000-4000-8000-000000000002','super_administrator',
   'Development governance second approver') is not null, 'the approver is authorized');
-select ok(private.bootstrap_staff_role(
-  'a2800000-0000-4000-8000-000000000003','security_administrator',
-  'Expired approval requester') is not null, 'the expired-case requester is authorized');
-select ok(private.bootstrap_staff_role(
-  'a2800000-0000-4000-8000-000000000004','security_administrator',
-  'Wrong purpose requester') is not null, 'the wrong-purpose requester is authorized');
-select ok(private.bootstrap_staff_role(
-  'a2800000-0000-4000-8000-000000000006','security_administrator',
-  'Already active retry requester') is not null, 'the retry requester is authorized');
+-- The two above are bootstraps because they ARE the initial quorum. Everything
+-- past that is a fixture, and since 202609060009 bootstrap refuses once two
+-- active identities exist, so these are written directly. That is the honest
+-- shape anyway: they were never bootstraps, they were test data using the
+-- bootstrap door because it was open.
+insert into public.staff_role_grants(user_id, role_key, reason, idempotency_key) values
+  ('a2800000-0000-4000-8000-000000000003','security_administrator',
+   'Expired approval requester','fixture:dev-provider-governance:3'),
+  ('a2800000-0000-4000-8000-000000000004','security_administrator',
+   'Wrong purpose requester','fixture:dev-provider-governance:4'),
+  ('a2800000-0000-4000-8000-000000000006','security_administrator',
+   'Already active retry requester','fixture:dev-provider-governance:6');
+
+select ok(exists(select 1 from public.staff_role_grants
+  where user_id='a2800000-0000-4000-8000-000000000003' and revoked_at is null),
+  'the expired-case requester is authorized');
+select ok(exists(select 1 from public.staff_role_grants
+  where user_id='a2800000-0000-4000-8000-000000000004' and revoked_at is null),
+  'the wrong-purpose requester is authorized');
+select ok(exists(select 1 from public.staff_role_grants
+  where user_id='a2800000-0000-4000-8000-000000000006' and revoked_at is null),
+  'the retry requester is authorized');
 
 -- ---------------------------------------------------------------------------
 -- Permanent development binding

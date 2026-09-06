@@ -137,16 +137,34 @@ select ok(private.bootstrap_staff_role('a1800000-0000-4000-8000-000000000001','s
   'WPS-018 fixture bootstrap') is not null, 'the administrator is bootstrapped');
 select ok(private.bootstrap_staff_role('a1800000-0000-4000-8000-000000000002','trust_safety_reviewer',
   'WPS-018 fixture') is not null, 'a trust reviewer is granted');
-select ok(private.bootstrap_staff_role('a1800000-0000-4000-8000-000000000003','trust_safety_reviewer',
-  'WPS-018 fixture second approver') is not null, 'a second trust reviewer is granted');
-select ok(private.bootstrap_staff_role('a1800000-0000-4000-8000-000000000004','verification_reviewer',
-  'WPS-018 fixture') is not null, 'a verification reviewer is granted');
+
+-- Those two ARE the initial quorum. Since 202609060009 bootstrap closes behind
+-- them, so the remaining staff fixtures are written directly. They were always
+-- fixtures rather than bootstraps; the door simply used to be open.
 -- Only break-glass holds approve_permanent_ban, so dual control is exercised
 -- with two separate break-glass holders.
-select ok(private.bootstrap_staff_role('a1800000-0000-4000-8000-000000000008','super_administrator',
-  'WPS-018 fixture break glass one') is not null, 'a break-glass holder is granted');
-select ok(private.bootstrap_staff_role('a1800000-0000-4000-8000-000000000009','super_administrator',
-  'WPS-018 fixture break glass two') is not null, 'a second break-glass holder is granted');
+insert into public.staff_role_grants(user_id, role_key, reason, idempotency_key) values
+  ('a1800000-0000-4000-8000-000000000003','trust_safety_reviewer',
+   'WPS-018 fixture second approver','fixture:production-readiness:3'),
+  ('a1800000-0000-4000-8000-000000000004','verification_reviewer',
+   'WPS-018 fixture','fixture:production-readiness:4'),
+  ('a1800000-0000-4000-8000-000000000008','super_administrator',
+   'WPS-018 fixture break glass one','fixture:production-readiness:8'),
+  ('a1800000-0000-4000-8000-000000000009','super_administrator',
+   'WPS-018 fixture break glass two','fixture:production-readiness:9');
+
+select ok(exists(select 1 from public.staff_role_grants
+  where user_id='a1800000-0000-4000-8000-000000000003' and revoked_at is null),
+  'a second trust reviewer is granted');
+select ok(exists(select 1 from public.staff_role_grants
+  where user_id='a1800000-0000-4000-8000-000000000004' and revoked_at is null),
+  'a verification reviewer is granted');
+select ok(exists(select 1 from public.staff_role_grants
+  where user_id='a1800000-0000-4000-8000-000000000008' and revoked_at is null),
+  'a break-glass holder is granted');
+select ok(exists(select 1 from public.staff_role_grants
+  where user_id='a1800000-0000-4000-8000-000000000009' and revoked_at is null),
+  'a second break-glass holder is granted');
 -- A pre-WPS-017 staff account, identified only by the legacy role table.
 -- Simulates a staff row that predates 202608310006, which refuses NEW
 -- legacy staff rows so that staff can only be granted through

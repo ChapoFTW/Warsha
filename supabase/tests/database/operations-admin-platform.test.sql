@@ -59,7 +59,9 @@ select has_function('public','process_financial_refund','the refund authority is
 select has_function('public','moderate_review','the review moderation authority is preserved');
 select has_function('public','review_reconciliation_exception','the reconciliation authority is preserved');
 
-select is((select count(*)::integer from public.staff_roles), 9, 'nine staff roles are defined');
+-- Ten since 202609060009 added `subprocessor_approver`: a role that can second
+-- a subprocessor decision without also being handed criminal records.
+select is((select count(*)::integer from public.staff_roles), 10, 'ten staff roles are defined');
 select is((select count(*)::integer from public.staff_queues), 18, 'eighteen work queues are defined');
 select ok((select count(*) from public.staff_capabilities) >= 30, 'the capability catalog is populated');
 select ok((select count(*) from private.staff_configuration_domains) >= 15,
@@ -210,7 +212,7 @@ select throws_ok(
 select throws_ok(
   $$select public.staff_grant_role('a1700000-0000-4000-8000-000000000002','support_agent','','grant-key-0008')$$,
   '22023','A reason is required','a role grant requires a reason');
-select ok(pg_catalog.jsonb_array_length((public.get_staff_role_directory())->'roles') = 9,
+select ok(pg_catalog.jsonb_array_length((public.get_staff_role_directory())->'roles') = 10,
   'the role directory lists every role');
 reset role;
 
