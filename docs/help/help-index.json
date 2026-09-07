@@ -350,7 +350,7 @@
       "locale": "en",
       "title": "Account, security, and preferences",
       "summary": "Sign in, recover your password, choose language and appearance, and manage privacy.",
-      "version": 9,
+      "version": 10,
       "lastReviewedDate": "2026-09-07",
       "features": [
         "auth",
@@ -383,7 +383,7 @@
       "locale": "ar",
       "title": "الحساب والأمان والتفضيلات",
       "summary": "سجّل الدخول، استرجع كلمة السر، واختار اللغة والمظهر وتحكم في الخصوصية.",
-      "version": 9,
+      "version": 10,
       "lastReviewedDate": "2026-09-07",
       "features": [
         "auth",
@@ -470,7 +470,7 @@
       "locale": "en",
       "title": "Getting started as a worker",
       "summary": "Register with phone and password, finish onboarding, and wait for governed approval.",
-      "version": 9,
+      "version": 10,
       "lastReviewedDate": "2026-09-07",
       "features": [
         "worker_auth",
@@ -498,7 +498,7 @@
       "locale": "ar",
       "title": "ابدأ كصنايعي",
       "summary": "سجّل بالموبايل وكلمة السر، كمّل التقديم، واستنى الموافقة المنظمة.",
-      "version": 9,
+      "version": 10,
       "lastReviewedDate": "2026-09-07",
       "features": [
         "worker_auth",
@@ -1228,7 +1228,7 @@
       "locale": "fr",
       "title": "Compte, sécurité et préférences",
       "summary": "Connectez-vous, récupérez votre mot de passe et gérez langue, apparence et confidentialité.",
-      "version": 9,
+      "version": 10,
       "lastReviewedDate": "2026-09-07",
       "features": [
         "auth",
@@ -1288,7 +1288,7 @@
       "locale": "fr",
       "title": "Bien démarrer comme professionnel",
       "summary": "Créez votre compte sans e-mail, terminez votre profil et préparez-vous à recevoir des opportunités.",
-      "version": 9,
+      "version": 10,
       "lastReviewedDate": "2026-09-07",
       "features": [
         "worker_auth",

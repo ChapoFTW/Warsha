@@ -493,8 +493,91 @@ check(/scope: 'global'/.test(recoverRoute),
   'and every session the old password could open is revoked afterwards');
 check(/passwordMeetsPolicy/.test(recoverRoute),
   'the canonical password policy is enforced server-side, not only in the browser');
-check(!/console\.(log|warn|error|info)/.test(codeOnly(recoverRoute)),
-  'and the route logs nothing at all — not the hash, not the password');
+// The route DOES log now, and what it may log is the assertion. A blanket ban
+// was easier to write and cost more than it saved: when the deliberate submit
+// began failing in Production, the deployment logs held one line — the request
+// and its status — while the provider's actual answer lived and died inside a
+// caught error. The rule was never "say nothing"; it is "carry no credential".
+const routeDiagnostic = recoverRoute.slice(
+  recoverRoute.indexOf('function diagnose'), recoverRoute.indexOf('function reply'));
+check(/console\.info\(JSON\.stringify\(\{/.test(routeDiagnostic),
+  'THE ROUTE REPORTS THROUGH EXACTLY ONE DIAGNOSTIC');
+equal((codeOnly(recoverRoute).match(/console\./g) ?? []).length, 1,
+  'and there is no second place that logs');
+const routeFields = [...routeDiagnostic.matchAll(/^\s{4}(\w+)[:,]/gm)].map(([, field]) => field).sort();
+equal(routeFields, ['failure_class', 'http_status', 'operation', 'provider_code', 'step'],
+  'ITS FIELDS ARE FIVE, NAMED HERE, AND A TOKEN IS NOT AMONG THEM');
+// Comments stripped, and the operation's own name neutralised: this file's
+// third prose-versus-code false positive, and the fix is the same each time.
+const diagnosticCode = codeOnly(routeDiagnostic).replace(/'password-recovery'/g, 'OPERATION');
+check(!/tokenHash|password|headers|\.message/.test(diagnosticCode),
+  'the diagnostic body names no credential and no provider text');
+check(/\^\[a-z0-9_\]\{1,64\}\$/.test(routeDiagnostic),
+  'and the provider code is bounded to a code shape rather than passed through');
+
+// --- The second factor is completed, not bypassed ---------------------------
+//
+// Production regression, 2026-09-07. A recovery session is aal1. An account
+// holding a verified TOTP factor cannot change its password on one: the
+// provider answers `insufficient_aal` / HTTP 401, "AAL2 session is required to
+// update email or password when MFA is enabled." The route did not recognise
+// that code, so it fell through to `failure: 'server'` and the owner was told
+// "something went wrong on our side" on a link that was working perfectly.
+//
+// The refusal is CORRECT and these assertions exist to keep it that way: the
+// fix completes the challenge, and must never become a way around it.
+
+check(/getAuthenticatorAssuranceLevel/.test(recoverRoute),
+  'THE ROUTE ASKS THE PROVIDER WHETHER A SECOND FACTOR IS REQUIRED');
+check(/nextLevel === 'aal2' && assurance\.currentLevel !== 'aal2'/.test(recoverRoute),
+  'and acts only when a verified factor actually exists');
+check(/challengeAndVerify/.test(recoverRoute),
+  'IT COMPLETES THE CHALLENGE');
+const routeCode = codeOnly(recoverRoute);
+check(routeCode.indexOf('challengeAndVerify') < routeCode.indexOf('updateUser'),
+  'BEFORE the password is set, on the session verifyOtp returned');
+check(!/service_role|SUPABASE_SECRET|SERVICE_ROLE/.test(recoverRoute),
+  'AND WITHOUT PRIVILEGE: no service_role key appears anywhere in this route');
+check(/NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY/.test(recoverRoute),
+  'it uses the publishable key, exactly as a browser would');
+check(/insufficient_aal/.test(recoverRoute),
+  'and the provider code is mapped rather than collapsed into a server error');
+check(/\/\^\[0-9\]\{6\}\$\//.test(recoverRoute),
+  'a code is six digits or it never reaches the provider');
+
+// The failure has to be distinguishable, or the person is told nothing useful.
+for (const failure of ['mfa_required', 'mfa_invalid']) {
+  check(recoverRoute.includes(`'${failure}'`), `the route can answer ${failure}`);
+  check(recoveryPage.includes(failure), `and the page knows what ${failure} means`);
+}
+check(/setCodeOpen\(true\)/.test(recoveryPage),
+  'AND THE PAGE OPENS THE CODE FIELD WHEN THE SERVER ASKS FOR ONE');
+check(/code: code \|\| undefined/.test(recoveryPage),
+  'the code travels WITH the password, because the submit spends the link');
+
+// Both surfaces, or the rule disagrees with itself.
+check(/getAuthenticatorAssuranceLevel/.test(authContext),
+  'MOBILE ASKS THE SAME QUESTION');
+check(/challengeAndVerify/.test(authContext), 'and completes the same challenge');
+const nativeCode2 = codeOnly(authContext);
+const nativeCompleteBlock = nativeCode2.slice(nativeCode2.indexOf('completePasswordRecovery: async'));
+check(nativeCompleteBlock.indexOf('challengeAndVerify') < nativeCompleteBlock.indexOf('updateUser'),
+  'in the same order');
+check(/authRecoveryCodeRequired/.test(read('src/auth/auth-errors.ts'))
+  && /authRecoveryCodeInvalid/.test(read('src/auth/auth-errors.ts')),
+  'and the two outcomes are named failures rather than a generic error');
+const mobileCopy = read('src/i18n/translations.ts');
+for (const key of ['authRecoveryCodeRequired', 'authRecoveryCodeInvalid',
+  'recoveryCodeLabel', 'recoveryCodeHint', 'recoveryCodeDisclosure']) {
+  equal((mobileCopy.match(new RegExp(`${key}\s*:`, 'g')) ?? []).length, 3,
+    `${key} is written in all three languages`);
+}
+const webCopy = read('web/lib/app-copy.ts') + read('web/lib/app-copy.fr.ts');
+for (const key of ['errRecoveryCodeRequired', 'errRecoveryCodeInvalid',
+  'recoveryCodeLabel', 'recoveryCodeHint', 'recoveryCodeDisclosure']) {
+  equal((webCopy.match(new RegExp(`${key}\s*:`, 'g')) ?? []).length, 3,
+    `and the web says ${key} in all three too`);
+}
 
 // --- The page consumes nothing on load --------------------------------------
 check(!/verifyOtp|exchangeCodeForSession|setSession/.test(codeOnly(recoveryPage)),
@@ -530,8 +613,8 @@ const handlerBlock = authContext.slice(
   authContext.indexOf('setOutcome({ status: \'processing\' })'));
 check(!/verifyOtp/.test(codeOnly(handlerBlock)),
   'and the deep-link handler performs no exchange for a token hash');
-check(/completePasswordRecovery: async \(password: string\)/.test(authContext),
-  'the exchange lives in a named action a person triggers');
+check(/completePasswordRecovery: async \(password: string, code\?: string\)/.test(authContext),
+  'the exchange lives in a named action a person triggers, taking the code with it');
 const completeBlock = authContext.slice(authContext.indexOf('completePasswordRecovery: async'));
 check(/verifyOtp\(\{[\s\S]{0,120}token_hash: recoveryTokenHash/.test(completeBlock),
   'which spends the hash');
@@ -539,8 +622,10 @@ check(completeBlock.indexOf('verifyOtp') < completeBlock.indexOf('updateUser'),
   'AND ONLY THEN SETS THE PASSWORD, in that order');
 check(/setRecoveryTokenHash\(null\)/.test(completeBlock),
   'and the hash is dropped whether it succeeded or failed');
-check(/auth\.completePasswordRecovery\(password\)/.test(mobileReset),
-  'the mobile screen submits through that action');
+check(/auth\.completePasswordRecovery\(password, code \|\| undefined\)/.test(mobileReset),
+  'the mobile screen submits through that action, code and all');
+check(/setCodeOpen\(true\)/.test(mobileReset),
+  'AND OPENS ITS CODE FIELD WHEN THE ACCOUNT TURNS OUT TO NEED ONE');
 check(!/auth\.updateUser|getSupabaseClient\(\)\.auth\.updateUser/.test(codeOnly(mobileReset)),
   'and no longer assumes a session the link used to create');
 
@@ -587,7 +672,6 @@ check(/history\.replaceState/.test(recoveryPage),
 // --- Nothing logs it --------------------------------------------------------
 for (const [label, source] of [
   ['the recovery page', recoveryPage],
-  ['the submit route', recoverRoute],
   ['the callback parser', parser],
 ] as const) {
   check(!/console\.(log|warn|error|info|debug)/.test(codeOnly(source)),
@@ -618,11 +702,29 @@ check(/p_surface|p_name|p_component|p_fatal/.test(errorReporter),
 // reply that interpolates anything at all — the hash, the password, the
 // provider's error text — cannot match, whatever it happens to be called.
 const replyShapes = [...recoverRoute.matchAll(/reply\(\{[^}]*\}/g)].map(([shape]) => shape);
-check(replyShapes.length >= 6, `the route answers in fixed shapes (${replyShapes.length})`);
+check(replyShapes.length >= 3, `the route answers in fixed shapes (${replyShapes.length})`);
 for (const shape of replyShapes) {
-  check(/^reply\(\{ ok: true \}$|^reply\(\{ ok: false, failure: '[a-z_]+' \}$/.test(shape),
+  check(/^reply\(\{ ok: true \}$|^reply\(\{ ok: false, failure(: '[a-z_]+')? \}$/.test(shape),
     `A REPLY IS A LITERAL VERDICT AND INTERPOLATES NOTHING: ${shape}`);
 }
+
+// Every refusal now names the step it happened at, and both halves of that name
+// are drawn from the two unions this file also lists. A step invented at a call
+// site would pass a `string` type and tell the next reader nothing.
+const STEPS = ['parse', 'shape', 'policy', 'verify', 'assurance', 'challenge',
+  'update', 'revoke', 'done'];
+const FAILURES = ['invalid', 'weak_password', 'expired_or_used', 'same_password',
+  'rate_limited', 'mfa_required', 'mfa_invalid', 'server'];
+const failCalls = [...codeOnly(recoverRoute).matchAll(/fail\('([a-z]+)', '([a-z_]+)'/g)];
+check(failCalls.length >= 10, `EVERY REFUSAL NAMES ITS STEP (${failCalls.length} sites)`);
+for (const [, step, failure] of failCalls) {
+  check(STEPS.includes(step), `a declared step: ${step}`);
+  check(FAILURES.includes(failure), `a declared failure class: ${failure}`);
+}
+for (const failure of FAILURES) {
+  check(recoverRoute.includes(`'${failure}'`), `the Failure union member ${failure} is reachable`);
+}
+
 check(/if \(type !== 'recovery'\)/.test(recoverRoute),
   'AND AN UNSUPPORTED CALLBACK TYPE IS REFUSED — this is not a general exchanger');
 check(/tokenHash\.length > 512/.test(recoverRoute),

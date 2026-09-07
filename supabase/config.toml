@@ -103,6 +103,21 @@ email_sent = 10
 # working, and an unknown phone is answered exactly like a known one with a
 # wrong password.
 
+# Staff hold TOTP factors, and Production has TOTP enrolment enabled — proven
+# by enrolling one on a synthetic Production account on 2026-09-07. Locally it
+# was off, which meant the one account shape that could break password recovery
+# could not even be created here.
+#
+# That is how `insufficient_aal` reached Production unseen: a recovery session
+# is aal1, an account with a verified factor cannot change its password on one,
+# and no local test could hold a factor to notice. Declared so the local stack
+# can reproduce the accounts Production actually has.
+[auth.mfa]
+max_enrolled_factors = 10
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true
+
 [auth.email]
 enable_signup = true
 double_confirm_changes = true

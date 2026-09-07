@@ -789,6 +789,11 @@ const baseAppCopy = {
     requestNewReset: 'Request a new link',
     errSamePassword: 'That is already your password. Choose a different one.',
     errSessionExpired: 'This reset link has expired. Request a new one and try again.',
+    recoveryCodeDisclosure: 'I use an authenticator app',
+    recoveryCodeLabel: 'Authenticator code',
+    recoveryCodeHint: 'The current 6-digit code from your authenticator app.',
+    errRecoveryCodeRequired: 'This account uses an authenticator app, so a reset link is not enough on its own. Request a new link, then enter your current 6-digit code with your new password.',
+    errRecoveryCodeInvalid: 'That code was not accepted. Codes change every 30 seconds, so use the current one. This link has now been used, so request a new one.',
 
     confirmCheckingTitle: 'Confirming your email address',
     confirmCheckingBody: 'One moment.',
@@ -2004,6 +2009,11 @@ const baseAppCopy = {
     requestNewReset: 'اطلب لينك جديد',
     errSamePassword: 'دي كلمة السر الحالية بتاعتك. اختار واحدة مختلفة.',
     errSessionExpired: 'اللينك ده انتهت صلاحيته. اطلب واحد جديد وجرّب تاني.',
+    recoveryCodeDisclosure: 'بستخدم تطبيق المصادقة',
+    recoveryCodeLabel: 'كود المصادقة',
+    recoveryCodeHint: 'الكود الحالي المكوّن من 6 أرقام من تطبيق المصادقة بتاعك.',
+    errRecoveryCodeRequired: 'الحساب ده بيستخدم تطبيق مصادقة، فلينك إعادة التعيين لوحده مش كفاية. اطلب لينك جديد، وبعدين اكتب الكود الحالي المكوّن من 6 أرقام مع كلمة السر الجديدة.',
+    errRecoveryCodeInvalid: 'الكود ده مااتقبلش. الأكواد بتتغير كل 30 ثانية، فاستخدم الكود الحالي. اللينك ده اتستخدم دلوقتي، فاطلب واحد جديد.',
 
     confirmCheckingTitle: 'بنأكّد بريدك الإلكتروني',
     confirmCheckingBody: 'لحظة واحدة.',

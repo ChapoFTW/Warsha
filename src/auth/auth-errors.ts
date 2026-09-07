@@ -27,6 +27,8 @@ export type AuthFailure =
   | 'authPhoneAlreadyVerified'
   | 'authInvalidOtp'
   | 'authOtpExpired'
+  | 'authRecoveryCodeRequired'
+  | 'authRecoveryCodeInvalid'
   | 'authPhoneUnavailable'
   | 'authSessionExpired'
   | 'authNetworkError'
@@ -77,6 +79,8 @@ const SAFE_MESSAGES: Record<AuthFailure, string> = {
   authPhoneAlreadyVerified: 'The phone number is already verified on this account.',
   authInvalidOtp: 'The OTP is invalid.',
   authOtpExpired: 'The OTP has expired.',
+  authRecoveryCodeRequired: 'The account requires an authenticator code to change its password.',
+  authRecoveryCodeInvalid: 'The authenticator code was not accepted.',
   authPhoneUnavailable: 'Phone authentication is unavailable.',
   authSessionExpired: 'The authenticated session is unavailable.',
   authNetworkError: 'The authentication network request failed.',

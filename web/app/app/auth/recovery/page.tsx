@@ -48,13 +48,16 @@ type Status =
   | { status: 'ready' | 'saving' | 'done' }
   | { status: 'invalid' };
 
-type Failure = 'weak_password' | 'expired_or_used' | 'same_password' | 'rate_limited' | 'server' | 'invalid';
+type Failure = 'weak_password' | 'expired_or_used' | 'same_password' | 'rate_limited'
+  | 'mfa_required' | 'mfa_invalid' | 'server' | 'invalid';
 
 const FAILURE_COPY: Record<Failure, string> = {
   weak_password: 'passwordRequirements',
   same_password: 'errSamePassword',
   expired_or_used: 'resetLinkInvalid',
   rate_limited: 'errRateLimited',
+  mfa_required: 'errRecoveryCodeRequired',
+  mfa_invalid: 'errRecoveryCodeInvalid',
   server: 'errServer',
   invalid: 'resetLinkInvalid',
 };
@@ -79,6 +82,24 @@ export default function RecoveryPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [failure, setFailure] = useState<Failure | null>(null);
+
+  /*
+   * The authenticator code, asked for only by people who have one.
+   *
+   * A recovery session starts at aal1, and an account with a verified factor
+   * cannot change its password on one — the provider refuses with
+   * `insufficient_aal`, which is right: otherwise reading the mailbox would be
+   * enough to defeat the authenticator.
+   *
+   * The code has to travel WITH the password, because the submit spends the
+   * link. Discovering the requirement afterwards would mean burning somebody's
+   * link to tell them something they could have been asked for. So the field is
+   * here from the start, behind a disclosure so that the great majority who
+   * have no authenticator never see it, and it opens itself if the server says
+   * a code was needed.
+   */
+  const [code, setCode] = useState('');
+  const [codeOpen, setCodeOpen] = useState(false);
 
   /*
    * Take the hash out of the address bar once it has been read.
@@ -113,16 +134,21 @@ export default function RecoveryPage() {
       const response = await fetch('/api/auth/recover', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ tokenHash, password }),
+        body: JSON.stringify({ tokenHash, password, code: code || undefined }),
       });
       const result = await response.json().catch(() => ({ ok: false, failure: 'server' }));
       if (result?.ok) {
         setPassword('');
         setConfirmation('');
+        setCode('');
         setStatus({ status: 'done' });
         return;
       }
-      setFailure((result?.failure ?? 'server') as Failure);
+      const reported = (result?.failure ?? 'server') as Failure;
+      // If the account turned out to need a code, show the field rather than
+      // leaving somebody to find the disclosure themselves.
+      if (reported === 'mfa_required' || reported === 'mfa_invalid') setCodeOpen(true);
+      setFailure(reported);
       setStatus({ status: 'ready' });
     } catch {
       setFailure('server');
@@ -188,6 +214,34 @@ export default function RecoveryPage() {
           hideShort={words.revealHide}
           disabled={busy}
         />
+        {codeOpen ? (
+          <label className={styles.field}>
+            <span className={styles.label}>{words.recoveryCodeLabel}</span>
+            <input
+              className={styles.input}
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              pattern="[0-9]{6}"
+              maxLength={6}
+              value={code}
+              onChange={(event) => setCode(event.target.value.replace(/[^0-9]/g, ''))}
+              disabled={busy}
+              aria-describedby="recovery-code-hint"
+            />
+            <span id="recovery-code-hint" className={styles.foot}>{words.recoveryCodeHint}</span>
+          </label>
+        ) : (
+          <button
+            type="button"
+            className={styles.link}
+            onClick={() => setCodeOpen(true)}
+            aria-expanded={false}
+          >
+            {words.recoveryCodeDisclosure}
+          </button>
+        )}
+
         {mismatch ? <p className={styles.error}>{words.passwordMismatch}</p> : null}
         {failure ? <p className={styles.error} role="alert">{words[FAILURE_COPY[failure]]}</p> : null}
 

@@ -26,6 +26,19 @@ export default function ResetPasswordScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [busy, setBusy] = useState(false);
+  /*
+   * The authenticator code, for the accounts that hold a factor.
+   *
+   * A recovery session is aal1, and the provider will not change the password
+   * of an account with a verified factor on one -- correctly, or reading the
+   * mailbox would be enough to defeat the authenticator. The code has to be
+   * here BEFORE the submit, because the submit spends the link: discovering the
+   * requirement afterwards would burn somebody's link to tell them something
+   * they could have been asked. Hidden behind a disclosure, so the majority who
+   * have no authenticator never see it.
+   */
+  const [code, setCode] = useState('');
+  const [codeOpen, setCodeOpen] = useState(false);
   const [success, setSuccess] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -51,13 +64,19 @@ export default function ResetPasswordScreen() {
       // One deliberate step: spend the held token hash, then set the password.
       // Opening the link did neither, which is what stops a mail scanner from
       // consuming the recovery before the person ever sees this screen.
-      await auth.completePasswordRecovery(password);
+      await auth.completePasswordRecovery(password, code || undefined);
       await auth.finishPasswordRecovery();
       setPassword('');
       setConfirmation('');
+      setCode('');
       setSuccess(true);
     } catch (error) {
-      setMessage(t(authMessageKey(sanitizeAuthError(error))));
+      const failure = sanitizeAuthError(error);
+      // If the account turned out to need a code, show the field rather than
+      // leaving somebody to find the disclosure themselves.
+      if (failure.translationKey === 'authRecoveryCodeRequired'
+        || failure.translationKey === 'authRecoveryCodeInvalid') setCodeOpen(true);
+      setMessage(t(authMessageKey(failure)));
     } finally {
       setBusy(false);
     }
@@ -103,6 +122,16 @@ export default function ResetPasswordScreen() {
                 password had no idea what the rules were and could only refuse
                 the result. */}
             <PasswordRequirementList password={password} />
+            {codeOpen
+              ? <View style={styles.field}>
+                  <AppText style={styles.label}>{t('recoveryCodeLabel')}</AppText>
+                  <View style={styles.inputShell}>
+                    <TextInput accessibilityLabel={t('recoveryCodeLabel')} autoCapitalize="none" autoCorrect={false} keyboardType="number-pad" textContentType="oneTimeCode" maxLength={6} value={code} onChangeText={(next) => setCode(next.replace(/[^0-9]/g, ''))} placeholder={t('recoveryCodeHint')} placeholderTextColor={colors.textMuted} style={[styles.input, { textAlign: isRTL ? 'right' : 'left' }]}/>
+                  </View>
+                </View>
+              : <Pressable accessibilityRole="button" accessibilityLabel={t('recoveryCodeDisclosure')} onPress={() => setCodeOpen(true)}>
+                  <AppText style={styles.link}>{t('recoveryCodeDisclosure')}</AppText>
+                </Pressable>}
             {confirmation.length > 0 && !passwordsMatch ? <AppText accessibilityRole="alert" style={styles.error}>{t('passwordMismatch')}</AppText> : null}
             {message ? <AppText accessibilityRole="alert" style={styles.error}>{message}</AppText> : null}
             <Pressable accessibilityRole="button" accessibilityLabel={t('resetPasswordAccessibility')} disabled={busy || !passwordValid || !passwordsMatch} onPress={() => void submit()} style={({ pressed }) => [styles.primary, (busy || !passwordValid || !passwordsMatch) && styles.disabled, pressed && styles.pressed]}>
@@ -136,6 +165,9 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   inputShell: { minHeight: 54, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: colors.border, borderRadius: radii.lg, backgroundColor: colors.background, paddingHorizontal: spacing.md },
   input: { flex: 1, minHeight: 52, color: colors.white, fontSize: 16, paddingHorizontal: spacing.sm }, eye: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center' },
   requirements: { gap: spacing.sm }, requirementRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm }, requirement: { color: colors.textMuted, fontSize: 13 }, met: { color: colors.success },
+  // The disclosure that reveals the authenticator field. A link rather than a
+  // second button, because it opens a field instead of doing anything.
+  link: { color: colors.textSecondary, fontSize: 14, fontWeight: typography.medium, textDecorationLine: 'underline' },
   error: { color: colors.error, fontSize: 13 }, primary: { minHeight: 54, minWidth: 220, borderRadius: radii.lg, backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.xl }, primaryText: { color: colors.background, fontWeight: typography.bold, textAlign: 'center' },
   secondary: { minHeight: 48, minWidth: 220, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.xl }, secondaryText: { color: colors.textPrimary, fontWeight: typography.semibold, textAlign: 'center' },
   disabled: { opacity: 0.42 }, pressed: { opacity: 0.78 }, reverse: { flexDirection: 'row-reverse' },

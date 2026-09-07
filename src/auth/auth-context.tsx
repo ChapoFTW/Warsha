@@ -68,7 +68,7 @@ type Value = {
    * one deliberate step. This is the ONLY place a recovery authority is
    * exchanged on mobile: opening the deep link does not.
    */
-  completePasswordRecovery: (password: string) => Promise<void>;
+  completePasswordRecovery: (password: string, code?: string) => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -440,7 +440,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         throw sanitizeAuthError(error, 'confirmation-resend');
       }
     },
-    completePasswordRecovery: async (password: string) => {
+    completePasswordRecovery: async (password: string, code?: string) => {
       if (environment.dataMode === 'mock') return;
       if (!recoveryTokenHash) throw new SafeAuthError('authOtpExpired');
       const client = getSupabaseClient();
@@ -457,9 +457,34 @@ export function AuthProvider({ children }: PropsWithChildren) {
           type: 'recovery',
         });
         if (verifyError) throw verifyError;
+
+        /*
+         * A recovery session is aal1. An account holding a verified factor
+         * cannot change its password on one — the provider answers
+         * `insufficient_aal`, which is correct: otherwise reading the mailbox
+         * would defeat the authenticator.
+         *
+         * The challenge is completed here, on the same session, in the same
+         * action, because the hash is already spent by the line above. The
+         * screen asks for the code alongside the password for that reason.
+         */
+        const { data: assurance } = await client.auth.mfa.getAuthenticatorAssuranceLevel();
+        if (assurance?.nextLevel === 'aal2' && assurance.currentLevel !== 'aal2') {
+          if (!code) throw new SafeAuthError('authRecoveryCodeRequired');
+          const { data: factors } = await client.auth.mfa.listFactors();
+          const factor = (factors?.totp ?? [])[0];
+          if (!factor) throw new SafeAuthError('authRecoveryCodeRequired');
+          const { error: challengeError } = await client.auth.mfa.challengeAndVerify({
+            factorId: factor.id,
+            code,
+          });
+          if (challengeError) throw new SafeAuthError('authRecoveryCodeInvalid');
+        }
+
         const { error: updateError } = await client.auth.updateUser({ password });
         if (updateError) throw updateError;
       } catch (error) {
+        if (error instanceof SafeAuthError) throw error;
         throw sanitizeAuthError(error, 'password-reset');
       } finally {
         // Spent or refused, it is not reusable and must not linger in memory.
