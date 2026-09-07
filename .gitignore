@@ -69,3 +69,7 @@ devlog.txt
 # and route-crawl scripts on every run.
 a11y-report.json
 crawl-chromium.json
+
+# Firebase Android config. Retrieved with `firebase apps:sdkconfig`, supplied to
+# EAS as a file environment variable, and never committed.
+google-services.json

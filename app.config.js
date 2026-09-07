@@ -10,6 +10,11 @@
 // location-proxy with the separate server key. See
 // docs/architecture/external-provider-registry.md.
 
+const { existsSync } = require('node:fs');
+const path = require('node:path');
+
+const LOCAL_GOOGLE_SERVICES = path.join(__dirname, 'google-services.json');
+
 /**
  * Is this EAS CLI reading the config locally only to learn the project id?
  *
@@ -58,6 +63,37 @@ function requiredRenderKey(name) {
   );
 }
 
+/**
+ * Where the Firebase Android config comes from.
+ *
+ * `google-services.json` carries the FCM sender id the Android build needs to
+ * register a push token. It is not committed — it is retrieved with
+ * `firebase apps:sdkconfig` and supplied to EAS as a file environment variable,
+ * which arrives on the worker as a path in `GOOGLE_SERVICES_JSON`.
+ *
+ * Locally the file sits at the project root, so a prebuild or `run:android`
+ * works without EAS.
+ *
+ * Undefined during the EAS local metadata read, for the same reason the render
+ * keys are: that evaluation exists only to learn the project id, and throwing
+ * there breaks every EAS command while producing no artifact. On the build
+ * worker a missing file IS fatal — a binary without it registers no push token
+ * and fails silently at the one moment nobody is watching.
+ */
+function googleServicesFile() {
+  const fromEas = process.env.GOOGLE_SERVICES_JSON;
+  if (typeof fromEas === 'string' && fromEas.trim() !== '') return fromEas;
+  if (existsSync(LOCAL_GOOGLE_SERVICES)) return LOCAL_GOOGLE_SERVICES;
+  if (isEasLocalMetadataRead()) return undefined;
+  throw new Error(
+    'google-services.json is missing. Android push registration needs it. '
+      + 'Retrieve it with `firebase apps:sdkconfig ANDROID <appId> --out '
+      + 'google-services.json`, or provide it to EAS as a file environment '
+      + 'variable named GOOGLE_SERVICES_JSON. '
+      + 'See docs/operations/google-cloud-setup-runbook.md.',
+  );
+}
+
 module.exports = ({ config }) => ({
   ...config,
   ios: {
@@ -69,6 +105,7 @@ module.exports = ({ config }) => ({
   },
   android: {
     ...config.android,
+    googleServicesFile: googleServicesFile(),
     config: {
       ...config.android?.config,
       googleMaps: {
