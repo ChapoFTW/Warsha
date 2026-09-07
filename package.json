@@ -92,6 +92,7 @@
     "test:admin-console": "node --no-warnings --experimental-strip-types scripts/admin-console.test.mts",
     "test:web-navigation": "node --no-warnings --experimental-strip-types scripts/web-navigation.test.mts",
     "test:password-recovery": "node --no-warnings --experimental-strip-types scripts/password-recovery.test.mts",
+    "test:recovery-state": "node --no-warnings --experimental-strip-types scripts/recovery-state.test.mts",
     "test:automation": "node --no-warnings --experimental-strip-types scripts/warsha-automation.test.mts",
     "test:all": "node scripts/run-deterministic-tests.mjs",
     "web:typecheck": "npm --prefix web run typecheck",

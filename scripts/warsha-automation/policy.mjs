@@ -79,6 +79,7 @@ export const DETERMINISTIC_TEST_SCRIPTS = [
   'test:admin-console',
   'test:web-navigation',
   'test:password-recovery',
+  'test:recovery-state',
   'test:automation',
   'test:auth-validation',
   'test:session-teardown',
@@ -408,6 +409,7 @@ export function planValidation(impact, options = {}) {
       ['auth-signup', 'test:signup-state'],
       ['auth-email', 'test:customer-email-confirmation'],
       ['auth-recovery', 'test:password-recovery'],
+      ['auth-recovery-state', 'test:recovery-state'],
       ['auth-wps023', 'test:wps023'],
     ]) add(npmStep(id, script, 'Authentication/session/onboarding behavior changed.'));
   }
