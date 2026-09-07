@@ -205,50 +205,53 @@ check(/Email or phone number/.test(readWeb('lib', 'copy.ts'))
 
 
 // ---------------------------------------------------------------------------
-// The legal locale switcher
+// The legal pages have ONE language control, and it is not theirs
 // ---------------------------------------------------------------------------
-// It rendered "العربيةFrançais": two bare anchors inside one bordered pill,
-// with no gap, one shared border, one shared hover and a single tab stop. That
-// was invisible while there was one alternative language and became a defect the
-// day French arrived. Twenty-six documents in three locales inherit this one
-// component, so the assertions are about the component, not about a page.
+// They used to carry their own row of language buttons directly under the
+// document summary, in addition to the site-wide control in the footer. Two
+// switchers on one screen is a question rather than a convenience: a reader has
+// to work out whether the inline one changes this document or the whole site,
+// and the honest answer was "the same thing, twice". The inline row was removed.
+//
+// Twenty-six documents in three locales inherit this one component, so these
+// assertions are about the component, not about a page.
 
 const legalPage = readWeb('app', '[locale]', 'legal', '[slug]', 'page.tsx');
 const legalStyles = readWeb('app', '[locale]', 'legal', '[slug]', 'page.module.css');
 
-check(/LOCALES\.map\(/.test(legalPage),
-  'the switcher renders EVERY locale, not only the alternatives');
-check(/aria-current="true"/.test(legalPage),
-  'AND MARKS THE CURRENT ONE, so "which language am I reading" is answerable');
-check(/<span[^>]*className=\{styles\.languageCurrent\}/.test(legalPage),
-  'the current locale is a span, not a link to the page you are already on');
-check(/<bdi>/.test(legalPage),
-  'EACH LABEL IS DIRECTION-ISOLATED WITH bdi — an Arabic name between Latin ones reorders its neighbours without it');
-check(/<nav[^>]*aria-label=\{words\.legalLanguageGroup\}/.test(legalPage),
-  'the group is a labelled landmark rather than an unnamed div');
-check(!/styles\.otherLanguage/.test(legalPage),
-  'the single-pill container is gone from the markup');
+check(!/styles\.languages|styles\.languageCurrent|styles\.language\b/.test(legalPage),
+  'THE INLINE LEGAL LANGUAGE SWITCHER IS GONE FROM THE DOCUMENT HEADER');
+check(!/<nav[^>]*aria-label=\{words\.legalLanguageGroup\}/.test(legalPage),
+  'and its labelled landmark with it');
+check(!/\.languages\s*\{/.test(legalStyles) && !/\.languageCurrent\s*\{/.test(legalStyles),
+  'AND ITS STYLES ARE GONE TOO, rather than left behind unreferenced');
 
-// The container spaces the options; the border and hit area belong to each one.
-check(/\.languages\s*\{[^}]*display:\s*flex/s.test(legalStyles),
-  'the container lays the options out rather than being one control');
-check(/\.languages\s*\{[^}]*gap:/s.test(legalStyles),
-  'THERE IS A REAL GAP BETWEEN LOCALES — the concatenation bug in one line');
-check(/\.languages\s*\{[^}]*flex-wrap:\s*wrap/s.test(legalStyles),
-  'and they wrap, because three language names do not fit at 320px');
-check(/\.language,\s+\.languageCurrent\s*\{[^}]*min-height:\s*40px/s.test(legalStyles),
-  'each option carries its own 40px hit target');
-check(/\.language:focus-visible\s*\{[^}]*outline:/s.test(legalStyles),
-  'and its own visible focus state, so keyboard users can see where they are');
-check(/prefers-reduced-motion/.test(legalStyles),
-  'the transition respects reduced motion');
+// Removing a control must not remove the space it occupied and leave the
+// summary running straight into the document body.
+check(/\.documentHeader\s*\{[^}]*margin-bottom:/s.test(legalStyles),
+  'THE HEADER STILL STATES ITS OWN SPACING, so no gap collapses where the row was');
 
-// Every locale must be able to name every language, or a label falls back to
-// English inside a control whose whole purpose is choosing a language.
+// What must still be true: the documents are still published in three
+// languages, still reachable at three routes, and still switchable.
+check(/languages:\s*\{\s*en:.*ar:.*fr:/s.test(legalPage),
+  'ALL THREE LOCALES ARE STILL DECLARED AS ALTERNATES for search engines');
+check(/LOCALES\.flatMap\(/.test(legalPage),
+  'and all three routes are still generated');
+check(/<SiteFooter locale=\{typed\} \/>/.test(legalPage),
+  'THE FOOTER LANGUAGE CONTROL IS STILL RENDERED — switching is still possible');
+check(/PreferenceFooter/.test(readWeb('components', 'site-chrome.tsx')),
+  'and that footer is the one carrying the site-wide preference controls');
+check(/dir=\{bodyLanguage === 'ar' \? 'rtl' : 'ltr'\}/.test(legalPage),
+  'Arabic still renders right-to-left');
+
+// The footer control has to be able to name every language in every locale, or
+// a label falls back to English inside the control for choosing a language.
 for (const locale of ['en', 'ar', 'fr'] as const) {
-  check(typeof (copy as Record<string, Record<string, string>>)[locale].legalLanguageGroup === 'string'
-    && (copy as Record<string, Record<string, string>>)[locale].legalLanguageGroup.length > 0,
-    `the ${locale} legal page names its language group`);
+  const words = (copy as Record<string, Record<string, string>>)[locale];
+  for (const key of ['languageEnglish', 'languageArabic', 'languageFrench']) {
+    check(typeof words[key] === 'string' && words[key].length > 0,
+      `the ${locale} footer can name ${key}`);
+  }
 }
 
 console.log(`Web platform regressions: ${checks} checks passed across ${webCode.length} web modules.`);

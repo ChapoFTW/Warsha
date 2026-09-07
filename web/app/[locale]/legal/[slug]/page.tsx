@@ -121,44 +121,6 @@ export default async function LegalDocumentPage({ params }: { params: Promise<Pa
               {document.requiresAcceptance ? ` · ${words.legalAcceptanceRequired}` : ''}
             </p>
             <p className={styles.summary}>{catalogue.summary}</p>
-            {/*
-              * Every locale, with the current one marked — the same "show all,
-              * mark the current" semantics the site's own locale menu uses,
-              * rather than a legal-only invention.
-              *
-              * It used to render only the ALTERNATIVES, as bare anchors inside a
-              * single bordered pill. That was fine while there was one
-              * alternative and became "العربيةFrançais" the day French arrived:
-              * two links, no separator, one shared border, one shared hover, and
-              * a screen reader announcing them as one run of text.
-              *
-              * The current locale is a span rather than a link, because a link to
-              * the page you are already on is a promise the browser does not keep.
-              *
-              * `<bdi>` isolates each label's direction. Without it an Arabic label
-              * sitting between Latin ones reorders its neighbours, which is how a
-              * mixed-direction row of language names goes wrong even when the
-              * spacing is right.
-              */}
-            <nav className={styles.languages} aria-label={words.legalLanguageGroup}>
-              {LOCALES.map(option => {
-                const label = option === 'ar' ? words.languageArabic
-                  : option === 'fr' ? words.languageFrench : words.languageEnglish;
-                return option === typed ? (
-                  <span key={option} className={styles.languageCurrent} lang={option} aria-current="true">
-                    <bdi>{label}</bdi>
-                  </span>
-                ) : (
-                  <a
-                    key={option}
-                    className={styles.language}
-                    href={`/${option}/legal/${slug}`}
-                    hrefLang={option}
-                    lang={option}
-                  ><bdi>{label}</bdi></a>
-                );
-              })}
-            </nav>
           </header>
 
           {/* Stated before the text it describes, not after it. Somebody who
