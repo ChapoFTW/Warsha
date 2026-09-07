@@ -124,4 +124,35 @@ for (const phrase of [
   check(runbook.includes(phrase), `the runbook documents ${phrase}`);
 }
 
+// ---------------------------------------------------------------------------
+// The Firebase config file, and where it is allowed to be missing
+// ---------------------------------------------------------------------------
+// `google-services.json` carries the FCM sender id an Android binary needs to
+// register a push token. It is deliberately NOT committed, which means every
+// context that reads the app config has to cope with its absence -- except the
+// one that builds the binary.
+//
+// The first version of this guard threw everywhere but the EAS metadata read
+// and broke CI on the spot: a checkout has no file, and CI reads this config
+// for `expo config`, three exports and the WPS-024 suite, none of which produce
+// an Android artifact. These assertions pin the narrower contract.
+
+check(/googleServicesFile: googleServicesFile\(\)/.test(appConfig),
+  'THE ANDROID CONFIG WIRES googleServicesFile');
+check(/process\.env\.GOOGLE_SERVICES_JSON/.test(appConfig),
+  'it prefers the EAS file environment variable');
+check(/existsSync\(LOCAL_GOOGLE_SERVICES\)/.test(appConfig),
+  'and falls back to the project root, so a local prebuild works');
+check(/if \(!process\.env\.EAS_BUILD_RUNNER\) return undefined;/.test(appConfig),
+  'A MISSING FILE IS NOT FATAL OFF THE BUILD WORKER — that is what broke CI');
+check(/missing on the build worker/.test(appConfig),
+  'and IS fatal on it, so no binary ships unable to register a token');
+
+// The file must never be committed: it is fetched per environment, and a
+// committed one would silently pin every build to whichever project it came
+// from.
+check(readFileSync('.gitignore', 'utf8').split('\n')
+  .some((line) => line.trim() === 'google-services.json'),
+  'AND THE FILE ITSELF IS GITIGNORED');
+
 console.log(`QA Preview pipeline regressions: ${checks} checks passed.`);

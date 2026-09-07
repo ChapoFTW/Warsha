@@ -74,23 +74,31 @@ function requiredRenderKey(name) {
  * Locally the file sits at the project root, so a prebuild or `run:android`
  * works without EAS.
  *
- * Undefined during the EAS local metadata read, for the same reason the render
- * keys are: that evaluation exists only to learn the project id, and throwing
- * there breaks every EAS command while producing no artifact. On the build
- * worker a missing file IS fatal — a binary without it registers no push token
- * and fails silently at the one moment nobody is watching.
+ * Fatal ONLY on the EAS build worker, which is narrower than the render keys
+ * above and deliberately so.
+ *
+ * The first version threw everywhere except the EAS metadata read, and broke
+ * CI immediately: the file is gitignored, so a checkout does not have it, and
+ * CI legitimately reads this config several times — `expo config`, three
+ * exports, the WPS-024 suite — none of which produce an Android binary or need
+ * an FCM sender id. A guard that stops those is not protecting anything; it is
+ * just refusing to run.
+ *
+ * `EAS_BUILD_RUNNER` is set on every EAS build job and never locally, so it
+ * names the one context where a missing file genuinely matters: the native
+ * artifact that would otherwise ship unable to register a push token and fail
+ * silently at the one moment nobody is watching.
  */
 function googleServicesFile() {
   const fromEas = process.env.GOOGLE_SERVICES_JSON;
   if (typeof fromEas === 'string' && fromEas.trim() !== '') return fromEas;
   if (existsSync(LOCAL_GOOGLE_SERVICES)) return LOCAL_GOOGLE_SERVICES;
-  if (isEasLocalMetadataRead()) return undefined;
+  if (!process.env.EAS_BUILD_RUNNER) return undefined;
   throw new Error(
-    'google-services.json is missing. Android push registration needs it. '
-      + 'Retrieve it with `firebase apps:sdkconfig ANDROID <appId> --out '
-      + 'google-services.json`, or provide it to EAS as a file environment '
-      + 'variable named GOOGLE_SERVICES_JSON. '
-      + 'See docs/operations/google-cloud-setup-runbook.md.',
+    'google-services.json is missing on the build worker. Android push '
+      + 'registration needs it. Provide it to EAS as a file environment '
+      + 'variable named GOOGLE_SERVICES_JSON in this build profile\'s '
+      + 'environment. See docs/operations/google-cloud-setup-runbook.md.',
   );
 }
 
