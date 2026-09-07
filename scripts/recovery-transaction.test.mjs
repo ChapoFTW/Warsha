@@ -30,6 +30,7 @@
  * with the scanner test.
  */
 import { execFileSync, spawn } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import crypto from 'node:crypto';
 
 const WEB = 'http://127.0.0.1:3100';
@@ -70,12 +71,38 @@ const signIn = (email, password) => anon('/auth/v1/token?grant_type=password', {
   method: 'POST', body: JSON.stringify({ email, password }),
 });
 
-/** POST the recovery route exactly as the browser does. */
-const submit = (body) => fetch(`${WEB}/api/auth/recover`, {
-  method: 'POST',
-  headers: { 'content-type': 'application/json', host: APP_HOST },
-  body: JSON.stringify(body),
-});
+/**
+ * POST the recovery route exactly as the browser does, including the cookie jar.
+ *
+ * `fetch` does not keep cookies between calls, and the retryable transaction
+ * lives in one, so a jar is the difference between testing the real journey and
+ * testing three unrelated requests.
+ */
+function makeJar() {
+  let cookie = '';
+  return {
+    get cookie() { return cookie; },
+    async submit(body) {
+      const response = await fetch(`${WEB}/api/auth/recover`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          host: APP_HOST,
+          ...(cookie ? { cookie } : {}),
+        },
+        body: JSON.stringify(body),
+      });
+      const set = response.headers.get('set-cookie');
+      if (set) {
+        const [pair] = set.split(';');
+        cookie = pair.endsWith('=') ? '' : pair;
+      }
+      return response;
+    },
+  };
+}
+const plainJar = makeJar();
+const submit = (body) => plainJar.submit(body);
 
 // --- TOTP, so a probe can hold a genuinely verified factor -------------------
 const base32 = (secret) => {
@@ -159,6 +186,10 @@ const localEnvironment = {
   ...process.env,
   NEXT_PUBLIC_SUPABASE_URL: API,
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: PUB,
+  // The key that seals the retryable recovery transaction. A local test value;
+  // Production carries its own, stored as a Vercel secret.
+  RECOVERY_STATE_SECRET: process.env.RECOVERY_STATE_SECRET
+    ?? 'local-recovery-state-secret-for-tests-only-0123456789',
 };
 console.log('building the web app against the local stack...');
 execFileSync('npx', ['next', 'build'], {
@@ -232,8 +263,18 @@ try {
   const doneBody = await done.text();
   check(done.status === 200 && doneBody === '{"ok":true}',
     'THE DELIBERATE SUBMIT COMPLETES THE WHOLE TRANSACTION', `HTTP ${done.status} ${doneBody}`);
-  check(!done.headers.get('set-cookie'),
-    'AND SETS NO COOKIE, so no session follows the request home');
+  // The only cookie this route may ever set is the sealed transaction, and on
+  // success it must be the DELETION of one: empty value, immediate expiry. The
+  // invariant is "no session follows the request home", and a Max-Age=0 cookie
+  // with no value carries nothing home at all.
+  const doneCookie = done.headers.get('set-cookie') ?? '';
+  check(!doneCookie || /^warsha_recovery=;/.test(doneCookie),
+    'AND SETS NO SESSION COOKIE -- only the transaction, and only to clear it',
+    doneCookie.split(';')[0] || 'none');
+  check(!doneCookie || /Max-Age=0/.test(doneCookie),
+    'which expires immediately', doneCookie);
+  check(!/sb-|access_token|refresh_token/.test(doneCookie),
+    'NO SUPABASE SESSION COOKIE IS EVER SET');
   check((done.headers.get('cache-control') ?? '').includes('no-store'),
     'and the answer is never stored');
 
@@ -256,44 +297,118 @@ try {
   // =========================================================================
   // 2. An account with an authenticator: the regression this test exists for
   // =========================================================================
+  //
+  // Two Production failures live here. The first was that the provider refuses
+  // `updateUser` on an aal1 session (`insufficient_aal`) and the route reported
+  // it as a server fault. The second was that fixing THAT made one mistyped
+  // six-digit code burn the whole recovery email, because the emailed token had
+  // already been spent by the time the code was checked.
   const guarded = await makeAccount('mfa', { withMfa: true });
   created.push(guarded.id);
   check(Boolean(guarded.secret), 'a probe with a verified TOTP factor exists');
-  // Without a factor there is nothing to regress against, and continuing would
-  // report a series of failures that all mean "the stack has MFA switched off".
-  if (!guarded.secret) throw new Error('TOTP enrolment is disabled on this stack');
 
+  const jar = makeJar();
   const mfaHash = await freshHash(guarded.email);
-  const withoutCode = await submit({ tokenHash: mfaHash, password: NEW_PASSWORD });
-  const withoutBody = await withoutCode.json();
-  check(withoutCode.status === 400 && withoutBody.failure === 'mfa_required',
+
+  // --- A. valid recovery -> no code -> told so, transaction stays usable -----
+  const opened = await jar.submit({ tokenHash: mfaHash, password: NEW_PASSWORD });
+  const openedBody = await opened.json();
+  check(opened.status === 400 && openedBody.failure === 'mfa_required',
     'AN MFA ACCOUNT IS TOLD A CODE IS NEEDED, NOT THAT WARSHA BROKE',
-    JSON.stringify(withoutBody));
+    JSON.stringify(openedBody));
+  check(Boolean(jar.cookie), 'AND A SEALED TRANSACTION IS OPENED');
+  check(/^warsha_recovery=/.test(jar.cookie), 'under the recovery cookie name');
+  const sealedValue = jar.cookie.split('=').slice(1).join('=');
+  check(sealedValue.split('.').length === 3,
+    'which looks like an AES-GCM envelope, not a token');
+  check(!sealedValue.includes(guarded.secret ?? 'no-secret'),
+    'and carries no TOTP secret');
   check((await signIn(guarded.email, guarded.password)).ok,
     'AND THE PASSWORD WAS NOT CHANGED without the second factor');
 
-  const badCodeHash = await freshHash(guarded.email);
-  const badCode = await submit({ tokenHash: badCodeHash, password: NEW_PASSWORD, code: '000000' });
-  const badBody = await badCode.json();
-  check(badCode.status === 400 && badBody.failure === 'mfa_invalid',
-    'A WRONG CODE IS AN ORDINARY REFUSAL', JSON.stringify(badBody));
-  check((await signIn(guarded.email, guarded.password)).ok,
-    'and still no password change');
+  // --- B. wrong code -> visible refusal -> STILL usable, no new email -------
+  const wrong = await jar.submit({ password: NEW_PASSWORD, code: '000000' });
+  const wrongBody = await wrong.json();
+  check(wrong.status === 400 && wrongBody.failure === 'mfa_invalid',
+    'A WRONG CODE IS AN ORDINARY REFUSAL', JSON.stringify(wrongBody));
+  check(Boolean(jar.cookie), 'AND THE TRANSACTION SURVIVES IT -- no new email needed');
+  check((await signIn(guarded.email, guarded.password)).ok, 'still no password change');
 
-  const malformed = await submit({ tokenHash: mfaHash, password: NEW_PASSWORD, code: 'abc' });
+  const malformed = await jar.submit({ password: NEW_PASSWORD, code: 'abc' });
   check(malformed.status === 400 && (await malformed.json()).failure === 'mfa_invalid',
     'a malformed code never reaches the provider');
 
-  const goodHash = await freshHash(guarded.email);
-  const accepted = await submit({
-    tokenHash: goodHash, password: NEW_PASSWORD, code: totp(guarded.secret),
+  const secondWrong = await jar.submit({ password: NEW_PASSWORD, code: '111111' });
+  check(secondWrong.status === 400 && (await secondWrong.json()).failure === 'mfa_invalid',
+    'AND A SECOND WRONG CODE IS STILL A RETRY, not a dead end');
+
+  // --- D. the sealed state authorises nothing, anywhere ---------------------
+  for (const table of ['profiles', 'addresses', 'bookings', 'messages', 'notifications']) {
+    const probe = await fetch(`${API}/rest/v1/${table}?select=*&limit=1`, {
+      headers: { apikey: PUB, Authorization: `Bearer ${sealedValue}` },
+    });
+    check(probe.status === 401,
+      `THE SEALED STATE READS NO ${table.toUpperCase()}`, `HTTP ${probe.status}`);
+  }
+  const tampered = sealedValue.slice(0, -2) + (sealedValue.endsWith('A') ? 'BB' : 'AA');
+  const forged = await fetch(`${WEB}/api/auth/recover`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json', host: APP_HOST,
+      cookie: `warsha_recovery=${tampered}`,
+    },
+    body: JSON.stringify({ password: NEW_PASSWORD, code: totp(guarded.secret) }),
   });
+  check(forged.status === 400 && (await forged.json()).failure === 'invalid',
+    'A TAMPERED ENVELOPE OPENS NOTHING -- GCM rejects it', `HTTP ${forged.status}`);
+  check((await signIn(guarded.email, guarded.password)).ok, 'and changed no password');
+
+  // --- C. same transaction, fresh correct code -> aal2 -> password changes ---
+  const accepted = await jar.submit({ password: NEW_PASSWORD, code: totp(guarded.secret) });
   const acceptedBody = await accepted.text();
   check(accepted.status === 200 && acceptedBody === '{"ok":true}',
-    'WITH THE CURRENT CODE THE PASSWORD CHANGES', `HTTP ${accepted.status} ${acceptedBody}`);
+    'THE SAME TRANSACTION THEN ACCEPTS THE CURRENT CODE -- no new email needed',
+    `HTTP ${accepted.status} ${acceptedBody}`);
+  check(!jar.cookie, 'AND THE TRANSACTION IS DESTROYED on success');
   check((await signIn(guarded.email, NEW_PASSWORD)).ok,
-    'the new password signs in on the MFA account too');
+    'the new password signs in on the MFA account');
   check(!(await signIn(guarded.email, guarded.password)).ok, 'and the old one does not');
+
+  // --- E. replay and reopen are defined -------------------------------------
+  const replayMfa = await fetch(`${WEB}/api/auth/recover`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', host: APP_HOST },
+    body: JSON.stringify({ tokenHash: mfaHash, password: 'Txn0!Replay-77' }),
+  });
+  check(replayMfa.status === 400 && (await replayMfa.json()).failure === 'expired_or_used',
+    'REPLAYING THE SPENT HASH AFTER SUCCESS IS REFUSED');
+  const reopen = await fetch(`${WEB}/api/auth/recover`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', host: APP_HOST },
+    body: JSON.stringify({ password: 'Txn0!Replay-77', code: totp(guarded.secret) }),
+  });
+  check(reopen.status === 400 && (await reopen.json()).failure === 'invalid',
+    'AND A REQUEST WITH NEITHER HASH NOR TRANSACTION IS REFUSED');
+  check(!(await signIn(guarded.email, 'Txn0!Replay-77')).ok, 'neither changed the password');
+
+  // --- F. an empty error message must be impossible -------------------------
+  const copy = readFileSync(new URL('../web/lib/app-copy.ts', import.meta.url), 'utf8');
+  const copyFr = readFileSync(new URL('../web/lib/app-copy.fr.ts', import.meta.url), 'utf8');
+  const page = readFileSync(
+    new URL('../web/app/app/auth/recovery/page.tsx', import.meta.url), 'utf8');
+  const mapping = page.slice(page.indexOf('const FAILURE_COPY'), page.indexOf('const RETRYABLE'));
+  const mapped = [...mapping.matchAll(/(\w+):\s*'(\w+)'/g)].map(([, failure, key]) => [failure, key]);
+  check(mapped.length >= 10, `EVERY FAILURE CLASS IS MAPPED (${mapped.length})`);
+  const enBlock = copy.slice(copy.indexOf('  en: {'), copy.indexOf('  ar: {'));
+  const arBlock = copy.slice(copy.indexOf('  ar: {'));
+  for (const [failure, key] of mapped) {
+    for (const [locale, block] of [['en', enBlock], ['ar', arBlock], ['fr', copyFr]]) {
+      const found = new RegExp(`(?<![A-Za-z])${key}\\s*:\\s*'([^']{4,})'`).test(block);
+      check(found, `${failure} -> ${key} has ${locale} words`);
+    }
+  }
+  check(/message\.trim\(\)\.length > 0 \? message : words\.errServer/.test(page),
+    'AND AN UNKNOWN OR EMPTY FAILURE STILL FALLS BACK TO A REAL SENTENCE');
 
   // =========================================================================
   // 3. The diagnostics must name the step and carry nothing else
@@ -312,7 +427,7 @@ try {
       || keys === 'failure_class,http_status,operation,step',
       `a diagnostic carries only named fields: ${keys}`);
   }
-  const secrets = [hash, mfaHash, goodHash, NEW_PASSWORD, plain.password, guarded.secret]
+  const secrets = [hash, mfaHash, sealedValue, NEW_PASSWORD, plain.password, guarded.secret]
     .filter(Boolean).filter((value) => logs.includes(value));
   check(secrets.length === 0,
     'AND THE LOGS CONTAIN NO HASH, NO PASSWORD AND NO TOTP SECRET');

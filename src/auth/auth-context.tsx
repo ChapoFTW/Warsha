@@ -86,6 +86,17 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const [loading, setLoading] = useState(environment.dataMode === 'supabase');
   // Held, not exchanged. Cleared as soon as it is spent or abandoned.
   const [recoveryTokenHash, setRecoveryTokenHash] = useState<string | null>(null);
+  /*
+   * A recovery whose hash is spent but whose second factor is still outstanding.
+   *
+   * The hash can be exchanged once. When the account holds a verified factor
+   * the exchange is not the end of the story, and a mistyped six-digit code
+   * must not cost the whole recovery email — codes rotate every thirty seconds,
+   * so that is the expected mistake. The client keeps the recovery session in
+   * memory, so this flag says "keep going with it" and the challenge can be
+   * retried until it succeeds.
+   */
+  const [recoveryMfaPending, setRecoveryMfaPending] = useState(false);
   const [recoveryOutcome, setRecoveryOutcome] = useState<AuthCallbackOutcome>(
     { status: environment.dataMode === 'supabase' ? 'checking' : 'idle' });
   const [emailConfirmationOutcome, setEmailConfirmationOutcome] = useState<AuthCallbackOutcome>(
@@ -442,53 +453,69 @@ export function AuthProvider({ children }: PropsWithChildren) {
     },
     completePasswordRecovery: async (password: string, code?: string) => {
       if (environment.dataMode === 'mock') return;
-      if (!recoveryTokenHash) throw new SafeAuthError('authOtpExpired');
+      // Either entrance: an unspent hash, or a transaction already open and
+      // waiting only on the authenticator.
+      if (!recoveryTokenHash && !recoveryMfaPending) throw new SafeAuthError('authOtpExpired');
       const client = getSupabaseClient();
       try {
         /*
          * The exchange, and the ONLY one. Opening the deep link held this hash
          * without spending it precisely so that a mail scanner could not; it is
          * spent here, once, because a person typed a password and pressed a
-         * button. verifyOtp establishes the recovery session, updateUser sets
-         * the password on it, and finishPasswordRecovery revokes it afterwards.
+         * button.
+         *
+         * On a retry the hash is already gone and this is skipped: the session
+         * it established is still held by the client, which is what makes the
+         * challenge retryable without another email.
          */
-        const { error: verifyError } = await client.auth.verifyOtp({
-          token_hash: recoveryTokenHash,
-          type: 'recovery',
-        });
-        if (verifyError) throw verifyError;
+        if (recoveryTokenHash) {
+          const { error: verifyError } = await client.auth.verifyOtp({
+            token_hash: recoveryTokenHash,
+            type: 'recovery',
+          });
+          if (verifyError) throw verifyError;
+          // Spent. Never offered again, whatever happens below.
+          setRecoveryTokenHash(null);
+        }
 
         /*
          * A recovery session is aal1. An account holding a verified factor
          * cannot change its password on one — the provider answers
          * `insufficient_aal`, which is correct: otherwise reading the mailbox
          * would defeat the authenticator.
-         *
-         * The challenge is completed here, on the same session, in the same
-         * action, because the hash is already spent by the line above. The
-         * screen asks for the code alongside the password for that reason.
          */
         const { data: assurance } = await client.auth.mfa.getAuthenticatorAssuranceLevel();
         if (assurance?.nextLevel === 'aal2' && assurance.currentLevel !== 'aal2') {
-          if (!code) throw new SafeAuthError('authRecoveryCodeRequired');
+          if (!code) {
+            setRecoveryMfaPending(true);
+            throw new SafeAuthError('authRecoveryCodeRequired');
+          }
           const { data: factors } = await client.auth.mfa.listFactors();
           const factor = (factors?.totp ?? [])[0];
-          if (!factor) throw new SafeAuthError('authRecoveryCodeRequired');
+          if (!factor) {
+            setRecoveryMfaPending(true);
+            throw new SafeAuthError('authRecoveryCodeRequired');
+          }
           const { error: challengeError } = await client.auth.mfa.challengeAndVerify({
             factorId: factor.id,
             code,
           });
-          if (challengeError) throw new SafeAuthError('authRecoveryCodeInvalid');
+          if (challengeError) {
+            // The transaction survives a wrong code, so the next attempt is a
+            // retry rather than a new recovery email.
+            setRecoveryMfaPending(true);
+            throw new SafeAuthError('authRecoveryCodeInvalid');
+          }
         }
 
         const { error: updateError } = await client.auth.updateUser({ password });
         if (updateError) throw updateError;
+        // Done. Nothing is left for a later attempt to continue.
+        setRecoveryMfaPending(false);
       } catch (error) {
         if (error instanceof SafeAuthError) throw error;
+        setRecoveryMfaPending(false);
         throw sanitizeAuthError(error, 'password-reset');
-      } finally {
-        // Spent or refused, it is not reusable and must not linger in memory.
-        setRecoveryTokenHash(null);
       }
     },
     finishPasswordRecovery: async () => {
@@ -498,6 +525,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         if (error) throw error;
         callbackHandled.current = false;
         setRecoveryTokenHash(null);
+        setRecoveryMfaPending(false);
         setRecoveryOutcome({ status: 'idle' });
       } catch (error) { throw sanitizeAuthError(error, 'sign-out'); }
     },
@@ -508,7 +536,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
         if (error) throw error;
       } catch (error) { throw sanitizeAuthError(error, 'sign-out'); }
     },
-  }), [emailConfirmationOutcome, loading, recoveryOutcome, recoveryTokenHash, session]);
+  }), [emailConfirmationOutcome, loading, recoveryMfaPending, recoveryOutcome,
+    recoveryTokenHash, session]);
 
   return <Context.Provider value={value}>{children}</Context.Provider>;
 }

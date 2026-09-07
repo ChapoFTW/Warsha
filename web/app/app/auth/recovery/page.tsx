@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { AuthScreen, AuthStateCard, SecretField, authPanelStyles as styles } from '@/components/auth-panel';
 import { PasswordRequirements } from '@/components/password-requirements';
-import { appCopy } from '@/lib/app-copy';
+import { appCopy, type AppCopyKey, type AppWords } from '@/lib/app-copy';
 import { useAppLocale } from '@/lib/use-app-locale';
 import { authOutcomeCopy } from '@/src/auth/auth-outcome-copy';
 import { recoveryFailurePresentation } from '@/src/auth/email-confirmation';
@@ -49,22 +49,54 @@ type Status =
   | { status: 'invalid' };
 
 type Failure = 'weak_password' | 'expired_or_used' | 'same_password' | 'rate_limited'
-  | 'mfa_required' | 'mfa_invalid' | 'server' | 'invalid';
+  | 'mfa_required' | 'mfa_invalid' | 'mfa_expired' | 'provider_unavailable'
+  | 'server' | 'invalid';
 
-const FAILURE_COPY: Record<Failure, string> = {
+/**
+ * Every failure the API can return, mapped to words a person can read.
+ *
+ * Typed as `AppCopyKey` rather than `string`, which is the whole point of this
+ * declaration. The previous version mapped `expired_or_used` to
+ * `'resetLinkInvalid'` — a key that existed on mobile and had never existed in
+ * the web copy at all. `words` was cast to `Record<string, string>`, so nothing
+ * objected: the lookup returned `undefined`, React rendered nothing, and a live
+ * recovery failure showed an error box containing no error. Now a key that does
+ * not exist is a compile error, and `Record<Failure, ...>` means a failure class
+ * added to the route without copy is one too.
+ */
+const FAILURE_COPY: Record<Failure, AppCopyKey> = {
   weak_password: 'passwordRequirements',
   same_password: 'errSamePassword',
   expired_or_used: 'resetLinkInvalid',
   rate_limited: 'errRateLimited',
   mfa_required: 'errRecoveryCodeRequired',
   mfa_invalid: 'errRecoveryCodeInvalid',
+  mfa_expired: 'errRecoveryExpired',
+  provider_unavailable: 'errProviderUnavailable',
   server: 'errServer',
   invalid: 'resetLinkInvalid',
 };
 
+/** The failure classes a person can still recover from without a new email. */
+const RETRYABLE: ReadonlySet<Failure> = new Set(['mfa_required', 'mfa_invalid', 'rate_limited']);
+
+/**
+ * The message, and never nothing.
+ *
+ * A failure class the build has never heard of still has to say something, so
+ * an unknown class and an empty string both fall back to the generic sentence.
+ * An empty error box is worse than a vague one: it tells somebody their attempt
+ * failed and gives them no idea what to do next.
+ */
+function failureMessage(words: AppWords, failure: Failure): string {
+  const key = FAILURE_COPY[failure];
+  const message = key ? words[key] : '';
+  return message && message.trim().length > 0 ? message : words.errServer;
+}
+
 export default function RecoveryPage() {
   const locale = useAppLocale();
-  const words = appCopy[locale] as Record<string, string>;
+  const words = appCopy[locale] as AppWords;
   const authWords = authOutcomeCopy[locale];
   const search = useSearchParams();
 
@@ -102,6 +134,17 @@ export default function RecoveryPage() {
   const [codeOpen, setCodeOpen] = useState(false);
 
   /*
+   * Whether the server is holding an open recovery transaction for us.
+   *
+   * Once it is, the emailed hash has been spent and must not be sent again —
+   * the transaction stands in for it, and a retry carries only the password and
+   * a fresh code. This is what makes a mistyped six-digit code cost one retry
+   * instead of the whole recovery email, which is exactly how the previous
+   * version failed in Production.
+   */
+  const [transactionOpen, setTransactionOpen] = useState(false);
+
+  /*
    * Take the hash out of the address bar once it has been read.
    *
    * It stays in this component's state for the submit. What it stops being is
@@ -127,14 +170,23 @@ export default function RecoveryPage() {
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (busy || !policyMet || !matched || !tokenHash) return;
+    if (busy || !policyMet || !matched || (!tokenHash && !transactionOpen)) return;
     setStatus({ status: 'saving' });
     setFailure(null);
     try {
       const response = await fetch('/api/auth/recover', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ tokenHash, password, code: code || undefined }),
+        // The sealed transaction cookie rides along; it is HttpOnly, so this
+        // page cannot read it and does not try to.
+        credentials: 'same-origin',
+        body: JSON.stringify({
+          // Sent ONCE. After the transaction opens, the hash is spent and the
+          // cookie is what identifies the recovery in progress.
+          tokenHash: transactionOpen ? undefined : tokenHash,
+          password,
+          code: code || undefined,
+        }),
       });
       const result = await response.json().catch(() => ({ ok: false, failure: 'server' }));
       if (result?.ok) {
@@ -146,8 +198,18 @@ export default function RecoveryPage() {
       }
       const reported = (result?.failure ?? 'server') as Failure;
       // If the account turned out to need a code, show the field rather than
-      // leaving somebody to find the disclosure themselves.
-      if (reported === 'mfa_required' || reported === 'mfa_invalid') setCodeOpen(true);
+      // leaving somebody to find the disclosure themselves — and remember that
+      // the server is now holding the transaction, so the next attempt is a
+      // retry rather than a second spend of a hash that is already gone.
+      if (reported === 'mfa_required' || reported === 'mfa_invalid') {
+        setCodeOpen(true);
+        setTransactionOpen(true);
+        setCode('');
+      }
+      // These end the transaction. A further attempt would fail for a reason
+      // the person cannot act on, so the form stops offering one.
+      if (reported === 'mfa_expired' || reported === 'expired_or_used'
+        || reported === 'invalid') setTransactionOpen(false);
       setFailure(reported);
       setStatus({ status: 'ready' });
     } catch {
@@ -243,12 +305,18 @@ export default function RecoveryPage() {
         )}
 
         {mismatch ? <p className={styles.error}>{words.passwordMismatch}</p> : null}
-        {failure ? <p className={styles.error} role="alert">{words[FAILURE_COPY[failure]]}</p> : null}
+        {failure ? (
+          <p className={styles.error} role="alert">
+            {failureMessage(words, failure)}
+            {RETRYABLE.has(failure) ? ` ${words.recoveryRetryHint}` : ''}
+          </p>
+        ) : null}
 
         <button
           type="submit"
           className={styles.submit}
-          disabled={busy || !policyMet || !matched}
+          disabled={busy || !policyMet || !matched
+            || (transactionOpen && code.length !== 6)}
         >
           {busy ? words.updatingPassword : words.updatePassword}
         </button>

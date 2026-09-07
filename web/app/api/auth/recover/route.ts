@@ -1,5 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
 
+import {
+  clearedRecoveryCookie,
+  openRecoveryState,
+  readRecoveryCookie,
+  recoveryCookie,
+  sealRecoveryState,
+} from '@/lib/recovery-state';
 import { passwordMeetsPolicy } from '@/src/auth/password-policy';
 
 /**
@@ -44,12 +51,23 @@ import { passwordMeetsPolicy } from '@/src/auth/password-policy';
  * whoever reads the mailbox defeats the authenticator, which is most of what
  * the authenticator is for.
  *
- * So the challenge is completed HERE, in the same request, on the same session
- * `verifyOtp` returned. It has to be the same request because `verifyOtp`
- * spends the token: a design that discovered the requirement, gave up, and
- * asked the person to try again would burn their link to learn something it
- * could have been told up front. The browser therefore sends the code with the
- * password, and the page asks for it before submitting.
+ * So the challenge is completed HERE, on the session `verifyOtp` returned.
+ *
+ * ## Why a wrong code no longer burns the email
+ *
+ * The first version of that asked for the code in the same request and had no
+ * way to keep going without one. `verifyOtp` had already spent the token, so a
+ * person who pressed the button before noticing the code field — or who typed a
+ * code that had rotated a second earlier — lost the whole recovery email and
+ * had to request another. Codes change every thirty seconds; that is the
+ * expected mistake, not an unusual one, and the flow treated it as fatal.
+ *
+ * The email token is now exchanged ONCE into a sealed recovery transaction (see
+ * `web/lib/recovery-state.ts`), carried in an HttpOnly, Secure, SameSite=Strict
+ * cookie scoped to this path alone. The authenticator challenge runs against
+ * that state and may be retried until it succeeds or the short window closes.
+ * What the browser holds is AES-256-GCM ciphertext, not a token: it authorises
+ * nothing at Supabase, nothing at Warsha's own APIs, and nothing anywhere else.
  */
 
 export const runtime = 'nodejs';
@@ -63,6 +81,8 @@ type Failure =
   | 'rate_limited'
   | 'mfa_required'
   | 'mfa_invalid'
+  | 'mfa_expired'
+  | 'provider_unavailable'
   | 'server';
 
 /**
@@ -76,8 +96,8 @@ type Failure =
  *
  * These steps are named so the next failure is legible from a log line alone.
  */
-type Step = 'parse' | 'shape' | 'policy' | 'verify' | 'assurance' | 'challenge'
-  | 'update' | 'revoke' | 'done';
+type Step = 'parse' | 'shape' | 'policy' | 'resume' | 'verify' | 'assurance'
+  | 'challenge' | 'update' | 'revoke' | 'done';
 
 /**
  * A diagnostic that cannot carry a credential, by construction.
@@ -102,18 +122,24 @@ function diagnose(step: Step, failure: Failure | 'none', evidence: {
   }));
 }
 
-function reply(body: { ok: true } | { ok: false; failure: Failure }, status: number) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json', 'cache-control': 'no-store' },
+function reply(
+  body: { ok: true } | { ok: false; failure: Failure },
+  status: number,
+  cookie?: string,
+) {
+  const headers = new Headers({
+    'content-type': 'application/json',
+    'cache-control': 'no-store',
   });
+  if (cookie) headers.set('set-cookie', cookie);
+  return new Response(JSON.stringify(body), { status, headers });
 }
 
 function fail(step: Step, failure: Failure, status: number, evidence: {
   code?: unknown; status?: unknown;
-} = {}) {
+} = {}, cookie?: string) {
   diagnose(step, failure, evidence);
-  return reply({ ok: false, failure }, status);
+  return reply({ ok: false, failure }, status, cookie);
 }
 
 export async function POST(request: Request) {
@@ -136,14 +162,23 @@ export async function POST(request: Request) {
     return fail('parse', 'invalid', 400);
   }
 
-  if (!tokenHash) return fail('shape', 'invalid', 400);
+  /*
+   * Two ways in, and only two.
+   *
+   * FRESH: the body carries the emailed token hash. It is exchanged once.
+   * CONTINUATION: the body carries no hash, and the sealed cookie from a
+   * previous request in this transaction stands in for it. That is what makes a
+   * mistyped code retryable without another email.
+   */
+  const resumed = openRecoveryState(readRecoveryCookie(request.headers.get('cookie')));
+  if (!tokenHash && !resumed) return fail('shape', 'invalid', 400);
   // This route exists for ONE callback type. A caller asking to spend a signup
   // or email-change token here is refused rather than quietly served, so the
   // route cannot be turned into a general-purpose token exchanger.
   if (type !== 'recovery') return fail('shape', 'invalid', 400);
   // A hash is opaque, but it is not arbitrary text. Bounding its shape keeps a
   // hostile body from reaching the provider at all.
-  if (tokenHash.length > 512 || /[\s<>"']/.test(tokenHash)) {
+  if (tokenHash && (tokenHash.length > 512 || /[\s<>"']/.test(tokenHash))) {
     return fail('shape', 'invalid', 400);
   }
   // Six digits or nothing. An authenticator code has exactly one shape, and
@@ -167,12 +202,32 @@ export async function POST(request: Request) {
   let reached: Step = 'verify';
 
   try {
-    const { data, error } = await client.auth.verifyOtp({
-      token_hash: tokenHash,
-      type: 'recovery',
-    });
-    if (error || !data.session) {
-      return fail('verify', 'expired_or_used', 400, error ?? {});
+    /*
+     * Establish the recovery session, from whichever entrance was used.
+     *
+     * FRESH spends the emailed token, exactly once, and this is still the only
+     * place that happens. CONTINUATION redeems the sealed refresh token instead,
+     * which is why a wrong code costs a retry rather than the whole email.
+     */
+    let session = null;
+    if (tokenHash) {
+      const { data, error } = await client.auth.verifyOtp({
+        token_hash: tokenHash,
+        type: 'recovery',
+      });
+      if (error || !data.session) {
+        return fail('verify', 'expired_or_used', 400, error ?? {}, clearedRecoveryCookie());
+      }
+      session = data.session;
+    } else {
+      const { data, error } = await client.auth.refreshSession({ refresh_token: resumed! });
+      if (error || !data.session) {
+        // The window closed, or the state was already spent. Said as an expired
+        // transaction rather than a broken server: a new link is the real
+        // remedy, and the page says exactly that.
+        return fail('resume', 'mfa_expired', 400, error ?? {}, clearedRecoveryCookie());
+      }
+      session = data.session;
     }
 
     /*
@@ -185,20 +240,26 @@ export async function POST(request: Request) {
      * a verified factor exists, so an account without one never sees a code
      * field and never has an extra step.
      */
-    reached = 'assurance';
     const { data: assurance, error: assuranceError } =
       await client.auth.mfa.getAuthenticatorAssuranceLevel();
     if (assuranceError) {
-      return fail('assurance', 'server', 400, assuranceError);
+      return fail('assurance', 'server', 400, assuranceError, clearedRecoveryCookie());
     }
 
     if (assurance?.nextLevel === 'aal2' && assurance.currentLevel !== 'aal2') {
+      // Sealed from the CURRENT session every time: `refreshSession` rotates the
+      // refresh token, so a stale envelope would make the second retry fail for
+      // a reason that has nothing to do with the code typed into it.
+      const sealed = sealRecoveryState(session.refresh_token);
+
       if (!code) {
         // Said plainly rather than as a server error, and said BEFORE the
-        // password is touched, so the page can ask for the code.
-        return fail('assurance', 'mfa_required', 400);
+        // password is touched, so the page can ask for the code — and, with the
+        // transaction sealed, ask again if the first one is wrong.
+        return fail('assurance', 'mfa_required', 400, {},
+          sealed ? recoveryCookie(sealed) : clearedRecoveryCookie());
       }
-      reached = 'challenge';
+
       const { data: factors, error: listError } = await client.auth.mfa.listFactors();
       if (listError) return fail('challenge', 'server', 400, listError);
       const factor = (factors?.totp ?? [])[0];
@@ -210,20 +271,22 @@ export async function POST(request: Request) {
       });
       if (challengeError) {
         const challengeStatus = (challengeError as { status?: number }).status ?? 0;
-        if (challengeStatus === 429) return fail('challenge', 'rate_limited', 429, challengeError);
-        // A wrong or stale code is an ordinary mistake, not a server fault. The
-        // token is already spent, so the page says so and offers a new link.
-        return fail('challenge', 'mfa_invalid', 400, challengeError);
+        // The transaction survives a wrong code: re-sealed rather than cleared,
+        // so the next attempt is a retry and not another email.
+        const keep = sealed ? recoveryCookie(sealed) : undefined;
+        if (challengeStatus === 429) {
+          return fail('challenge', 'rate_limited', 429, challengeError, keep);
+        }
+        return fail('challenge', 'mfa_invalid', 400, challengeError, keep);
       }
     }
 
-    reached = 'update';
     const { error: updateError } = await client.auth.updateUser({ password });
     if (updateError) {
       const providerCode = (updateError as { code?: string }).code ?? '';
       const status = (updateError as { status?: number }).status ?? 0;
       if (providerCode === 'same_password') {
-        return fail('update', 'same_password', 400, updateError);
+        return fail('update', 'same_password', 400, updateError, clearedRecoveryCookie());
       }
       if (providerCode === 'weak_password') {
         return fail('update', 'weak_password', 400, updateError);
@@ -235,6 +298,7 @@ export async function POST(request: Request) {
         return fail('update', 'mfa_required', 400, updateError);
       }
       if (status === 429) return fail('update', 'rate_limited', 429, updateError);
+      if (status >= 500) return fail('update', 'provider_unavailable', 503, updateError);
       return fail('update', 'server', 400, updateError);
     }
 
@@ -242,10 +306,10 @@ export async function POST(request: Request) {
     // reset is what somebody does when they believe their account is
     // compromised, so every session that password could have opened goes too —
     // including the recovery session this request just created.
-    reached = 'revoke';
     await client.auth.signOut({ scope: 'global' }).catch(() => undefined);
     diagnose('done', 'none');
-    return reply({ ok: true }, 200);
+    // The transaction is over. Nothing is left for a later request to redeem.
+    return reply({ ok: true }, 200, clearedRecoveryCookie());
   } catch (error) {
     return fail(reached, 'server', 500, error as { code?: unknown; status?: unknown });
   }

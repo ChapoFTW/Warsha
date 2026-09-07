@@ -711,10 +711,11 @@ for (const shape of replyShapes) {
 // Every refusal now names the step it happened at, and both halves of that name
 // are drawn from the two unions this file also lists. A step invented at a call
 // site would pass a `string` type and tell the next reader nothing.
-const STEPS = ['parse', 'shape', 'policy', 'verify', 'assurance', 'challenge',
-  'update', 'revoke', 'done'];
+const STEPS = ['parse', 'shape', 'policy', 'resume', 'verify', 'assurance',
+  'challenge', 'update', 'revoke', 'done'];
 const FAILURES = ['invalid', 'weak_password', 'expired_or_used', 'same_password',
-  'rate_limited', 'mfa_required', 'mfa_invalid', 'server'];
+  'rate_limited', 'mfa_required', 'mfa_invalid', 'mfa_expired',
+  'provider_unavailable', 'server'];
 const failCalls = [...codeOnly(recoverRoute).matchAll(/fail\('([a-z]+)', '([a-z_]+)'/g)];
 check(failCalls.length >= 10, `EVERY REFUSAL NAMES ITS STEP (${failCalls.length} sites)`);
 for (const [, step, failure] of failCalls) {
@@ -743,15 +744,31 @@ check(/const \[recoveryTokenHash, setRecoveryTokenHash\] = useState<string \| nu
   .test(authContext), 'THE NATIVE HASH LIVES IN REACT STATE');
 check(!/AsyncStorage|SecureStore|async-storage|expo-secure-store|MMKV/.test(authContext),
   'AND THE FILE HOLDING IT IMPORTS NO STORAGE AT ALL, so it cannot outlive the app');
-equal([...codeOnly(authContext).matchAll(/recoveryTokenHash/g)].length, 4,
-  'it appears four times: declared, guarded, spent, and in the memo dependencies');
+// Declared, guarded on entry, spent inside the exchange, and named in the memo
+// dependencies. The count is asserted because this value must stay easy to
+// follow: every additional place it is touched is another place it could be
+// persisted, logged or handed somewhere it does not belong.
+equal([...codeOnly(authContext).matchAll(/recoveryTokenHash/g)].length, 5,
+  'the native hash is touched in five places, all of them in this file');
+check(/recoveryMfaPending/.test(authContext),
+  'AND A SPENT HASH WITH AN OUTSTANDING FACTOR IS A SEPARATE, NAMED STATE');
+check(/setRecoveryMfaPending\(true\)/.test(authContext),
+  'so a wrong code leaves the recovery open rather than ending it');
 check(/token_hash: recoveryTokenHash/.test(completeBlock),
   'and the only thing it is ever passed to is verifyOtp');
 
-const finallyBlock = completeBlock.slice(completeBlock.indexOf('} finally {'),
-  completeBlock.indexOf('finishPasswordRecovery:'));
-check(/setRecoveryTokenHash\(null\)/.test(finallyBlock),
-  'IT IS CLEARED IN A `finally`, so a refusal drops it exactly as a success does');
+// Cleared the moment it is spent, inside the exchange rather than in a
+// `finally` at the end. That is the stronger placement: it holds even if a
+// later step throws, and it means a retry for the outstanding second factor
+// literally cannot re-present a hash that is already gone.
+const spendBlock = nativeCompleteBlock.slice(
+  nativeCompleteBlock.indexOf('verifyOtp'),
+  nativeCompleteBlock.indexOf('getAuthenticatorAssuranceLevel'));
+check(/setRecoveryTokenHash\(null\)/.test(spendBlock),
+  'THE HASH IS DROPPED THE MOMENT IT IS SPENT, before anything else can fail');
+check(nativeCompleteBlock.indexOf('setRecoveryMfaPending(false)')
+  > nativeCompleteBlock.indexOf('updateUser'),
+  'and the open transaction is closed only after the password actually changes');
 
 // --- What the native path is allowed to log ---------------------------------
 //
