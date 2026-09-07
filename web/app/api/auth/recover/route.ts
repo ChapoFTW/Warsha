@@ -161,6 +161,11 @@ export async function POST(request: Request) {
     auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
   });
 
+  // Tracks where the request actually got to, so an unexpected throw reports the
+  // step it happened at rather than a guess. The first version of this always
+  // said `update`, which would have been wrong for most of the ways it can fail.
+  let reached: Step = 'verify';
+
   try {
     const { data, error } = await client.auth.verifyOtp({
       token_hash: tokenHash,
@@ -180,6 +185,7 @@ export async function POST(request: Request) {
      * a verified factor exists, so an account without one never sees a code
      * field and never has an extra step.
      */
+    reached = 'assurance';
     const { data: assurance, error: assuranceError } =
       await client.auth.mfa.getAuthenticatorAssuranceLevel();
     if (assuranceError) {
@@ -192,6 +198,7 @@ export async function POST(request: Request) {
         // password is touched, so the page can ask for the code.
         return fail('assurance', 'mfa_required', 400);
       }
+      reached = 'challenge';
       const { data: factors, error: listError } = await client.auth.mfa.listFactors();
       if (listError) return fail('challenge', 'server', 400, listError);
       const factor = (factors?.totp ?? [])[0];
@@ -210,6 +217,7 @@ export async function POST(request: Request) {
       }
     }
 
+    reached = 'update';
     const { error: updateError } = await client.auth.updateUser({ password });
     if (updateError) {
       const providerCode = (updateError as { code?: string }).code ?? '';
@@ -234,10 +242,11 @@ export async function POST(request: Request) {
     // reset is what somebody does when they believe their account is
     // compromised, so every session that password could have opened goes too —
     // including the recovery session this request just created.
+    reached = 'revoke';
     await client.auth.signOut({ scope: 'global' }).catch(() => undefined);
     diagnose('done', 'none');
     return reply({ ok: true }, 200);
   } catch (error) {
-    return fail('update', 'server', 500, error as { code?: unknown; status?: unknown });
+    return fail(reached, 'server', 500, error as { code?: unknown; status?: unknown });
   }
 }
