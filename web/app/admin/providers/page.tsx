@@ -705,7 +705,13 @@ export default function ProvidersPage() {
                 irreversible={false}
                 audit="subprocessor_agreement_recorded"
                 availability={actionAvailability(
-                  mayActivate && agreementReference.trim().length >= 10 ? 'ready' : 'waiting',
+                  // Two different refusals, and collapsing them into `waiting`
+                  // told an operator who held every capability that they held
+                  // none. Missing permission is `waiting`; an unfilled
+                  // reference is `incomplete`, which is this form's own fault
+                  // and says so.
+                  !mayActivate ? 'waiting'
+                    : agreementReference.trim().length >= 10 ? 'ready' : 'incomplete',
                   busy ?? reauth.pendingKey, refreshing)}
                 label={busy === 'agreement' ? words.loading : words.providerAgreementAction}
                 onRun={recordAgreement}
@@ -785,8 +791,9 @@ function GovernedAction({
           {availability.reason === 'refreshing' ? words.providerBusyRefreshing
             : availability.reason === 'another-action' ? words.providerBusyOtherAction
               : availability.reason === 'waiting' ? words.providerBusyWaiting
-                : availability.reason === 'done' ? words.providerBusyDone
-                  : words.providerBusyBlocked}
+                : availability.reason === 'incomplete' ? words.providerBusyIncomplete
+                  : availability.reason === 'done' ? words.providerBusyDone
+                    : words.providerBusyBlocked}
         </p>
       ) : null}
     </div>

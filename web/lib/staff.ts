@@ -100,7 +100,7 @@ export function environmentLabel(session: StaffSession): string | null {
 }
 
 /** The environments a bound platform may legitimately report. */
-const BOUND_ENVIRONMENTS = ['development', 'staging', 'production'] as const;
+export const BOUND_ENVIRONMENTS = ['development', 'staging', 'production'] as const;
 
 /**
  * Whether the console is being served from a developer's own machine.

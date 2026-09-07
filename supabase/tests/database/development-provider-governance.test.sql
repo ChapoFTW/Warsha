@@ -137,10 +137,30 @@ select is((select current_status from private.external_providers
   'implemented_awaiting_credential',
   'and a local replay still reports that it is waiting for a credential');
 
--- OCR was not swept along. The Maps migration names one provider on purpose.
-select ok((select not ('production' = any(environments)) from private.external_providers
+-- OCR was not swept along by the Maps migration -- that one names a single
+-- provider on purpose, and this assertion existed to prove it.
+--
+-- Vision reached Production later and separately, in 202609070001, once
+-- Production had a credential of its own in Google Cloud project
+-- warsha-504822. So the expected value moved with the decision rather than the
+-- assertion being deleted: what it was really protecting is that each provider
+-- is approved deliberately, by its own reviewed migration, and that approval is
+-- not the same act as activation.
+select ok((select 'production' = any(environments) from private.external_providers
            where provider_key = 'google_cloud_vision'),
-  'GOOGLE CLOUD VISION IS STILL NOT PRODUCTION-COMPATIBLE');
+  'GOOGLE CLOUD VISION IS APPROVED FOR PRODUCTION, BY ITS OWN MIGRATION');
+
+select is((select current_status from private.external_providers
+           where provider_key = 'google_cloud_vision'),
+  'implemented_awaiting_credential',
+  'AND APPROVAL DID NOT ACTIVATE IT -- that is still the governed sequence');
+
+-- The registry entry and the credential it names have to agree, or an operator
+-- is told a secret is expected under a name nothing reads.
+select is((select credential_secret_name from private.external_providers
+           where provider_key = 'google_cloud_vision'),
+  'GOOGLE_CLOUD_VISION_SERVICE_ACCOUNT',
+  'and it still names the credential the Edge Function actually reads');
 select is((select current_status from private.external_providers
            where provider_key = 'google_maps_platform'),
   'implemented_awaiting_credential', 'the migration does not activate Google Maps');

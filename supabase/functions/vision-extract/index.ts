@@ -55,7 +55,7 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 import { readSecret } from '../_shared/provider-secrets.ts';
-import { resolveOcrProvider } from '../_shared/ocr-providers.ts';
+import { registeredOcrProviderKeys, resolveOcrProvider } from '../_shared/ocr-providers.ts';
 import {
   decideOcrRequest,
   OCR_HISTORY_WINDOW_MS,
@@ -164,10 +164,31 @@ Deno.serve(async (request) => {
    * it follows: existence is not sensitive, the value is.
    */
   if (body.operation === 'capability') {
-    const resolved = resolveOcrProvider(
-      (await asService.rpc('warsha_ocr_provider_for_role', { p_role: OCR_ROLE })
-        .then((r) => r.data as string | null).catch(() => null)),
-    );
+    const roleProviderKey = await asService
+      .rpc('warsha_ocr_provider_for_role', { p_role: OCR_ROLE })
+      .then((r) => r.data as string | null).catch(() => null);
+    const resolved = resolveOcrProvider(roleProviderKey);
+
+    /*
+     * Which provider answers the CREDENTIAL question before the role is bound.
+     *
+     * `warsha_ocr_provider_for_role` returns null until a provider is activated
+     * for this environment, and the probe used to derive every answer from it.
+     * So a Production console with the credential published, stored and proven
+     * working was told "Not configured" — because nothing was activated yet,
+     * which is exactly the state an operator is in when they are trying to
+     * decide whether they may activate. The one question they needed answered
+     * was the one that could not be asked.
+     *
+     * This function serves one provider. When the role is unbound, its own
+     * registered implementation answers "is the secret present", and
+     * `roleBound` says plainly that the binding is still missing. The provider
+     * key stays null, because claiming a binding that does not exist would be
+     * the same class of lie in the other direction.
+     */
+    const registered = registeredOcrProviderKeys();
+    const credentialProvider = resolved
+      ?? (registered.length === 1 ? resolveOcrProvider(registered[0]) : null);
     const { data: roleEnabled } = await asService
       .rpc('warsha_ocr_provider_enabled_for_role', { p_role: OCR_ROLE })
       .then((r) => ({ data: r.data as boolean | null }))
@@ -179,13 +200,15 @@ Deno.serve(async (request) => {
     // project with the API switched off passes the first and fails the second,
     // and used to surface as `refused_no_credential`, which reads as "nobody
     // configured anything" and sends an operator to the wrong place entirely.
-    const credential = resolved?.verifyCredential
-      ? await resolved.verifyCredential()
+    const credential = credentialProvider?.verifyCredential
+      ? await credentialProvider.verifyCredential()
       : null;
     return json({
       operation: 'capability',
       providerKey: resolved?.providerKey ?? null,
-      credentialConfigured: resolved?.isConfigured() === true,
+      /** False until a provider is activated for this environment. */
+      roleBound: resolved !== null,
+      credentialConfigured: credentialProvider?.isConfigured() === true,
       credentialUsable: credential?.usable ?? null,
       credentialFailure: credential && !credential.usable
         ? { reason: credential.reason, status: credential.status, code: credential.code }

@@ -309,10 +309,10 @@ transcribed ground truth, and it refuses to invent either.
 
 | | Development | Staging | Production |
 | --- | --- | --- | --- |
-| Vision service account | Not configured; extraction unavailable, manual entry used | Future `warsha-staging` | Future `warsha-production` |
+| Vision service account | Configured since 2026-08-28 | Future `warsha-staging` | Configured 2026-09-07, GCP project `warsha-504822`, own service account |
 | Maps server key | Present in Supabase secrets; provider still disabled | Future staging credential | Future production credential |
 | Render keys | Configured for development builds; activation still gated | Future staging keys, debug fingerprint | Future production keys, Play app-signing fingerprint |
-| Vision billing | None | Free tier expected | Budgeted, alerted |
+| Vision billing | Free tier | Free tier expected | Billing linked; free tier is 1000 units/month |
 | Maps registry status | `implemented_awaiting_credential` until dual-controlled activation | Future | Future, only after staging evidence |
 
 A developer with no Google account gets a working application. Extraction and

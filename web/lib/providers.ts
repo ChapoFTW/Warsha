@@ -27,6 +27,11 @@
  * that it needs them.
  */
 
+// Relative, with the extension: this module is loaded outside Next by
+// scripts/admin-console.test.mts, where the '@/' alias does not resolve. The
+// same reason web/middleware.ts imports './lib/preferences.ts'.
+import { BOUND_ENVIRONMENTS } from './staff.ts';
+
 export const MAPS_PROVIDER_KEY = 'google_maps_platform';
 export const MAPS_FEATURE_FLAG = 'location_provider';
 export const VISION_PROVIDER_KEY = 'google_cloud_vision';
@@ -435,7 +440,16 @@ export function parseGovernancePolicy(
  * `done` — already true. `ready` — the operator can do it now.
  * `waiting` — correct, but needs somebody else. `blocked` — an earlier step first.
  */
-export type StepState = 'done' | 'ready' | 'waiting' | 'blocked';
+/**
+ * `incomplete` is not a governance state — it means this form is not filled in.
+ *
+ * It exists because the console had no way to say so and reused `waiting`,
+ * whose sentence is "This needs a permission you do not hold". An operator who
+ * held every capability and had simply not typed an agreement reference was
+ * told they lacked the permission. That is the exact confusion the refusal copy
+ * elsewhere in this file was written to prevent.
+ */
+export type StepState = 'done' | 'ready' | 'waiting' | 'blocked' | 'incomplete';
 
 export type ActivationInput = {
   environment: string | null;
@@ -464,7 +478,24 @@ export type ActivationInput = {
 };
 
 export function activationSteps(input: ActivationInput): Record<ActivationStepKey, StepState> {
-  const bound = input.environment === 'development';
+  /*
+   * Bound means "this backend knows which environment it is", not "this backend
+   * is development".
+   *
+   * It was written as `=== 'development'` when development was the only bound
+   * environment there was, and it survived into Production as a silent floor
+   * under every later step: `credential` is gated on it, `prerequisites` is
+   * gated on it, and everything downstream is gated on those. So a Production
+   * console with a live, verified credential reported "Not configured" and
+   * blocked the whole activation — not because anything was missing, but
+   * because the environment was not the one word this line accepted.
+   *
+   * `BOUND_ENVIRONMENTS` is the list `staff.ts` already uses to decide whether
+   * the console may honestly claim what data it is showing. Sharing it means
+   * "bound" cannot mean two different things in two files again.
+   */
+  const bound = BOUND_ENVIRONMENTS.includes(
+    input.environment as (typeof BOUND_ENVIRONMENTS)[number]);
   const policyReady = input.policyReady !== false;
   const readyStatus = input.provider
     && ['implemented_awaiting_credential', 'configured_not_enabled'].includes(input.provider.status);
@@ -556,7 +587,7 @@ export type ActionAvailability =
   | { enabled: true }
   | {
       enabled: false;
-      reason: 'done' | 'blocked' | 'waiting' | 'refreshing' | 'another-action';
+      reason: 'done' | 'blocked' | 'waiting' | 'incomplete' | 'refreshing' | 'another-action';
     };
 
 export function actionAvailability(
@@ -565,11 +596,12 @@ export function actionAvailability(
   refreshing: boolean,
 ): ActionAvailability {
   // Structural refusals, told apart because they are different sentences: this
-  // is finished, an earlier step is not, or somebody with another permission
-  // has to do it.
+  // is finished, an earlier step is not, somebody with another permission has
+  // to do it, or this form is not filled in yet.
   if (step === 'done') return { enabled: false, reason: 'done' };
   if (step === 'blocked') return { enabled: false, reason: 'blocked' };
   if (step === 'waiting') return { enabled: false, reason: 'waiting' };
+  if (step === 'incomplete') return { enabled: false, reason: 'incomplete' };
   // A refresh in flight is transient and worth naming; an action in flight is
   // the operator's own doing and is named differently.
   if (refreshing) return { enabled: false, reason: 'refreshing' };
