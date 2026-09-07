@@ -107,6 +107,10 @@ email_sent = 10
 enable_signup = true
 double_confirm_changes = true
 enable_confirmations = true
+[auth.email.template.recovery]
+subject = "Reset your Warsha password"
+content_path = "./supabase/templates/reset-password.html"
+
 [auth.sms]
 enable_signup = true
 enable_confirmations = true
@@ -193,6 +197,10 @@ sender_name = "Warsha"
 # authority for its content -- see supabase/templates/confirm-signup.html --
 # and every other auth email is still the Supabase default in BOTH projects,
 # so there is nothing else here to declare.
+[remotes.production.auth.email.template.recovery]
+subject = "Reset your Warsha password"
+content_path = "./supabase/templates/reset-password.html"
+
 [remotes.production.auth.email.template.confirmation]
 subject = "أكد بريدك الإلكتروني في ورشة | Confirm your Warsha email"
 content_path = "./supabase/templates/confirm-signup.html"

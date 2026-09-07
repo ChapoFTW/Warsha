@@ -7,6 +7,8 @@ export type AuthCallbackParameters = {
   accessToken?: string;
   refreshToken?: string;
   code?: string;
+  /** Present on the scanner-safe recovery link; inert until exchanged. */
+  tokenHash?: string;
   error?: string;
   errorCode?: string;
   errorDescription?: string;
@@ -252,7 +254,7 @@ export function readAuthCallbackParameters(url: string): AuthCallbackParameters 
 
   const type = parameters.get('type')?.toLowerCase();
   const path = url.split(/[?#]/, 1)[0].toLowerCase();
-  const kind = type === 'recovery' || path.includes('reset-password')
+  const kind = type === 'recovery' || path.includes('reset-password') || path.includes('auth/recovery')
     ? 'recovery'
     : type === 'signup' || type === 'email' || path.includes('auth/confirm')
       ? 'signup'
@@ -263,6 +265,17 @@ export function readAuthCallbackParameters(url: string): AuthCallbackParameters 
     accessToken: parameters.get('access_token') ?? undefined,
     refreshToken: parameters.get('refresh_token') ?? undefined,
     code: parameters.get('code') ?? undefined,
+    /*
+     * A token HASH, which is inert until somebody exchanges it.
+     *
+     * This is what the recovery email carries now. The previous link pointed at
+     * /auth/v1/verify, which spends the single-use token on the FIRST GET, so a
+     * mail scanner fetching the link consumed it and the person who clicked
+     * afterwards reached a form built on a credential that no longer existed.
+     * A hash cannot be spent by being fetched; it is exchanged once, on a
+     * deliberate submit.
+     */
+    tokenHash: parameters.get('token_hash') ?? undefined,
     error: parameters.get('error') ?? undefined,
     errorCode: parameters.get('error_code') ?? undefined,
     errorDescription: parameters.get('error_description') ?? undefined,

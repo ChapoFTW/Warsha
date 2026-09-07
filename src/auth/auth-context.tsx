@@ -63,6 +63,12 @@ type Value = {
   requestPasswordReset: (email: string) => Promise<void>;
   requestEmailConfirmation: (email: string) => Promise<void>;
   finishPasswordRecovery: () => Promise<void>;
+  /**
+   * Spend the recovery token hash and set the new password, in that order, in
+   * one deliberate step. This is the ONLY place a recovery authority is
+   * exchanged on mobile: opening the deep link does not.
+   */
+  completePasswordRecovery: (password: string) => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -78,6 +84,8 @@ async function requireCurrentUser(operation: 'phone-change-request' | 'phone-cha
 export function AuthProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(environment.dataMode === 'supabase');
+  // Held, not exchanged. Cleared as soon as it is spent or abandoned.
+  const [recoveryTokenHash, setRecoveryTokenHash] = useState<string | null>(null);
   const [recoveryOutcome, setRecoveryOutcome] = useState<AuthCallbackOutcome>(
     { status: environment.dataMode === 'supabase' ? 'checking' : 'idle' });
   const [emailConfirmationOutcome, setEmailConfirmationOutcome] = useState<AuthCallbackOutcome>(
@@ -124,6 +132,24 @@ export function AuthProvider({ children }: PropsWithChildren) {
         openScreen();
         return;
       }
+      /*
+       * A recovery token hash is NOT exchanged here.
+       *
+       * Opening a link must never spend the recovery authority. The old email
+       * pointed at /auth/v1/verify, which consumed the single-use token on the
+       * first fetch, so a mail scanner opening the link used it up and the
+       * person who tapped it afterwards was told their brand-new link had
+       * expired. The deep link now carries a hash, which is inert: it is held
+       * here and exchanged once, by `completePasswordRecovery`, when the person
+       * has typed a password and pressed the button.
+       */
+      if (parameters.kind === 'recovery' && parameters.tokenHash) {
+        setRecoveryTokenHash(parameters.tokenHash);
+        setOutcome({ status: 'ready' });
+        openScreen();
+        return;
+      }
+
       setOutcome({ status: 'processing' });
       try {
         const { error } = parameters.code
@@ -414,12 +440,39 @@ export function AuthProvider({ children }: PropsWithChildren) {
         throw sanitizeAuthError(error, 'confirmation-resend');
       }
     },
+    completePasswordRecovery: async (password: string) => {
+      if (environment.dataMode === 'mock') return;
+      if (!recoveryTokenHash) throw new SafeAuthError('authOtpExpired');
+      const client = getSupabaseClient();
+      try {
+        /*
+         * The exchange, and the ONLY one. Opening the deep link held this hash
+         * without spending it precisely so that a mail scanner could not; it is
+         * spent here, once, because a person typed a password and pressed a
+         * button. verifyOtp establishes the recovery session, updateUser sets
+         * the password on it, and finishPasswordRecovery revokes it afterwards.
+         */
+        const { error: verifyError } = await client.auth.verifyOtp({
+          token_hash: recoveryTokenHash,
+          type: 'recovery',
+        });
+        if (verifyError) throw verifyError;
+        const { error: updateError } = await client.auth.updateUser({ password });
+        if (updateError) throw updateError;
+      } catch (error) {
+        throw sanitizeAuthError(error, 'password-reset');
+      } finally {
+        // Spent or refused, it is not reusable and must not linger in memory.
+        setRecoveryTokenHash(null);
+      }
+    },
     finishPasswordRecovery: async () => {
       if (environment.dataMode === 'mock') return;
       try {
         const { error } = await getSupabaseClient().auth.signOut({ scope: 'global' });
         if (error) throw error;
         callbackHandled.current = false;
+        setRecoveryTokenHash(null);
         setRecoveryOutcome({ status: 'idle' });
       } catch (error) { throw sanitizeAuthError(error, 'sign-out'); }
     },
@@ -430,7 +483,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         if (error) throw error;
       } catch (error) { throw sanitizeAuthError(error, 'sign-out'); }
     },
-  }), [emailConfirmationOutcome, loading, recoveryOutcome, session]);
+  }), [emailConfirmationOutcome, loading, recoveryOutcome, recoveryTokenHash, session]);
 
   return <Context.Provider value={value}>{children}</Context.Provider>;
 }

@@ -56,7 +56,7 @@ const PUBLIC_APP_ROUTES = ['/sign-in', '/create-account', '/forgot-password', '/
  * with a recovery grant; somebody who simply types the path is shown the
  * invalid-link card.
  */
-const CALLBACK_APP_ROUTES = ['/reset-password', '/auth/confirm', '/sign-out'];
+const CALLBACK_APP_ROUTES = ['/reset-password', '/auth/recovery', '/auth/confirm', '/sign-out'];
 
 function matches(routes: readonly string[], path: string): boolean {
   return routes.some((route) => path === route || path.startsWith(`${route}/`));

@@ -49,8 +49,10 @@ export default function ResetPasswordScreen() {
     setBusy(true);
     setMessage('');
     try {
-      const { error } = await getSupabaseClient().auth.updateUser({ password });
-      if (error) throw error;
+      // One deliberate step: spend the held token hash, then set the password.
+      // Opening the link did neither, which is what stops a mail scanner from
+      // consuming the recovery before the person ever sees this screen.
+      await auth.completePasswordRecovery(password);
       await auth.finishPasswordRecovery();
       setPassword('');
       setConfirmation('');

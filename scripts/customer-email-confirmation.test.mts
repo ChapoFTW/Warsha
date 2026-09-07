@@ -49,13 +49,15 @@ check(!('confirmationRequestAccepted' in acceptanceUnverified),
 assert.deepEqual(
   readAuthCallbackParameters(
     'warsha://auth/confirm#access_token=access&refresh_token=refresh&type=signup'),
-  { kind: 'signup', accessToken: 'access', refreshToken: 'refresh', code: undefined, error: undefined,
+  { kind: 'signup', accessToken: 'access', refreshToken: 'refresh', code: undefined,
+    tokenHash: undefined, error: undefined,
     errorCode: undefined, errorDescription: undefined },
 );
 checks += 1;
 assert.deepEqual(
   readAuthCallbackParameters('https://warsha.example/auth/confirm?code=pkce-code'),
-  { kind: 'signup', accessToken: undefined, refreshToken: undefined, code: 'pkce-code', error: undefined,
+  { kind: 'signup', accessToken: undefined, refreshToken: undefined, code: 'pkce-code',
+    tokenHash: undefined, error: undefined,
     errorCode: undefined, errorDescription: undefined },
 );
 checks += 1;

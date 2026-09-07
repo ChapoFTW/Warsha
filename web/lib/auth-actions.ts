@@ -162,7 +162,11 @@ export async function requestPasswordReset(email: string): Promise<ResetRequestR
   if (!emailAcceptable(email)) return { ok: false, failure: 'invalid_email' };
   try {
     const { error } = await supabase().auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: `${window.location.origin}/reset-password`,
+      // `/auth/recovery`, not `/reset-password`. The email now carries a token
+      // HASH to a Warsha route that consumes nothing on GET, so a mail scanner
+      // fetching the link no longer spends the recovery before the person taps
+      // it. `/reset-password` remains for links already in flight.
+      redirectTo: `${window.location.origin}/auth/recovery`,
     });
     if (!error) return { ok: true };
     const status = (error as { status?: number }).status ?? 0;

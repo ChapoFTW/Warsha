@@ -71,6 +71,20 @@ export function middleware(request: NextRequest) {
   }
 
   /*
+   * `/api/auth/*` is host-neutral for the same reason the two above are: it is
+   * an API, not a page, and rewriting it into `/app/api/auth/...` would make it
+   * a 404 on the very origin that calls it.
+   *
+   * `/api/auth/recover` is the only route that can spend a password-recovery
+   * token, and it does so exclusively on POST. A GET reaches no handler and is
+   * answered 405, which is what keeps a mail scanner that finds the path in a
+   * bundle from being able to consume anything.
+   */
+  if (pathname.startsWith('/api/auth/')) {
+    return NextResponse.next();
+  }
+
+  /*
    * Host decides which product is served.
    *
    * `app.` and `admin.` are separate origins on purpose. A browser isolates

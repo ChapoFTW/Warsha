@@ -299,7 +299,10 @@ check(/finishPasswordRecovery\(recoveryClient\)/.test(webReset),
 
 // The redirect target is this origin's own route. Web recovery must not borrow
 // the native deep link, and must not require native configuration to change.
-check(/redirectTo: `\$\{window\.location\.origin\}\/reset-password`/.test(webActions),
+// `/auth/recovery` since the scanner fix: the token-hash link goes to the route
+// that consumes nothing on GET. `/reset-password` still exists for links already
+// in flight, but nothing asks for it any more.
+check(/redirectTo: `\$\{window\.location\.origin\}\/auth\/recovery`/.test(webActions),
   'THE WEB ASKS FOR A LINK BACK TO ITS OWN ORIGIN, NOT THE APP SCHEME');
 check(!/warsha:\/\//.test(stripComments(webActions)),
   'and never builds the native scheme');
@@ -417,5 +420,131 @@ check(/if \(!credential\)/.test(resetPage),
 // that is now safe precisely because no session was created.
 check(/CALLBACK_APP_ROUTES\s*=\s*\[[^\]]*'\/reset-password'/.test(gate),
   'the reset route still owns its own lifecycle');
+
+// ===========================================================================
+// SCANNER RESISTANCE  (P0, 2026-09-07)
+// ===========================================================================
+//
+// Reported twice from Production: a fresh recovery email, clicked, reaching
+// "Create a new password", and then "This reset link has expired" on submit.
+//
+// Cause: {{ .ConfirmationURL }} points at /auth/v1/verify, which CONSUMES the
+// single-use token on the first GET. Mail providers, security products, link
+// expanders and preview generators fetch links automatically, so the token was
+// spent before the person clicked. Proven single-use against a live stack:
+// first fetch 303s with a session, second returns otp_expired.
+//
+// The email now carries a token HASH to a Warsha route. A hash is inert until
+// exchanged, so any number of machine fetches change nothing, and the exchange
+// happens once, server-side, on a deliberate submit.
+//
+// The live proof runs in `npm run test:recovery-scanner`, which needs the local
+// Supabase stack and Mailpit. These are the parts CI can check on its own.
+
+
+/**
+ * Source with comments removed.
+ *
+ * These assertions are about what the code DOES, and the files deliberately
+ * explain what they no longer do — the recovery page's own header names
+ * verifyOtp, setSession and exchangeCodeForSession in order to say it calls
+ * none of them. A test that cannot tell prose from code fails for the wrong
+ * reason, which is worse than not testing.
+ */
+const codeOnly = (source: string) => source
+  .replace(/\/\*[\s\S]*?\*\//g, '')
+  .replace(/^\s*\/\/.*$/gm, '')
+  .replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
+
+const template = read('supabase/templates/reset-password.html');
+const recoverRoute = read('web/app/api/auth/recover/route.ts');
+const recoveryPage = read('web/app/app/auth/recovery/page.tsx');
+const mobileReset = read('app/reset-password.tsx');
+const parser = read('src/auth/email-confirmation.ts');
+const config = read('supabase/config.toml');
+
+// --- The email no longer links at the consuming endpoint --------------------
+check(/\{\{ \.TokenHash \}\}/.test(template),
+  'THE RECOVERY EMAIL CARRIES A TOKEN HASH');
+// Matched against the LINK, not the whole file: the comment above it explains
+// why ConfirmationURL is not used, and a test that cannot tell prose from markup
+// fails for the wrong reason.
+const templateHref = (template.match(/<a href="([^"]+)"/) ?? [, ''])[1];
+check(templateHref.includes('{{ .TokenHash }}'), 'the link itself carries the hash');
+check(!templateHref.includes('.ConfirmationURL'),
+  'AND NOT ConfirmationURL, WHICH IS CONSUMED BY THE FIRST GET');
+check(!templateHref.includes('/auth/v1/verify'),
+  'and does not point at the consuming endpoint by hand either');
+check(/\{\{ if \.RedirectTo \}\}/.test(template),
+  'one template serves both surfaces through RedirectTo');
+check(/type=recovery/.test(template), 'and declares the callback type');
+check(/template\.recovery/.test(config) && /reset-password\.html/.test(config),
+  'the template is declared in config.toml for local and Production');
+
+// --- The route that spends it is POST-only ----------------------------------
+check(/export async function POST/.test(recoverRoute),
+  'the recovery API accepts a deliberate POST');
+check(!/export async function GET/.test(codeOnly(recoverRoute)),
+  'AND HAS NO GET HANDLER — a scanner that finds the path can spend nothing');
+check(/verifyOtp/.test(recoverRoute), 'the exchange happens there');
+check(/persistSession: false/.test(recoverRoute),
+  'on a server client that persists nothing');
+check(/scope: 'global'/.test(recoverRoute),
+  'and every session the old password could open is revoked afterwards');
+check(/passwordMeetsPolicy/.test(recoverRoute),
+  'the canonical password policy is enforced server-side, not only in the browser');
+check(!/console\.(log|warn|error|info)/.test(codeOnly(recoverRoute)),
+  'and the route logs nothing at all — not the hash, not the password');
+
+// --- The page consumes nothing on load --------------------------------------
+check(!/verifyOtp|exchangeCodeForSession|setSession/.test(codeOnly(recoveryPage)),
+  'THE RECOVERY PAGE CONSUMES NOTHING ON LOAD');
+check(!/from '@\/lib\/supabase'/.test(codeOnly(recoveryPage)),
+  'it does not even construct a Supabase client');
+check(!/useEffect/.test(codeOnly(recoveryPage)),
+  'and holds no effect that could exchange anything after render');
+check(/useSearchParams/.test(recoveryPage) && /token_hash/.test(recoveryPage),
+  'it reads the hash from the address bar');
+check(/fetch\('\/api\/auth\/recover'/.test(recoveryPage),
+  'and sends it exactly once, from the submit handler');
+const submitBlock = recoveryPage.slice(recoveryPage.indexOf('const submit'));
+check(/method: 'POST'/.test(submitBlock), 'as a POST');
+
+// --- Mobile stopped consuming on deep-link open -----------------------------
+check(/parameters\.kind === 'recovery' && parameters\.tokenHash/.test(authContext),
+  'MOBILE HOLDS THE HASH INSTEAD OF EXCHANGING IT ON OPEN');
+const handlerBlock = authContext.slice(
+  authContext.indexOf('const handleAuthUrl'),
+  authContext.indexOf('setOutcome({ status: \'processing\' })'));
+check(!/verifyOtp/.test(codeOnly(handlerBlock)),
+  'and the deep-link handler performs no exchange for a token hash');
+check(/completePasswordRecovery: async \(password: string\)/.test(authContext),
+  'the exchange lives in a named action a person triggers');
+const completeBlock = authContext.slice(authContext.indexOf('completePasswordRecovery: async'));
+check(/verifyOtp\(\{[\s\S]{0,120}token_hash: recoveryTokenHash/.test(completeBlock),
+  'which spends the hash');
+check(completeBlock.indexOf('verifyOtp') < completeBlock.indexOf('updateUser'),
+  'AND ONLY THEN SETS THE PASSWORD, in that order');
+check(/setRecoveryTokenHash\(null\)/.test(completeBlock),
+  'and the hash is dropped whether it succeeded or failed');
+check(/auth\.completePasswordRecovery\(password\)/.test(mobileReset),
+  'the mobile screen submits through that action');
+check(!/auth\.updateUser|getSupabaseClient\(\)\.auth\.updateUser/.test(codeOnly(mobileReset)),
+  'and no longer assumes a session the link used to create');
+
+// --- The shared parser understands the new shape ----------------------------
+check(/tokenHash: parameters\.get\('token_hash'\)/.test(parser),
+  'the shared parser reads a token hash');
+const hashed = readAuthCallbackParameters(
+  'https://app.usewarsha.com/auth/recovery?token_hash=pkce_abc123&type=recovery');
+equal(hashed.kind, 'recovery', 'and classifies the new link as recovery');
+equal(hashed.tokenHash, 'pkce_abc123', 'and returns the hash');
+check(!hashed.accessToken && !hashed.refreshToken,
+  'WITH NO BEARER TOKEN ANYWHERE IN IT — that is the point of the shape');
+
+const nativeHashed = readAuthCallbackParameters(
+  'warsha://reset-password?token_hash=pkce_xyz789&type=recovery');
+equal(nativeHashed.kind, 'recovery', 'the native deep link is recognised too');
+equal(nativeHashed.tokenHash, 'pkce_xyz789', 'and carries its hash');
 
 console.log(`Password recovery: ${checks} checks passed.`);
