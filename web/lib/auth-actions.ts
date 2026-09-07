@@ -5,6 +5,7 @@ import { safeAuthDiagnostic } from '@/src/auth/auth-errors';
 import { confirmationResendErrorIsNeutral } from '@/src/auth/email-confirmation';
 import { passwordMeetsPolicy } from '@/src/auth/password-policy';
 import type { SupportedLanguage } from '@/src/i18n/language-preference';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 import {
   classifySignUpError,
@@ -224,10 +225,19 @@ export type PasswordUpdateResult =
   | { ok: true }
   | { ok: false; failure: PasswordUpdateFailure };
 
-export async function updatePassword(password: string): Promise<PasswordUpdateResult> {
+/**
+ * `client` is supplied by the recovery page so the password is set on the
+ * EPHEMERAL recovery client rather than the shared application one. Defaulting
+ * to the shared client keeps the ordinary "change my password while signed in"
+ * caller working unchanged.
+ */
+export async function updatePassword(
+  password: string,
+  client: SupabaseClient = supabase(),
+): Promise<PasswordUpdateResult> {
   if (!passwordMeetsPolicy(password)) return { ok: false, failure: 'weak_password' };
   try {
-    const { error } = await supabase().auth.updateUser({ password });
+    const { error } = await client.auth.updateUser({ password });
     if (!error) return { ok: true };
     const status = (error as { status?: number }).status ?? 0;
     const code = (error as { code?: string }).code ?? '';
@@ -251,8 +261,17 @@ export async function updatePassword(password: string): Promise<PasswordUpdateRe
  * revoked. Signing in again with the new password is the point, not an
  * inconvenience.
  */
-export async function finishPasswordRecovery(): Promise<void> {
-  await supabase().auth.signOut({ scope: 'global' }).catch(() => undefined);
+export async function finishPasswordRecovery(
+  client: SupabaseClient = supabase(),
+): Promise<void> {
+  // Global scope on the recovery client revokes every refresh token the account
+  // holds, which is the point: the old password's sessions go too.
+  await client.auth.signOut({ scope: 'global' }).catch(() => undefined);
+  // And the shared client is cleared as well, so no stale application session
+  // can survive on this origin from before the reset.
+  if (client !== supabase()) {
+    await supabase().auth.signOut({ scope: 'local' }).catch(() => undefined);
+  }
 }
 
 /**

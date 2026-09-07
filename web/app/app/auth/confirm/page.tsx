@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import { AuthStateCard } from '@/components/auth-panel';
-import { arrivedBy } from '@/lib/auth-callback';
+import { arrivedBy, callbackCredential } from '@/lib/auth-callback';
 import { supabase } from '@/lib/supabase';
 import { useAppLocale } from '@/lib/use-app-locale';
 import { authOutcomeCopy } from '@/src/auth/auth-outcome-copy';
@@ -72,7 +72,21 @@ export default function ConfirmEmailPage() {
       try {
         // Awaiting the session awaits initialisation, which is where the link's
         // credential was exchanged. A session here means Auth accepted it.
-        const { data } = await supabase().auth.getSession();
+        /*
+         * Exchanged explicitly, because `detectSessionInUrl` is now off — see
+         * the security note in `lib/supabase-browser.ts`. Confirming an email
+         * address IS meant to sign you in, so unlike recovery this one goes
+         * onto the shared, persisted client exactly as it always did.
+         */
+        const client = supabase();
+        const credential = callbackCredential();
+        if (credential) {
+          await client.auth.setSession({
+            access_token: credential.accessToken,
+            refresh_token: credential.refreshToken,
+          });
+        }
+        const { data } = await client.auth.getSession();
         if (!active) return;
         setStatus(data.session
           ? { status: 'confirmed' }

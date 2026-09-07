@@ -1,6 +1,6 @@
 'use client';
 
-import { createBrowserClient } from './supabase-browser.ts';
+import { createBrowserClient, createRecoveryClient } from './supabase-browser.ts';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 /**
@@ -22,4 +22,18 @@ export function supabase(): SupabaseClient {
   if (client) return client;
   client = createBrowserClient();
   return client;
+}
+
+/**
+ * A throwaway client for one password recovery.
+ *
+ * Deliberately NOT memoised. The shared client above is a singleton because
+ * every surface wants the same session; this one exists so that a recovery
+ * credential has somewhere to live that is not shared with anything, and
+ * caching it would slowly turn it into a second application session.
+ *
+ * It persists nothing, so when the page goes, the grant goes with it.
+ */
+export function recoverySupabase(): SupabaseClient {
+  return createRecoveryClient();
 }

@@ -226,8 +226,14 @@ check(!/localStorage|sessionStorage|document\.cookie/.test(callback),
 // `recoveryStatus !== 'ready'` rule, expressed in what a browser can observe.
 check(/arrived\.kind !== 'recovery' \|\| arrived\.failure/.test(webReset),
   'A VISITOR WHO SIMPLY TYPES /reset-password SEES THE INVALID CARD, NOT THE FORM');
-check(/getSession\(\)/.test(webReset),
-  'and readiness is decided by awaiting the session, which awaits URL exchange');
+// Readiness used to be decided by awaiting `getSession()`, because URL exchange
+// happened during client initialisation. It no longer does: the page exchanges
+// the credential itself, onto a client that persists nothing, and readiness is
+// the result of THAT. The change is the P0 fix, so the assertion moves with it.
+check(/setSession\(\{/.test(webReset),
+  'readiness is decided by an explicit exchange the page performs itself');
+check(/access_token: credential\.accessToken/.test(webReset),
+  'using the credential the link carried, handed over deliberately');
 
 // One password policy, read by both surfaces.
 check(/PASSWORD_MIN_LENGTH = 8/.test(policy),
@@ -288,8 +294,8 @@ check(/If that address has a Warsha account/.test(appCopySource),
 // Finishing must revoke everything, exactly as the app does.
 check(/finishPasswordRecovery[\s\S]{0,400}signOut\(\{ scope: 'global' \}\)/.test(webActions),
   'FINISHING A WEB RESET SIGNS OUT GLOBALLY TOO');
-check(/finishPasswordRecovery\(\)/.test(webReset),
-  'and the page actually calls it before reporting success');
+check(/finishPasswordRecovery\(recoveryClient\)/.test(webReset),
+  'and the page calls it on the CONTAINED client before reporting success');
 
 // The redirect target is this origin's own route. Web recovery must not borrow
 // the native deep link, and must not require native configuration to change.
@@ -311,5 +317,105 @@ check(/href="\/forgot-password"/.test(read('web/app/app/sign-in/page.tsx')),
   'and sign-in links to it, which is the only way anybody finds it');
 check(/forgotWorkerNote/.test(webForgot),
   'and a worker is told plainly that a phone account has no address to email');
+
+// ===========================================================================
+// RECOVERY-SESSION CONTAINMENT  (P0, 2026-09-07)
+// ===========================================================================
+//
+// Reported and reproduced: clicking a recovery link put the visitor inside the
+// normal Warsha web app without a new password ever being set.
+//
+// Root cause, confirmed against a live stack. `detectSessionInUrl: true`
+// consumed the link's credential during initialisation of the SHARED,
+// PERSISTED client, so a full application session was written to the origin's
+// storage before the password form was even submitted. Routing could not
+// contain that: `/reset-password` was exempted from `StartupGate`, which made
+// that route tolerate the session while every OTHER route treated it as an
+// ordinary signed-in visitor.
+//
+// Measured with the real token, aal1 / amr=otp / role=authenticated:
+//   own profile     HTTP 200     bookings       HTTP 200
+//   addresses       HTTP 200     notifications  HTTP 200
+//   staff RPC write HTTP 403     provider activate HTTP 403
+//
+// So the staff gates held — AAL2, recent-auth and capability all refused — and
+// the customer surface did not. That is the defect.
+
+const browserClient = read('web/lib/supabase-browser.ts');
+const sharedClient = read('web/lib/supabase.ts');
+const resetPage = read('web/app/app/reset-password/page.tsx');
+const confirmPage = read('web/app/app/auth/confirm/page.tsx');
+const callbackLib = read('web/lib/auth-callback.ts');
+const actions = read('web/lib/auth-actions.ts');
+
+// --- The credential is no longer consumed into the shared session -----------
+check(/detectSessionInUrl:\s*false/.test(browserClient),
+  'THE SHARED CLIENT NO LONGER CONSUMES CREDENTIALS FROM THE ADDRESS BAR');
+check(!/detectSessionInUrl:\s*true/.test(browserClient),
+  'and there is no remaining client that does');
+
+// --- A recovery client that cannot become a session -------------------------
+check(/export function createRecoveryClient/.test(browserClient),
+  'a recovery-only client exists');
+const recoveryBlock = browserClient.slice(browserClient.indexOf('export function createRecoveryClient'));
+check(/persistSession:\s*false/.test(recoveryBlock),
+  'IT PERSISTS NOTHING — there is no storage entry to survive the page');
+check(/autoRefreshToken:\s*false/.test(recoveryBlock),
+  'and does not refresh, so the grant stays as short-lived as it was issued');
+check(/detectSessionInUrl:\s*false/.test(recoveryBlock),
+  'and does not read the address bar either');
+check(/export function recoverySupabase/.test(sharedClient),
+  'and it is exposed separately from the shared client');
+check(!/let recoveryClient|recoveryClient =\s*createRecoveryClient/.test(sharedClient),
+  'DELIBERATELY NOT MEMOISED — a cached recovery client is a second app session');
+
+// --- The reset page uses it, and never the shared one -----------------------
+check(/recoverySupabase\(\)/.test(resetPage),
+  'the reset page exchanges onto the contained client');
+check(!/\bsupabase\(\)/.test(resetPage),
+  'AND NEVER TOUCHES THE SHARED CLIENT, so no persisted session can be created');
+check(/callbackCredential\(\)/.test(resetPage),
+  'it reads the credential explicitly rather than relying on initialisation');
+check(/updatePassword\(password, recoveryClient\)/.test(resetPage),
+  'the password is set on the contained client');
+check(/finishPasswordRecovery\(recoveryClient\)/.test(resetPage),
+  'and the contained client is what gets signed out');
+
+// --- Confirmation still signs you in, because it is meant to ----------------
+check(/callbackCredential\(\)/.test(confirmPage) && /setSession/.test(confirmPage),
+  'email confirmation exchanges explicitly onto the shared client');
+check(/const client = supabase\(\)/.test(confirmPage),
+  'AND STILL SIGNS THE VISITOR IN — confirming an address is supposed to');
+
+// --- Nothing logs the credential --------------------------------------------
+check(!/console\.(log|warn|error|info)\([^)]*credential/i.test(callbackLib + resetPage),
+  'THE CREDENTIAL IS NEVER LOGGED');
+check(!/localStorage|sessionStorage|document\.cookie/.test(resetPage + callbackLib),
+  'and never written to browser storage by Warsha code');
+
+// --- A finished reset revokes everything ------------------------------------
+check(/signOut\(\{\s*scope:\s*'global'\s*\}\)/.test(actions),
+  'FINISHING A RESET REVOKES EVERY SESSION THE OLD PASSWORD COULD HAVE OPENED');
+check(/scope:\s*'local'/.test(actions),
+  'and clears the shared client on this origin too, so nothing stale survives');
+
+// --- Expired and refreshed links stay on the recovery surface ---------------
+// Verified against the exact shapes a live GoTrue emits.
+const expiredRedirect = readAuthCallbackParameters(
+  'https://app.usewarsha.com/reset-password#error=access_denied&error_code=otp_expired'
+  + '&error_description=Email+link+is+invalid+or+has+expired&sb=');
+equal(expiredRedirect.kind, 'recovery', 'an expired redirect is still recognised as recovery');
+check(Boolean(expiredRedirect.errorCode), 'and carries the provider error code');
+
+const refreshed = readAuthCallbackParameters('https://app.usewarsha.com/reset-password');
+check(!refreshed.accessToken && !refreshed.refreshToken,
+  'A REFRESH CARRIES NO CREDENTIAL, so the page cannot mistake it for a grant');
+check(/if \(!credential\)/.test(resetPage),
+  'and the page refuses without one rather than falling through to a form');
+
+// The route stays exempt from the gate so it can show its own error card, and
+// that is now safe precisely because no session was created.
+check(/CALLBACK_APP_ROUTES\s*=\s*\[[^\]]*'\/reset-password'/.test(gate),
+  'the reset route still owns its own lifecycle');
 
 console.log(`Password recovery: ${checks} checks passed.`);

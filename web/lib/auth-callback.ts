@@ -53,6 +53,27 @@ export type ArrivedBy = {
  * types `/reset-password` into the address bar has no recovery grant and must
  * not be shown a password form as though they did.
  */
+/**
+ * The credential the link carried, for the route that owns it to exchange.
+ *
+ * This exists because `detectSessionInUrl` is off. It used to be Auth's job to
+ * consume the address bar during client initialisation, and the problem with
+ * that was WHICH client it consumed into: the shared, persisted one, on every
+ * route, including a recovery link that must never become an application
+ * session.
+ *
+ * So the credential is read here and handed to a caller that has already
+ * decided where it belongs. Nothing is logged, nothing is stored, and the
+ * snapshot it comes from is the same module-scope one `arrivedBy` classifies.
+ * A caller that does not ask never sees it.
+ */
+export function callbackCredential(): { accessToken: string; refreshToken: string } | null {
+  if (!snapshot) return null;
+  const parameters = readAuthCallbackParameters(snapshot);
+  if (!parameters.accessToken || !parameters.refreshToken) return null;
+  return { accessToken: parameters.accessToken, refreshToken: parameters.refreshToken };
+}
+
 export function arrivedBy(): ArrivedBy {
   if (!snapshot) return { kind: null, failure: null };
   const parameters = readAuthCallbackParameters(snapshot);

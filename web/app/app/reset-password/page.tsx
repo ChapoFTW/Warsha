@@ -5,9 +5,9 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { AuthScreen, AuthStateCard, SecretField, authPanelStyles as styles } from '@/components/auth-panel';
 import { appCopy } from '@/lib/app-copy';
-import { arrivedBy } from '@/lib/auth-callback';
+import { arrivedBy, callbackCredential } from '@/lib/auth-callback';
 import { finishPasswordRecovery, updatePassword, type PasswordUpdateFailure } from '@/lib/auth-actions';
-import { supabase } from '@/lib/supabase';
+import { recoverySupabase } from '@/lib/supabase';
 import { useAppLocale } from '@/lib/use-app-locale';
 import { authOutcomeCopy } from '@/src/auth/auth-outcome-copy';
 import {
@@ -19,6 +19,7 @@ import { PasswordRequirements } from '@/components/password-requirements';
 import { passwordMeetsPolicy } from '@/src/auth/password-policy';
 
 import type { Route } from 'next';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 /**
  * Setting a new password from a recovery link.
@@ -75,6 +76,9 @@ export default function ResetPasswordPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [busy, setBusy] = useState(false);
+  // Held so the submit handler sets the password on the SAME contained
+  // client the credential was exchanged onto, never on the shared one.
+  const [recoveryClient, setRecoveryClient] = useState<SupabaseClient | null>(null);
   const [failure, setFailure] = useState<PasswordUpdateFailure | null>(null);
 
   useEffect(() => {
@@ -85,17 +89,37 @@ export default function ResetPasswordPage() {
       return () => { active = false; };
     }
 
-    const client = supabase();
+    /*
+     * The credential is exchanged HERE, onto a client that persists nothing.
+     *
+     * It used to be exchanged by `detectSessionInUrl` during initialisation of
+     * the SHARED client, which wrote a full application session to this
+     * origin's storage before any new password existed. That session was a
+     * normal `authenticated` JWT: reproduced against a live stack, it read the
+     * account's own profile, addresses, bookings and notifications through
+     * PostgREST. Routing could not contain it, because the token itself was
+     * valid everywhere.
+     *
+     * `recoverySupabase()` persists nothing and refreshes nothing, so this
+     * grant exists in one closure for the length of one form submission.
+     */
+    const credential = callbackCredential();
+    if (!credential) {
+      setStatus({ status: 'invalid', failure: 'session_mismatch' });
+      return () => { active = false; };
+    }
 
-    // `getSession()` awaits the client's initialisation, and initialisation is
-    // where the URL callback is exchanged. Awaiting it is therefore a
-    // deterministic answer to "did the link produce a session?" — no polling,
-    // no racing the auth event.
+    const client = recoverySupabase();
+    setRecoveryClient(client);
+
     void (async () => {
       try {
-        const { data } = await client.auth.getSession();
+        const { data, error } = await client.auth.setSession({
+          access_token: credential.accessToken,
+          refresh_token: credential.refreshToken,
+        });
         if (!active) return;
-        setStatus(data.session
+        setStatus(data.session && !error
           ? { status: 'ready' }
           : { status: 'invalid', failure: 'session_mismatch' });
       } catch (error) {
@@ -108,17 +132,7 @@ export default function ResetPasswordPage() {
       }
     })();
 
-    // Belt and braces. On the implicit path the recovery notification is
-    // deferred a tick past the session being saved, so this can only ever
-    // confirm what the await above already found — never contradict it.
-    const { data: subscription } = client.auth.onAuthStateChange((event, session) => {
-      if (active && event === 'PASSWORD_RECOVERY' && session) setStatus({ status: 'ready' });
-    });
-
-    return () => {
-      active = false;
-      subscription.subscription.unsubscribe();
-    };
+    return () => { active = false; };
   }, [arrived]);
 
   const policyMet = passwordMeetsPolicy(password);
@@ -130,7 +144,8 @@ export default function ResetPasswordPage() {
     if (busy || !policyMet || !matched) return;
     setBusy(true);
     setFailure(null);
-    const result = await updatePassword(password);
+    if (!recoveryClient) { setBusy(false); return; }
+    const result = await updatePassword(password, recoveryClient);
     if (!result.ok) {
       setFailure(result.failure);
       setBusy(false);
@@ -138,7 +153,7 @@ export default function ResetPasswordPage() {
     }
     setPassword('');
     setConfirmation('');
-    await finishPasswordRecovery();
+    await finishPasswordRecovery(recoveryClient);
     setStatus({ status: 'done' });
     setBusy(false);
   };
