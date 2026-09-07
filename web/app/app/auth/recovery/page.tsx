@@ -1,7 +1,7 @@
 'use client';
 
 import { useSearchParams } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { AuthScreen, AuthStateCard, SecretField, authPanelStyles as styles } from '@/components/auth-panel';
 import { PasswordRequirements } from '@/components/password-requirements';
@@ -73,11 +73,31 @@ export default function RecoveryPage() {
   const [status, setStatus] = useState<Status>(
     tokenHash && type === 'recovery' ? { status: 'ready' } : { status: 'invalid' },
   );
+
   const [password, setPassword] = useState('');
   const [confirmation, setConfirmation] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [failure, setFailure] = useState<Failure | null>(null);
+
+  /*
+   * Take the hash out of the address bar once it has been read.
+   *
+   * It stays in this component's state for the submit. What it stops being is
+   * part of the visible URL, which is the copy that ends up in a screenshot, a
+   * shared link, a bookmark, a browser-sync history and an over-the-shoulder
+   * glance. `replaceState` also means a later navigation cannot leave it in the
+   * back stack.
+   *
+   * This runs after the read above, so the form is already holding what it
+   * needs; a refresh afterwards correctly shows the invalid card, because a
+   * refresh genuinely no longer has a credential.
+   */
+  useEffect(() => {
+    if (typeof window === 'undefined' || !tokenHash) return;
+    if (!window.location.search.includes('token_hash')) return;
+    window.history.replaceState(null, '', window.location.pathname);
+  }, [tokenHash]);
 
   const policyMet = passwordMeetsPolicy(password);
   const matched = password === confirmation && confirmation.length > 0;

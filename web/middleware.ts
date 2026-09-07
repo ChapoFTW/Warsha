@@ -10,11 +10,43 @@ import { CANONICAL_HOST } from './lib/site.ts';
  * `app.usewarsha.com/jobs` renders `/app/jobs`; the visitor never sees `/app`
  * in the address bar, and the public host cannot reach it at all.
  */
+/**
+ * The recovery surface carries authority in its address bar.
+ *
+ * `/auth/recovery?token_hash=…` holds the one credential that can change a
+ * password. A hash is inert until exchanged, but it is still worth exactly one
+ * account takeover to anybody who reads it, so the two ways a URL escapes a
+ * browser are closed on this path specifically:
+ *
+ *   Referrer-Policy: no-referrer   a `Referer` header carries the FULL url,
+ *                                  query included, to every host the page
+ *                                  fetches from. One font, one image, one
+ *                                  analytics beacon and the hash is in
+ *                                  somebody else's access log.
+ *   Cache-Control: no-store        keeps it out of shared caches and out of
+ *                                  disk on borrowed machines.
+ *
+ * `X-Robots-Tag` is belt and braces: a crawler that somehow reached the URL
+ * must not publish it.
+ */
+function isRecoverySurface(pathname: string): boolean {
+  return pathname === '/auth/recovery' || pathname.startsWith('/auth/recovery/')
+    || pathname === '/reset-password' || pathname.startsWith('/reset-password/');
+}
+
+function protectRecovery(response: NextResponse, pathname: string) {
+  if (!isRecoverySurface(pathname)) return response;
+  response.headers.set('Referrer-Policy', 'no-referrer');
+  response.headers.set('Cache-Control', 'no-store, max-age=0');
+  response.headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
+  return response;
+}
+
 function rewriteInto(prefix: string, request: NextRequest, pathname: string) {
-  if (pathname.startsWith(prefix)) return NextResponse.next();
+  if (pathname.startsWith(prefix)) return protectRecovery(NextResponse.next(), pathname);
   const url = request.nextUrl.clone();
   url.pathname = `${prefix}${pathname === '/' ? '' : pathname}`;
-  return NextResponse.rewrite(url);
+  return protectRecovery(NextResponse.rewrite(url), pathname);
 }
 
 /**

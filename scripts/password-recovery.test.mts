@@ -501,8 +501,20 @@ check(!/verifyOtp|exchangeCodeForSession|setSession/.test(codeOnly(recoveryPage)
   'THE RECOVERY PAGE CONSUMES NOTHING ON LOAD');
 check(!/from '@\/lib\/supabase'/.test(codeOnly(recoveryPage)),
   'it does not even construct a Supabase client');
-check(!/useEffect/.test(codeOnly(recoveryPage)),
-  'and holds no effect that could exchange anything after render');
+// The page does hold ONE effect, and what it contains is the assertion. An
+// absolute ban on `useEffect` would be easier to write and would say less: the
+// rule is that no effect may consume the credential, not that the page may
+// never react to mounting.
+const recoveryCode = codeOnly(recoveryPage);
+equal(recoveryCode.split('useEffect(').length - 1, 1,
+  'THE RECOVERY PAGE HOLDS EXACTLY ONE EFFECT');
+const effect = recoveryCode.slice(
+  recoveryCode.indexOf('useEffect('),
+  recoveryCode.indexOf('const policyMet'));
+check(/history\.replaceState/.test(effect),
+  'and all it does is take the hash out of the address bar');
+check(!/fetch|verifyOtp|supabase|createClient|auth\./i.test(effect),
+  'IT CALLS NOTHING THAT COULD SPEND THE CREDENTIAL');
 check(/useSearchParams/.test(recoveryPage) && /token_hash/.test(recoveryPage),
   'it reads the hash from the address bar');
 check(/fetch\('\/api\/auth\/recover'/.test(recoveryPage),
@@ -546,5 +558,125 @@ const nativeHashed = readAuthCallbackParameters(
   'warsha://reset-password?token_hash=pkce_xyz789&type=recovery');
 equal(nativeHashed.kind, 'recovery', 'the native deep link is recognised too');
 equal(nativeHashed.tokenHash, 'pkce_xyz789', 'and carries its hash');
+
+// ===========================================================================
+// TOKEN-HASH LEAKAGE
+// ===========================================================================
+//
+// The hash is inert until exchanged, but it is still worth exactly one account
+// takeover to whoever reads it. So the ways a URL escapes a browser are closed
+// on this surface, and the ways a value escapes a program are closed here.
+
+const middleware = read('web/middleware.ts');
+const errorReporter = read('src/observability/client-error-reporter.ts');
+
+// --- The URL must not leave the browser -------------------------------------
+check(/Referrer-Policy'?,\s*'no-referrer'/.test(middleware),
+  'THE RECOVERY SURFACE SENDS NO REFERRER — one font or beacon would otherwise '
+  + 'put the hash in somebody else\'s access log');
+check(/Cache-Control'?,\s*'no-store/.test(middleware),
+  'and is never stored in a shared cache or on disk');
+check(/X-Robots-Tag/.test(middleware), 'and is never indexed');
+check(/isRecoverySurface/.test(middleware) && /auth\/recovery/.test(middleware),
+  'and the protection is applied to the recovery paths by name');
+
+// --- And it does not linger in the address bar ------------------------------
+check(/history\.replaceState/.test(recoveryPage),
+  'THE HASH IS REMOVED FROM THE ADDRESS BAR ONCE READ');
+
+// --- Nothing logs it --------------------------------------------------------
+for (const [label, source] of [
+  ['the recovery page', recoveryPage],
+  ['the submit route', recoverRoute],
+  ['the callback parser', parser],
+] as const) {
+  check(!/console\.(log|warn|error|info|debug)/.test(codeOnly(source)),
+    `${label} logs nothing at all`);
+}
+// The diagnostic is the one thing in the callback path that is deliberately
+// SENT somewhere, so its fields are enumerated rather than trusted. Bounded to
+// the function body: the parser below it legitimately handles the hash.
+const diagnostic = parser.slice(
+  parser.indexOf('export function safeAuthCallbackDiagnostic'),
+  parser.indexOf('export type CustomerSignUpResult'));
+const reported = [...diagnostic.matchAll(/^\s{4}(\w+)[:,]/gm)].map(([, field]) => field);
+equal(reported.sort(), ['code', 'failure', 'kind', 'operation', 'state', 'status'],
+  'THE DIAGNOSTIC REPORTS SIX FIELDS AND THE HASH IS NOT ONE OF THEM');
+check(!/token|access|refresh|password|url|href/i.test(diagnostic),
+  'and its body names no credential at all');
+
+// --- Telemetry cannot capture it either -------------------------------------
+check(!/location|href|url|query|search/i.test(
+  codeOnly(errorReporter).replace(/WarshaSurface|surface/g, '')),
+  'CLIENT ERROR TELEMETRY CAPTURES NO URL, so a crash on this page reports no hash');
+check(/p_surface|p_name|p_component|p_fatal/.test(errorReporter),
+  'it reports an error class and a surface, and nothing free-form');
+
+// --- The route echoes nothing and accepts one thing -------------------------
+// Every answer this route gives is a literal verdict. Asserting the SHAPE
+// rather than searching for forbidden words is what makes this airtight: a
+// reply that interpolates anything at all — the hash, the password, the
+// provider's error text — cannot match, whatever it happens to be called.
+const replyShapes = [...recoverRoute.matchAll(/reply\(\{[^}]*\}/g)].map(([shape]) => shape);
+check(replyShapes.length >= 6, `the route answers in fixed shapes (${replyShapes.length})`);
+for (const shape of replyShapes) {
+  check(/^reply\(\{ ok: true \}$|^reply\(\{ ok: false, failure: '[a-z_]+' \}$/.test(shape),
+    `A REPLY IS A LITERAL VERDICT AND INTERPOLATES NOTHING: ${shape}`);
+}
+check(/if \(type !== 'recovery'\)/.test(recoverRoute),
+  'AND AN UNSUPPORTED CALLBACK TYPE IS REFUSED — this is not a general exchanger');
+check(/tokenHash\.length > 512/.test(recoverRoute),
+  'a hostile oversized hash never reaches the provider');
+equal((codeOnly(recoverRoute).match(/verifyOtp/g) ?? []).length, 1,
+  'AND IT IS EXCHANGED IN EXACTLY ONE PLACE, once per request');
+
+// --- Native keeps it transient ----------------------------------------------
+//
+// Mobile is where a credential is most likely to be persisted by accident: the
+// hash has to survive a screen transition between the deep link opening and the
+// person typing a password, and the obvious way to carry it is storage. It is
+// carried in React state instead, so it dies with the process.
+
+check(/const \[recoveryTokenHash, setRecoveryTokenHash\] = useState<string \| null>\(null\)/
+  .test(authContext), 'THE NATIVE HASH LIVES IN REACT STATE');
+check(!/AsyncStorage|SecureStore|async-storage|expo-secure-store|MMKV/.test(authContext),
+  'AND THE FILE HOLDING IT IMPORTS NO STORAGE AT ALL, so it cannot outlive the app');
+equal([...codeOnly(authContext).matchAll(/recoveryTokenHash/g)].length, 4,
+  'it appears four times: declared, guarded, spent, and in the memo dependencies');
+check(/token_hash: recoveryTokenHash/.test(completeBlock),
+  'and the only thing it is ever passed to is verifyOtp');
+
+const finallyBlock = completeBlock.slice(completeBlock.indexOf('} finally {'),
+  completeBlock.indexOf('finishPasswordRecovery:'));
+check(/setRecoveryTokenHash\(null\)/.test(finallyBlock),
+  'IT IS CLEARED IN A `finally`, so a refusal drops it exactly as a success does');
+
+// --- What the native path is allowed to log ---------------------------------
+//
+// It does log, in development, and that is the reason to pin it rather than
+// hope. Every call site is a bracketed literal tag plus the DIAGNOSTIC's return
+// value — the six fields enumerated above — or the static redirect target. The
+// raw URL, the parsed parameters and the hash reach console through none of
+// them. `parameters` is handed to the diagnostic as evidence, which is safe
+// precisely because the diagnostic returns a fixed shape rather than its input.
+const consoleCalls = codeOnly(authContext).split('console.').slice(1)
+  .map((tail) => tail.slice(0, tail.indexOf(');') + 2));
+check(consoleCalls.length >= 4,
+  `the native auth path has ${consoleCalls.length} log sites, and each is pinned`);
+for (const call of consoleCalls) {
+  check(
+    /^warn\(\s*'\[Warsha [a-z ]+\]',\s*safeAuth\w*Diagnostic\(/.test(call)
+    || /^info\('\[Warsha password recovery\] Redirect target:', redirectTo\);$/.test(call),
+    `A LOG IS A LITERAL TAG PLUS A DIAGNOSTIC AND NOTHING ELSE: ${call.slice(0, 44)}`);
+  check(!/tokenHash|accessToken|refreshToken|password:|[.]href|[.]url|event/.test(call),
+    `and names no credential and no URL: ${call.slice(0, 44)}`);
+}
+
+// A release build logs none of it. The tag alone would be harmless; the habit
+// of logging in the callback path is what is being kept out of production.
+const nativeCode = codeOnly(authContext);
+const unguarded = [...nativeCode.matchAll(/console[.]\w+[(]/g)].filter(
+  (match) => !nativeCode.slice(Math.max(0, (match.index ?? 0) - 140), match.index).includes('__DEV__'));
+equal(unguarded.length, 0, 'AND EVERY LOG IS BEHIND __DEV__, so a release build writes none of them');
 
 console.log(`Password recovery: ${checks} checks passed.`);

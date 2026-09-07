@@ -15,7 +15,6 @@ import { recoveryFailurePresentation } from '@/src/auth/email-confirmation';
 import { PasswordRequirementList } from '@/components/warsha/PasswordRequirementList';
 import { passwordMeetsPolicy, passwordFailureKey } from '@/src/auth/password-policy';
 import { useLocalization } from '@/src/i18n/localization';
-import { getSupabaseClient } from '@/src/lib/supabase';
 
 export default function ResetPasswordScreen() {
   const colors = useThemeColors();

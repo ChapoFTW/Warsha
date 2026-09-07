@@ -61,15 +61,27 @@ export async function POST(request: Request) {
 
   let tokenHash = '';
   let password = '';
+  let type = 'recovery';
   try {
-    const body = await request.json() as { tokenHash?: unknown; password?: unknown };
+    const body = await request.json() as
+      { tokenHash?: unknown; password?: unknown; type?: unknown };
     tokenHash = typeof body.tokenHash === 'string' ? body.tokenHash : '';
     password = typeof body.password === 'string' ? body.password : '';
+    if (typeof body.type === 'string') type = body.type;
   } catch {
     return reply({ ok: false, failure: 'invalid' }, 400);
   }
 
   if (!tokenHash) return reply({ ok: false, failure: 'invalid' }, 400);
+  // This route exists for ONE callback type. A caller asking to spend a signup
+  // or email-change token here is refused rather than quietly served, so the
+  // route cannot be turned into a general-purpose token exchanger.
+  if (type !== 'recovery') return reply({ ok: false, failure: 'invalid' }, 400);
+  // A hash is opaque, but it is not arbitrary text. Bounding its shape keeps a
+  // hostile body from reaching the provider at all.
+  if (tokenHash.length > 512 || /[\s<>"']/.test(tokenHash)) {
+    return reply({ ok: false, failure: 'invalid' }, 400);
+  }
   // Checked here as well as in the browser. The browser's copy is a courtesy to
   // somebody typing; this one is the rule, and it is the same module the mobile
   // client reads so all three surfaces demand the same password.
