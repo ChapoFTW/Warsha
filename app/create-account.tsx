@@ -7,7 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BrandLockup } from '@/components/warsha/BrandMark';
 import { BrandButton, BrandTextField } from '@/components/warsha/BrandUI';
 import { PasswordRequirementList } from '@/components/warsha/PasswordRequirementList';
-import { SignupLegalAcceptance } from '@/components/warsha/SignupLegalAcceptance';
+import { SignupLegalAcceptance, SignupLegalFootnotes } from '@/components/warsha/SignupLegalAcceptance';
 import { AppText } from '@/components/warsha/Typography';
 import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
 import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
@@ -320,6 +320,16 @@ export default function CreateAccount() {
             />
           ) : null}
           <BrandTextField
+            label={at('phone')}
+            value={phone}
+            onChangeText={setPhone}
+            keyboardType="phone-pad"
+            autoCapitalize="none"
+            autoCorrect={false}
+            textContentType="telephoneNumber"
+            helper={at('phoneContactHint')}
+          />
+          <BrandTextField
             label={t('password')}
             value={password}
             onChangeText={setPassword}
@@ -330,22 +340,14 @@ export default function CreateAccount() {
               signup form that states the policy only by refusing the result is
               a form somebody fails three times in a row. */}
           <PasswordRequirementList password={password} />
-          <BrandTextField
-            label={at('phone')}
-            value={phone}
-            onChangeText={setPhone}
-            keyboardType="phone-pad"
-            autoCapitalize="none"
-            autoCorrect={false}
-            textContentType="telephoneNumber"
-            helper={at('phoneContactHint')}
-          />
 
+          {/* The reassurance stays — "no email is needed, this phone number is
+              how you sign in" answers a real worry at the moment it arises. The
+              role description does not: it was read on the card that got them
+              here, and repeating it under the fields spends the space just
+              above the primary action on a decision already made. */}
           {role === 'worker' ? (
-            <>
-              <AppText style={styles.note}>{at('workerRegistrationNoEmail')}</AppText>
-              <AppText style={styles.note}>{ot.text('roleWorkerHint')}</AppText>
-            </>
+            <AppText style={styles.note}>{at('workerRegistrationNoEmail')}</AppText>
           ) : null}
 
           <SignupLegalAcceptance
@@ -377,6 +379,12 @@ export default function CreateAccount() {
             }
             onPress={() => void createAccount(role)}
           />
+
+          {/* After the action, deliberately. Neither is a decision to make
+              here, and between the last checkbox and the button they put three
+              lines about something else in the one place a person is looking
+              for the way forward. */}
+          <SignupLegalFootnotes />
         </View>
 
         {/* One result, one element. These are branches of a single value, so

@@ -113,6 +113,28 @@ export function SignupLegalAcceptance({
         </>
       ) : null}
 
+    </View>
+  );
+}
+
+/**
+ * The parts of the legal section that are NOT a required choice.
+ *
+ * The location policy is explicitly separate from this agreement, and the
+ * record-keeping sentence is reassurance about what Warsha stores. Neither is
+ * something to decide here, and both used to sit between the last required
+ * checkbox and the button — so the primary action was separated from the
+ * choices that gate it by three lines of prose about something else.
+ *
+ * They are rendered after the action instead. Nothing is removed, nothing is
+ * merged, nothing is pre-selected: the required consents are still two distinct
+ * decisions, still unchecked, still each with their documents.
+ */
+export function SignupLegalFootnotes() {
+  const styles = useThemedStyles(makeStyles);
+  const lt = useLegalText();
+  return (
+    <View style={styles.footnotes}>
       <View style={styles.optionalPolicy}>
         <AppText style={styles.hint}>{lt.text('signupLocationSeparate')}</AppText>
         <LegalLink documentKey="location_data_policy" label={lt.text('signupLocationPolicy')} />
@@ -123,6 +145,7 @@ export function SignupLegalAcceptance({
 }
 
 const makeStyles = (colors: ThemeColors) => StyleSheet.create({
+  footnotes: { width: '100%', gap: spacing.sm },
   card: {
     width: '100%',
     gap: spacing.sm,

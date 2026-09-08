@@ -350,7 +350,7 @@
       "locale": "en",
       "title": "Account, security, and preferences",
       "summary": "Sign in, recover your password, choose language and appearance, and manage privacy.",
-      "version": 11,
+      "version": 12,
       "lastReviewedDate": "2026-09-09",
       "features": [
         "auth",
@@ -383,7 +383,7 @@
       "locale": "ar",
       "title": "الحساب والأمان والتفضيلات",
       "summary": "سجّل الدخول، استرجع كلمة السر، واختار اللغة والمظهر وتحكم في الخصوصية.",
-      "version": 11,
+      "version": 12,
       "lastReviewedDate": "2026-09-09",
       "features": [
         "auth",
@@ -470,7 +470,7 @@
       "locale": "en",
       "title": "Getting started as a professional",
       "summary": "Register with phone and password, finish onboarding, and wait for governed approval.",
-      "version": 11,
+      "version": 12,
       "lastReviewedDate": "2026-09-09",
       "features": [
         "worker_auth",
@@ -498,8 +498,8 @@
       "locale": "ar",
       "title": "ابدأ كصنايعي",
       "summary": "سجّل بالموبايل وكلمة السر، كمّل التقديم، واستنى الموافقة المنظمة.",
-      "version": 10,
-      "lastReviewedDate": "2026-09-07",
+      "version": 11,
+      "lastReviewedDate": "2026-09-09",
       "features": [
         "worker_auth",
         "worker_onboarding",
@@ -1228,7 +1228,7 @@
       "locale": "fr",
       "title": "Compte, sécurité et préférences",
       "summary": "Connectez-vous, récupérez votre mot de passe et gérez langue, apparence et confidentialité.",
-      "version": 11,
+      "version": 12,
       "lastReviewedDate": "2026-09-09",
       "features": [
         "auth",
@@ -1288,8 +1288,8 @@
       "locale": "fr",
       "title": "Bien démarrer comme professionnel",
       "summary": "Créez votre compte sans e-mail, terminez votre profil et préparez-vous à recevoir des opportunités.",
-      "version": 10,
-      "lastReviewedDate": "2026-09-07",
+      "version": 11,
+      "lastReviewedDate": "2026-09-09",
       "features": [
         "worker_auth",
         "worker_onboarding",
