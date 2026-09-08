@@ -99,55 +99,47 @@ for choices.
 
 ---
 
-### UX-002 — A cold launch asks "which are you?" before saying what Warsha is
+### UX-002 — WITHDRAWN: the role chooser was a mock-mode artefact
 
 - **Stage:** first contact
-- **User goal:** work out what this app is and whether to trust it
-- **Severity:** P1
-- **Evidence:** rendered — API 24, `pm clear` then launcher intent, resumed
-  activity `com.warsha.app/.MainActivity`, accessibility tree captured
-- **Status:** OPEN
+- **Severity:** was recorded P1
+- **Status:** **WITHDRAWN 2026-09-08.** The finding was wrong.
 
-**Current experience.** A cleared install opens directly on the account-creation
-role chooser:
+**What was recorded.** That a cleared install opens on the account-creation role
+chooser rather than `welcome.tsx`, so Warsha asks for a commitment before saying
+what it is.
 
-> Warsha
-> **How will you use Warsha?**
-> **Customer** — Book plumbers, electricians, carpenters and more.
-> **Worker** — Offer your services. Needs identity checks before you can start.
-> Every account can book services. Choosing Worker also starts your application.
-> Sign in
+**Why it was wrong.** The screenshots were taken from a build made with
+`EXPO_PUBLIC_DATA_MODE=mock`, and mock mode is not signed out. In
+`src/onboarding/onboarding-context.tsx`:
 
-`app/welcome.tsx` exists, is written as "the signed-out gateway ... the first
-Warsha screen anybody sees", and is **not** what a cold launch reaches.
+```ts
+const accountKey = mode === 'mock' ? 'mock-user' : user?.id ?? null;
+```
 
-**Problem.** The first thing Warsha asks for is a commitment — pick a role,
-which begins creating an account — before it has said what the service does, how
-pricing works, or why a stranger should be trusted with a home visit. There is
-no value proposition and no trust signal anywhere above the fold. "Book
-plumbers, electricians, carpenters and more" is the closest thing to one, and it
-is card subtext inside a decision the user has not yet been given a reason to
-make.
+`AuthGate` derives `signedIn = onboarding.accountKey !== null`, so under mock
+mode the app believes an account is present. `routeFor` then finds no role
+selected and returns `role_choice`, which `homeRouteFor` maps to
+`/create-account`. A real signed-out launch returns `gateway` → `/welcome`,
+which is what the production APK does: the push proof, run against the EAS
+production build, logged "THE PRODUCTION APP LAUNCHES to the welcome screen".
 
-Two smaller problems ride along:
+**The lesson, which is the reason this is corrected in place rather than
+deleted.** Rendering is necessary but not sufficient. A screenshot is only
+evidence about the build it came from, and the build was not representative of
+the journey being judged. "Rendered" is now a claim about *which* build, and the
+methodology note below says which build is admissible for what.
 
-- For a **returning** user, sign-in is the primary intent, and it is the least
-  prominent control on the screen — a plain text link below a paragraph of
-  explanatory footnote, beneath two large cards.
-- The footnote ("Every account can book services. Choosing Worker also starts
-  your application.") is doing real work — it resolves a genuine ambiguity about
-  what choosing Worker commits you to — but it is placed and styled as fine
-  print, which is where users do not read.
+## Which build is admissible for which finding
 
-**Proposed change.** Not yet decided; this is a product decision as much as a
-design one, and it is recorded here rather than guessed at. The options are
-materially different: restore `welcome.tsx` as first contact and make role
-selection a step inside Create account; or keep the role chooser first and give
-it a value proposition and a trust line above the question. Both are defensible;
-the second is less disruptive.
+Neither build can answer everything, and using the wrong one produced UX-002.
 
-**Why it matters.** This is the highest-leverage screen in the product for
-abandonment. Everything downstream is reached through it.
+| Build | Signed-out journey | Authenticated journeys |
+| --- | --- | --- |
+| `EXPO_PUBLIC_DATA_MODE=supabase` | **authoritative** — routes to `/welcome` | unreachable here: sign-in needs network, and this host's TLS is intercepted |
+| `EXPO_PUBLIC_DATA_MODE=mock` | **inadmissible** — believes it is signed in | **authoritative** — the only way to reach customer and worker screens on this machine |
+
+Every rendered finding below names the mode it was captured under.
 
 ---
 
@@ -172,13 +164,21 @@ tranche.
 
 ---
 
-### UX-004 — First contact has no trust signal and no imagery
+### UX-004 — The role chooser distinguishes two roles by text alone
 
-- **Stage:** first contact
-- **User goal:** decide whether this is for them, and whether it is safe
+- **Stage:** role chooser (`/create-account`), reached from Welcome
+- **User goal:** work out which of these two things they are
 - **Severity:** P2
-- **Evidence:** rendered — `api24-01-first-contact.png`
-- **Status:** OPEN
+- **Evidence:** rendered (mock mode) — `api24-01-first-contact.png`. The
+  filename says "first contact" because it was captured before UX-002 was
+  withdrawn; the screen is the role chooser.
+- **Status:** PARTLY FIXED. Each role now carries a mark — a service icon for
+  Customer, a tools icon for Worker — so the two are discriminable before either
+  label is read. The mark never carries the meaning alone: the label and the
+  accessible name still say which is which, and the icon is hidden from screen
+  readers so it is not announced twice. The trust signal moved to the gateway
+  where it belongs (UX-006) rather than being added here, because the role
+  chooser's job is role selection.
 
 The screen is typographically clean and the monochrome direction reads calm and
 premium, which is the right foundation. What it does not do is give anybody a
@@ -200,18 +200,100 @@ reason to proceed.
 
 ---
 
-### UX-005 — Enlarged text is handled correctly on first contact
+### UX-005 — Enlarged text is handled correctly on the role chooser
 
-- **Stage:** first contact
+- **Stage:** role chooser
 - **Severity:** none — recorded as a pass
-- **Evidence:** rendered — `api24-04-first-contact-large-text.png`, font scale
-  1.3x on API 24
+- **Evidence:** rendered (mock mode) — `api24-04-first-contact-large-text.png`,
+  font scale 1.3x on API 24
 
-At 1.3x every element reflows: the heading wraps to two lines, both card
+At 1.3x every element on the role chooser reflows: the heading wraps to two
+lines, both card
 subtitles wrap to two, the footnote to three, and nothing clips, overlaps or
 leaves the viewport. Recorded because "we checked and it was fine" is worth as
 much to the next reader as a defect, and because this is the axis where fixed
 height rows usually fail.
+
+---
+
+### UX-006 — The gateway now says what Warsha is before asking for anything
+
+- **Stage:** first contact (`/welcome`)
+- **User goal:** understand the service and decide whether to continue
+- **Severity:** was P1
+- **Evidence:** rendered (supabase mode) — `gw-05-gateway-ar.png`,
+  `gw-05-gateway-fr.png`, `gw-05-gateway-en.png`, `gw-06-gateway-320dp.png`,
+  `gw-03-first-contact-dark.png`, `gw-04-first-contact-large-text.png`
+- **Status:** FIXED
+
+**Before.** "Welcome to Warsha" over "Sign in to book a service, or create an
+account to get started" — a greeting and an instruction, which between them said
+nothing about what the service does or why a stranger should be let into a
+home. The primary button was Sign in, which is the one action a first-time
+visitor cannot take.
+
+**After.** The value proposition first, taken verbatim from `web/lib/copy.ts` so
+the marketing site and the app cannot disagree about what Warsha is; then two
+reasons to believe it, each an icon and a short clause — workers are identity
+checked, and the price is agreed before work starts. Both are true, both are
+Warsha's actual differentiators, and neither appeared anywhere before a person
+had already committed. Then **Get started** as the primary action, and **I
+already have an account** as the secondary.
+
+Deliberately not a carousel, and deliberately short.
+
+**Rendered in all three languages, and it holds:**
+
+| | |
+| --- | --- |
+| Arabic | `ar-rEG-ldrtl`. Icons mirror to the right, footer links reverse, natural Egyptian copy: «صلّح اللي محتاج تصليح، بسعر اتفقت عليه الأول.» and «يلا نبدأ» |
+| French | `fr-rFR-ldltr`. The longest trust line, "Vous acceptez le prix avant le début des travaux", fits on one line at 411dp |
+| 320dp | Everything fits with no scrolling: the heading wraps to two lines, one trust line wraps to two, both buttons and the footer remain on screen |
+
+The French rendering also proves the new French layer works — before this
+tranche `useOnboardingText` mapped French to English, so a French speaker's
+first sentence from Warsha was in English.
+
+---
+
+### UX-007 — Warsha calls the same role three different things
+
+- **Stage:** cross-surface
+- **Severity:** P2
+- **Evidence:** read — app (`roleWorker: 'Worker'`, `/worker` routes,
+  `workerCapabilityActive`), public web (`navFind: 'Find a professional'`,
+  `navWorker: 'Work with Warsha'`, `footerBecomeWorker: 'Become a professional'`),
+  and this programme's own brief, which says "technician"
+- **Status:** OPEN — needs a product decision, not an engineering one
+
+The app says **Worker**, the website says **professional**, and the brief says
+**technician**. French already resolves to *Professionnel* and Arabic to
+*صنايعي*, so English is the surface where the three compete.
+
+This is not cosmetic. It is the noun for one of Warsha's two audiences, it
+appears in the first decision a new user makes, and the parity constitution
+exists precisely to stop surfaces disagreeing about identity. Renaming it is a
+one-line change per table and a large change to the product's voice, so it is
+recorded rather than guessed at.
+
+---
+
+### Testing note — how to make an Android emulator change language
+
+Recorded because it cost an hour and the obvious method does not work.
+
+`setprop persist.sys.locale ar-EG` followed by a zygote restart, and even a full
+reboot, left `am get-config` reporting `en-rUS`. On API 24+ the framework takes
+its locale list from the settings provider once userdata is initialised, and the
+property is ignored:
+
+```
+adb shell settings put system system_locales ar-EG
+adb reboot
+```
+
+produced `ar-rEG-ldrtl` first try. `scripts/android-e2e/flows/journey-screens.mjs`
+writes both, because the property is what a genuinely fresh boot reads.
 
 ---
 
@@ -221,7 +303,8 @@ What has and has not been looked at, honestly, so the gaps are visible.
 
 | Journey stage | Rendered | Read | Notes |
 | --- | --- | --- | --- |
-| First contact (cold launch, role chooser) | yes | yes | UX-002, UX-004 |
+| First contact (Welcome) | yes (supabase) | yes | UX-006 fixed; EN/AR/FR, 320dp, dark, 1.3x |
+| Role chooser | yes (mock) | yes | UX-004, UX-005 |
 | Welcome screen | no | yes | not reached by a cold launch |
 | Sign in | no | yes | |
 | Create account (beyond the role step) | no | yes | |
@@ -231,8 +314,8 @@ What has and has not been looked at, honestly, so the gaps are visible.
 | Job, chat, completion | no | no | |
 | Worker onboarding and verification | no | no | Part C priority |
 | Worker home, work, quotes, earnings | no | no | Part C priority |
-| Arabic RTL | no | partial | hard gate; not yet photographed |
-| French | no | partial | |
+| Arabic RTL | gateway only | partial | hard gate; the journey beyond Welcome is not photographed |
+| French | gateway only | partial | |
 | Dark | first contact | partial | |
 | Enlarged text | first contact | no | UX-005: passes there |
 

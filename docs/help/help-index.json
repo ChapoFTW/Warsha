@@ -350,8 +350,8 @@
       "locale": "en",
       "title": "Account, security, and preferences",
       "summary": "Sign in, recover your password, choose language and appearance, and manage privacy.",
-      "version": 10,
-      "lastReviewedDate": "2026-09-07",
+      "version": 11,
+      "lastReviewedDate": "2026-09-09",
       "features": [
         "auth",
         "password_recovery",
@@ -383,8 +383,8 @@
       "locale": "ar",
       "title": "الحساب والأمان والتفضيلات",
       "summary": "سجّل الدخول، استرجع كلمة السر، واختار اللغة والمظهر وتحكم في الخصوصية.",
-      "version": 10,
-      "lastReviewedDate": "2026-09-07",
+      "version": 11,
+      "lastReviewedDate": "2026-09-09",
       "features": [
         "auth",
         "password_recovery",
@@ -1228,8 +1228,8 @@
       "locale": "fr",
       "title": "Compte, sécurité et préférences",
       "summary": "Connectez-vous, récupérez votre mot de passe et gérez langue, apparence et confidentialité.",
-      "version": 10,
-      "lastReviewedDate": "2026-09-07",
+      "version": 11,
+      "lastReviewedDate": "2026-09-09",
       "features": [
         "auth",
         "password_recovery",

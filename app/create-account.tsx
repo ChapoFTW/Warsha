@@ -1,3 +1,4 @@
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
@@ -9,7 +10,7 @@ import { PasswordRequirementList } from '@/components/warsha/PasswordRequirement
 import { SignupLegalAcceptance } from '@/components/warsha/SignupLegalAcceptance';
 import { AppText } from '@/components/warsha/Typography';
 import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
-import { useThemedStyles } from '@/src/appearance/appearance-context';
+import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
 import { useAuth } from '@/src/auth/auth-context';
 import { authMessageKey } from '@/src/auth/auth-errors';
 import { isValidCustomerEmail } from '@/src/auth/auth-identifier';
@@ -47,6 +48,7 @@ import type { AccountRoleChoice } from '@/src/onboarding/onboarding-types';
  */
 export default function CreateAccount() {
   const styles = useThemedStyles(makeStyles);
+  const colors = useThemeColors();
   const { t, isRTL, language } = useLocalization();
   const at = useAuthText();
   const ot = useOnboardingText();
@@ -238,13 +240,30 @@ export default function CreateAccount() {
                   ot.text(option === 'customer' ? 'roleCustomerHint' : 'roleWorkerHint')}`}
                 accessibilityHint={ot.text('a11yRoleNotSelected')}
                 onPress={() => chooseRole(option)}
-                style={({ pressed }) => [styles.option, pressed && styles.optionPressed]}>
-                <AppText style={styles.optionTitle}>
-                  {ot.text(option === 'customer' ? 'roleCustomer' : 'roleWorker')}
-                </AppText>
-                <AppText style={styles.optionHint}>
-                  {ot.text(option === 'customer' ? 'roleCustomerHint' : 'roleWorkerHint')}
-                </AppText>
+                style={({ pressed }) => [styles.option, isRTL && styles.optionReverse, pressed && styles.optionPressed]}>
+                {/* The mark is the fastest discriminator on this screen, and
+                    for a reader who is not confident with text it may be the
+                    only one they use. It never carries the meaning alone: the
+                    label and the accessible name still say which is which, and
+                    the icon is hidden from screen readers so it is not
+                    announced twice. */}
+                <View style={styles.optionMark}>
+                  <MaterialIcons
+                    accessibilityElementsHidden
+                    importantForAccessibility="no"
+                    name={option === 'customer' ? 'home-repair-service' : 'handyman'}
+                    size={26}
+                    color={colors.textPrimary}
+                  />
+                </View>
+                <View style={styles.optionCopy}>
+                  <AppText style={styles.optionTitle}>
+                    {ot.text(option === 'customer' ? 'roleCustomer' : 'roleWorker')}
+                  </AppText>
+                  <AppText style={styles.optionHint}>
+                    {ot.text(option === 'customer' ? 'roleCustomerHint' : 'roleWorkerHint')}
+                  </AppText>
+                </View>
               </Pressable>
             ))}
           </View>
@@ -419,14 +438,25 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   options: { width: '100%', maxWidth: 420, gap: spacing.md },
   option: {
     minHeight: 88,
-    justifyContent: 'center',
-    gap: spacing.xs,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
     padding: spacing.lg,
     borderWidth: 1,
     borderColor: colors.borderDefault,
     borderRadius: radii.md,
     backgroundColor: colors.surface,
   },
+  optionReverse: { flexDirection: 'row-reverse' },
+  optionMark: {
+    width: 48,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radii.md,
+    backgroundColor: colors.surfaceElevated,
+  },
+  optionCopy: { flex: 1, gap: spacing.xs },
   optionPressed: { backgroundColor: colors.surfacePressed },
   optionTitle: { fontSize: 18, fontWeight: typography.semibold, color: colors.textPrimary },
   optionHint: { color: colors.textSecondary },

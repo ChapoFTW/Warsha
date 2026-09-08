@@ -10,11 +10,12 @@
  * chevrons still point the Latin way, a card whose text clips at 1.3x font
  * scale. So this drives the shipped binary and writes PNGs.
  *
- * It runs against a build made with EXPO_PUBLIC_DATA_MODE=mock, which is a
- * first-class mode rather than a test fixture: the whole product is navigable
- * with no backend, which is the only reason a full journey can be photographed
- * on a machine whose TLS is intercepted by antivirus and cannot reach Supabase
- * at all.
+ * WHICH BUILD MATTERS, and getting it wrong produced a withdrawn finding.
+ * `EXPO_PUBLIC_DATA_MODE=mock` sets an accountKey, so the app believes it is
+ * signed in and never routes to the gateway at all - mock mode is authoritative
+ * for the authenticated journeys and INADMISSIBLE for the signed-out one. Use a
+ * supabase-mode build for anything before sign-in. See
+ * docs/ux/product-journey-audit.md.
  *
  * Every axis below is a place Warsha has a real reason to expect trouble:
  *
@@ -30,7 +31,7 @@
  */
 import { existsSync } from 'node:fs';
 import {
-  describeScreen, find, install, screenshot, shell, sleep, tap, tree, waitFor,
+  adb, describeScreen, find, install, screenshot, shell, sleep,
 } from '../driver.mjs';
 
 const PACKAGE = 'com.warsha.app';
@@ -66,6 +67,34 @@ async function setFontScale(scale) {
 async function setNightMode(on) {
   shell(`cmd uimode night ${on ? 'yes' : 'no'}`);
   await sleep(2500);
+}
+
+/**
+ * Set the device language, and wait for the framework to come back.
+ *
+ * Signed out, Warsha follows the device - that is the whole point of moving
+ * language into Settings - so the only honest way to photograph the Arabic and
+ * French gateway is to change the device, not to reach into the app. On these
+ * old images that means setting the property and restarting the framework,
+ * which takes the better part of a minute and is why it is done once per
+ * language rather than once per screen.
+ */
+async function setDeviceLocale(tagValue) {
+  // `persist.sys.locale` alone is not enough on API 24+. Once userdata is
+  // initialised the framework takes its locale list from the settings
+  // provider and ignores the property: setting the property and restarting
+  // zygote left `am get-config` reporting en-rUS through a full reboot, while
+  // setting `system_locales` produced ar-rEG-ldrtl on the first try. Both are
+  // written because the property is what a genuinely fresh boot reads.
+  shell(`settings put system system_locales ${tagValue}`);
+  shell(`setprop persist.sys.locale ${tagValue}`);
+  adb(['reboot']);
+  for (let i = 0; i < 90; i += 1) {
+    await sleep(5000);
+    if (shell('getprop sys.boot_completed').trim() === '1') break;
+  }
+  await sleep(12000);
+  console.log(`   device config: ${shell('am get-config').trim().slice(0, 66)}`);
 }
 
 // --- install ------------------------------------------------------------------
@@ -117,6 +146,17 @@ await setFontScale('1.3');
 await coldStart();
 capture('04-first-contact-large-text');
 await setFontScale('1.0');
+
+// --- the gateway in every language -------------------------------------------
+// Arabic is a release gate and French is the long-copy language that breaks
+// buttons, so both are photographed rather than reasoned about.
+for (const [code, tagValue] of [['ar', 'ar-EG'], ['fr', 'fr-FR'], ['en', 'en-US']]) {
+  console.log(`\n== gateway in ${code} ==`);
+  await setDeviceLocale(tagValue);
+  await coldStart();
+  capture(`05-gateway-${code}`);
+  console.log(describeScreen().slice(0, 500));
+}
 
 console.log(`\n${shots.length} screenshots written for API ${api}.`);
 console.log(shots.map((s) => `  ${tag}-${s}.png`).join('\n'));

@@ -68,7 +68,9 @@ const gateKeys: Record<string, OnboardingCopyKey> = {
 
 export function useOnboardingText() {
   const { language, isRTL } = useLocalization();
-  const locale = language === 'ar' ? 'ar' : 'en';
+  // French is a real table now (English underneath it), so it is selected
+  // rather than collapsed into English. Anything else still falls back.
+  const locale = language in onboardingCopy ? language : 'en';
   return {
     locale,
     isRTL,

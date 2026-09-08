@@ -443,8 +443,30 @@ check(!/offence|offense|conviction/i.test(migration.slice(
 // ---------------------------------------------------------------------------
 const welcome = read('app', 'welcome.tsx');
 check(/BrandLockup/.test(welcome), 'the gateway shows the brand lockup');
-check(/signIn/.test(welcome) && /createAccount/.test(welcome),
-  'the gateway offers sign in and create account');
+/*
+ * The gateway leads with what Warsha is, not with a greeting.
+ *
+ * This used to assert `signIn` and `createAccount`, which described a screen
+ * whose primary button was Sign in — the one action a first-time visitor cannot
+ * take — under the heading "Welcome to Warsha" and the instruction "Sign in to
+ * book a service, or create an account to get started". Between them those said
+ * nothing about what the service does or why to trust it.
+ *
+ * Both routes still exist and both are still reachable; what changed is which
+ * one is primary and what the screen says before offering either.
+ */
+check(/gatewayHeadline/.test(welcome),
+  'THE GATEWAY STATES WHAT WARSHA DOES before asking for anything');
+check(/gatewayTrustChecked/.test(welcome) && /gatewayTrustPrice/.test(welcome),
+  'and gives two reasons to believe it: workers are checked, price is agreed first');
+check(/gatewayGetStarted/.test(welcome),
+  'the primary action starts an account rather than assuming one exists');
+check(/gatewayHaveAccount/.test(welcome),
+  'and a returning visitor is offered sign in as the secondary action');
+check(/router\.push\('\/create-account'\)/.test(welcome),
+  'Get started leads to the role choice');
+check(/openSignIn/.test(welcome),
+  'sign in still ends any stale session before entering the public form');
 check(/gatewayHelp/.test(welcome) && /gatewayPrivacy/.test(welcome) && /gatewayTerms/.test(welcome),
   'the gateway offers help, privacy and terms');
 check(/accessibilityRole="header"/.test(welcome), 'the gateway has an accessible heading');

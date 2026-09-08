@@ -13,10 +13,17 @@
  * screen feel better.
  */
 
-export const onboardingCopy = {
+const baseOnboardingCopy = {
   en: {
     // Gateway
     gatewayWelcome: 'Welcome to Warsha',
+    // The value proposition, taken verbatim from web/lib/copy.ts so the
+    // site and the app say the same thing about what Warsha is.
+    gatewayHeadline: 'Get it fixed, at a price you agreed first.',
+    gatewayTrustChecked: 'Workers are identity checked',
+    gatewayTrustPrice: 'You agree the price before work starts',
+    gatewayGetStarted: 'Get started',
+    gatewayHaveAccount: 'I already have an account',
     gatewayIntro: 'Sign in to book a service, or create an account to get started.',
     signIn: 'Sign in',
     createAccount: 'Create account',
@@ -225,6 +232,11 @@ export const onboardingCopy = {
   },
   ar: {
     gatewayWelcome: 'أهلاً بيك في ورشة',
+    gatewayHeadline: 'صلّح اللي محتاج تصليح، بسعر اتفقت عليه الأول.',
+    gatewayTrustChecked: 'الصنايعية متأكدين من هويتهم',
+    gatewayTrustPrice: 'السعر بيتفق عليه قبل ما الشغل يبدأ',
+    gatewayGetStarted: 'يلا نبدأ',
+    gatewayHaveAccount: 'عندي حساب بالفعل',
     gatewayIntro: 'ادخل على حسابك علشان تحجز خدمة، أو اعمل حساب جديد.',
     signIn: 'تسجيل الدخول',
     createAccount: 'إنشاء حساب',
@@ -418,6 +430,42 @@ export const onboardingCopy = {
     a11yFrontCaptured: 'وش البطاقة اتصور',
     a11yBackCaptured: 'ضهر البطاقة اتصور',
     a11yPinConfirmed: 'مكان الخدمة اتأكد',
+  },
+} as const;
+
+/**
+ * French, layered over English.
+ *
+ * `useOnboardingText` used to map French to English wholesale. On most screens
+ * that is a content gap; on Welcome it is the first sentence a French speaker
+ * ever reads from Warsha, in the wrong language. The keys translated here are
+ * the ones a person meets before they have an account — the gateway and the
+ * role choice — and everything else still falls back to English exactly as it
+ * did, so this adds coverage without pretending the table is finished.
+ */
+export const onboardingCopy = {
+  ...baseOnboardingCopy,
+  fr: {
+    ...baseOnboardingCopy.en,
+    gatewayWelcome: 'Bienvenue sur Warsha',
+    gatewayHeadline: "Faites réparer, au prix convenu d'abord.",
+    gatewayTrustChecked: "L'identité des professionnels est vérifiée",
+    gatewayTrustPrice: 'Vous acceptez le prix avant le début des travaux',
+    gatewayGetStarted: 'Commencer',
+    gatewayHaveAccount: "J'ai déjà un compte",
+    gatewayHelp: 'Aide',
+    gatewayPrivacy: 'Confidentialité',
+    gatewayTerms: 'Conditions',
+    gatewayLoading: 'Chargement de Warsha',
+    signIn: 'Se connecter',
+    createAccount: 'Créer un compte',
+    roleQuestion: 'Comment allez-vous utiliser Warsha ?',
+    roleCustomer: 'Client',
+    roleCustomerHint: 'Réservez plombiers, électriciens, menuisiers et plus.',
+    roleWorker: 'Professionnel',
+    roleWorkerHint: "Proposez vos services. Vérification d'identité requise.",
+    roleContinue: 'Continuer',
+    roleBothNote: 'Tout compte peut réserver des services. Choisir Professionnel lance aussi votre candidature.',
   },
 } as const;
 

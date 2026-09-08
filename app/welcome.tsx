@@ -3,11 +3,13 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+
 import { BrandLockup } from '@/components/warsha/BrandMark';
 import { BrandButton } from '@/components/warsha/BrandUI';
 import { AppText } from '@/components/warsha/Typography';
 import { spacing, typography, type ThemeColors } from '@/constants/theme';
-import { useThemedStyles } from '@/src/appearance/appearance-context';
+import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
 import { useAuth } from '@/src/auth/auth-context';
 import { authMessageKey } from '@/src/auth/auth-errors';
 import { useLocalization } from '@/src/i18n/localization';
@@ -15,6 +17,29 @@ import { useOnboardingText } from '@/src/onboarding/onboarding-translations';
 
 /**
  * The signed-out gateway. This is the first Warsha screen anybody sees.
+ *
+ * It used to open with "Welcome to Warsha" and "Sign in to book a service, or
+ * create an account to get started" — a greeting and an instruction, which
+ * between them said nothing about what Warsha is or why a stranger should be
+ * let into your home. The primary button was Sign in, which is the one action a
+ * first-time visitor cannot take.
+ *
+ * So it now leads with what Warsha does, gives two reasons to believe it, and
+ * makes starting the primary action:
+ *
+ *   headline   the value proposition, verbatim from web/lib/copy.ts, because
+ *              the marketing site and the app must not disagree about what this
+ *              service is
+ *   trust      two lines, each an icon and a short clause: workers are identity
+ *              checked, and the price is agreed before work starts. Both are
+ *              true, both are Warsha's actual differentiators, and neither
+ *              appeared anywhere before a person had already committed
+ *   primary    Get started, which goes to the role choice
+ *   secondary  I already have an account
+ *
+ * Deliberately not a carousel and deliberately short. A person deciding whether
+ * to try a service does not read three screens first, and every extra sentence
+ * here is one more thing between them and the thing they came to do.
  *
  * The brand lockup carries the motto in the active language, and it appears
  * once. A privacy or sign-in screen repeating "YOUR WORK, OUR MISSION" three
@@ -27,6 +52,7 @@ import { useOnboardingText } from '@/src/onboarding/onboarding-translations';
  */
 export default function Welcome() {
   const styles = useThemedStyles(makeStyles);
+  const colors = useThemeColors();
   const { isRTL, t } = useLocalization();
   const ot = useOnboardingText();
   const auth = useAuth();
@@ -60,23 +86,37 @@ export default function Welcome() {
 
         <View style={styles.intro}>
           <AppText accessibilityRole="header" style={styles.title}>
-            {ot.text('gatewayWelcome')}
+            {ot.text('gatewayHeadline')}
           </AppText>
-          <AppText style={styles.subtitle}>{ot.text('gatewayIntro')}</AppText>
+        </View>
+
+        {/* Two reasons to believe it, each readable at a glance. The icon is
+            support for the sentence, never a replacement for it: nothing here
+            is carried by the icon alone. */}
+        <View style={styles.trust}>
+          {([
+            ['verified-user', ot.text('gatewayTrustChecked')],
+            ['handshake', ot.text('gatewayTrustPrice')],
+          ] as const).map(([icon, label]) => (
+            <View key={icon} style={[styles.trustRow, isRTL && styles.reverse]}>
+              <MaterialIcons name={icon} size={20} color={colors.textPrimary} />
+              <AppText style={styles.trustText}>{label}</AppText>
+            </View>
+          ))}
         </View>
 
         <View style={styles.actions}>
           <BrandButton
-            label={ot.text('signIn')}
-            accessibilityLabel={ot.text('signIn')}
-            loading={signingIn}
-            onPress={() => void openSignIn()}
+            label={ot.text('gatewayGetStarted')}
+            accessibilityLabel={ot.text('gatewayGetStarted')}
+            onPress={() => router.push('/create-account')}
           />
           <BrandButton
-            label={ot.text('createAccount')}
+            label={ot.text('gatewayHaveAccount')}
             variant="secondary"
-            accessibilityLabel={ot.text('createAccount')}
-            onPress={() => router.push('/create-account')}
+            accessibilityLabel={ot.text('gatewayHaveAccount')}
+            loading={signingIn}
+            onPress={() => void openSignIn()}
           />
         </View>
 
@@ -117,6 +157,9 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
     gap: spacing.xl,
   },
   intro: { gap: spacing.sm, maxWidth: 520 },
+  trust: { width: '100%', maxWidth: 420, gap: spacing.sm },
+  trustRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  trustText: { flex: 1, fontSize: 14, lineHeight: 20, color: colors.textSecondary },
   title: { fontSize: 28, fontWeight: typography.bold, textAlign: 'center', color: colors.textPrimary },
   subtitle: { textAlign: 'center', color: colors.textSecondary },
   error: { textAlign: 'center', color: colors.errorText, maxWidth: 420 },
