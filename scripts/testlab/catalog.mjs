@@ -15,6 +15,7 @@
  *   3. Which locales are available, since Arabic RTL is a hard gate.
  */
 import { accessToken } from './auth.mjs';
+import { floorReport, floorVerdictText, supportedApis } from './models.mjs';
 
 const PROJECT = 'warsha-504822';
 const MIN_SDK = 24;
@@ -42,11 +43,11 @@ for (const l of levels) {
   const mark = l.api === MIN_SDK ? '  <== WARSHA FLOOR' : '';
   console.log(`  API ${String(l.api).padStart(2)}  Android ${String(l.name).padEnd(6)} ${l.tags}${mark}`);
 }
-const servesFloor = levels.some((l) => l.api === MIN_SDK);
-console.log(servesFloor
-  ? `\nTest Lab CAN serve Warsha's declared floor (API ${MIN_SDK}).`
-  : `\nTest Lab does NOT offer API ${MIN_SDK}. The floor must be proven elsewhere `
-    + '— it must not be quietly raised.');
+// A version in the catalogue is not a device you can book. The floor question
+// is answered from the models, in models.mjs, so this script and api-floor.mjs
+// cannot reach opposite conclusions again.
+const report = floorReport(models, MIN_SDK);
+console.log(`\n${floorVerdictText(report)}`);
 
 console.log('\n=== device classes, by screen width ===');
 const withGeometry = models
@@ -55,7 +56,7 @@ const withGeometry = models
     id: m.id, name: `${m.manufacturer ?? ''} ${m.name ?? ''}`.trim(), form: m.form,
     px: m.screenX, py: m.screenY, dpi: m.screenDensity,
     dp: m.screenDensity ? Math.round(m.screenX / (m.screenDensity / 160)) : null,
-    apis: (m.supportedVersionIds ?? []).map(Number).filter(Boolean).sort((a, b) => a - b),
+    apis: supportedApis(m),
   }))
   .filter((m) => m.dp);
 
@@ -67,7 +68,8 @@ const show = (label, list) => {
   console.log(`\n  ${label} (${list.length})`);
   for (const m of list.slice(0, 8)) {
     console.log(`    ${m.id.padEnd(16)} ${m.name.padEnd(26)} ${m.form.padEnd(8)} `
-      + `${m.dp}dp ${m.px}x${m.py}@${m.dpi}  APIs ${m.apis[0]}-${m.apis[m.apis.length - 1]}`);
+      + `${m.dp}dp ${m.px}x${m.py}@${m.dpi}  `
+      + (m.apis.length ? `APIs ${m.apis[0]}-${m.apis[m.apis.length - 1]}` : 'APIs not declared'));
   }
 };
 show('COMPACT  <=360dp', compact);
@@ -78,7 +80,8 @@ console.log('\n=== which devices can run the floor (API ' + MIN_SDK + ') ===');
 const floorCapable = withGeometry.filter((m) => m.apis.includes(MIN_SDK));
 console.log(floorCapable.length
   ? floorCapable.slice(0, 10).map((m) => `  ${m.id} (${m.dp}dp, ${m.form})`).join('\n')
-  : '  NONE');
+  : `  NONE - and ${report.unknownCount} of ${report.total} models declare no versions`
+    + ' at all, so they are neither counted for nor against.');
 
 console.log('\n=== locales (Arabic is a hard gate) ===');
 const locales = (catalogue.runtimeConfiguration?.locales ?? []);

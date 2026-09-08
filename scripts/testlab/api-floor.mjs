@@ -9,6 +9,7 @@
  * Read-only. Nothing is scheduled, nothing is billed. Prints no token.
  */
 import { accessToken } from './auth.mjs';
+import { floorReport, floorVerdictText, schedulable } from './models.mjs';
 
 const PROJECT = 'warsha-504822';
 const FLOOR = 24;
@@ -35,13 +36,11 @@ const versionField = [...fields].find((f) => /version/i.test(f) && Array.isArray
   ?? [...fields].find((f) => /version/i.test(f));
 console.log(`\n=== version field in use: ${versionField} ===`);
 
-const supports = (m) => {
-  const raw = m[versionField];
-  if (!Array.isArray(raw)) return false;
-  return raw.map(String).includes(String(FLOOR));
-};
-
-const capable = models.filter(supports);
+// Version support is read in models.mjs, from BOTH supportedVersionIds and
+// perVersionInfo. Reading only the flat list - which this script used to do -
+// under-reports every model that describes its versions the richer way.
+const report = floorReport(models, FLOOR);
+const capable = report.capable;
 const virtual = capable.filter((m) => m.form === 'VIRTUAL');
 const physical = capable.filter((m) => m.form === 'PHYSICAL');
 
@@ -60,25 +59,14 @@ if (virtual.length) { console.log('\n  VIRTUAL devices that can run the floor:')
 if (physical.length) { console.log('\n  PHYSICAL devices that can run the floor:'); physical.slice(0, 10).forEach((m) => console.log(line(m))); }
 
 // A model can advertise a version and still be unschedulable.
-const usable = capable.filter((m) => !(m.tags ?? []).some((t) => /deprecated|unsupported/i.test(t)));
+const usable = capable.filter(schedulable);
 console.log(`\nof those, not deprecated/unsupported: ${usable.length}`);
 
 console.log('\n=== VERDICT ===');
-if (usable.length > 0) {
-  console.log(`  Test Lab CAN run API ${FLOOR}. Warsha's floor is provable on hosted devices.`);
-} else if (capable.length > 0) {
-  console.log(`  API ${FLOOR} is advertised but every model carrying it is deprecated/unsupported.`);
-} else {
-  console.log(`  NO model advertises API ${FLOOR}. The floor must be proven off Test Lab.`);
-  console.log('  Warsha minSdk stays 24 regardless — the gap is in the test estate.');
-}
+console.log(`  ${floorVerdictText(report)}`);
 
 // What IS the lowest schedulable API, so the matrix can be honest about it?
-const lowest = models
-  .flatMap((m) => (Array.isArray(m[versionField]) ? m[versionField].map(Number) : []))
-  .filter((n) => Number.isFinite(n))
-  .sort((a, b) => a - b)[0];
-console.log(`\n  lowest API any model can run: ${lowest ?? 'unknown'}`);
+console.log(`\n  lowest API any model can run: ${report.lowest ?? 'unknown'}`);
 
 // perVersionInfo is a second, richer source: it carries per-version scheduling
 // detail, so a model can describe support there without a flat id list.
