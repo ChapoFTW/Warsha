@@ -65,6 +65,32 @@ export function adb(args, { quiet = true } = {}) {
 
 export const shell = (command) => adb(['shell', command]);
 
+/**
+ * Install an APK, and say plainly whether it worked.
+ *
+ * `adb()` above deliberately swallows failures so that UI probing stays quiet,
+ * which is right for reading a screen and wrong for this: an install failure is
+ * a result, and on the compatibility matrix it is THE result — an
+ * INSTALL_FAILED_OLDER_SDK means the manifest excludes a device Warsha claims
+ * to support.
+ *
+ * It lives here rather than in the flow that calls it because this module owns
+ * where adb is. The first version resolved the binary a second time, in the
+ * flow, as `process.env.WARSHA_ADB ?? 'adb'` — and on a machine where adb is
+ * neither on PATH nor named by that variable it died with `spawnSync adb
+ * ENOENT` while the driver, three lines above, was talking to the device
+ * perfectly well. Two answers to "where is adb" is one too many.
+ */
+export function install(apkPath) {
+  try {
+    const out = execFileSync(ADB, ['install', '-r', '-d', apkPath], { encoding: 'utf8' });
+    return { ok: /Success/i.test(out), detail: out.trim().slice(-300) };
+  } catch (error) {
+    const detail = String(error.stderr ?? error.stdout ?? error.message).trim();
+    return { ok: false, detail: detail.slice(0, 300) };
+  }
+}
+
 /** The current screen as a list of nodes, each with its bounds and labels. */
 export function tree() {
   // UIAutomator writes to the device; the pull brings it back. Both paths are

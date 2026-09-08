@@ -37,10 +37,9 @@
  *   WARSHA_TEMP    artifact directory     (default: OS temp)
  *   WARSHA_APK     apk to install first   (default: use what is installed)
  */
-import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import {
-  clearLog, describeScreen, findAll, logcat, screenshot, shell, sleep, tree, waitFor,
+  clearLog, describeScreen, findAll, install, logcat, screenshot, shell, sleep, tree, waitFor,
 } from '../driver.mjs';
 
 const PACKAGE = 'com.warsha.app';
@@ -74,18 +73,9 @@ if (apk) {
     console.error(`WARSHA_APK does not exist: ${apk}`);
     process.exit(1);
   }
-  // Not via driver.adb(): that swallows failures to keep UI probing quiet, and
-  // an install failure is exactly the result this flow exists to report.
-  let installed = false;
-  let detail = '';
-  try {
-    const out = execFileSync(process.env.WARSHA_ADB ?? 'adb',
-      ['install', '-r', '-d', apk], { encoding: 'utf8' });
-    installed = /Success/i.test(out);
-    detail = out.trim().split('\n').pop() ?? '';
-  } catch (error) {
-    detail = String(error.stderr ?? error.stdout ?? error.message).trim().slice(0, 300);
-  }
+  // driver.install() reports the result rather than swallowing it, and resolves
+  // adb the one way the driver does.
+  const { ok: installed, detail } = install(apk);
   if (!check(installed, `THE APK INSTALLS on API ${api}`, detail)) {
     // INSTALL_FAILED_OLDER_SDK here is the headline result: the manifest's
     // minSdk excludes a device Warsha claims to support.
