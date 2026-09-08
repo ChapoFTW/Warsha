@@ -180,9 +180,15 @@ jobs:
           profile: Nexus 6
           ram-size: 2048M
           disable-animations: true
+          # These are the exact flags an API 24 AVD was booted with on a
+          # developer machine, where this same APK and flow then passed 6/6.
+          # `-no-snapshot` matters on an old image: without it the emulator
+          # tries to load a snapshot that was never saved. The camera overrides
+          # that were here before are gone — nothing in the launch check uses a
+          # camera, and they are two more things to go wrong on a 2016 image.
           emulator-options: >-
             -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
-            -camera-back none -camera-front none
+            -no-snapshot
           script: |
             export WARSHA_APK="$(find apk -name '*.apk' | head -1)"
             export WARSHA_TEMP="${RUNNER_TEMP}/warsha-qa"
