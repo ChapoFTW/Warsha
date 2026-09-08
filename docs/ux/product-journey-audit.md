@@ -297,6 +297,57 @@ writes both, because the property is what a genuinely fresh boot reads.
 
 ---
 
+### UX-008 — The worker signup form is a reading exercise
+
+- **Stage:** worker account creation, the first screen after choosing Worker
+- **User goal:** create an account and get on with applying
+- **Severity:** P1
+- **Evidence:** rendered (mock mode) — `wk-03-after-role-worker.png`, API 24.
+  The accessibility tree measures **114 words and 3 tappable things**.
+- **Status:** OPEN
+
+This is the first thing Warsha asks a technician to do, and it is the densest
+screen in the early journey. Five separate defects, in the order a worker meets
+them:
+
+1. **Five password rules, in text, before a character is typed.** "At least 8
+   characters / One uppercase letter / One lowercase letter / One number / One
+   symbol, such as ! ? # or -". Each is announced to a screen reader as "Not met
+   yet", so the form opens with five negative statements. For the audience this
+   programme names as a first-class requirement, this is the single heaviest
+   reading load in the product, and it is placed at the point of highest
+   abandonment risk.
+
+2. **The password is asked before the phone number.** The phone number is the
+   identity a worker signs in with; the password is chosen *for* it. Asking for
+   the password first inverts that, and puts the hardest field first.
+
+3. **There is no visible forward action.** The screen ends with prose and the
+   navigation bar. The harness, pressing whatever a screen offers as its forward
+   action, found none — which is the automated form of a worker asking "what do
+   I do now?" and getting no answer above the fold.
+
+4. **The role's description is repeated at the bottom.** "Offer your services.
+   Needs identity checks before you can start." was already read on the role
+   card. Restating a decision already made, in the position where the action
+   should be, spends the most valuable space on the least new information.
+
+5. **The heading is "Worker".** It names the role, not the task. "Create your
+   worker account" would say what the screen is for.
+
+What is good, and should survive any redesign: "No email is needed. You will
+sign in with this phone number and password." That is one short sentence that
+answers a real worry, in plain language, at the moment it arises.
+
+**Direction (not yet implemented).** The password rules should be a single line
+that becomes specific only when it is not met, the phone number should come
+first, and the primary action should be reachable without scrolling. None of
+that changes the password policy itself — `worker-auth-password-contract`
+governs that and must not be weakened; it changes how many words a worker reads
+before they can comply.
+
+---
+
 ## Coverage
 
 What has and has not been looked at, honestly, so the gaps are visible.
@@ -312,7 +363,8 @@ What has and has not been looked at, honestly, so the gaps are visible.
 | Request creation | no | no | |
 | Marketplace, quotes, worker selection | no | no | |
 | Job, chat, completion | no | no | |
-| Worker onboarding and verification | no | no | Part C priority |
+| Worker account creation | yes (mock) | yes | UX-008 |
+| Worker onboarding beyond signup | no | no | blocked: the form has no reachable forward action to drive |
 | Worker home, work, quotes, earnings | no | no | Part C priority |
 | Arabic RTL | gateway only | partial | hard gate; the journey beyond Welcome is not photographed |
 | French | gateway only | partial | |
