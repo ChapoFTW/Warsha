@@ -130,7 +130,12 @@ jobs:
   floor:
     name: API ${{ matrix.api }}
     needs: apk
-    runs-on: ubuntu-latest
+    # Pinned, not `ubuntu-latest`. That label now resolves to Ubuntu 24.04, and
+    # the API 24/25 system images predate it: the emulator fails to come up
+    # there, which is why both matrix legs failed identically while the same APK
+    # and the same flow passed 6/6 against a local API 24 AVD. Old emulators are
+    # the whole point of this job, so the runner has to be one they run on.
+    runs-on: ubuntu-22.04
     timeout-minutes: 45
     strategy:
       # Both levels are reported even when one fails. "24 is broken" and "24
@@ -166,6 +171,7 @@ jobs:
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: ${{ matrix.api }}
+          emulator-boot-timeout: 900
           # `default` rather than `google_apis`: Warsha's launch path must not
           # need Play Services present, and the floor devices least likely to
           # have current Play Services are exactly the ones this job is for.
