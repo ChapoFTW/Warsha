@@ -174,8 +174,8 @@
       "locale": "en",
       "title": "Getting started as a customer",
       "summary": "Create an account, add an address, request work, compare quotes, and follow the job.",
-      "version": 2,
-      "lastReviewedDate": "2026-08-21",
+      "version": 3,
+      "lastReviewedDate": "2026-09-09",
       "features": [
         "auth",
         "onboarding",
@@ -236,8 +236,8 @@
       "locale": "en",
       "title": "Addresses and location",
       "summary": "Save a clear service address without losing the exact map pin.",
-      "version": 3,
-      "lastReviewedDate": "2026-08-26",
+      "version": 4,
+      "lastReviewedDate": "2026-09-09",
       "features": [
         "addresses",
         "location"
@@ -290,8 +290,8 @@
       "locale": "en",
       "title": "Requests, quotes, and jobs",
       "summary": "Understand what happens from posting a request to completing or cancelling a job.",
-      "version": 6,
-      "lastReviewedDate": "2026-08-30",
+      "version": 7,
+      "lastReviewedDate": "2026-09-09",
       "features": [
         "marketplace",
         "quotes",
@@ -308,7 +308,7 @@
       "keywords": [
         "request",
         "quote",
-        "worker",
+        "professional",
         "job",
         "cancel",
         "dispute"
@@ -416,8 +416,8 @@
       "locale": "en",
       "title": "Notifications, support, and common questions",
       "summary": "Know where updates appear and how to get help safely.",
-      "version": 1,
-      "lastReviewedDate": "2026-08-21",
+      "version": 2,
+      "lastReviewedDate": "2026-09-09",
       "features": [
         "notifications",
         "support"
@@ -468,10 +468,10 @@
       "id": "worker-getting-started",
       "audience": "worker",
       "locale": "en",
-      "title": "Getting started as a worker",
+      "title": "Getting started as a professional",
       "summary": "Register with phone and password, finish onboarding, and wait for governed approval.",
-      "version": 10,
-      "lastReviewedDate": "2026-09-07",
+      "version": 11,
+      "lastReviewedDate": "2026-09-09",
       "features": [
         "worker_auth",
         "worker_onboarding",
@@ -485,7 +485,7 @@
       ],
       "capabilities": [],
       "keywords": [
-        "worker",
+        "professional",
         "phone",
         "signup",
         "onboarding",
@@ -526,8 +526,8 @@
       "locale": "en",
       "title": "Onboarding, service areas, and verification",
       "summary": "Understand every application stage and what customers can see.",
-      "version": 5,
-      "lastReviewedDate": "2026-09-05",
+      "version": 6,
+      "lastReviewedDate": "2026-09-09",
       "features": [
         "worker_onboarding",
         "location",
@@ -582,8 +582,8 @@
       "locale": "en",
       "title": "Opportunities, quotes, and jobs",
       "summary": "Review matching requests, write clear quotes, and update real job progress.",
-      "version": 6,
-      "lastReviewedDate": "2026-08-30",
+      "version": 7,
+      "lastReviewedDate": "2026-09-09",
       "features": [
         "marketplace",
         "quotes",
@@ -698,8 +698,8 @@
       "locale": "en",
       "title": "Admin portal: getting started",
       "summary": "Understand the separate staff portal, capabilities, reauthentication, dual control, privacy, and auditability.",
-      "version": 2,
-      "lastReviewedDate": "2026-09-06",
+      "version": 3,
+      "lastReviewedDate": "2026-09-09",
       "features": [
         "admin",
         "staff_auth",
@@ -751,9 +751,9 @@
       "audience": "admin",
       "locale": "en",
       "title": "User lookup and product roles",
-      "summary": "Find one redacted record and understand customer/worker state without treating the console as a directory.",
-      "version": 1,
-      "lastReviewedDate": "2026-08-21",
+      "summary": "Find one redacted record and understand customer/professional state without treating the console as a directory.",
+      "version": 2,
+      "lastReviewedDate": "2026-09-09",
       "features": [
         "admin_search",
         "product_roles",
@@ -772,7 +772,7 @@
         "search",
         "user",
         "customer",
-        "worker",
+        "professional",
         "product role",
         "recovery"
       ]
@@ -812,10 +812,10 @@
       "id": "admin-verification-enforcement",
       "audience": "admin",
       "locale": "en",
-      "title": "Worker verification and enforcement",
+      "title": "Professional verification and enforcement",
       "summary": "Review evidence, record safe reasons, and understand approval, rejection, suspension, ban, and appeal boundaries.",
-      "version": 7,
-      "lastReviewedDate": "2026-09-06",
+      "version": 8,
+      "lastReviewedDate": "2026-09-09",
       "features": [
         "worker_vetting",
         "trust",
@@ -1086,8 +1086,8 @@
       "locale": "en",
       "title": "Warsha glossary",
       "summary": "Plain-language meanings for the words Warsha uses.",
-      "version": 2,
-      "lastReviewedDate": "2026-09-06",
+      "version": 3,
+      "lastReviewedDate": "2026-09-09",
       "features": [
         "glossary"
       ],
@@ -1098,7 +1098,7 @@
       "capabilities": [],
       "keywords": [
         "customer",
-        "worker",
+        "professional",
         "request",
         "quote",
         "booking",

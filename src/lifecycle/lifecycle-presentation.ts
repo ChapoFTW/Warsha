@@ -54,11 +54,11 @@ const requestSemantics = {
 const requestLabels = {
   en: {
     draft: 'Draft',
-    matching: 'Finding workers',
+    matching: 'Finding professionals',
     collecting_quotes: 'Collecting quotes',
     customer_reviewing: 'Reviewing quotes',
-    selection_pending_confirmation: 'Waiting for worker confirmation',
-    worker_confirmed: 'Worker confirmed',
+    selection_pending_confirmation: 'Waiting for professional confirmation',
+    worker_confirmed: 'Professional confirmed',
     converted_to_booking: 'Booked',
     rescue_matching: 'Finding a replacement',
     cancelled: 'Cancelled',

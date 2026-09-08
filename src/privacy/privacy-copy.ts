@@ -39,7 +39,7 @@ export const privacyCopy = {
     locationPermissionUnknown: 'Warsha could not read the device permission state.',
     openDeviceSettings: 'Open device settings',
     savedLocationTitle: 'Saved location information',
-    savedLocationBody: 'Saved addresses and private worker matching coordinates stay in your account until they are changed or removed through a supported account action.',
+    savedLocationBody: 'Saved addresses and private professional matching coordinates stay in your account until they are changed or removed through a supported account action.',
 
     storedTitle: 'What we store',
     storedBody: 'Warsha keeps these kinds of information about your account.',
@@ -57,7 +57,7 @@ export const privacyCopy = {
     consentFailed: 'That could not be saved. Try again.',
 
     historyTitle: 'Search and viewing history',
-    historyBody: 'Recent searches and workers you looked at. Clearing them cannot be undone.',
+    historyBody: 'Recent searches and professionals you looked at. Clearing them cannot be undone.',
     clearSearches: 'Clear recent searches',
     clearViews: 'Clear recently viewed',
     clearAll: 'Clear both',
@@ -102,8 +102,8 @@ export const privacyCopy = {
     deleteWhatGoes: 'What is removed',
     deleteWhatStays: 'What has to stay',
     deleteGoesName: 'Your name, photo, phone number and addresses',
-    deleteGoesProfile: 'Your public worker profile, if you have one',
-    deleteGoesHistory: 'Your searches, viewing history and saved workers',
+    deleteGoesProfile: 'Your public professional profile, if you have one',
+    deleteGoesHistory: 'Your searches, viewing history and saved professionals',
     deleteGoesDevices: 'Your devices stop receiving notifications',
     deleteStaysBookings: 'Bookings you shared with someone else, so their record stays complete',
     deleteStaysMoney: 'Payment and earnings records, which Warsha must keep',

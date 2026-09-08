@@ -11,8 +11,8 @@
       "locale": "en",
       "title": "Admin portal: getting started",
       "summary": "Understand the separate staff portal, capabilities, reauthentication, dual control, privacy, and auditability.",
-      "version": 2,
-      "lastReviewedDate": "2026-09-06",
+      "version": 3,
+      "lastReviewedDate": "2026-09-09",
       "features": [
         "admin",
         "staff_auth",
@@ -31,7 +31,7 @@
         "fresh authentication",
         "dual control"
       ],
-      "body": "The Warsha Console is web-only and separate from customer and worker experiences. A product role answers whether an account books or performs work. A staff role grants a reviewed set of operational capabilities. One never substitutes for the other.\n\nThe server checks the required capability on every RPC. Hiding a link is convenience, not authorization. Sensitive actions can require a recent real authentication. Warsha does not require a second person for any action: one authorized operator, at a second factor, recently signed in, with a written reason, is the control. Dual control remains available if a permission is ever set to need it.\n\nUse development data for safe training. Read the action's scope, reversibility, evidence, and audit notice before confirming. Never work around a refusal with direct table edits, service credentials, disabled RLS, or invented audit rows. Ask a Security Administrator or follow the named runbook."
+      "body": "The Warsha Console is web-only and separate from customer and professional experiences. A product role answers whether an account books or performs work. A staff role grants a reviewed set of operational capabilities. One never substitutes for the other.\n\nThe server checks the required capability on every RPC. Hiding a link is convenience, not authorization. Sensitive actions can require a recent real authentication. Warsha does not require a second person for any action: one authorized operator, at a second factor, recently signed in, with a written reason, is the control. Dual control remains available if a permission is ever set to need it.\n\nUse development data for safe training. Read the action's scope, reversibility, evidence, and audit notice before confirming. Never work around a refusal with direct table edits, service credentials, disabled RLS, or invented audit rows. Ask a Security Administrator or follow the named runbook."
     },
     {
       "id": "admin-getting-started",
@@ -66,9 +66,9 @@
       "audience": "admin",
       "locale": "en",
       "title": "User lookup and product roles",
-      "summary": "Find one redacted record and understand customer/worker state without treating the console as a directory.",
-      "version": 1,
-      "lastReviewedDate": "2026-08-21",
+      "summary": "Find one redacted record and understand customer/professional state without treating the console as a directory.",
+      "version": 2,
+      "lastReviewedDate": "2026-09-09",
       "features": [
         "admin_search",
         "product_roles",
@@ -87,11 +87,11 @@
         "search",
         "user",
         "customer",
-        "worker",
+        "professional",
         "product role",
         "recovery"
       ],
-      "body": "Record lookup finds one exact identifier. It is not a browsable user directory. Results are redacted to the operator's capabilities, and the lookup itself is logged. Contact details require the separate `view_contact_details` capability and fresh authentication.\n\nCustomer and worker are product roles. Worker capability additionally depends on onboarding, vetting, activation, and enforcement. Do not create, remove, or infer product roles with raw database edits. Use an existing governed product action or documented recovery authority.\n\nA malformed historical account must be inventoried before any retirement. Preserve bookings, jobs, support, audit, financial, and staff history. Authentication success does not prove Warsha onboarding is complete."
+      "body": "Record lookup finds one exact identifier. It is not a browsable user directory. Results are redacted to the operator's capabilities, and the lookup itself is logged. Contact details require the separate `view_contact_details` capability and fresh authentication.\n\nCustomer and professional are product roles. Professional capability additionally depends on onboarding, vetting, activation, and enforcement. Do not create, remove, or infer product roles with raw database edits. Use an existing governed product action or documented recovery authority.\n\nA malformed historical account must be inventoried before any retirement. Preserve bookings, jobs, support, audit, financial, and staff history. Authentication success does not prove Warsha onboarding is complete."
     },
     {
       "id": "admin-users-roles",
@@ -129,10 +129,10 @@
       "id": "admin-verification-enforcement",
       "audience": "admin",
       "locale": "en",
-      "title": "Worker verification and enforcement",
+      "title": "Professional verification and enforcement",
       "summary": "Review evidence, record safe reasons, and understand approval, rejection, suspension, ban, and appeal boundaries.",
-      "version": 7,
-      "lastReviewedDate": "2026-09-06",
+      "version": 8,
+      "lastReviewedDate": "2026-09-09",
       "features": [
         "worker_vetting",
         "trust",
@@ -162,7 +162,7 @@
         "appeal",
         "evidence"
       ],
-      "body": "Review the submitted identity and criminal-record steps against the active policy. Record evidence only in the private evidence field and give the worker a separate safe, useful reason. Warsha does not claim an automated government check.\n\nApproval and activation are separate authorities. A temporary restriction or suspension is time/scope bounded when the policy says so. A permanent ban is high-risk and requires the specific capability, investigated evidence, fresh authentication and a recorded reason. It does not require a second person; the evidence rule is what stops an unjustified ban.\n\nNever put offence detail, document contents, reviewer identity, or private notes into worker-visible text. Appeals do not erase the original decision; they add an auditable later decision.\n\nA decision that asks you to confirm who you are is not lost. If your session needs refreshing at the moment you submit a vetting decision or an enforcement action, Warsha holds the decision exactly as you composed it, asks you to confirm, and then submits that same decision. Previously the confirmation closed and the decision had to be re-entered — and because nothing had been recorded, the screen looked unchanged. Cancelling the confirmation, or failing it, submits nothing.\n\nThe console reads the same language preference as the rest of Warsha. Choosing a language anywhere — the product, the public site, or the console itself — applies to all of them, and Arabic brings right-to-left layout with it. The console has no language in its address; there has never been an /ar route here, and one is not needed.\n\nAutomated reading assists the worker filling in their own details. It is not evidence and it is not a check. The case record shows that extraction ran and what it produced, never a confidence score and never an extracted value — the document itself is the evidence, and reading it is the reviewer's job. A worker whose document could not be read has done nothing wrong and their case carries no mark for it. Reading is also rate limited and reuses a result for an identical document rather than sending the same photograph to the provider twice, so a case with few extraction attempts is normal rather than suspicious.\n\nOpening a worker's identity documents requires the identity-verification capability, not a staff badge. A staff account without that capability cannot view, list, or obtain a link to those files by any route, including reading storage directly, and the same rule applies to the certificates filed with them. Criminal records remain behind their own separate capability.\n\nEvery criminal-record submission carries a declared name the worker typed themselves, for comparison against the document. It is never filled from the profile and never from extraction, so a mismatch between the declared name and the record is a real signal rather than a copying artefact. Treat it as one input to the decision, not a decision in itself."
+      "body": "Review the submitted identity and criminal-record steps against the active policy. Record evidence only in the private evidence field and give the professional a separate safe, useful reason. Warsha does not claim an automated government check.\n\nApproval and activation are separate authorities. A temporary restriction or suspension is time/scope bounded when the policy says so. A permanent ban is high-risk and requires the specific capability, investigated evidence, fresh authentication and a recorded reason. It does not require a second person; the evidence rule is what stops an unjustified ban.\n\nNever put offence detail, document contents, reviewer identity, or private notes into professional-visible text. Appeals do not erase the original decision; they add an auditable later decision.\n\nA decision that asks you to confirm who you are is not lost. If your session needs refreshing at the moment you submit a vetting decision or an enforcement action, Warsha holds the decision exactly as you composed it, asks you to confirm, and then submits that same decision. Previously the confirmation closed and the decision had to be re-entered — and because nothing had been recorded, the screen looked unchanged. Cancelling the confirmation, or failing it, submits nothing.\n\nThe console reads the same language preference as the rest of Warsha. Choosing a language anywhere — the product, the public site, or the console itself — applies to all of them, and Arabic brings right-to-left layout with it. The console has no language in its address; there has never been an /ar route here, and one is not needed.\n\nAutomated reading assists the professional filling in their own details. It is not evidence and it is not a check. The case record shows that extraction ran and what it produced, never a confidence score and never an extracted value — the document itself is the evidence, and reading it is the reviewer's job. A professional whose document could not be read has done nothing wrong and their case carries no mark for it. Reading is also rate limited and reuses a result for an identical document rather than sending the same photograph to the provider twice, so a case with few extraction attempts is normal rather than suspicious.\n\nOpening a professional's identity documents requires the identity-verification capability, not a staff badge. A staff account without that capability cannot view, list, or obtain a link to those files by any route, including reading storage directly, and the same rule applies to the certificates filed with them. Criminal records remain behind their own separate capability.\n\nEvery criminal-record submission carries a declared name the professional typed themselves, for comparison against the document. It is never filled from the profile and never from extraction, so a mismatch between the declared name and the record is a real signal rather than a copying artefact. Treat it as one input to the decision, not a decision in itself."
     },
     {
       "id": "admin-verification-enforcement",
@@ -411,8 +411,8 @@
       "locale": "en",
       "title": "Warsha glossary",
       "summary": "Plain-language meanings for the words Warsha uses.",
-      "version": 2,
-      "lastReviewedDate": "2026-09-06",
+      "version": 3,
+      "lastReviewedDate": "2026-09-09",
       "features": [
         "glossary"
       ],
@@ -423,7 +423,7 @@
       "capabilities": [],
       "keywords": [
         "customer",
-        "worker",
+        "professional",
         "request",
         "quote",
         "booking",
@@ -431,7 +431,7 @@
         "capability",
         "audit"
       ],
-      "body": "- **Customer:** a person using Warsha to request or book work.\n- **Worker / provider:** a person offering services after the required onboarding and approval. “Provider” is the internal data term; the product says Worker.\n- **Request:** a description of work sent to matching workers.\n- **Quote:** a worker's offer with price and terms.\n- **Job / booking:** the authoritative agreement and its progress. The product usually says Job; some stored authorities say Booking.\n- **Service area:** the approximate places a worker agrees to serve.\n- **Verification:** the governed review of required worker information.\n- **Product role:** Customer or Worker; what the account does in the product.\n- **Staff role:** a reviewed bundle of admin capabilities.\n- **Capability:** one server-checked admin permission.\n- **Fresh authentication:** proof that the operator authenticated recently; it does not add permission.\n- **Dual control:** an optional policy under which a second, different authorized person must approve. No Warsha permission uses it today; one authorized operator is the standard control.\n- **Suspension:** an account or worker capability is stopped under a governed state.\n- **Ban:** a high-risk permanent enforcement action.\n- **Recovery:** a governed way to restore a valid state without rewriting history.\n- **Audit log:** append-only evidence of an action.\n- **Onboarding:** the required steps before the permanent experience.\n- **Address pin:** exact stored coordinates confirmed separately from editable address words.\n- **Default address:** the saved address Warsha selects first; it can be changed."
+      "body": "- **Customer:** a person using Warsha to request or book work.\n- **Professional / provider:** a person offering services after the required onboarding and approval. “Provider” is the internal data term; the product says Professional.\n- **Request:** a description of work sent to matching professionals.\n- **Quote:** a professional's offer with price and terms.\n- **Job / booking:** the authoritative agreement and its progress. The product usually says Job; some stored authorities say Booking.\n- **Service area:** the approximate places a professional agrees to serve.\n- **Verification:** the governed review of required professional information.\n- **Product role:** Customer or Professional; what the account does in the product.\n- **Staff role:** a reviewed bundle of admin capabilities.\n- **Capability:** one server-checked admin permission.\n- **Fresh authentication:** proof that the operator authenticated recently; it does not add permission.\n- **Dual control:** an optional policy under which a second, different authorized person must approve. No Warsha permission uses it today; one authorized operator is the standard control.\n- **Suspension:** an account or professional capability is stopped under a governed state.\n- **Ban:** a high-risk permanent enforcement action.\n- **Recovery:** a governed way to restore a valid state without rewriting history.\n- **Audit log:** append-only evidence of an action.\n- **Onboarding:** the required steps before the permanent experience.\n- **Address pin:** exact stored coordinates confirmed separately from editable address words.\n- **Default address:** the saved address Warsha selects first; it can be changed."
     },
     {
       "id": "warsha-glossary",

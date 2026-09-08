@@ -20,7 +20,7 @@ const baseOnboardingCopy = {
     // The value proposition, taken verbatim from web/lib/copy.ts so the
     // site and the app say the same thing about what Warsha is.
     gatewayHeadline: 'Get it fixed, at a price you agreed first.',
-    gatewayTrustChecked: 'Workers are identity checked',
+    gatewayTrustChecked: 'Professionals are identity checked',
     gatewayTrustPrice: 'You agree the price before work starts',
     gatewayGetStarted: 'Get started',
     gatewayHaveAccount: 'I already have an account',
@@ -36,10 +36,10 @@ const baseOnboardingCopy = {
     roleQuestion: 'How will you use Warsha?',
     roleCustomer: 'Customer',
     roleCustomerHint: 'Book plumbers, electricians, carpenters and more.',
-    roleWorker: 'Worker',
+    roleWorker: 'Professional',
     roleWorkerHint: 'Offer your services. Needs identity checks before you can start.',
     roleContinue: 'Continue',
-    roleBothNote: 'Every account can book services. Choosing Worker also starts your application.',
+    roleBothNote: 'Every account can book services. Choosing Professional also starts your application.',
     roleLocked: 'Your account type cannot be changed while your application is being reviewed.',
     accountSetupIncomplete: 'This signed-in account did not finish Warsha account setup.',
     accountSetupResume: 'Continue the registration you already started.',
@@ -53,7 +53,7 @@ const baseOnboardingCopy = {
 
     // Customer address
     addressTitle: 'Where do you need the work done?',
-    addressIntro: 'Workers only see this after you book, and only what they need to find you.',
+    addressIntro: 'Professionals only see this after you book, and only what they need to find you.',
     addressUseLocation: 'Use my current location',
     addressSearch: 'Search for an address',
     addressChooseMap: 'Choose location on map',
@@ -95,7 +95,7 @@ const baseOnboardingCopy = {
     addressApartmentHelp: 'Apartment or unit number, if applicable.',
     addressLandmark: 'Nearby landmark',
     addressLandmarkHelp: 'An easy-to-recognize place near this address, if helpful.',
-    addressNotes: 'Notes for the worker',
+    addressNotes: 'Notes for the professional',
     addressLatitude: 'Latitude',
     addressLongitude: 'Longitude',
     addressPinRequired: 'A confirmed pin is needed before you can book.',
@@ -106,12 +106,12 @@ const baseOnboardingCopy = {
     addressPermissionOptional: 'Location permission is optional. You never have to grant it.',
 
     // Worker onboarding
-    workerTitle: 'Your worker application',
+    workerTitle: 'Your professional application',
     workerIntro: 'Finish these steps and a member of our team will review your application.',
     workerStepsRemaining: 'Steps remaining',
     workerAllStepsDone: 'Every step is done. Your application is with our team.',
-    workerAgreementTitle: 'Worker terms',
-    workerAgreementBody: 'You accept the worker terms and the way Warsha handles your documents.',
+    workerAgreementTitle: 'Professional terms',
+    workerAgreementBody: 'You accept the professional terms and the way Warsha handles your documents.',
     workerAgreementAccept: 'I accept',
     workerAgreementAccepted: 'Accepted',
     workerDocumentConsent: 'I agree to Warsha processing my identity document and certificate.',
@@ -183,7 +183,7 @@ const baseOnboardingCopy = {
     stateApproved: 'Approved. We are finishing setting up your account.',
     stateProvisionallyActive: 'You can take work while our team reviews your documents.',
     stateActive: 'You are live on Warsha.',
-    stateSuspended: 'Your worker account is on hold.',
+    stateSuspended: 'Your professional account is on hold.',
     stateNoTimePromise: 'We will tell you as soon as there is an update.',
 
     // Correction, rejection, appeal

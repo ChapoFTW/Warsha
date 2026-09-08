@@ -81,7 +81,7 @@ export const supportCopy = {
 
     category_account_access: 'Signing in',
     category_booking_help: 'A booking',
-    category_worker_onboarding: 'Becoming a worker',
+    category_worker_onboarding: 'Becoming a professional',
     category_verification_help: 'Verification',
     category_payment_question: 'A payment',
     category_withdrawal_question: 'Withdrawing earnings',

@@ -12,8 +12,8 @@
 const rawCopy = {
   en: {
     notifications:'Notifications',notificationBell:'Open notifications',markAllRead:'Mark all as read',markRead:'Mark as read',dismiss:'Dismiss notification',empty:'No notifications yet',emptyBody:'Booking updates and important account activity will appear here.',loadError:'Couldn’t load notifications.',retry:'Try again',loadMore:'Load more',newUpdate:'New update',justNow:'Just now',
-    new_booking_request:'New booking request',booking_message:'New message',booking_pending_provider_approval:'Booking request sent',booking_accepted:'Booking accepted',booking_rejected:'Booking rejected',booking_rescheduling_requested:'New schedule proposed',booking_reschedule_accepted:'Proposed schedule accepted',booking_reschedule_rejected:'Proposed schedule declined',booking_confirmed:'Booking confirmed',booking_provider_on_the_way:'Provider on the way',booking_provider_arrived:'Provider arrived',booking_job_started:'Work started',booking_work_in_progress:'Work in progress',booking_completed:'Work completed',booking_cancelled:'Booking cancelled',booking_no_show:'Customer no-show',booking_disputed:'Problem reported',booking_refunded:'Booking refunded',operation_traveling:'Worker traveling',operation_arrived:'Worker arrived',operation_started:'Work started',operation_paused:'Work paused',operation_resumed:'Work resumed',operation_waiting_for_approval:'Approval needed',operation_additional_work:'Additional work update',operation_delay:'Delay update',operation_finished:'Work finished',operation_inspection:'Inspection ready',operation_completed:'Work completed',operation_return_visit:'Return visit update',review_unlocked:'Review available',verification_submitted:'Verification sent',verification_approved:'Identity verified',verification_rejected:'Verification needs attention',verification_resubmission_requested:'New verification photos needed',verification_expired:'Verification expired',
-    new_booking_requestBody:'A customer sent you a new booking request.',booking_messageBody:'You have a new message about your booking.',booking_pending_provider_approvalBody:'Your booking request was sent.',booking_acceptedBody:'The provider accepted your booking.',booking_rejectedBody:'The provider could not accept this booking.',booking_rescheduling_requestedBody:'The provider proposed another date and time.',booking_reschedule_acceptedBody:'The customer accepted your proposed schedule.',booking_reschedule_rejectedBody:'The customer declined your proposed schedule.',booking_confirmedBody:'The proposed schedule or booking was confirmed.',booking_provider_on_the_wayBody:'Your provider is on the way.',booking_provider_arrivedBody:'Your provider has arrived.',booking_job_startedBody:'Work on your booking has started.',booking_work_in_progressBody:'Your booking is now in progress.',booking_completedBody:'The provider marked the work as completed.',booking_cancelledBody:'This booking was cancelled.',booking_no_showBody:'Customer no-show.',booking_disputedBody:'A problem was reported for this booking.',booking_refundedBody:'This booking was marked as refunded.',operation_travelingBody:'The worker is on the way.',operation_arrivedBody:'The worker arrived.',operation_startedBody:'Work on this booking started.',operation_pausedBody:'Work was paused with an auditable update.',operation_resumedBody:'Work resumed.',operation_waiting_for_approvalBody:'A customer decision is needed before work continues.',operation_additional_workBody:'There is an additional-work decision on this booking.',operation_delayBody:'The worker shared a delay update.',operation_finishedBody:'The work is ready for inspection.',operation_inspectionBody:'Review the finished work before closing the booking.',operation_completedBody:'The customer approved completion.',operation_return_visitBody:'There is a return-visit update on the same booking.',review_unlockedBody:'You can now review this completed booking.',verification_submittedBody:'Your photos were sent for review.',verification_approvedBody:'Customers can now see your verified identity.',verification_rejectedBody:'Open verification to see what needs changing.',verification_resubmission_requestedBody:'Please add the requested new photos.',verification_expiredBody:'Take new photos to restore your verified status.',genericBody:'There is a new update for your booking.',
+    new_booking_request:'New booking request',booking_message:'New message',booking_pending_provider_approval:'Booking request sent',booking_accepted:'Booking accepted',booking_rejected:'Booking rejected',booking_rescheduling_requested:'New schedule proposed',booking_reschedule_accepted:'Proposed schedule accepted',booking_reschedule_rejected:'Proposed schedule declined',booking_confirmed:'Booking confirmed',booking_provider_on_the_way:'Provider on the way',booking_provider_arrived:'Provider arrived',booking_job_started:'Work started',booking_work_in_progress:'Work in progress',booking_completed:'Work completed',booking_cancelled:'Booking cancelled',booking_no_show:'Customer no-show',booking_disputed:'Problem reported',booking_refunded:'Booking refunded',operation_traveling:'Professional traveling',operation_arrived:'Professional arrived',operation_started:'Work started',operation_paused:'Work paused',operation_resumed:'Work resumed',operation_waiting_for_approval:'Approval needed',operation_additional_work:'Additional work update',operation_delay:'Delay update',operation_finished:'Work finished',operation_inspection:'Inspection ready',operation_completed:'Work completed',operation_return_visit:'Return visit update',review_unlocked:'Review available',verification_submitted:'Verification sent',verification_approved:'Identity verified',verification_rejected:'Verification needs attention',verification_resubmission_requested:'New verification photos needed',verification_expired:'Verification expired',
+    new_booking_requestBody:'A customer sent you a new booking request.',booking_messageBody:'You have a new message about your booking.',booking_pending_provider_approvalBody:'Your booking request was sent.',booking_acceptedBody:'The provider accepted your booking.',booking_rejectedBody:'The provider could not accept this booking.',booking_rescheduling_requestedBody:'The provider proposed another date and time.',booking_reschedule_acceptedBody:'The customer accepted your proposed schedule.',booking_reschedule_rejectedBody:'The customer declined your proposed schedule.',booking_confirmedBody:'The proposed schedule or booking was confirmed.',booking_provider_on_the_wayBody:'Your provider is on the way.',booking_provider_arrivedBody:'Your provider has arrived.',booking_job_startedBody:'Work on your booking has started.',booking_work_in_progressBody:'Your booking is now in progress.',booking_completedBody:'The provider marked the work as completed.',booking_cancelledBody:'This booking was cancelled.',booking_no_showBody:'Customer no-show.',booking_disputedBody:'A problem was reported for this booking.',booking_refundedBody:'This booking was marked as refunded.',operation_travelingBody:'The professional is on the way.',operation_arrivedBody:'The professional arrived.',operation_startedBody:'Work on this booking started.',operation_pausedBody:'Work was paused with an auditable update.',operation_resumedBody:'Work resumed.',operation_waiting_for_approvalBody:'A customer decision is needed before work continues.',operation_additional_workBody:'There is an additional-work decision on this booking.',operation_delayBody:'The professional shared a delay update.',operation_finishedBody:'The work is ready for inspection.',operation_inspectionBody:'Review the finished work before closing the booking.',operation_completedBody:'The customer approved completion.',operation_return_visitBody:'There is a return-visit update on the same booking.',review_unlockedBody:'You can now review this completed booking.',verification_submittedBody:'Your photos were sent for review.',verification_approvedBody:'Customers can now see your verified identity.',verification_rejectedBody:'Open verification to see what needs changing.',verification_resubmission_requestedBody:'Please add the requested new photos.',verification_expiredBody:'Take new photos to restore your verified status.',genericBody:'There is a new update for your booking.',
   },
   ar: {
     notifications:'الإشعارات',notificationBell:'فتح الإشعارات',markAllRead:'تحديد الكل كمقروء',markRead:'تحديد كمقروء',dismiss:'حذف الإشعار',empty:'لا توجد إشعارات حتى الآن',emptyBody:'ستظهر هنا تحديثات الحجوزات والأنشطة المهمة في حسابك.',loadError:'تعذر تحميل الإشعارات.',retry:'حاول مرة أخرى',loadMore:'عرض المزيد',newUpdate:'تحديث جديد',justNow:'الآن',
@@ -71,7 +71,7 @@ const financial = {
     cash_collection_reported: 'Confirm cash payment', cash_collection_reportedBody: 'The provider reported collecting cash. Please confirm what happened.',
     cash_collection_confirmed: 'Cash payment confirmed', cash_collection_confirmedBody: 'The customer confirmed the cash payment.',
     cash_collection_disputed: 'Cash payment needs review', cash_collection_disputedBody: 'The customer did not confirm the reported cash payment.',
-    cash_debt_threshold_warning: 'Account action required', cash_debt_threshold_warningBody: 'Your worker financial account requires attention.',
+    cash_debt_threshold_warning: 'Account action required', cash_debt_threshold_warningBody: 'Your professional financial account requires attention.',
   },
   ar: {
     payment_confirmed: 'تم تأكيد الدفع', payment_confirmedBody: 'تم تأكيد دفع الحجز.',
@@ -129,7 +129,7 @@ export const FINANCIAL_NOTIFICATION_EVENT_KEYS = [
  *
  * The event catalogue holds 108 events. Nineteen of them resolved to copy on
  * both platforms in every language; the other eighty-nine fell through to the
- * generic category line — "Your worker account has an update" — which meant an
+ * generic category line — "Your professional account has an update" — which meant an
  * approved worker and a REJECTED worker were shown the same sentence. Forty of
  * those had English and Arabic in the native `eventCopy` and nothing on the
  * web, because the browser reads only this table; forty-nine had no copy at all.
@@ -160,9 +160,9 @@ const catalogue = {
     legal_acceptance_recorded: 'Acceptance recorded', legal_acceptance_recordedBody: 'Your acceptance was recorded.',
     legal_acceptance_required: 'Action needed on our terms', legal_acceptance_requiredBody: 'Please review and accept the updated terms.',
     legal_update_available: 'Our terms have been updated', legal_update_availableBody: 'You can read what changed.',
-    marketplace_booking_confirmed: 'Worker confirmed', marketplace_booking_confirmedBody: 'Your service request is now a confirmed booking.',
-    marketplace_no_providers: 'No workers found', marketplace_no_providersBody: 'No eligible worker was found yet.',
-    marketplace_rematching: 'Matching restarted', marketplace_rematchingBody: 'Warsha is looking for another eligible worker.',
+    marketplace_booking_confirmed: 'Professional confirmed', marketplace_booking_confirmedBody: 'Your service request is now a confirmed booking.',
+    marketplace_no_providers: 'No professionals found', marketplace_no_providersBody: 'No eligible professional was found yet.',
+    marketplace_rematching: 'Matching restarted', marketplace_rematchingBody: 'Warsha is looking for another eligible professional.',
     marketplace_request_expired: 'Request expired', marketplace_request_expiredBody: 'Your service request expired.',
     new_review: 'New review', new_reviewBody: 'A completed booking has a review update.',
     operation_additional_work_approved: 'Additional work approved', operation_additional_work_approvedBody: 'An additional-work decision is available.',
@@ -185,7 +185,7 @@ const catalogue = {
     promotion_available: 'A promotion is available', promotion_availableBody: 'There is a promotion you can use.',
     promotion_expiring: 'Promotion ending soon', promotion_expiringBody: 'A promotion you can use is ending soon.',
     promotion_redeemed: 'Promotion applied', promotion_redeemedBody: 'Your promotion was applied.',
-    quote_confirmation_expired: 'Confirmation expired', quote_confirmation_expiredBody: 'The selected worker did not confirm in time.',
+    quote_confirmation_expired: 'Confirmation expired', quote_confirmation_expiredBody: 'The selected professional did not confirm in time.',
     quote_expired: 'Quote expired', quote_expiredBody: 'Your quote is no longer active.',
     quote_invitation: 'New opportunity', quote_invitationBody: 'A service opportunity requires your attention.',
     quote_received: 'New quote', quote_receivedBody: 'Your service request has a quote update.',
@@ -193,7 +193,7 @@ const catalogue = {
     quote_selected: 'Confirmation required', quote_selectedBody: 'A customer selected your quote.',
     referral_pending: 'Referral in progress', referral_pendingBody: 'Your referral is being confirmed.',
     referral_qualified: 'Referral confirmed', referral_qualifiedBody: 'Your referral qualified.',
-    request_awarded_elsewhere: 'Request closed', request_awarded_elsewhereBody: 'This request was awarded to another worker.',
+    request_awarded_elsewhere: 'Request closed', request_awarded_elsewhereBody: 'This request was awarded to another professional.',
     request_cancelled: 'Request cancelled', request_cancelledBody: 'The customer cancelled this service request.',
     request_edited: 'Request updated', request_editedBody: 'A service request you were invited to has changed.',
     review_moderation_outcome: 'Review update', review_moderation_outcomeBody: 'A moderation decision is available.',
@@ -214,7 +214,7 @@ const catalogue = {
     staff_support_case_assigned: 'Support case assigned', staff_support_case_assignedBody: 'A support case was assigned to you.',
     staff_support_customer_reply: 'Customer replied', staff_support_customer_replyBody: 'A customer replied on a support case.',
     staff_support_sla_breach: 'Response overdue', staff_support_sla_breachBody: 'A support case has passed its response time.',
-    staff_support_worker_reply: 'Worker replied', staff_support_worker_replyBody: 'A worker replied on a support case.',
+    staff_support_worker_reply: 'Professional replied', staff_support_worker_replyBody: 'A professional replied on a support case.',
     support_case_assigned: 'Support case assigned', support_case_assignedBody: 'Someone is looking at your support request.',
     support_case_opened: 'Support case opened', support_case_openedBody: 'We received your support request.',
     support_case_reopened: 'Support case reopened', support_case_reopenedBody: 'Your support case was reopened.',
@@ -223,13 +223,13 @@ const catalogue = {
     support_survey_available: 'Tell us how we did', support_survey_availableBody: 'You can rate your support experience.',
     vetting_appeal_submitted: 'Appeal received', vetting_appeal_submittedBody: 'Your appeal was received.',
     vetting_appeal_updated: 'Appeal update', vetting_appeal_updatedBody: 'There is a decision on your appeal.',
-    worker_approved: 'You are approved to work', worker_approvedBody: 'Your worker account is approved. You can start receiving jobs.',
+    worker_approved: 'You are approved to work', worker_approvedBody: 'Your professional account is approved. You can start receiving jobs.',
     worker_manual_review: 'Under review', worker_manual_reviewBody: 'A person is reviewing your application.',
-    worker_onboarding_incomplete: 'Finish your setup', worker_onboarding_incompleteBody: 'Your worker profile still needs a few details.',
-    worker_profile_discoverable: 'Profile available', worker_profile_discoverableBody: 'Your worker profile is visible in the marketplace.',
-    worker_profile_unavailable: 'Profile unavailable', worker_profile_unavailableBody: 'A blocking requirement is hiding your worker profile.',
+    worker_onboarding_incomplete: 'Finish your setup', worker_onboarding_incompleteBody: 'Your professional profile still needs a few details.',
+    worker_profile_discoverable: 'Profile available', worker_profile_discoverableBody: 'Your professional profile is visible in the marketplace.',
+    worker_profile_unavailable: 'Profile unavailable', worker_profile_unavailableBody: 'A blocking requirement is hiding your professional profile.',
     worker_provisionally_active: 'Provisionally active', worker_provisionally_activeBody: 'You can start working while the final checks finish.',
-    worker_rejected: 'Application not approved', worker_rejectedBody: 'Your worker application was not approved. Open your account to see what to do next.',
+    worker_rejected: 'Application not approved', worker_rejectedBody: 'Your professional application was not approved. Open your account to see what to do next.',
   },
   ar: {
     account_created: 'أهلاً بك في ورشة', account_createdBody: 'تم إنشاء حسابك.',

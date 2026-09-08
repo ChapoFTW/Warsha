@@ -17,7 +17,7 @@
  *      the source rather than by trusting the grants.
  */
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import {
@@ -203,15 +203,48 @@ equal(readPushPayload(null).notificationId, undefined, 'an absent payload is not
 // Two copies of the same table is a parity defect the moment they disagree, so
 // they are compared string for string.
 
-const inserts = migration.slice(migration.indexOf('insert into private.notification_push_copy'));
+/*
+ * The EFFECTIVE server copy, not the first migration that ever wrote it.
+ *
+ * This used to read the insert in `202609010001` alone, which quietly assumed
+ * each row is written once and never corrected. The moment a later migration
+ * updated one — as `202609090001` does, renaming the English worker_account row
+ * to "Professional" — the comparison failed against a value the server no longer
+ * holds, and pointed at the client as if it were the thing out of step.
+ *
+ * So the base insert is read, then every later `update` is applied in filename
+ * order, exactly as Supabase applies them. What is compared is what a device
+ * would actually be sent.
+ */
+const unquote = (value: string) => value.replace(/''/g, "'");
+const effectivePushCopy = new Map<string, { title: string; body: string }>();
+
+const baseInsert = migration.slice(migration.indexOf('insert into private.notification_push_copy'));
+for (const [, category, language, title, body] of baseInsert.matchAll(
+  /\('([a-z_]+)',\s*'([a-z]{2})',\s*'((?:[^']|'')*)',\s*'((?:[^']|'')*)'\)/g)) {
+  effectivePushCopy.set(`${language}.${category}`, { title: unquote(title), body: unquote(body) });
+}
+
+for (const file of readdirSync(join(root, 'supabase', 'migrations')).sort()) {
+  if (!file.endsWith('.sql') || file === '202609010001_push_delivery_authority.sql') continue;
+  const sql = read(join('supabase', 'migrations', file));
+  if (!sql.includes('private.notification_push_copy')) continue;
+  for (const [, title, body, category, language] of sql.matchAll(
+    /update\s+private\.notification_push_copy\s+set\s+title\s*=\s*'((?:[^']|'')*)',\s*body\s*=\s*'((?:[^']|'')*)'\s+where\s+category\s*=\s*'([a-z_]+)'\s+and\s+language\s*=\s*'([a-z]{2})'/gi)) {
+    effectivePushCopy.set(`${language}.${category}`, { title: unquote(title), body: unquote(body) });
+  }
+}
+
 let compared = 0;
 for (const language of ['en', 'ar', 'fr'] as const) {
   for (const category of notificationCategories) {
     const preview = pushPreviewCopy[language][category];
     ok(preview && preview.title && preview.body, `${language}.${category} exists in TypeScript`);
-    const row = new RegExp(
-      `\\('${category}', '${language}', '${preview.title.replace(/'/g, "''").replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')}', '${preview.body.replace(/'/g, "''").replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')}'\\)`);
-    ok(row.test(inserts), `${language}.${category} is the SAME STRING in the migration`);
+    const server = effectivePushCopy.get(`${language}.${category}`);
+    ok(server, `${language}.${category} exists in the migrations`);
+    equal({ title: server?.title, body: server?.body },
+      { title: preview.title, body: preview.body },
+      `${language}.${category} is the SAME STRING in the migration`);
     compared += 1;
   }
 }

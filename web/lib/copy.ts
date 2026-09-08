@@ -105,7 +105,7 @@ const baseCopy = {
     footerContact: 'Contact',
     footerAllServices: 'All services',
     footerCategories: 'Categories',
-    footerBecomeWorker: 'Become a worker',
+    footerBecomeWorker: 'Become a professional',
     footerLegalCentre: 'Legal centre',
     footerPrivacy: 'Privacy Policy',
     footerTerms: 'Terms of Service',
@@ -166,7 +166,7 @@ const baseCopy = {
     createWorkerPending: 'Professional application — coming to the web',
     createFootNote:
       'Applying as a professional starts a verification process. It does not make you a '
-      + 'worker on Warsha, and approval is not automatic. Already have an account?',
+      + 'professional on Warsha, and approval is not automatic. Already have an account?',
 
     notFoundTitle: 'That page does not exist',
     notFoundBody:

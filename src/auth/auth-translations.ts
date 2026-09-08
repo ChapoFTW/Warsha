@@ -3,19 +3,19 @@ import { useLocalization } from '@/src/i18n/localization';
 const copy = {
   en: {
     customerAccount: 'Customer',
-    workerAccount: 'Worker',
-    workerSignIn: 'Worker sign in',
-    workerCreate: 'Create worker account',
+    workerAccount: 'Professional',
+    workerSignIn: 'Professional sign in',
+    workerCreate: 'Create professional account',
     workerName: 'Name customers will see',
-    signInIdentifier: 'Customer email or worker phone',
+    signInIdentifier: 'Customer email or professional phone',
     signInIdentity: 'Email or phone number',
     signInIdentityHint: 'Use the email address or the phone number you registered with. Warsha works out the rest.',
     signInIdentityInvalid: 'Enter the email address or phone number you registered with.',
-    phonePasswordHint: 'Workers sign in with their phone number and password. No SMS code is sent.',
+    phonePasswordHint: 'Professionals sign in with their phone number and password. No SMS code is sent.',
     customerEmail: 'Email address',
     workerPhone: 'Phone number',
     customerSignInHint: 'Sign in to your customer account with email and password.',
-    workerSignInHint: 'Sign in to your worker account with phone number and password. No SMS code is sent.',
+    workerSignInHint: 'Sign in to your professional account with phone number and password. No SMS code is sent.',
     workerRegistrationNoEmail: 'No email is needed. You will sign in with this phone number and password.',
     customerConfirmationPending: 'Email confirmation is required. If this address can be registered, a confirmation link will arrive. Warsha cannot verify sending or delivery from this screen. Check your inbox and spam, wait before trying again, or contact support.',
     confirmationProcessingTitle: 'Confirming your email',
@@ -29,7 +29,7 @@ const copy = {
     phoneHint: 'Enter an Egyptian mobile number, for example 01012345678.',
     // WPS-024 correction. Says what the number is FOR and, by saying nothing
     // about a code, does not promise one. Registration sends no SMS.
-    phoneContactHint: 'How your worker or customer reaches you on the day. For example 01012345678.',
+    phoneContactHint: 'How your professional or customer reaches you on the day. For example 01012345678.',
     phoneNotVerified: 'Not confirmed yet',
     sendCodePreview: 'We’ll send the code to',
     localOtpHint: 'Local development code: 123456.',
@@ -44,8 +44,8 @@ const copy = {
     // Confirming is optional and additional. It is never a condition of
     // registering, working or being paid, and this line must not imply it is.
     phoneRequired: 'Confirming your number is optional. Your account works without it.',
-    existingWorker: 'Already have a worker account?',
-    newWorker: 'New to Warsha as a worker?',
+    existingWorker: 'Already have a professional account?',
+    newWorker: 'New to Warsha as a professional?',
   },
   fr: {
     customerAccount: 'Client',

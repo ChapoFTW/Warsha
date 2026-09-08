@@ -10,7 +10,7 @@ const copy = {
     reviews: 'Reviews', reputation: 'Reputation', noReviews: 'No verified reviews yet.', loadError: 'Could not load reviews.', tryAgain: 'Try again',
     newest: 'Newest', highestRated: 'Highest rated', lowestRated: 'Lowest rated', mostHelpful: 'Most helpful', sortReviews: 'Sort reviews',
     helpful: 'Helpful', notHelpful: 'Not helpful', report: 'Report review', reportReason: 'Why are you reporting this review?', spam: 'Spam', abuse: 'Abuse', fakeReview: 'Fake review', offensiveContent: 'Offensive content', reportDetails: 'Add details (optional)', sendReport: 'Send report', reportSent: 'Report sent for staff review.',
-    providerReply: 'Worker reply', immutableReply: 'Replies cannot be changed after publishing.',
+    providerReply: 'Professional reply', immutableReply: 'Replies cannot be changed after publishing.',
     averageRating: 'Average rating', completedJobs: 'Completed jobs', responseRate: 'Response rate', completionRate: 'Completion rate', repeatCustomers: 'Repeat customers', yearsOnPlatform: 'Years on Warsha', unavailable: 'Not enough data',
     ratingBreakdown: 'Rating breakdown', ratingDistribution: 'Overall rating distribution', confidence: 'Reputation confidence', confidenceHelp: 'A rule-based evidence summary. It does not change marketplace ranking.',
     identityVerified: 'Identity Verified', skillVerified: 'Skill Certificate Verified', professionalVerified: 'Professional Certificate Verified', topRated: 'Top Rated', fastResponder: 'Fast Responder', experienced: 'Experienced',

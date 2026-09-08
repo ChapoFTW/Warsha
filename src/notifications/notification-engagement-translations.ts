@@ -36,7 +36,7 @@ const ui = {
 } as const;
 
 const categories: Record<SupportedLanguage, Record<NotificationCategory, string>> = {
-  en: { marketplace: 'Marketplace', bookings: 'Bookings', messages: 'Messages', payments: 'Payments', worker_account: 'Worker account', reviews: 'Reviews', disputes: 'Disputes', security: 'Security', system: 'System', support: 'Support' },
+  en: { marketplace: 'Marketplace', bookings: 'Bookings', messages: 'Messages', payments: 'Payments', worker_account: 'Professional account', reviews: 'Reviews', disputes: 'Disputes', security: 'Security', system: 'System', support: 'Support' },
   ar: { marketplace: 'السوق والعروض', bookings: 'الحجوزات', messages: 'الرسائل', payments: 'المدفوعات', worker_account: 'حساب الصنايعي', reviews: 'التقييمات', disputes: 'النزاعات', security: 'الأمان', system: 'النظام', support: 'الدعم' },
   fr: { marketplace:'Demandes et devis',bookings:'Travaux',messages:'Messages',payments:'Paiements',worker_account:'Compte professionnel',reviews:'Avis',disputes:'Litiges',security:'Sécurité',system:'Système',support:'Assistance' },
 };
@@ -184,7 +184,7 @@ const generic: Record<SupportedLanguage, Record<NotificationCategory, { title: s
   en: {
     marketplace: { title: 'Marketplace update', body: 'Your service request has an update.' }, bookings: { title: 'Booking update', body: 'Your booking has an update.' },
     messages: { title: 'New message', body: 'You have a new message in Warsha.' }, payments: { title: 'Payment update', body: 'Your payment status changed.' },
-    worker_account: { title: 'Worker account update', body: 'Your worker account has an update.' }, reviews: { title: 'Review update', body: 'A review has an update.' },
+    worker_account: { title: 'Professional account update', body: 'Your professional account has an update.' }, reviews: { title: 'Review update', body: 'A review has an update.' },
     disputes: { title: 'Dispute update', body: 'Your dispute has an update.' }, security: { title: 'Account security update', body: 'Your Warsha account security changed.' }, system: { title: 'Warsha update', body: 'You have an update in Warsha.' },
     support: { title: 'Support update', body: 'Your support case has an update.' },
   },
@@ -205,7 +205,7 @@ const reminderCopy = {
     worker_confirmation: 'Confirm the selected job before the response window closes.', booking_approaching: 'Your confirmed booking is approaching.',
     inspection_pending: 'The completed work is still waiting for inspection.', payment_pending: 'A booking payment still requires action.',
     review_opportunity: 'You can still review your completed booking.', dispute_deadline: 'A dispute response or evidence deadline needs attention.',
-    verification_correction: 'Your verification correction is still incomplete.', worker_profile_incomplete: 'Your worker profile still has a blocking requirement.',
+    verification_correction: 'Your verification correction is still incomplete.', worker_profile_incomplete: 'Your professional profile still has a blocking requirement.',
   },
   ar: {
     worker_confirmation: 'أكد الشغل المختار قبل ما مهلة الرد تخلص.', booking_approaching: 'ميعاد الحجز المؤكد قرب.',

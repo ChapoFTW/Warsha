@@ -103,7 +103,7 @@ const baseDiscoveryCopy = {
     availableNearby: 'Available near you',
     trustedWorkers: 'Proven professionals',
     trustedWorkersHint: 'Verified skill certificate and completed work on Warsha.',
-    savedWorkers: 'Workers you saved',
+    savedWorkers: 'Professionals you saved',
     continueLooking: 'Continue where you left off',
     viewAll: 'View all',
 

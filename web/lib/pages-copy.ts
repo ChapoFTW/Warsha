@@ -36,7 +36,7 @@ const en: Record<PageSlug, PageContent> = {
       { kind: 'heading', text: '1. You describe the job' },
       { kind: 'paragraph', text: 'You choose the trade, describe what needs doing, and say where. Photographs are optional and usually make quotes more accurate.' },
       { kind: 'heading', text: '2. Professionals quote' },
-      { kind: 'paragraph', text: 'Warsha shows the request to workers whose registered trade and work area match it. Each decides whether to quote, and sets their own price.' },
+      { kind: 'paragraph', text: 'Warsha shows the request to professionals whose registered trade and work area match it. Each decides whether to quote, and sets their own price.' },
       { kind: 'heading', text: '3. You accept a quote' },
       { kind: 'paragraph', text: 'Nothing is booked until you accept. The accepted price is recorded against the job, so there is a written record of what was agreed and by whom.' },
       { kind: 'heading', text: '4. The job runs to completion' },
@@ -48,25 +48,25 @@ const en: Record<PageSlug, PageContent> = {
   },
   services: {
     title: 'Find a professional',
-    lead: 'Warsha covers home repair and maintenance trades. You describe the job; workers who cover it quote.',
+    lead: 'Warsha covers home repair and maintenance trades. You describe the job; professionals who cover it quote.',
     description: 'Home repair and maintenance trades available through Warsha in Egypt.',
     blocks: [
-      { kind: 'note', text: 'Availability depends on verified professionals covering your area. Warsha does not publish worker counts or response times it cannot guarantee.' },
+      { kind: 'note', text: 'Availability depends on verified professionals covering your area. Warsha does not publish professional counts or response times it cannot guarantee.' },
     ],
   },
   categories: {
     title: 'Service categories',
-    lead: 'The trades a worker can register for, and the categories a request can be filed under.',
+    lead: 'The trades a professional can register for, and the categories a request can be filed under.',
     description: 'Warsha service categories for home repair and maintenance work in Egypt.',
     blocks: [
-      { kind: 'paragraph', text: 'A worker registers the trades they practise, and Warsha matches requests to those trades and to the areas they cover. A worker may register more than one trade, and each is verified on its own terms.' },
+      { kind: 'paragraph', text: 'A professional registers the trades they practise, and Warsha matches requests to those trades and to the areas they cover. A professional may register more than one trade, and each is verified on its own terms.' },
       { kind: 'heading', text: 'Where categories matter' },
       { kind: 'list', items: [
-        'They decide which workers see a request.',
-        'They decide which verification a worker must complete.',
+        'They decide which professionals see a request.',
+        'They decide which verification a professional must complete.',
         'They are recorded against the job, so history stays searchable.',
       ] },
-      { kind: 'note', text: 'Categories are governed centrally rather than typed freely, so that a request and a worker registration can be matched reliably.' },
+      { kind: 'note', text: 'Categories are governed centrally rather than typed freely, so that a request and a professional registration can be matched reliably.' },
     ],
   },
   'become-a-worker': {
@@ -89,7 +89,7 @@ const en: Record<PageSlug, PageContent> = {
         'It does not set your prices.',
         'It does not take a decision about your application without a stated reason.',
       ] },
-      { kind: 'note', text: 'Applying starts a verification process. It does not make you a worker on Warsha, and approval is not automatic.' },
+      { kind: 'note', text: 'Applying starts a verification process. It does not make you a professional on Warsha, and approval is not automatic.' },
     ],
   },
   'trust-and-safety': {
@@ -98,7 +98,7 @@ const en: Record<PageSlug, PageContent> = {
     description: 'How Warsha verifies professionals, records agreements, and handles disputes and appeals.',
     blocks: [
       { kind: 'heading', text: 'Professionals are verified before they work' },
-      { kind: 'paragraph', text: 'A worker completes identity verification and any documents their trade requires. A person reviews the evidence and records a decision with a reason.' },
+      { kind: 'paragraph', text: 'A professional completes identity verification and any documents their trade requires. A person reviews the evidence and records a decision with a reason.' },
       { kind: 'heading', text: 'Agreements are recorded, not remembered' },
       { kind: 'paragraph', text: 'The accepted price, the agreed job, and the exact version of every legal document a person accepted are all recorded. Acceptance records are append-only: they can be added to and never edited, so a past agreement cannot be quietly rewritten.' },
       { kind: 'heading', text: 'Disputes are decided by people' },
@@ -107,7 +107,7 @@ const en: Record<PageSlug, PageContent> = {
       { kind: 'list', items: [
         'It does not publish ratings or reviews it has not received.',
         'It does not guarantee response times.',
-        'It does not claim coverage in areas where no verified worker operates.',
+        'It does not claim coverage in areas where no verified professional operates.',
       ] },
     ],
   },
@@ -116,7 +116,7 @@ const en: Record<PageSlug, PageContent> = {
     lead: 'Warsha is a marketplace for home repair and maintenance work in Egypt.',
     description: 'About Warsha, a home services marketplace operating in Egypt.',
     blocks: [
-      { kind: 'paragraph', text: 'Warsha exists because arranging home repairs usually means asking around, taking a price on trust, and having no record of what was agreed. The result is that both sides carry risk they did not choose: the customer cannot tell who is competent, and the worker cannot prove they were.' },
+      { kind: 'paragraph', text: 'Warsha exists because arranging home repairs usually means asking around, taking a price on trust, and having no record of what was agreed. The result is that both sides carry risk they did not choose: the customer cannot tell who is competent, and the professional cannot prove they were.' },
       { kind: 'heading', text: 'What Warsha does about that' },
       { kind: 'list', items: [
         'Professionals are verified by a person before they take work.',
