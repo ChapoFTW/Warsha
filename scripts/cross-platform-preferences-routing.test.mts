@@ -78,21 +78,58 @@ check(/AppState\.addEventListener/.test(localization), 'automatic language follo
 check(/documentElement\.dir/.test(localization), 'web document direction updates immediately');
 
 const root = read('app/_layout.tsx');
-check(/<GlobalPreferenceControls \/>/.test(root), 'one root-owned preference dock covers every routed surface');
-const preferenceControls = read('components/warsha/GlobalPreferenceControls.tsx');
-check(!/layer:\s*\{\s*position:\s*'absolute'/.test(preferenceControls),
-  'the root preference dock reserves layout space instead of overlaying page headings');
-check(/paddingTop: Math\.max\(insets\.top/.test(preferenceControls),
-  'the root preference rail reserves the platform safe-area inset');
-check(/<GlobalPreferenceControls\/>/.test(read('components/warsha/ConfigurationError.tsx')), 'the pre-router configuration error keeps both global preferences available');
+
+/*
+ * Language and appearance are settings, not chrome.
+ *
+ * They used to be a dock rendered above every routed screen, and this file
+ * asserted exactly that. The product rule changed: two controls that a person
+ * touches roughly once in the life of an install were the most prominent
+ * interactive thing on Welcome, sign-in, create-account and onboarding,
+ * competing with the single action each of those screens exists to get done.
+ *
+ * The engine did not change and must not: `resolveLanguage` already prefers the
+ * platform locale until somebody chooses explicitly, and appearance already
+ * defaults to System, which is exactly the signed-out behaviour the product
+ * wants. What changed is where the choice lives.
+ */
+check(!/GlobalPreferenceControls/.test(root),
+  'NO PREFERENCE DOCK IS PAINTED OVER THE JOURNEY: the root layout renders none');
+check(!/GlobalPreferenceControls/.test(read('components/warsha/Header.tsx')),
+  'customer home does not carry a preference dock');
+check(!/GlobalPreferenceControls/.test(read('app/worker/index.tsx')),
+  'worker home does not carry a preference dock');
+
+// The one exception, and the reason it is one: this screen renders when the app
+// cannot configure itself, so Settings is unreachable from it. A person stuck
+// there in the wrong language has no other way to change it.
+check(/<GlobalPreferenceControls\/>/.test(read('components/warsha/ConfigurationError.tsx')),
+  'the pre-router configuration error keeps both preferences reachable, having no Settings to offer');
+
+// Settings owns both choices, in one place, with radio semantics.
+const settings = read('app/appearance.tsx');
+check(/supportedLanguages\.map/.test(settings), 'SETTINGS OWNS LANGUAGE');
+check(/appearancePreferences\.map/.test(settings), 'and appearance');
+check(/setLanguage\(option\)/.test(settings), 'choosing a language writes through the existing engine');
+check(/setPreference\(option\)/.test(settings), 'choosing an appearance writes through the existing engine');
+check(/languageMetadata\[option\]\.label/.test(settings),
+  'each language names itself in its own script, so it is recognisable to the person looking for it');
+check((settings.match(/accessibilityRole="radiogroup"/g) ?? []).length === 2,
+  'both choices are radio groups, so a screen reader announces "2 of 3, selected"');
+check(/settingsLanguageAppearance/.test(settings), 'the screen is titled for both things it does');
+
+// Reachable from both journeys, or it may as well not exist.
+check(/router\.push\('\/appearance'\)/.test(read('app/(tabs)/profile.tsx')),
+  'the customer reaches it from their profile');
+check(/router\.push\('\/appearance'\)/.test(read('app/worker/settings.tsx')),
+  'the worker reaches it from their settings');
+
 check(/direction: isRTL \? 'rtl' : 'ltr'/.test(root), 'root layout direction follows the active language');
-check(/GlobalPreferenceControls embedded/.test(read('components/warsha/Header.tsx')), 'customer home owns a non-overlapping shared preference slot');
 // The mobile admin shell is gone: operational administration is web-only.
 // What mattered here — that a surface owning its own preference slot does not
 // double-render the global one — still holds for the two shells that remain.
 check(!existsSync('components/warsha/AdminShell.tsx'),
   'THERE IS NO MOBILE ADMIN SHELL; ADMINISTRATION IS WEB-ONLY');
-check(/GlobalPreferenceControls embedded/.test(read('app/worker/index.tsx')), 'worker home owns a non-overlapping shared preference slot');
 
 const expo = JSON.parse(read('app.json')).expo;
 equal(expo.userInterfaceStyle, 'automatic', 'native appearance follows the platform by default');

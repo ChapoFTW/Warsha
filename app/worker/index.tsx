@@ -5,7 +5,6 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BrandButton, BrandCard, BrandLoadingState, StateBadge } from '@/components/warsha/BrandUI';
-import { GlobalPreferenceControls } from '@/components/warsha/GlobalPreferenceControls';
 import { AppText } from '@/components/warsha/Typography';
 import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
 import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
@@ -131,7 +130,6 @@ export default function WorkerDashboard() {
               compact
             />
           </View>
-          <GlobalPreferenceControls embedded />
           <HeaderAction icon="chat-bubble-outline" label={wt.text('messages')} onPress={() => router.push('/chat')} />
           <HeaderAction icon="notifications-none" label={wt.text('notifications')} onPress={() => router.push('/notifications')} />
         </View>

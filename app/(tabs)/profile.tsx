@@ -223,7 +223,7 @@ export default function Profile() {
     <Pressable onPress={() => router.push('/favourites')} style={styles.button}><AppText>{t('favourites')}</AppText></Pressable>
     <Pressable accessibilityRole="button" accessibilityLabel={dt.text('recentlyViewed')} onPress={() => router.push('/recently-viewed')} style={styles.button}><AppText>{dt.text('recentlyViewed')}</AppText></Pressable>
     <Pressable accessibilityRole="button" accessibilityLabel={gt.text('referralTitle')} onPress={() => router.push('/referrals')} style={styles.button}><AppText>{gt.text('referralTitle')}</AppText></Pressable>
-    <Pressable accessibilityRole="button" accessibilityLabel={dt.text('appearance')} onPress={() => router.push('/appearance')} style={styles.button}><AppText>{dt.text('appearance')}</AppText></Pressable>
+    <Pressable accessibilityRole="button" accessibilityLabel={dt.text('settingsLanguageAppearance')} onPress={() => router.push('/appearance')} style={styles.button}><AppText>{dt.text('settingsLanguageAppearance')}</AppText></Pressable>
     <Pressable accessibilityRole="button" accessibilityLabel={st.text('helpCenter')} onPress={() => router.push('/help')} style={styles.button}><AppText>{st.text('helpCenter')}</AppText></Pressable>
     <Pressable accessibilityRole="button" accessibilityLabel={st.text('myCases')} onPress={() => router.push('/support')} style={styles.button}><AppText>{st.text('myCases')}</AppText></Pressable>
     {/* Privacy sits in the ordinary settings list, above sign out. Burying it

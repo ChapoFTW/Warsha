@@ -14,7 +14,9 @@ const sortKeys: Record<DiscoverySort, DiscoveryTextKey> = {
 /** WPS-020 copy hook. The tables themselves live in `discovery-copy.ts`. */
 export function useDiscoveryText() {
   const { language, isRTL } = useLocalization();
-  const locale = language === 'ar' ? 'ar' : 'en';
+  // French is a real table now (English underneath it), so it is selected
+  // rather than collapsed into English. Anything else still falls back.
+  const locale = language in discoveryCopy ? language : 'en';
   return {
     locale,
     isRTL,

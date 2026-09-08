@@ -12,7 +12,7 @@ import {
 } from '@expo-google-fonts/inter';
 import { useFonts } from 'expo-font';
 import { ThemeProvider } from '@react-navigation/native';
-import { Stack, usePathname } from 'expo-router';
+import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import * as SystemUI from 'expo-system-ui';
@@ -22,7 +22,6 @@ import 'react-native-reanimated';
 
 import { AuthGate } from '@/components/warsha/AuthGate';
 import { ConfigurationError } from '@/components/warsha/ConfigurationError';
-import { GlobalPreferenceControls } from '@/components/warsha/GlobalPreferenceControls';
 import { LocalDataMigrationGate } from '@/components/warsha/LocalDataMigrationGate';
 import { NotificationBanner } from '@/components/warsha/NotificationBanner';
 import { PushNotificationSync } from '@/components/warsha/PushNotificationSync';
@@ -67,8 +66,6 @@ void SplashScreen.preventAutoHideAsync();
 function ThemedRoot() {
   const { colors, scheme } = useAppearance();
   const { isRTL } = useLocalization();
-  const pathname = usePathname();
-  const shellOwnsPreferences = pathname === '/' || pathname === '/worker';
 
   const navigationTheme = useMemo(() => ({
     dark: scheme === 'dark',
@@ -120,7 +117,13 @@ function ThemedRoot() {
             for a frame before the router corrects itself. */}
         <AuthGate>
         <View style={{ flex: 1 }}>
-        {!shellOwnsPreferences ? <GlobalPreferenceControls /> : null}
+        {/* Language and appearance are not chrome.
+            They used to be a dock pinned above every routed screen, so the two
+            most rarely-changed settings in the product were the most prominent
+            controls on Welcome, sign-in, create-account and onboarding — three
+            taps competing with the one thing each of those screens exists to
+            get done. They live in Settings now; signed out, Warsha follows the
+            device. See app/appearance.tsx. */}
         <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.canvas } }}>
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="welcome" />

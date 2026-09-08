@@ -1,13 +1,26 @@
 /**
- * WPS-020 vocabulary, English and Egyptian Arabic.
+ * WPS-020 vocabulary, English and Egyptian Arabic, with a French layer.
  *
  * Import-free so the regression suite can assert key parity and Arabic script
  * coverage without a bundler. Arabic is spoken register, matching the rest of
  * Warsha: someone hunting for a plumber is not helped by formal prose.
+ *
+ * French is a layer over English rather than a third full table, the same shape
+ * `web/lib/copy.ts` and `lib/app-copy.fr.ts` already use. The hook used to map
+ * French to English wholesale, which was mostly invisible — until Language and
+ * appearance moved into Settings, at which point a French speaker opened the
+ * screen for choosing their language and found it written in English. Keys
+ * translated here are French; the rest fall back to English exactly as before,
+ * so this adds coverage without pretending the whole table is translated.
  */
-export const discoveryCopy = {
+const baseDiscoveryCopy = {
   en: {
     // Appearance
+    settingsLanguageAppearance: 'Language & appearance',
+    language: 'Language',
+    languageHint: 'Choose the language Warsha uses.',
+    languageDeviceHint: 'Warsha follows your phone’s language until you choose one here.',
+    languageChosenHint: 'Saved. Warsha stays in this language.',
     appearance: 'Appearance',
     appearanceHint: 'Choose Warsha’s appearance, or match your device setting.',
     appearanceSystem: 'System',
@@ -125,6 +138,11 @@ export const discoveryCopy = {
     startingFrom: 'From',
   },
   ar: {
+    settingsLanguageAppearance: 'اللغة والشكل',
+    language: 'اللغة',
+    languageHint: 'اختار اللغة اللي ورشة تشتغل بيها.',
+    languageDeviceHint: 'ورشة بتمشي مع لغة موبايلك لحد ما تختار لغة من هنا.',
+    languageChosenHint: 'اتحفظت. ورشة هتفضل باللغة دي.',
     appearance: 'شكل التطبيق',
     appearanceHint: 'اختار شكل ورشة، أو خليه يتغير حسب إعدادات جهازك.',
     appearanceSystem: 'حسب الجهاز',
@@ -231,6 +249,32 @@ export const discoveryCopy = {
     jobsLabel: 'شغلانة مكتملة',
     kilometresAway: 'كم',
     startingFrom: 'من',
+  },
+} as const;
+
+export const discoveryCopy = {
+  ...baseDiscoveryCopy,
+  fr: {
+    ...baseDiscoveryCopy.en,
+    settingsLanguageAppearance: 'Langue et apparence',
+    language: 'Langue',
+    languageHint: 'Choisissez la langue utilisée par Warsha.',
+    languageDeviceHint: 'Warsha suit la langue de votre téléphone tant que vous n’en choisissez pas une ici.',
+    languageChosenHint: 'Enregistré. Warsha reste dans cette langue.',
+    appearance: 'Apparence',
+    appearanceHint: 'Choisissez l’apparence de Warsha, ou suivez le réglage de votre appareil.',
+    appearanceSystem: 'Système',
+    appearanceLight: 'Clair',
+    appearanceDark: 'Sombre',
+    appearanceSystemHint: 'Suit votre appareil. Changer le réglage du téléphone change Warsha aussitôt.',
+    appearanceLightHint: 'Toujours clair, quel que soit le réglage de l’appareil.',
+    appearanceDarkHint: 'Toujours sombre, quel que soit le réglage de l’appareil.',
+    appearanceSelected: 'Sélectionné',
+    appearanceSaved: 'Enregistré sur cet appareil',
+    appearanceSyncedHint: 'Connecté, votre choix suit votre compte sur vos autres appareils.',
+    appearanceGuestHint: 'Enregistré sur cet appareil. Connectez-vous pour le retrouver ailleurs.',
+    appearanceCurrentlyLight: 'Apparence claire actuellement affichée.',
+    appearanceCurrentlyDark: 'Apparence sombre actuellement affichée.',
   },
 } as const;
 
