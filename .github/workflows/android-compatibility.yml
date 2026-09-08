@@ -167,6 +167,31 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
+      # Resolve the APK here, not inside the emulator step.
+      #
+      # `android-emulator-runner` runs each line of `script:` as its own
+      # `sh -c`, so an `export` on one line is gone by the next one. The first
+      # version of this job exported WARSHA_APK and WARSHA_TEMP as two lines and
+      # then ran node as a third, which reached node with neither set — the flow
+      # fell through to "is it already installed?", answered no, and failed. The
+      # log said `FAIL com.warsha.app is installed on this device` directly under
+      # `Emulator booted.`, which is how a perfectly healthy emulator spent three
+      # runs looking like a boot problem.
+      #
+      # `$GITHUB_ENV` survives into later steps and does not depend on the
+      # action's shell semantics at all.
+      - name: Locate the APK
+        run: |
+          set -euo pipefail
+          APK="$(find apk -name '*.apk' | head -1)"
+          if [ -z "$APK" ]; then
+            echo "No APK in the downloaded artifact:"; find apk -type f | head
+            exit 1
+          fi
+          echo "Testing $APK"
+          echo "WARSHA_APK=$PWD/$APK" >> "$GITHUB_ENV"
+          echo "WARSHA_TEMP=$RUNNER_TEMP/warsha-qa" >> "$GITHUB_ENV"
+
       - name: Launch Warsha on API ${{ matrix.api }}
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -189,10 +214,9 @@ jobs:
           emulator-options: >-
             -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
             -no-snapshot
-          script: |
-            export WARSHA_APK="$(find apk -name '*.apk' | head -1)"
-            export WARSHA_TEMP="${RUNNER_TEMP}/warsha-qa"
-            node scripts/android-e2e/flows/launch-compat.mjs
+          # One line, one shell, and everything it needs already in the
+          # environment from the step above.
+          script: node scripts/android-e2e/flows/launch-compat.mjs
 
       - uses: actions/upload-artifact@v4
         if: always()
