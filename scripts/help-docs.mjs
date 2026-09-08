@@ -237,9 +237,29 @@ const retirementOnlyMigration = (path) => {
 const testOnly = (path) => /\.test\.(mts|ts|tsx)$/.test(path)
   || path.startsWith('supabase/tests/');
 
+/**
+ * A release gate inspects behaviour; it does not implement any.
+ *
+ * The same argument as `testOnly`, for the same reason, one directory over.
+ * `scripts/` holds gates, audits and QA harnesses, and each is named after what
+ * it examines — a Test Lab token helper is `testlab/auth.mjs`, an artifact
+ * scanner reads the word `password` out of a manifest. Under the rules as
+ * written, adding a device-farm harness demanded a review of the customer
+ * account-security article, which describes none of it. That is the filler this
+ * file's own comments warn against three separate times.
+ *
+ * Safe for the same structural reason: nothing under `app/`, `src/`,
+ * `components/`, `web/` or `supabase/` imports from `scripts/`, so no script
+ * can put behaviour in front of a reader. A generator that shapes product
+ * content still trips the rule, because its committed output lives in one of
+ * those trees and changes alongside it.
+ */
+const toolingOnly = (path) => path.startsWith('scripts/');
+
 const behavioural = (path) => !path.startsWith('docs/help/')
   && !/\.s?css$/i.test(path)
   && !testOnly(path)
+  && !toolingOnly(path)
   && !retirementOnlyMigration(path)
   && !(deleted.has(path) && !removalIsBehaviour(path));
 const impacted = impactRules.filter(rule => changed.some(path =>
