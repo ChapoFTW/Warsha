@@ -82,16 +82,35 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
+      # The generated `gradle.properties` asks for 2GB of heap, turns parallel
+      # execution on, and builds all four ABIs. Together those exhausted the
+      # runner: the first run of this workflow spent seventeen minutes and then
+      # died, and reproducing it locally produced a JVM crash log that said
+      # "insufficient memory ... Native memory allocation (malloc) failed".
+      - name: Give Gradle enough memory to finish
+        run: |
+          {
+            echo ""
+            echo "# Set by .github/workflows/android-compatibility.yml"
+            echo "org.gradle.jvmargs=-Xmx5g -XX:MaxMetaspaceSize=1g"
+            echo "org.gradle.parallel=false"
+          } >> android/gradle.properties
+
       # Release, not debug: a debug APK expects a Metro server to hand it the
       # JS bundle, so it would launch to a red screen on an emulator with no
       # host. Release bundles the JS into the APK, which is what has to be
-      # tested — Hermes evaluating a real bundle is the step most likely to
+      # tested - Hermes evaluating a real bundle is the step most likely to
       # break on an old API. The Expo template signs release with the debug key
       # when no upload key is configured, so this needs no secret and produces
       # nothing shippable.
+      #
+      # x86_64 only. Every device in the matrix below is an x86_64 emulator, so
+      # the arm builds would be compiled, linked and packaged purely to be
+      # thrown away - the majority of both the time and the peak memory of this
+      # job. `gradle.properties` documents this exact flag for this exact use.
       - name: Assemble a release APK
         working-directory: android
-        run: ./gradlew assembleRelease --no-daemon
+        run: ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=x86_64
 
       - name: Report what was built
         run: |
