@@ -23,11 +23,33 @@
  *   { index: 1 }                   which match, when several
  */
 import { execFileSync } from 'node:child_process';
-import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, mkdirSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-const ADB = process.env.WARSHA_ADB ?? 'D:\\Dev\\Android\\Sdk\\platform-tools\\adb.exe';
-const TEMP = process.env.WARSHA_TEMP ?? 'D:\\Warsha-Temp';
+/**
+ * Where adb is.
+ *
+ * This machine keeps the SDK outside PATH, so that path stays the first guess
+ * and nothing about a local run changes. But the compatibility matrix runs this
+ * same driver on a Linux CI runner, where the Windows path cannot exist and adb
+ * is on PATH -- so an absent file falls back to the PATH name rather than
+ * failing with an ENOENT that reads like a broken device.
+ *
+ * WARSHA_ADB overrides both, and is what a runner should set when it knows.
+ */
+const WINDOWS_ADB = 'D:\\Dev\\Android\\Sdk\\platform-tools\\adb.exe';
+const ADB = process.env.WARSHA_ADB
+  ?? (existsSync(WINDOWS_ADB) ? WINDOWS_ADB : 'adb');
+
+/**
+ * Where artifacts land. Same reasoning: keep the local scratch directory when
+ * it is there, and fall back to the OS temp directory when it is not, so a
+ * checkout on a runner does not have to invent a D: drive.
+ */
+const WINDOWS_TEMP = 'D:\\Warsha-Temp';
+const TEMP = process.env.WARSHA_TEMP
+  ?? (existsSync(WINDOWS_TEMP) ? WINDOWS_TEMP : join(tmpdir(), 'warsha-qa'));
 const ARTIFACTS = join(TEMP, 'android-e2e');
 mkdirSync(ARTIFACTS, { recursive: true });
 

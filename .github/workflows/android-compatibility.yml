@@ -1,0 +1,172 @@
+name: Android compatibility
+
+# Warsha's Android floor is API 24, and until this workflow existed nothing
+# proved it. The floor is not a preference: it is written into every APK
+# Warsha ships, it decides which devices Play will offer the app to, and it is
+# the kind of claim that is discovered to be false by a user on a cheap phone
+# rather than by a test.
+#
+# Firebase Test Lab cannot prove it. `scripts/testlab/api-floor.mjs` reads the
+# real catalogue and finds no schedulable model below API 26 — the floor is
+# simply not purchasable there. Emulators are the only honest way to check, so
+# they are what this runs.
+#
+# Nothing here deploys anything and no job has access to a production
+# credential. The APK it builds is signed with the debug key on the runner: it
+# runs on an emulator and is not installable as a release. Real releases are
+# built by EAS from `docs/operations/release-management-runbook.md`, and a push
+# to `main` still publishes nothing (`web/vercel.json`).
+
+on:
+  # The gate that matters: main must stay compatible with its own floor.
+  push:
+    branches: [main]
+  # On pull requests, only when something that could move the floor changes.
+  # A 45-minute emulator matrix on every documentation PR is a matrix somebody
+  # switches off, and a gate that is off is worse than a gate that is narrow.
+  pull_request:
+    branches: [main]
+    paths:
+      - 'app.json'
+      - 'app.config.js'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'eas.json'
+      - 'scripts/android-e2e/**'
+      - '.github/workflows/android-compatibility.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: android-compatibility-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # Same posture as validate.yml: mock data, and obvious non-credential stubs
+  # for the Maps render keys, which app.config.js requires whenever a native
+  # artifact is produced. An emulator APK is not deployable, so it must never
+  # be granted a real key.
+  EXPO_PUBLIC_DATA_MODE: mock
+  EXPO_PUBLIC_ADMIN_SURFACE: enabled
+  GOOGLE_MAPS_ANDROID_RENDER_KEY: ci-noncredential-android-render-key
+  GOOGLE_MAPS_IOS_RENDER_KEY: ci-noncredential-ios-render-key
+
+jobs:
+  apk:
+    name: Build a floor-testable APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # `android/` is gitignored — Warsha uses continuous native generation, so
+      # the native project is an output, not a source. It has to be generated
+      # before Gradle has anything to build.
+      - name: Generate the native Android project
+        run: npx expo prebuild --platform android --no-install
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      # Release, not debug: a debug APK expects a Metro server to hand it the
+      # JS bundle, so it would launch to a red screen on an emulator with no
+      # host. Release bundles the JS into the APK, which is what has to be
+      # tested — Hermes evaluating a real bundle is the step most likely to
+      # break on an old API. The Expo template signs release with the debug key
+      # when no upload key is configured, so this needs no secret and produces
+      # nothing shippable.
+      - name: Assemble a release APK
+        working-directory: android
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Report what was built
+        run: |
+          APK="$(find android/app/build/outputs/apk/release -name '*.apk' | head -1)"
+          echo "apk: $APK"
+          ls -la "$APK"
+          "$ANDROID_HOME"/build-tools/$(ls "$ANDROID_HOME"/build-tools | sort -V | tail -1)/aapt2 \
+            dump badging "$APK" | grep -E 'sdkVersion|targetSdkVersion|package:' || true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: warsha-compat-apk
+          path: android/app/build/outputs/apk/release/*.apk
+          retention-days: 7
+          if-no-files-found: error
+
+  floor:
+    name: API ${{ matrix.api }}
+    needs: apk
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      # Both levels are reported even when one fails. "24 is broken" and "24
+      # and 25 are both broken" are different findings and point at different
+      # causes, and fail-fast would hide the second.
+      fail-fast: false
+      matrix:
+        api: [24, 25]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+
+      # No `npm ci` on purpose: the driver and the flow use only Node builtins,
+      # so this job installs nothing and cannot be broken by a dependency.
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: warsha-compat-apk
+          path: apk
+
+      # x86_64 emulators need KVM, and the runner does not grant it by default.
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Launch Warsha on API ${{ matrix.api }}
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api }}
+          # `default` rather than `google_apis`: Warsha's launch path must not
+          # need Play Services present, and the floor devices least likely to
+          # have current Play Services are exactly the ones this job is for.
+          target: default
+          arch: x86_64
+          profile: Nexus 6
+          ram-size: 2048M
+          disable-animations: true
+          emulator-options: >-
+            -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+            -camera-back none -camera-front none
+          script: |
+            export WARSHA_APK="$(find apk -name '*.apk' | head -1)"
+            export WARSHA_TEMP="${RUNNER_TEMP}/warsha-qa"
+            node scripts/android-e2e/flows/launch-compat.mjs
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: compat-evidence-api${{ matrix.api }}
+          path: ${{ runner.temp }}/warsha-qa/android-e2e/**
+          retention-days: 7
+          if-no-files-found: ignore
