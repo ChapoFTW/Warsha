@@ -302,8 +302,10 @@ writes both, because the property is what a genuinely fresh boot reads.
 - **Stage:** worker account creation, the first screen after choosing Worker
 - **User goal:** create an account and get on with applying
 - **Severity:** P1
-- **Evidence:** rendered (mock mode) — `wk-03-after-role-worker.png`, API 24.
-  The accessibility tree measures **114 words and 3 tappable things**.
+- **Evidence:** rendered (mock mode) — `wk-03-after-role-worker.png`,
+  `wk-04-signup-scrolled.png`, `wk-05-signup-bottom.png`, API 24. The first
+  screenful measures **114 words and 3 tappable things**; the whole form runs to
+  roughly three screenfuls.
 - **Status:** OPEN
 
 This is the first thing Warsha asks a technician to do, and it is the densest
@@ -322,10 +324,17 @@ them:
    identity a worker signs in with; the password is chosen *for* it. Asking for
    the password first inverts that, and puts the hardest field first.
 
-3. **There is no visible forward action.** The screen ends with prose and the
-   navigation bar. The harness, pressing whatever a screen offers as its forward
-   action, found none — which is the automated form of a worker asking "what do
-   I do now?" and getting no answer above the fold.
+3. **The forward action is two screens down.** *Create account* exists, and is
+   reachable — but only after scrolling past the whole form, including a legal
+   block of two consent checkboxes, four document links and three explanatory
+   sentences. Nothing on the first screenful says an action is waiting below.
+   The harness, pressing whatever a screen offers, found none without scrolling,
+   which is the automated form of a worker asking "what do I do now?" and having
+   to go looking for the answer.
+
+   Corrected after checking: an earlier draft of this finding said there was no
+   forward action at all. There is one; it is buried, which is a smaller claim
+   and the true one.
 
 4. **The role's description is repeated at the bottom.** "Offer your services.
    Needs identity checks before you can start." was already read on the role
