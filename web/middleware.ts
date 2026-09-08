@@ -1,6 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
-import { isLocale, localeFromAcceptLanguage, pathWithoutLocale } from './lib/preferences.ts';
+import {
+  isLocale, LOCALE_HEADER, localeFromAcceptLanguage, pathWithoutLocale,
+} from './lib/preferences.ts';
 // Shared with `robots.ts` and `sitemap.ts`, which must name the same domain.
 import { CANONICAL_HOST } from './lib/site.ts';
 
@@ -175,7 +177,21 @@ export function middleware(request: NextRequest) {
     // The matcher lets these through so the host redirect above can see them,
     // so the guard has to be here rather than in the matcher — without it
     // `/en` would be rewritten to `/en/en`, forever.
-    return NextResponse.next();
+    /*
+     * The language is in the address, and it is passed on as a request header
+     * because one renderer cannot read the address: `not-found.tsx`.
+     *
+     * Next gives a not-found boundary no route params, and on that path it
+     * also supplies its own `<html>` rather than the one
+     * `[locale]/layout.tsx` renders - so a 404 could learn its language from
+     * neither the route nor the layout, and answered every visitor in English,
+     * left to right. The cookie is not a substitute: it exists only after
+     * somebody has used the language control, and the reader who most needs an
+     * Arabic 404 is the one following a stale link for the first time.
+     */
+    const forwarded = new Headers(request.headers);
+    forwarded.set(LOCALE_HEADER, addressed[1]);
+    return NextResponse.next({ request: { headers: forwarded } });
   }
 
   const locale = chosen ?? localeFromAcceptLanguage(request.headers.get('accept-language'));

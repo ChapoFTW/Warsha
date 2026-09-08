@@ -167,6 +167,13 @@ const baseCopy = {
     createFootNote:
       'Applying as a professional starts a verification process. It does not make you a '
       + 'worker on Warsha, and approval is not automatic. Already have an account?',
+
+    notFoundTitle: 'That page does not exist',
+    notFoundBody:
+      'The address may have changed, or the link that brought you here may be out of '
+      + 'date. Everything else on Warsha is still where it was.',
+    notFoundHome: 'Go to the homepage',
+    notFoundServices: 'Browse services',
   },
 
   ar: {
@@ -309,6 +316,13 @@ const baseCopy = {
     createFootNote:
       'التقديم كصنايعي بيبدأ عملية توثيق. ده ما بيخليكش صنايعي في ورشة، والقبول مش '
       + 'تلقائي. عندك حساب بالفعل؟',
+
+    notFoundTitle: 'الصفحة دي مش موجودة',
+    notFoundBody:
+      'يمكن العنوان اتغيّر، أو اللينك اللي جابك هنا بقى قديم. كل حاجة تانية في ورشة '
+      + 'لسه في مكانها.',
+    notFoundHome: 'روح للصفحة الرئيسية',
+    notFoundServices: 'اتفرج على الخدمات',
   },
 } as const;
 
@@ -328,6 +342,7 @@ export const copy = {
     legalCentreTitle: 'Centre juridique', legalCentreLead: 'Tous les accords et politiques sont consultables en entier, sans connexion.', legalMandatoryHeading: 'Accords à accepter', legalMandatoryNote: 'Warsha enregistre la version exacte et l’empreinte du texte affiché lors de votre acceptation. Les preuves d’acceptation sont immuables.', legalReferenceHeading: 'Politiques et registres', legalReferenceNote: 'Ces documents expliquent le fonctionnement de Warsha. Ils ne nécessitent pas votre acceptation.', legalAudienceEveryone: 'tout le monde', legalEffective: 'en vigueur', legalAcceptanceRequired: 'acceptation requise', fingerprintHeading: 'Empreinte du document', fingerprintNote: 'Warsha enregistre la version exacte et l’empreinte du texte affiché lors de l’acceptation. Empreintes de la version',
     signInTitle: 'Se connecter à Warsha', signInEyebrow: 'Heureux de vous revoir', signInLead: 'Utilisez le même compte sur le Web et dans l’application.', signInIdentity: 'Adresse e-mail ou numéro de téléphone', signInIdentityHint: 'Utilisez l’adresse e-mail ou le numéro de téléphone enregistré. Warsha détermine le type de compte.', signInOneAccount: 'Une connexion pour tous', signInOneAccountBody: 'Que vous demandiez un service, réalisiez le travail ou les deux, la connexion reste la même. Warsha détermine ensuite les possibilités de votre compte.', signInCustomer: "J'ai besoin d'un service", signInCustomerBody: 'Connectez-vous avec votre adresse e-mail et votre mot de passe.', signInWorker: 'Je réalise les travaux', signInWorkerBody: 'Connectez-vous avec votre numéro de téléphone et votre mot de passe. Aucun e-mail n’est utilisé.', signInCustomerPending: 'Connexion client — bientôt disponible sur le Web', signInWorkerPending: 'Connexion professionnel — bientôt disponible sur le Web', signInFootNote: "Vous n'avez pas encore de compte ?", signInFootLink: 'Créez-en un', signInFootTail: 'Les comptes créés dans l’application fonctionnent sur le Web, et inversement.',
     createTitle: 'Comment souhaitez-vous utiliser Warsha ?', createEyebrow: 'Créer un compte', createLead: 'Choisissez ce qui vous correspond. Vous pouvez lire chaque accord requis avant de l’accepter.', createCustomerBody: 'Décrivez un travail, recevez des devis et acceptez le prix avant le début. Vous vous inscrivez avec une adresse e-mail que vous devez confirmer.', createWorkerBody: 'Enregistrez vos métiers, terminez la vérification et répondez aux demandes qui vous intéressent. Vous vous inscrivez avec un numéro de téléphone et un mot de passe, sans e-mail.', createRequiredHeading: 'Vous devrez accepter', createCustomerPending: 'Inscription client — bientôt disponible sur le Web', createWorkerPending: 'Candidature professionnel — bientôt disponible sur le Web', createFootNote: 'La candidature comme professionnel déclenche une vérification. Elle ne vaut pas approbation automatique. Vous avez déjà un compte ?',
+    notFoundTitle: "Cette page n'existe pas", notFoundBody: 'L’adresse a peut-être changé, ou le lien qui vous a amené ici n’est plus à jour. Tout le reste de Warsha est toujours à sa place.', notFoundHome: "Aller à la page d'accueil", notFoundServices: 'Voir les services',
   },
 } as const;
 

@@ -78,6 +78,16 @@ export type Locale = SupportedLocale;
  * second copy of "which locales exist" and "which way does Arabic run" is
  * exactly the kind of duplication that lets one surface disagree with another.
  */
+/**
+ * The request header the middleware uses to tell a renderer which language
+ * the address asked for.
+ *
+ * Route params carry this everywhere except one place: a not-found boundary,
+ * which Next renders without them. The header is set once, in the middleware,
+ * so the 404 page has a source of truth rather than a guess.
+ */
+export const LOCALE_HEADER = 'x-warsha-locale';
+
 export function isLocale(value: unknown): value is Locale {
   return isSupportedLocale(value);
 }
