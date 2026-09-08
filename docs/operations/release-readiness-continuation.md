@@ -7,11 +7,24 @@ This is the continuation note for whoever picks the audit up. It is not a
 summary of what went well; it is the list of what has not been done, and the
 things a next pass needs to know before it starts.
 
+> **Superseded on 2026-09-08 — the release model changed.** The first bullet
+> below said pushing was publishing. That was true when this note was written
+> and is not true now: commit `10345e5` set `git.deploymentEnabled: false` in
+> `web/vercel.json`, so a push creates no Vercel deployment of any kind. The
+> backlog in this note is still accurate; the reason for not pushing is not.
+> Corrected in place below rather than deleted, because a stale governance
+> claim is the kind of thing a reader acts on.
+
 ## Read this first
 
-- **`origin/main` auto-deploys the public web to usewarsha.com.** The fourteen
-  commits are deliberately unpushed. Pushing is a production deployment, and
-  the audit that was supposed to precede it is not finished.
+- **Pushing `main` does not publish anything.** It did when this note was
+  written — `origin/main` auto-deployed the public web to usewarsha.com, so the
+  fourteen commits were deliberately withheld. `web/vercel.json` now disables
+  Git deployment entirely; `main` is source authority, and Production is an
+  explicit staged deployment and promotion. Withholding finished work from
+  `origin/main` is no longer a release control and no longer buys anything —
+  see `docs/operations/release-management-runbook.md`. The audit backlog below
+  gates the **deployment**, not the push.
 - **Hosted Development is ahead of `origin/main`.** Migrations `202608300001`
   and `202608300002` were applied there on 2026-08-30; the ledger reports 81/81.
   Migrations `202608300003` through `202608300006` are applied **locally only**
@@ -21,14 +34,17 @@ things a next pass needs to know before it starts.
 ## What this machine cannot do
 
 These are environment limits, not product findings. Do not spend time
-re-discovering them.
+re-discovering them — but do not trust a struck-through row either: the
+machine changed, and a limit that has lifted is worth more than a limit that
+held.
 
 | Blocked | Evidence |
 | --- | --- |
 | Firefox and WebKit | `playwright install` downloads, then fails `EPERM` writing `firefox.exe`. Chromium works. |
 | Any Edge Function | The Deno runtime and `supabase functions deploy` both fail fetching `https://jsr.io/@supabase/supabase-js/meta.json` with `invalid peer certificate: UnknownIssuer`. TLS is intercepted here. This affects functions already in production, not just new ones. |
 | Authenticated hosted testing | Hosted Development requires email confirmation and no mailbox or service key is available locally. |
-| Android/iOS on device | No device attached; `adb` is not on PATH. |
+| iOS on device | No Mac, no device. Unchanged. |
+| ~~Android on device~~ | **No longer true (2026-09-08).** An emulator is attached and Warsha is installed. `adb` is not on `PATH`, but it is at `D:\Dev\Android\Sdk\platform-tools\adb.exe`, which `scripts/android-e2e/driver.mjs` uses by default and `WARSHA_ADB` overrides. Android UI work is executable here. |
 
 ## Phases still not executed
 
