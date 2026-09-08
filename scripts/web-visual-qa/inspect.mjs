@@ -36,6 +36,17 @@ export function watchRuntime(page) {
   page.on('response', (response) => {
     const status = response.status();
     if (status < 400) return;
+    /*
+     * The page's own response is not a subresource failure.
+     *
+     * `run.mjs` already compares the navigation status against the status the
+     * route declares it expects, so counting it again here reported every
+     * deliberate 404 twice - once correctly as "as expected", once as a defect.
+     * The not-found route alone produced 38 of those, which is exactly the kind
+     * of noise that trains a reader to skim the findings list.
+     */
+    const request = response.request();
+    if (request.isNavigationRequest() && request.frame() === page.mainFrame()) return;
     badResponses.push(`${status} ${response.url().slice(0, 120)}`);
   });
 
@@ -144,6 +155,30 @@ export async function findPrimaryActions(page) {
            * sideways, so a control past the right edge cannot be reached at all.
            */
           horizontallyInside: box.left >= -1 && box.right <= viewportWidth + 1,
+          /*
+           * Does it come back on screen when focused?
+           *
+           * A skip link is SUPPOSED to sit off-screen. The accessible pattern
+           * parks it at a large negative offset and brings it into view on
+           * focus, so measuring it at rest says "unreachable" about the one
+           * control that exists to make the page more reachable. That single
+           * false positive accounted for 300 of the gate's 413 findings.
+           *
+           * Focusing it and measuring again separates the two cases without
+           * guessing from the magnitude of the offset: the deliberate pattern
+           * moves into the viewport, a genuinely clipped control does not.
+           */
+          reachableWhenFocused: (() => {
+            if (box.left >= -1 && box.right <= viewportWidth + 1) return true;
+            if (typeof el.focus !== 'function') return false;
+            const previous = document.activeElement;
+            el.focus({ preventScroll: true });
+            const focused = el.getBoundingClientRect();
+            const inside = focused.left >= -1 && focused.right <= viewportWidth + 1;
+            if (previous instanceof HTMLElement) previous.focus({ preventScroll: true });
+            else el.blur();
+            return inside;
+          })(),
           belowFold: box.top >= viewportHeight,
           // 44px is the widely used minimum touch target.
           touchTargetOk: box.height >= 40 || box.width === 0,

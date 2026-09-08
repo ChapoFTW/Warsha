@@ -159,7 +159,11 @@ for (const testCase of CASES) {
             record('BLOCKING', where, 'non-Arabic page rendered right-to-left', `dir=${layout.dir}`);
           }
         }
-        const offscreen = actions.filter((a) => !a.horizontallyInside && !a.disabled);
+        // `reachableWhenFocused` clears the skip-link pattern: a control parked
+        // off-screen that moves into view on focus is reachable, and reporting
+        // it was the single loudest false positive this gate produced.
+        const offscreen = actions.filter(
+          (a) => !a.horizontallyInside && !a.reachableWhenFocused && !a.disabled);
         if (offscreen.length) {
           record('SUSPICIOUS', where, `${offscreen.length} control(s) unreachable past the right edge`,
             offscreen.slice(0, 3).map((a) => a.label).join(' | '));
