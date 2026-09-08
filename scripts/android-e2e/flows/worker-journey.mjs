@@ -106,10 +106,10 @@ await sleep(3000);
 record('role-choice');
 
 const chose = await tapAny([
-  // The role card's accessible name is "Worker. Offer your services…", so
-  // anchoring on the period distinguishes the card from any prose mentioning
-  // workers.
-  { descContains: 'Worker. ' },
+  // The role card's accessible name is "Professional. Offer your services…",
+  // so anchoring on the period distinguishes the card from prose that merely
+  // mentions professionals — the gateway's trust line does exactly that.
+  { descContains: 'Professional. ' },
   { descContains: 'صنايعي. ' },
 ]);
 console.log(chose ? `\n-> chose worker via ${JSON.stringify(chose)}` : '\n-> could not find the worker role');

@@ -327,7 +327,9 @@ export default function CreateAccount() {
             autoCapitalize="none"
             autoCorrect={false}
             textContentType="telephoneNumber"
-            helper={at('phoneContactHint')}
+            // The screen knows which role is registering, so the helper
+            // addresses that person rather than naming both roles at once.
+            helper={at(role === 'worker' ? 'phoneContactHintProfessional' : 'phoneContactHintCustomer')}
           />
           <BrandTextField
             label={t('password')}

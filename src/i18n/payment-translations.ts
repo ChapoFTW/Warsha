@@ -163,7 +163,7 @@ const paymentTranslations = {
     simulateHold: 'وقّف الأرباح مؤقتًا',
     simulateReleaseHold: 'رجّع الأرباح المتاحة',
     hostedCheckoutNotice: 'ورشة مش بتطلب أو بتحفظ بيانات الكارت.',
-    cashNotice: 'الدفع الكاش بيتم بينك وبين الفني مباشرة، وورشة ما بتحصّلش المبلغ.',
+    cashNotice: 'الدفع الكاش بيتم بينك وبين الصنايعي مباشرة، وورشة ما بتحصّلش المبلغ.',
     confirmCompletion: 'أكد إن الشغل تم بنجاح',
     completionConfirmed: 'تم تأكيد إتمام الشغل وإتاحة الأرباح المستحقة.',
     reportCashCollected: 'استلمت المبلغ كاش',

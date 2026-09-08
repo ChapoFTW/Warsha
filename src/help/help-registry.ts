@@ -21,7 +21,7 @@ const publicArticles = publicSource.articles as ManualArticle[];
 
 export const helpUi = {
   en: { manual: 'How to use Warsha', manualIntro: 'Practical guides based on the current Warsha product.', customerGuide: 'Customer guide', workerGuide: 'Professional guide', search: 'Search the manual', searchPlaceholder: 'Try “reset password”, “address”, or “quote”', noResults: 'No manual topics match that search.', reviewed: 'Reviewed', back: 'Back to Help', related: 'Related topics' },
-  ar: { manual: 'استخدام ورشة', manualIntro: 'دليل عملي مبني على طريقة عمل ورشة الحالية.', customerGuide: 'دليل العميل', workerGuide: 'دليل الفني', search: 'دور في الدليل', searchPlaceholder: 'جرّب «كلمة السر» أو «العنوان» أو «عرض السعر»', noResults: 'مالقيناش موضوع مطابق للبحث.', reviewed: 'آخر مراجعة', back: 'الرجوع للمساعدة', related: 'مواضيع مرتبطة' },
+  ar: { manual: 'استخدام ورشة', manualIntro: 'دليل عملي مبني على طريقة عمل ورشة الحالية.', customerGuide: 'دليل العميل', workerGuide: 'دليل الصنايعي', search: 'دور في الدليل', searchPlaceholder: 'جرّب «كلمة السر» أو «العنوان» أو «عرض السعر»', noResults: 'مالقيناش موضوع مطابق للبحث.', reviewed: 'آخر مراجعة', back: 'الرجوع للمساعدة', related: 'مواضيع مرتبطة' },
   fr: { manual: 'Comment utiliser Warsha', manualIntro: 'Des guides pratiques basés sur le fonctionnement actuel de Warsha.', customerGuide: 'Guide client', workerGuide: 'Guide professionnel', search: 'Rechercher dans le manuel', searchPlaceholder: 'Essayez « mot de passe », « adresse » ou « devis »', noResults: 'Aucun sujet ne correspond à cette recherche.', reviewed: 'Révisé', back: 'Retour à l’aide', related: 'Sujets associés' },
 } as const;
 
