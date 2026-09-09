@@ -45,8 +45,32 @@ export function LocalizationProvider({ children }: PropsWithChildren) {
   const accountRef = useRef(account);
   accountRef.current = account;
 
+  // Direction is decided in JavaScript, so the platform must not decide it too.
+  //
+  // Warsha resolves layout direction from the WARSHA language preference — see
+  // src/i18n/direction.ts — and every mirrored row applies `row-reverse`
+  // itself. That works only while React Native is not also mirroring.
+  //
+  // `allowRTL(true)` let it. On a phone whose own locale is Arabic — which is
+  // most of Warsha's market — `I18nManager.isRTL` became true, the platform
+  // mirrored every `flexDirection: 'row'`, and the app's own `row-reverse`
+  // then mirrored it back. Rows rendered in LTR order inside a right-aligned
+  // Arabic screen: the role-chooser icons sat on the far side of their labels,
+  // detached from the words they belong to.
+  //
+  // It was invisible on a phone set to English, which is how it survived: the
+  // JS mirroring was correct there and nothing else was.
+  //
+  // Turning platform mirroring off makes the JS rule the only rule, and makes
+  // all four combinations behave the same way — English or Arabic Warsha, on an
+  // English or Arabic phone.
+  //
+  // Like the call it replaces, this applies from the next app start; forceRTL
+  // would apply sooner and is deliberately not used, because it needs a restart
+  // and restarting somebody mid-task to change a layout is worse than the
+  // layout.
   useEffect(() => {
-    I18nManager.allowRTL(true);
+    I18nManager.allowRTL(false);
   }, []);
 
   // Android can change its preferred language without restarting the app.

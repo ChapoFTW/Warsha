@@ -67,11 +67,39 @@ check(/writingDirection: isRTL \? 'rtl' : 'ltr'/.test(typography),
 const localization = readFileSync('src/i18n/localization.tsx', 'utf8');
 check(/isRTL/.test(localization),
   'direction is published by the localization context for every consumer');
-check(/I18nManager\.allowRTL\(true\)/.test(localization),
-  'the platform is permitted to lay out right to left');
+/**
+ * This asserted `allowRTL(true)` — that the platform was PERMITTED to mirror.
+ * It is now the opposite, and the reason is a defect found by looking at a
+ * screenshot rather than at the code.
+ *
+ * Warsha decides direction in JavaScript from the Warsha language preference,
+ * because a person whose phone is English and whose Warsha is Arabic must get
+ * an Arabic layout. Every mirrored row applies `row-reverse` itself. That is a
+ * complete strategy, and it only works if the platform is not ALSO mirroring.
+ *
+ * With `allowRTL(true)`, a phone whose own locale is Arabic — most of Warsha's
+ * market — made `I18nManager.isRTL` true. The platform mirrored every
+ * `flexDirection: 'row'` and the app's own `row-reverse` mirrored it back, so
+ * rows rendered left-to-right inside a right-aligned Arabic screen. On the
+ * role chooser at 320dp the icons sat across the card from their labels.
+ *
+ * It was invisible on an English phone, where the JS mirroring was the only
+ * mirroring and was correct. That is why it survived: the wrong configuration
+ * is the one nobody develops on.
+ */
+check(/I18nManager\.allowRTL\(false\)/.test(localization),
+  'THE PLATFORM DOES NOT MIRROR — direction is decided in JavaScript, once');
+// Comments are stripped first. The explanation above this fix names the old
+// call in prose, and a checker that cannot tell an explanation from the code it
+// explains fails for the wrong reason — the same trap the certification
+// document's honesty check fell into.
+const localizationCode = localization
+  .replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+check(!/allowRTL\(true\)/.test(localizationCode),
+  'the platform is never re-permitted to mirror alongside the JS rule');
 // forceRTL is deliberately not called: it needs a restart to take effect, and
 // restarting somebody mid-task to change a layout is worse than the layout.
-check(!/forceRTL/.test(localization),
+check(!/forceRTL/.test(localizationCode),
   'direction is resolved in JavaScript rather than by a restart-required native flag');
 
 // --- No hardcoded left alignment in shared components ----------------------

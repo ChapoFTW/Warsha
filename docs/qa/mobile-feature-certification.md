@@ -7,6 +7,27 @@ the only thing that decides what a person can actually reach.
 A feature that exists in code and is not in this table is a QA defect in its own
 right. If you add a route, add a row.
 
+## Two statuses, and both must pass
+
+Since 2026-09-09 every capability carries **FUNCTIONAL** and **VISUAL**
+separately. A feature is certified only when both are PASS.
+
+Neither is inferred from the other: functionality is not read off a screenshot,
+and visual quality is not read off source code. The first visual pass proved the
+point — `create-account` passes every functional assertion and lays its Arabic
+rows out backwards on an Arabic phone. See
+`docs/ux/mobile-visual-certification.md`, which owns the visual half; the tables
+here carry the functional half and reference it.
+
+| Capability | Functional | Visual |
+| --- | --- | --- |
+| `create-account` role choice | **PARTIAL** | **FAIL** — V-P1 double-mirrored RTL rows (fixed in source, retest pending a rebuild) |
+| `welcome` gateway | **PASS** | UNTESTED |
+| Everything below | as stated | **UNTESTED** unless named above |
+
+**No row below may be read as visually certified.** The visual column is
+UNTESTED for the entire product except the two rows above.
+
 ## How to read a status
 
 | | |
