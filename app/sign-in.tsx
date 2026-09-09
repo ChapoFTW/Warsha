@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -52,6 +52,15 @@ export default function SignIn() {
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
+
+  // Say why they are here. Arriving at a sign-in screen you did not ask for
+  // reads as the app losing your work for no reason; one sentence turns it into
+  // something that happened for a reason and can be acted on.
+  useEffect(() => {
+    if (!auth.sessionEnded) return;
+    setMessage(t('authSessionExpired'));
+    auth.acknowledgeSessionEnd();
+  }, [auth, t]);
 
   const submit = async () => {
     // The identifier decides the authentication path. A person who registered

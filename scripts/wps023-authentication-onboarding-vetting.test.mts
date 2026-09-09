@@ -97,6 +97,7 @@ const workerAuthBroker = codeOf('supabase', 'functions', 'worker-auth', 'index.t
 const authContextSource = codeOf('src', 'auth', 'auth-context.tsx');
 const createAccountSource = codeOf('app', 'create-account.tsx');
 const signInSource = codeOf('app', 'sign-in.tsx');
+const welcomeSource = codeOf('app', 'welcome.tsx');
 const profileSource = codeOf('app', '(tabs)', 'profile.tsx');
 const profileRepositorySource = codeOf('src', 'repositories', 'supabase-user-repositories.ts');
 const customerProfileRepositorySource = profileRepositorySource.slice(
@@ -755,7 +756,73 @@ const packageJson = read('package.json');
 check(/"test:wps023"/.test(packageJson), 'the WPS-023 suite has a package script');
 
 // ---------------------------------------------------------------------------
+/*
+ * Being signed out is not the same as signing out.
+ *
+ * A professional halfway through their application had their password changed
+ * elsewhere. That revoked the refresh token, so the app dropped the session --
+ * correctly -- and said nothing whatever: the form disappeared, the marketing
+ * gateway appeared, and the unsaved step was gone. It reads as the app losing
+ * your work by itself, which is the worst available reading and was the only
+ * one on offer.
+ *
+ * The copy for this has existed in all three languages the whole time. What did
+ * not exist was anything that showed it.
+ */
+check(
+  /sessionEnded: boolean;/.test(authContextSource),
+  'the auth context distinguishes an ended session from a requested sign-out',
+);
+check(
+  /if \(!intentionalSignOut\.current\) setSessionEnded\(true\);/.test(authContextSource),
+  'a SIGNED_OUT the app did not ask for raises the notice',
+);
+check(
+  (authContextSource.match(/intentionalSignOut\.current = true;/g) ?? []).length >= 2,
+  'every sign-out Warsha itself performs declares itself, so it stays silent',
+);
+check(
+  /setSessionEnded\(true\);[\s\S]{0,200}?verifiedSession = null;/.test(authContextSource),
+  'a persisted session Auth no longer honours raises it on cold start too',
+);
+check(
+  /acknowledgeSessionEnd/.test(authContextSource),
+  'the notice is acknowledged, so it appears once rather than on every render',
+);
+
+// Both landing places, because which one a person reaches depends on whether
+// the router sent them to the gateway or straight to the form.
+for (const [name, source] of [['sign-in', signInSource], ['welcome', welcomeSource]] as const) {
+  check(
+    /auth\.sessionEnded/.test(source),
+    `${name} reads whether the session was ended for them`,
+  );
+  check(
+    /t\('authSessionExpired'\)/.test(source),
+    `${name} explains it with the existing copy rather than a new string`,
+  );
+  check(
+    /acknowledgeSessionEnd\(\)/.test(source),
+    `${name} acknowledges the notice after showing it`,
+  );
+  check(
+    /accessibilityRole="alert"/.test(source),
+    `${name} announces the explanation rather than only drawing it`,
+  );
+}
+
+// The copy predates this and must stay complete: a person signed out in Arabic
+// is exactly as entitled to know why.
+{
+  const copy = codeOf('src', 'i18n', 'translations.ts');
+  check(
+    (copy.match(/authSessionExpired:\s*'[^']{10,}'/g) ?? []).length >= 3,
+    'every language says why the session ended',
+  );
+}
+
 console.log(`WPS-023 client regressions: ${passed} checks passed`);
+
 if (failures.length > 0) {
   console.error(`\n${failures.length} failed:`);
   for (const failure of failures) console.error(`  - ${failure}`);

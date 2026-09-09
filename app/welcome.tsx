@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -58,6 +58,15 @@ export default function Welcome() {
   const auth = useAuth();
   const [signingIn, setSigningIn] = useState(false);
   const [message, setMessage] = useState('');
+
+  // This is where an ended session lands, so this is where it has to be
+  // explained. Without it the gateway is indistinguishable from the app having
+  // thrown the work away by itself.
+  useEffect(() => {
+    if (!auth.sessionEnded) return;
+    setMessage(t('authSessionExpired'));
+    auth.acknowledgeSessionEnd();
+  }, [auth, t]);
 
   const openSignIn = async () => {
     setSigningIn(true);

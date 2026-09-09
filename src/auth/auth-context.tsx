@@ -70,6 +70,21 @@ type Value = {
    */
   completePasswordRecovery: (password: string, code?: string) => Promise<void>;
   signOut: () => Promise<void>;
+  /**
+   * The server ended the session; the person did not.
+   *
+   * A professional halfway through their application had their password
+   * changed elsewhere, which revoked the refresh token. The app did exactly
+   * what it should -- dropped the session -- and said nothing at all: the
+   * form vanished and the marketing gateway appeared. That reads as the app
+   * breaking, and the unsaved step was gone with no explanation for why.
+   *
+   * Distinguishing it from tapping Sign out is the whole point. Signing
+   * yourself out needs no explanation; being signed out does.
+   */
+  sessionEnded: boolean;
+  /** Call once the notice has been shown, so it appears exactly once. */
+  acknowledgeSessionEnd: () => void;
 };
 
 const Context = createContext<Value | null>(null);
@@ -83,6 +98,14 @@ async function requireCurrentUser(operation: 'phone-change-request' | 'phone-cha
 
 export function AuthProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState<Session | null>(null);
+  const [sessionEnded, setSessionEnded] = useState(false);
+  /*
+   * Set immediately before every sign-out Warsha itself asks for, and read
+   * once by the listener. A ref rather than state because the listener has
+   * to see the value the same tick it was written, and because nothing
+   * renders differently for it.
+   */
+  const intentionalSignOut = useRef(false);
   const [loading, setLoading] = useState(environment.dataMode === 'supabase');
   // Held, not exchanged. Cleared as soon as it is spent or abandoned.
   const [recoveryTokenHash, setRecoveryTokenHash] = useState<string | null>(null);
@@ -214,6 +237,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
             // delete the recovery session that arrived while this was in flight.
             if (!callbackHandled.current) {
               await client.auth.signOut({ scope: 'local' }).catch(() => undefined);
+              // Reached only when a session was PERSISTED and Auth has since
+              // stopped honouring it. Someone who has never signed in has no
+              // session here, so this cannot greet a first-time visitor.
+              setSessionEnded(true);
             }
             verifiedSession = null;
           } else {
@@ -240,6 +267,12 @@ export function AuthProvider({ children }: PropsWithChildren) {
       if (!active) return;
       if (event === 'INITIAL_SESSION' && hydratingInitialSession) return;
       setSession(next);
+      if (event === 'SIGNED_OUT') {
+        // supabase-js emits this both when Warsha asks and when a refresh
+        // token is refused. Only the second one is news to the person.
+        if (!intentionalSignOut.current) setSessionEnded(true);
+        intentionalSignOut.current = false;
+      }
       if (event === 'PASSWORD_RECOVERY') {
         callbackHandled.current = true;
         setRecoveryOutcome({ status: 'ready' });
@@ -264,6 +297,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const value = useMemo<Value>(() => ({
     mode: environment.dataMode,
     session,
+    sessionEnded,
+    acknowledgeSessionEnd: () => setSessionEnded(false),
     user: session?.user ?? null,
     visibleEmail: visibleContactEmail(session?.user),
     loading,
@@ -521,6 +556,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     finishPasswordRecovery: async () => {
       if (environment.dataMode === 'mock') return;
       try {
+        intentionalSignOut.current = true;
         const { error } = await getSupabaseClient().auth.signOut({ scope: 'global' });
         if (error) throw error;
         callbackHandled.current = false;
@@ -532,12 +568,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
     signOut: async () => {
       if (environment.dataMode === 'mock') return;
       try {
+        intentionalSignOut.current = true;
         const { error } = await getSupabaseClient().auth.signOut();
         if (error) throw error;
       } catch (error) { throw sanitizeAuthError(error, 'sign-out'); }
     },
   }), [emailConfirmationOutcome, loading, recoveryMfaPending, recoveryOutcome,
-    recoveryTokenHash, session]);
+    recoveryTokenHash, session, sessionEnded]);
 
   return <Context.Provider value={value}>{children}</Context.Provider>;
 }
