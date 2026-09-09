@@ -11,6 +11,50 @@ G22 and it blocks private beta.
 A backup that has never been restored is not a backup. It is a hope with a
 filename.
 
+## Migration-specific exceptions, and why they do not close this gap
+
+One Production migration has been allowed to proceed without a verified restore
+point: `202609090002_push_configuration_authority`. The decision is recorded in
+`docs/operations/migration-backup-exceptions.json`, bound to that migration's
+name **and its content hash**, with the owner's reason attached.
+
+That exception exists because the migration is six statements — two
+`create or replace function`, two `revoke`, one `grant`, one `comment` — with no
+`alter table`, no `drop`, no `insert`, `update` or `delete`, and both function
+names new. It cannot modify a Production row, and its rollback is two
+`drop function` statements. The risk of applying it without a restore point is
+therefore a different kind of risk from the one this runbook is about.
+
+**It changes nothing here. G22 stays OPEN.** B01 through B07 are all still
+unverified, and the sentence at the top of this file is still true: no backup is
+claimed to be working. An exception is a recorded decision about one change; it
+is not evidence that Warsha can restore anything, and the deployment workflow
+prints exactly that on every acceptance.
+
+The mechanism is deliberately hostile to reuse. It is a filename, not a
+checkbox; it pins content, so editing the migration revokes the approval; it
+refuses wildcards and blanket words; and supplying both a backup reference and
+an exception is an error rather than a preference. `scripts/backup-exception.test.mts`
+asserts all of that, including that exactly one exception exists — because the
+failure mode is not a bad entry, it is this list quietly becoming a habit.
+
+### The follow-up programme this does not substitute for
+
+| # | Step | Status |
+| --- | --- | --- |
+| G22-1 | Determine the actual Supabase Production plan, backup schedule and PITR entitlement | NOT STARTED |
+| G22-2 | Confirm daily backups are genuinely running, from the dashboard rather than from the plan description | NOT STARTED |
+| G22-3 | Establish a real backup and record its reference | NOT STARTED |
+| G22-4 | Perform a restore onto a non-production target and verify the data | NOT STARTED |
+| G22-5 | Measure and record actual RPO and RTO from that exercise | NOT STARTED |
+| G22-6 | Decide and document the storage-object position — a database restore does not bring files back | NOT STARTED |
+| G22-7 | Schedule the drill and name its owner | NOT STARTED |
+
+Only when G22-4 has actually been performed may Production backup capability be
+described as verified. Until then the honest word is "unknown", and every
+further migration needs either a real restore point or its own recorded
+exception.
+
 ## What must be true before any hosted environment carries real data
 
 | # | Requirement |

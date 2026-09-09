@@ -1,0 +1,52 @@
+{
+  "$comment": [
+    "Owner-approved exceptions to the pre-migration backup requirement.",
+    "",
+    "The Production database workflow normally refuses to apply anything unless",
+    "PRE_MIGRATION_BACKUP_REF names a verified restore point. Warsha cannot",
+    "currently satisfy that: docs/operations/backup-runbook.md records gap G22 —",
+    "the Supabase plan is unconfirmed, PITR availability is unconfirmed, and no",
+    "restore has ever been performed. A backup that has never been restored is",
+    "not a backup.",
+    "",
+    "So rather than fabricate a reference, or add a reusable skip-backups switch,",
+    "each exception is bound to ONE migration by name AND by content hash, with a",
+    "reason a person wrote. Change a byte of that migration and the exception",
+    "stops applying. It cannot be pointed at a different migration, cannot be",
+    "widened to a directory, and cannot be reused for the next deployment.",
+    "",
+    "G22 REMAINS OPEN. An exception here is a recorded risk decision about one",
+    "specific change; it is not evidence that Warsha can restore anything.",
+    "",
+    "Adding an entry is an owner decision. It is not something a deployment",
+    "should be able to grant itself."
+  ],
+  "schemaVersion": 1,
+  "exceptions": [
+    {
+      "migration": "202609090002_push_configuration_authority.sql",
+      "sha256": "4f409c151edbca7107899b56a6f75ead864680267a37ef436157b28e20293f5a",
+      "environment": "production",
+      "approvedBy": "owner",
+      "approvedOn": "2026-09-09",
+      "reason": "Owner-approved exception: additive function-only migration with no data or schema mutation of existing objects; rollback is removal of the two newly introduced functions. Production restore capability remains an open release-readiness gap (G22).",
+      "evidence": {
+        "statements": 6,
+        "createOrReplaceFunction": 2,
+        "revoke": 2,
+        "grant": 1,
+        "comment": 1,
+        "alterTable": 0,
+        "dropOfExistingAuthority": 0,
+        "insert": 0,
+        "update": 0,
+        "delete": 0,
+        "newFunctionNames": [
+          "private.set_push_configuration_core",
+          "public.staff_set_push_configuration"
+        ],
+        "rollback": "drop function public.staff_set_push_configuration(text, text, boolean, boolean, text); drop function private.set_push_configuration_core(uuid, text, text, text, text, boolean, boolean, text);"
+      }
+    }
+  ]
+}

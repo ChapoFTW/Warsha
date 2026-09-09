@@ -136,6 +136,7 @@
     "test:staff-mfa-enrolment": "node --no-warnings --experimental-strip-types scripts/staff-mfa-enrolment.test.mts",
     "test:urgent-service-pricing": "node --no-warnings --experimental-strip-types scripts/urgent-service-pricing.test.mts",
     "test:criminal-record-contract": "node --no-warnings --experimental-strip-types scripts/criminal-record-contract.test.mts",
+    "test:backup-exception": "node --no-warnings --experimental-strip-types scripts/backup-exception.test.mts",
     "test:currency-authority": "node --no-warnings --experimental-strip-types scripts/currency-authority.test.mts",
     "test:mobile-certification": "node --no-warnings --experimental-strip-types scripts/mobile-certification.test.mts",
     "test:photo-fixture": "node --no-warnings --experimental-strip-types scripts/photo-fixture.test.mts",

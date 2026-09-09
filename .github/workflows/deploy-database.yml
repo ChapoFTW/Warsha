@@ -25,6 +25,18 @@ on:
         required: true
         type: boolean
         default: true
+      # Deliberately a filename and not a checkbox. "Skip the backup" as a
+      # boolean gets ticked once for a good reason and then out of habit; a
+      # field that demands the exact migration being excepted has to be filled
+      # in again, correctly, every single time.
+      backup_exception:
+        description: >-
+          Leave empty when PRE_MIGRATION_BACKUP_REF names a verified restore
+          point. Otherwise the exact migration filename that the owner has
+          approved in docs/operations/migration-backup-exceptions.json.
+        required: false
+        type: string
+        default: ''
 
 concurrency:
   group: deploy-database-${{ inputs.environment }}
@@ -91,16 +103,48 @@ jobs:
 
       # A backup is taken immediately before any schema change. A deployment
       # without a verified restore point is not a deployment, it is a gamble.
+      #
+      # Exactly one of two things must hold, and there is no third:
+      #
+      #   A. PRE_MIGRATION_BACKUP_REF names a verified restore point, or
+      #   B. the owner has recorded a migration-specific exception, pinned to
+      #      that migration's content hash.
+      #
+      # B exists because Warsha cannot currently satisfy A: gap G22 in
+      # docs/operations/backup-runbook.md records that the Supabase plan is
+      # unconfirmed and no restore has ever been performed. The honest response
+      # to that is a narrow, recorded, per-migration decision — not a fabricated
+      # backup reference, and not a reusable skip switch.
       - name: Confirm a restore point exists
         if: ${{ !inputs.dry_run }}
         run: |
           set -euo pipefail
-          echo "A pre-migration backup must be confirmed in the Supabase dashboard"
-          echo "and recorded in docs/operations/backup-runbook.md before proceeding."
-          if [ -z "${{ vars.PRE_MIGRATION_BACKUP_REF }}" ]; then
-            echo "PRE_MIGRATION_BACKUP_REF is not set for this environment."; exit 1
+          BACKUP_REF="${{ vars.PRE_MIGRATION_BACKUP_REF }}"
+          EXCEPTION="${{ inputs.backup_exception }}"
+
+          if [ -n "$BACKUP_REF" ] && [ -n "$EXCEPTION" ]; then
+            echo "Both a restore point and a backup exception were supplied."
+            echo "Pick one: a verified backup does not need an exception."
+            exit 1
           fi
-          echo "Restore point recorded: ${{ vars.PRE_MIGRATION_BACKUP_REF }}"
+
+          if [ -n "$BACKUP_REF" ]; then
+            echo "Restore point recorded: $BACKUP_REF"
+            exit 0
+          fi
+
+          if [ -z "$EXCEPTION" ]; then
+            echo "PRE_MIGRATION_BACKUP_REF is not set for this environment, and no"
+            echo "migration-specific backup exception was named."
+            echo ""
+            echo "Either confirm a pre-migration backup in the Supabase dashboard and"
+            echo "record it in docs/operations/backup-runbook.md, or have the owner add"
+            echo "an entry to docs/operations/migration-backup-exceptions.json and pass"
+            echo "that migration's filename as backup_exception."
+            exit 1
+          fi
+
+          node scripts/verify-backup-exception.mjs "$EXCEPTION" "${{ inputs.environment }}"
 
       - name: Apply
         if: ${{ !inputs.dry_run }}
