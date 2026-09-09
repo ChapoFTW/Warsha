@@ -47,9 +47,21 @@ const EXEMPT = new Set([
   'app/icon-gallery.tsx',
 ]);
 
-const files = execFileSync('git', ['ls-files', 'app', 'components', 'src', 'hooks'], {
+/*
+ * The web is counted too, and separately.
+ *
+ * It had 372 `font-size` declarations and no scale at all to put them on --
+ * worse than mobile, which at least had a scale it was ignoring. Both now
+ * share one set of steps, and `test:web-brand` asserts the two agree, so both
+ * are measured the same way and both ratchet down.
+ */
+const tracked = execFileSync('git', ['ls-files', 'app', 'components', 'src', 'hooks', 'web'], {
   encoding: 'utf8',
-}).trim().split(/\r?\n/).filter((path) => /\.tsx?$/.test(path) && !EXEMPT.has(path));
+}).trim().split(/\r?\n/);
+
+const files = tracked.filter((path) => /\.tsx?$/.test(path)
+  && !path.startsWith('web/') && !EXEMPT.has(path));
+const webFiles = tracked.filter((path) => /\.css$/.test(path) && !EXEMPT.has(path));
 
 /** Comments explain sizes; they do not set them. */
 const stripComments = (text) => text
@@ -69,6 +81,18 @@ for (const path of files) {
 }
 offenders.sort((left, right) => right.count - left.count);
 
+/** `font-size: 15px` in a stylesheet. A token already carries its own value. */
+let webTotal = 0;
+const webOffenders = [];
+for (const path of webFiles) {
+  const css = readFileSync(path, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  const hits = [...css.matchAll(/font-size:\s*(\d+)px/g)];
+  if (!hits.length) continue;
+  webTotal += hits.length;
+  webOffenders.push({ path, count: hits.length });
+}
+webOffenders.sort((left, right) => right.count - left.count);
+
 const budget = JSON.parse(readFileSync(BUDGET_FILE, 'utf8'));
 const update = process.argv.includes('--update');
 
@@ -76,26 +100,40 @@ const adopting = files.filter((path) => /typography\.(display|h1|h2|h3|body|body
   .test(readFileSync(path, 'utf8'))).length;
 
 console.log(`type scale: ${adopting} files adopt it, ${offenders.length} still name sizes`);
-console.log(`hardcoded font sizes: ${total} (budget ${budget.maximum})`);
+console.log(`hardcoded font sizes: app ${total} (budget ${budget.maximum}), web ${webTotal} (budget ${budget.webMaximum})`);
 console.log('\nlargest remaining, convert these first:');
 for (const entry of offenders.slice(0, 12)) {
   console.log(`  ${String(entry.count).padStart(3)}  ${entry.path}  [${entry.sizes.join(' ')}]`);
 }
 
+console.log('\nlargest remaining on the web:');
+for (const entry of webOffenders.slice(0, 6)) {
+  console.log(`  ${String(entry.count).padStart(3)}  ${entry.path}`);
+}
+
 if (update) {
-  writeFileSync(BUDGET_FILE, `${JSON.stringify({ ...budget, maximum: total, recorded: new Date().toISOString().slice(0, 10) }, null, 2)}\n`);
-  console.log(`\nbudget lowered to ${total}`);
+  writeFileSync(BUDGET_FILE, `${JSON.stringify({
+    ...budget, maximum: total, webMaximum: webTotal,
+    recorded: new Date().toISOString().slice(0, 10),
+  }, null, 2)}\n`);
+  console.log(`\nbudgets lowered to app ${total}, web ${webTotal}`);
   process.exit(0);
 }
 
-if (total > budget.maximum) {
-  console.error(`\nFAIL: ${total - budget.maximum} more hardcoded font size(s) than the budget allows.`);
-  console.error('Use a step from `typography` in constants/theme.ts. If a size genuinely has no');
-  console.error('home on the scale, the scale is what should change — not this number upward.');
-  process.exit(1);
+let failed = false;
+for (const [surface, count, ceiling, guidance] of [
+  ['app', total, budget.maximum, 'Use a step from `typography` in constants/theme.ts.'],
+  ['web', webTotal, budget.webMaximum, 'Use a --type-* custom property from web/app/globals.css.'],
+]) {
+  if (count > ceiling) {
+    failed = true;
+    console.error(`\nFAIL (${surface}): ${count - ceiling} more hardcoded font size(s) than the budget allows.`);
+    console.error(`  ${guidance}`);
+    console.error('  If a size genuinely has no home on the scale, the scale is what should');
+    console.error('  change — not this number upward, and not on one surface alone.');
+  } else if (count < ceiling) {
+    console.log(`\n${surface}: ${ceiling - count} under budget. Run with --update to record the gain.`);
+  }
 }
-
-if (total < budget.maximum) {
-  console.log(`\n${budget.maximum - total} under budget. Run with --update to record the gain.`);
-}
+if (failed) process.exit(1);
 console.log('\nok');

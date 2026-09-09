@@ -32,6 +32,19 @@ const equal = (actual: unknown, expected: unknown, message: string) => {
 const PLUGIN = 'plugins/warsha-android-dialog-theme.js';
 const source = readFileSync(PLUGIN, 'utf8');
 
+/*
+ * The plugin's comments describe the mistakes it corrects, by name. Searching
+ * the raw text for a wrong resource name therefore matches the paragraph
+ * explaining why it is wrong -- which is the fifth time in this repository that
+ * an assertion has matched the prose about a construct rather than the
+ * construct. Comment-stripping is standard here for exactly that reason.
+ */
+const code = source
+  .replace(/\/\*[\s\S]*?\*\//g, '')
+  .split('\n')
+  .map((line) => line.replace(/(^|[^:])\/\/.*$/, '$1'))
+  .join('\n');
+
 /** The literal table the plugin writes into `colors.xml`. */
 function table(name: 'LIGHT' | 'DARK'): Record<string, string> {
   const block = source.slice(source.indexOf(`const ${name} = {`));
@@ -89,8 +102,20 @@ ok(
   'the activity theme points at the Warsha dialog, so no screen has to opt in',
 );
 ok(
-  /parent: 'ThemeOverlay\.AppCompat\.DayNight\.Dialog\.Alert'/.test(source),
+  /parent: 'ThemeOverlay\.AppCompat\.Dialog\.Alert'/.test(source),
   'it is an overlay, so it changes the dialog and inherits everything else',
+);
+// The first version of this named `ThemeOverlay.AppCompat.DayNight.Dialog.Alert`
+// and this assertion passed, because a check that reads a file can confirm a
+// string is present and cannot confirm AppCompat defines it. The build caught
+// it. Kept as a reminder of what a source-shape assertion cannot know.
+ok(
+  !/DayNight\.Dialog/.test(code),
+  'and not the DayNight variant of it, which AppCompat does not define',
+);
+ok(
+  /android:colorBackground/.test(code) && !/'android:background'/.test(code),
+  'the panel colour is colorBackground, which does not leak into child views',
 );
 ok(
   /throw new Error\('AppTheme is missing/.test(source),

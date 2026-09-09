@@ -8,10 +8,15 @@
   gap: 12px; flex-wrap: wrap; margin-bottom: 10px;
 }
 
-.title { font-size: 26px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.01em; }
+.title {
+  font-size: var(--type-h1); line-height: var(--type-h1-leading);
+  letter-spacing: var(--type-h1-tracking);
+  font-weight: 700; color: var(--text-primary);
+}
 
 .lead {
-  font-size: 15px; line-height: 1.65; color: var(--text-secondary);
+  font-size: var(--type-body); line-height: var(--type-body-leading);
+  color: var(--text-secondary);
   max-width: 70ch; margin-bottom: 22px;
 }
 
@@ -26,21 +31,30 @@
 .timeline li { display: grid; gap: 3px; padding-inline-start: 4px; }
 
 .sectionTitle {
-  font-size: 12px; font-weight: 700; letter-spacing: 0.08em;
+  font-size: var(--type-caption); line-height: var(--type-caption-leading);
+  font-weight: 700; letter-spacing: 0.08em;
   text-transform: uppercase; color: var(--text-muted); margin-bottom: var(--space-section-gap);
 }
 
-.muted { font-size: 14.5px; line-height: 1.6; color: var(--text-muted); }
+.muted {
+  font-size: var(--type-body); line-height: var(--type-body-leading);
+  color: var(--text-muted);
+}
 
 .error {
-  font-size: 14px; line-height: 1.6; color: var(--text-primary);
+  font-size: var(--type-body); line-height: var(--type-body-leading);
+  color: var(--text-primary);
   border-inline-start: 3px solid var(--brand); padding-inline-start: 12px; margin-bottom: 12px;
 }
 
-.ok { font-size: 14px; line-height: 1.6; color: var(--text-secondary); margin: 12px 0; }
+.ok {
+  font-size: var(--type-body); line-height: var(--type-body-leading);
+  color: var(--text-secondary); margin: 12px 0;
+}
 
 .note {
-  font-size: 13.5px; line-height: 1.65; color: var(--text-muted);
+  font-size: var(--type-body-small); line-height: var(--type-body-small-leading);
+  color: var(--text-muted);
   border-inline-start: 2px dashed var(--border); padding-inline-start: 12px;
 }
 
@@ -82,13 +96,20 @@ button.card:active {
   transition-duration: var(--motion-press);
 }
 
-.cardName { font-size: 15.5px; font-weight: 700; color: var(--text-primary); }
-.cardMeta { font-size: 13px; color: var(--text-muted); }
+.cardName {
+  font-size: var(--type-body); line-height: var(--type-body-leading);
+  font-weight: 700; color: var(--text-primary);
+}
+.cardMeta {
+  font-size: var(--type-body-small); line-height: var(--type-body-small-leading);
+  color: var(--text-muted);
+}
 
 .chips { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
 
 .chip {
-  font-size: 11.5px; font-weight: 600; padding: 3px 8px; border-radius: 999px;
+  font-size: var(--type-caption); line-height: var(--type-caption-leading);
+  font-weight: 600; padding: 3px 8px; border-radius: 999px;
   border: 1px solid var(--border); color: var(--text-secondary); white-space: nowrap;
 }
 
@@ -107,7 +128,8 @@ a.chip:hover { border-color: var(--border-strong); color: var(--text-primary); }
 
 .rowTitle {
   appearance: none; border: 0; background: transparent; font: inherit;
-  font-size: 15.5px; font-weight: 700; color: var(--text-primary);
+  font-size: var(--type-body); line-height: var(--type-body-leading);
+  font-weight: 700; color: var(--text-primary);
   cursor: pointer; padding: 0; text-align: start;
   text-decoration: underline; text-underline-offset: 3px;
   text-decoration-color: var(--border-strong);
@@ -122,10 +144,14 @@ a.chip:hover { border-color: var(--border-strong); color: var(--text-primary); }
 
 .rowMeta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 
-.when { font-size: 13px; color: var(--text-muted); }
+.when {
+  font-size: var(--type-body-small); line-height: var(--type-body-small-leading);
+  color: var(--text-muted);
+}
 
 .badge {
-  font-size: 12px; font-weight: 600; padding: 4px 9px; border-radius: 999px;
+  font-size: var(--type-caption); line-height: var(--type-caption-leading);
+  font-weight: 600; padding: 4px 9px; border-radius: 999px;
   border: 1px solid var(--border); color: var(--text-secondary); white-space: nowrap;
 }
 
@@ -166,7 +192,9 @@ a.chip:hover { border-color: var(--border-strong); color: var(--text-primary); }
 .workLabel { white-space: normal; overflow-wrap: anywhere; }
 
 .price {
-  font-size: 20px; font-weight: 700; color: var(--text-primary);
+  font-size: var(--type-h2); line-height: var(--type-h2-leading);
+  letter-spacing: var(--type-h2-tracking);
+  font-weight: 700; color: var(--text-primary);
   font-variant-numeric: tabular-nums;
 }
 
@@ -176,8 +204,14 @@ a.chip:hover { border-color: var(--border-strong); color: var(--text-primary); }
 }
 
 .fact { display: grid; gap: 2px; min-width: 0; }
-.factLabel { font-size: 12px; font-weight: 600; color: var(--text-muted); }
-.factValue { font-size: 14.5px; color: var(--text-primary); overflow-wrap: anywhere; }
+.factLabel {
+  font-size: var(--type-caption); line-height: var(--type-caption-leading);
+  font-weight: 600; color: var(--text-muted);
+}
+.factValue {
+  font-size: var(--type-body); line-height: var(--type-body-leading);
+  color: var(--text-primary); overflow-wrap: anywhere;
+}
 
 .field { display: grid; gap: var(--space-field-help); margin-bottom: var(--space-field-gap); }
 
@@ -266,7 +300,10 @@ a.chip:hover { border-color: var(--border-strong); color: var(--text-primary); }
   display: grid; gap: 3px;
 }
 .searchOption button:hover { background: var(--canvas); }
-.searchOption button span { color: var(--text-muted); font-size: 13px; }
+.searchOption button span {
+  color: var(--text-muted);
+  font-size: var(--type-body-small); line-height: var(--type-body-small-leading);
+}
 
 /* The suggestion list opens with the same four pixels every other Warsha
    disclosure uses — `data-warsha-open="fast"`, set on the element, because it
@@ -276,15 +313,19 @@ a.chip:hover { border-color: var(--border-strong); color: var(--text-primary); }
 
 .label {
   margin-bottom: calc(var(--space-field-label) - var(--space-field-help));
-  font-size: 12px; font-weight: 700; letter-spacing: 0.06em;
+  font-size: var(--type-caption); line-height: var(--type-caption-leading);
+  font-weight: 700; letter-spacing: 0.06em;
   text-transform: uppercase; color: var(--text-muted);
 }
 .fieldRequirement { font-weight: 500; letter-spacing: 0; text-transform: none; }
 
-.hint { font-size: 12.5px; line-height: 1.55; color: var(--text-muted); }
+.hint {
+  font-size: var(--type-body-small); line-height: var(--type-body-small-leading);
+  color: var(--text-muted);
+}
 
 .input, .select, .textarea {
-  font: inherit; font-size: 15px; color: var(--text-primary);
+  font: inherit; font-size: var(--type-body); color: var(--text-primary);
   background: var(--canvas); border: 1px solid var(--border);
   border-radius: var(--radius-sm); padding: 10px 12px; min-height: 44px; width: 100%;
 }
@@ -414,7 +455,7 @@ a.chip:hover { border-color: var(--border-strong); color: var(--text-primary); }
 
 .messageSummary {
   cursor: pointer;
-  font-size: 13.5px;
+  font-size: var(--type-body-small); line-height: var(--type-body-small-leading);
   font-weight: 700;
   color: var(--text-secondary);
   list-style-position: inside;
@@ -445,7 +486,7 @@ a.chip:hover { border-color: var(--border-strong); color: var(--text-primary); }
   max-width: 78%;
   padding: 8px 12px;
   border-radius: var(--radius-md);
-  font-size: 14.5px;
+  font-size: var(--type-body); line-height: var(--type-body-leading);
   line-height: 1.55;
   overflow-wrap: anywhere;
   /* Logical, so Arabic mirrors without a second rule. */

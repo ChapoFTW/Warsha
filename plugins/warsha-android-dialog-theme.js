@@ -34,6 +34,24 @@
  * rather than papered over here — nothing below can express it, because the
  * choice lives in JavaScript and these are compile-time resources.
  *
+ * ## Two resource names that are easy to get wrong
+ *
+ * The parent is `ThemeOverlay.AppCompat.Dialog.Alert` and NOT
+ * `ThemeOverlay.AppCompat.DayNight.Dialog.Alert`, which does not exist. The
+ * first attempt used the second, and no unit test could have said so: a check
+ * that reads this file can confirm the string is present and cannot confirm
+ * that AppCompat defines it. The build is the authority for that, and it said
+ * so plainly -- `resource style/... not found`.
+ *
+ * Day and night still work, because they come from the COLOURS rather than
+ * from the parent: `@color/warshaDialogBackground` resolves out of `values/`
+ * or `values-night/` depending on the night mode, and the activity's own theme
+ * is already `Theme.AppCompat.DayNight.NoActionBar`.
+ *
+ * The panel colour is `android:colorBackground`, not `android:background`. The
+ * latter is the default background for any view that does not set its own, so
+ * it leaks past the dialog into its children.
+ *
  * ## Values
  *
  * Read from `constants/appearance.ts`, which is the only place in Warsha
@@ -100,13 +118,13 @@ module.exports = function withWarshaAndroidDialogTheme(config) {
     const overlay = {
       $: {
         name: 'Warsha.Dialog',
-        parent: 'ThemeOverlay.AppCompat.DayNight.Dialog.Alert',
+        parent: 'ThemeOverlay.AppCompat.Dialog.Alert',
       },
       item: [],
     };
     setItems(overlay, {
       'colorAccent': '@color/warshaDialogAction',
-      'android:background': '@color/warshaDialogBackground',
+      'android:colorBackground': '@color/warshaDialogBackground',
       'android:textColorPrimary': '@color/warshaDialogText',
       'buttonBarPositiveButtonStyle': '@style/Warsha.Dialog.Button',
       'buttonBarNegativeButtonStyle': '@style/Warsha.Dialog.Button',

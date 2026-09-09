@@ -525,13 +525,28 @@ for (const [sheet, name] of [
 // once pulled input typography into the control scale with it. They keep their
 // own type size.
 {
+  const globalsCssForType = readFileSync('web/app/globals.css', 'utf8');
   const consoleCss = readFileSync('web/components/console-table.module.css', 'utf8');
   check(/\.input \{[\s\S]*?font-size: 15px/.test(consoleCss),
     'FORM FIELDS KEEP THEIR OWN TYPE SIZE, NOT THE BUTTON SCALE (console input)');
   check(/\.select \{[\s\S]*?font-size: 14\.5px/.test(consoleCss),
     'and a select keeps the size it had (console select)');
-  check(/\.input, \.select, \.textarea \{[\s\S]*?font-size: 15px/.test(surfaceCss),
-    'and so do the product surfaces');
+  /*
+   * The product surfaces now take that size from the shared type scale rather
+   * than from a literal. The assertion is re-encoded, not relaxed: it used to
+   * check that the number was 15, and it now checks that the field uses the
+   * BODY step and that the body step is not the control size -- which is the
+   * property this block was written to protect, and is stronger, because a
+   * literal 15 could drift while the control scale moved and nothing would
+   * have noticed the two had converged.
+   */
+  check(/\.input, \.select, \.textarea \{[\s\S]*?font-size: var\(--type-body\)/.test(surfaceCss),
+    'and so do the product surfaces, from the shared body step');
+  const bodyStep = /--type-body:\s*(\d+)px;/.exec(globalsCssForType)?.[1];
+  const controlMd = /--control-font-md:\s*([\d.]+)px;/.exec(globalsCssForType)?.[1];
+  check(bodyStep === '15', 'the body step is still the size this block was protecting');
+  check(bodyStep !== controlMd,
+    'A FORM FIELD IS NOT A BUTTON: the body step and the control size are different values');
 }
 
 // Navigation is text, not a control, and keeps its own type.
