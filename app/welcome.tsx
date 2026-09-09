@@ -105,7 +105,12 @@ export default function Welcome() {
         <View style={styles.trust}>
           {([
             ['verified-user', ot.text('gatewayTrustChecked')],
-            ['handshake', ot.text('gatewayTrustPrice')],
+            /* `handshake` was two interlocking hands, which at 20px on a 320dp
+               screen is a shape with no silhouette — a grey blob beside the
+               sentence it was meant to support. A tag with a tick survives the
+               size, and survives it in the language that matters most here:
+               the person who reads the mark instead of the clause. */
+            ['price-check', ot.text('gatewayTrustPrice')],
           ] as const).map(([icon, label]) => (
             <View key={icon} style={[styles.trustRow, isRTL && styles.reverse]}>
               <MaterialIcons name={icon} size={20} color={colors.textPrimary} />

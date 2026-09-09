@@ -162,8 +162,8 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
     padding: spacing.xl,
     gap: spacing.lg,
   },
-  title: { fontSize: 26, fontWeight: typography.bold, color: colors.textPrimary },
+  title: { ...typography.h1, fontWeight: typography.bold, color: colors.textPrimary },
   form: { width: '100%', maxWidth: 420, gap: spacing.md },
-  modeHelp: { color: colors.textSecondary, lineHeight: 21 },
-  error: { color: colors.errorText, textAlign: 'center', maxWidth: 420 },
+  modeHelp: { ...typography.body, color: colors.textSecondary },
+  error: { ...typography.body, color: colors.errorText, textAlign: 'center', maxWidth: 420 },
 });

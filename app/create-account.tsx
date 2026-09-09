@@ -461,7 +461,7 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
     padding: spacing.xl,
     gap: spacing.lg,
   },
-  title: { fontSize: 26, fontWeight: typography.bold, textAlign: 'center', color: colors.textPrimary },
+  title: { ...typography.h1, fontWeight: typography.bold, textAlign: 'center', color: colors.textPrimary },
   options: { width: '100%', maxWidth: 420, gap: spacing.md },
   option: {
     minHeight: 88,
@@ -485,12 +485,12 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   optionCopy: { flex: 1, gap: spacing.xs },
   optionPressed: { backgroundColor: colors.surfacePressed },
-  optionTitle: { fontSize: 18, fontWeight: typography.semibold, color: colors.textPrimary },
+  optionTitle: { ...typography.h3, fontWeight: typography.semibold, color: colors.textPrimary },
   optionHint: { color: colors.textSecondary },
   note: { color: colors.textMuted, textAlign: 'center', maxWidth: 420 },
   form: { width: '100%', maxWidth: 420, gap: spacing.md },
   error: { color: colors.errorText, textAlign: 'center', maxWidth: 420 },
   notice: { color: colors.successText, textAlign: 'center', maxWidth: 420 },
   pendingCard: { width: '100%', maxWidth: 420, gap: spacing.md },
-  pendingTitle: { fontSize: 20, fontWeight: typography.bold, textAlign: 'center', color: colors.textPrimary },
+  pendingTitle: { ...typography.h2, fontWeight: typography.bold, textAlign: 'center', color: colors.textPrimary },
 });

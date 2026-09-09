@@ -469,14 +469,18 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.canvas },
   page: { width: '100%', maxWidth: 560, alignSelf: 'center', padding: spacing.lg, paddingBottom: spacing.xxxl, gap: spacing.lg },
   heading: { gap: spacing.sm },
-  title: { fontSize: 26, lineHeight: 33, fontWeight: typography.bold, color: colors.textPrimary },
-  progressText: { color: colors.textSecondary, fontSize: 13 },
+  // Four of the five sizes below were within a pixel of a scale step already:
+  // 26/33 against h1, 21/28 against h2, 15/23 against body, 13/20 against
+  // bodySmall. That is drift rather than intent, and drift is what makes a
+  // product feel assembled instead of designed.
+  title: { ...typography.h1, fontWeight: typography.bold, color: colors.textPrimary },
+  progressText: { ...typography.bodySmall, color: colors.textSecondary },
   progressTrack: { height: 8, overflow: 'hidden', borderRadius: radii.full, backgroundColor: colors.surfaceElevated },
   progressFill: { height: '100%', borderRadius: radii.full, backgroundColor: colors.textPrimary },
   card: { gap: spacing.md },
   stepIcon: { width: 58, height: 58, alignItems: 'center', justifyContent: 'center', borderRadius: radii.lg, backgroundColor: colors.surfaceElevated },
-  sectionTitle: { fontSize: 21, lineHeight: 28, fontWeight: typography.bold, color: colors.textPrimary },
-  body: { color: colors.textSecondary, fontSize: 15, lineHeight: 23 },
-  note: { color: colors.textMuted, fontSize: 13, lineHeight: 20 },
+  sectionTitle: { ...typography.h2, fontWeight: typography.bold, color: colors.textPrimary },
+  body: { ...typography.body, color: colors.textSecondary },
+  note: { ...typography.bodySmall, color: colors.textMuted },
   error: { color: colors.errorText },
 });
