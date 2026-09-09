@@ -207,7 +207,51 @@ A pathological journey, circling a district hunting for an address, costs more
 than 16 calls. That is an argument for the elapsed-time trigger being a ceiling
 rather than a target.
 
+## Built: the refresh policy, and what simulating it corrected
+
+`src/tracking/route-refresh-policy.ts` is the first code written for this, and
+it is the deviation test the section above says has to exist before the map
+does. It is pure arithmetic — no network, no device, no clock it was not handed
+— so `scripts/route-refresh-policy.test.mts` can simulate journeys sample by
+sample and count what the policy would actually spend.
+
+That simulation immediately falsified three things in the first draft, which is
+the entire argument for writing it before the map:
+
+**The movement trigger was setting the bill, not the ceiling.** At 250m it fired
+far more often than the ninety-second ceiling, and a twenty-minute journey spent
+25 requests rather than 16. Raised to 500m it still dominated above average
+traffic speed — 30 requests for a 16km run. It is now 1,200m, which is ninety
+seconds at roughly twice Cairo's average speed: a safety valve for progress that
+genuinely outruns the ceiling, not a second freshness rule. The parameter meant
+to prevent runaway cost was causing it.
+
+**The staleness rule fired on every GPS sample near arrival.** It triggered at
+`now >= eta - 60s`, which is not staleness — an ETA a minute away is one about
+to be right. It made the last minute of every journey twelve billed requests.
+It now fires only once the promised arrival has actually passed.
+
+**There was no floor.** A ceiling bounds how stale an ETA may get and says
+nothing about how often a request may be made, so any misjudged threshold could
+bill every five seconds. There is now a 20-second floor beneath every trigger
+except "no route at all", where waiting would mean a blank map.
+
+### Measured, not estimated
+
+| Journey | Requests |
+| --- | --- |
+| 20 min, 6.7km (Cairo average) | ≤ 16 — the figure the cost table above assumes |
+| 20 min, 1.5km (crawling) | ≤ 16, carried entirely by the ceiling |
+| 20 min, 16km (fast) | ≤ 18 |
+| 20 min, 25km (ring road) | ≤ 24, and the movement valve opens |
+| 20 min with fifteen wrong turns | ≤ 20, allowance spent and then bounded |
+| 20 min whose ETA is wrong all the way | ≤ 24 |
+
+Against 240 for one request per GPS sample, in every row.
+
 ## Not started
 
-Everything below the audit. This note exists so the first line of code is
-written against the architecture Warsha already has rather than beside it.
+Everything else: the position record and its RLS, the `route` operation in
+`location-proxy`, the foreground service, and any UI. This note exists so the
+next line of code is written against the architecture Warsha already has rather
+than beside it.

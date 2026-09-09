@@ -98,6 +98,7 @@ export const DETERMINISTIC_TEST_SCRIPTS = [
   'test:backend-target-gate',
   'test:android-dialog-theme',
   'test:typography',
+  'test:route-refresh',
   'test:deployment-approval',
   'test:worker-auth-password-contract',
   'test:staff-mfa-enrolment',
