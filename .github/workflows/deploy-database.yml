@@ -117,6 +117,9 @@ jobs:
       # backup reference, and not a reusable skip switch.
       - name: Confirm a restore point exists
         if: ${{ !inputs.dry_run }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
         run: |
           set -euo pipefail
           BACKUP_REF="${{ vars.PRE_MIGRATION_BACKUP_REF }}"
@@ -144,7 +147,27 @@ jobs:
             exit 1
           fi
 
-          node scripts/verify-backup-exception.mjs "$EXCEPTION" "${{ inputs.environment }}"
+          # What WOULD be pushed, taken from the CLI rather than from the
+          # operator's memory. The first real use of this gate approved an
+          # exception for one migration while the deployment would have applied
+          # two; the second was harmless, but nothing had looked at it. The
+          # declared set must now match the actual set exactly.
+          PENDING=$(supabase db push --linked --dry-run 2>&1 \
+            | sed -n 's/^[[:space:]]*•[[:space:]]*//p' \
+            | paste -sd, -)
+
+          echo "Deployment would apply: ${PENDING:-<none>}"
+
+          if [ -z "$PENDING" ]; then
+            echo "No migrations are pending. A backup exception is not needed"
+            echo "and will not be recorded for a deployment that changes nothing."
+            exit 1
+          fi
+
+          node scripts/verify-backup-exception.mjs \
+            --declared "$EXCEPTION" \
+            --environment "${{ inputs.environment }}" \
+            --pending "$PENDING"
 
       - name: Apply
         if: ${{ !inputs.dry_run }}

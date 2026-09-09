@@ -24,6 +24,27 @@
   "schemaVersion": 1,
   "exceptions": [
     {
+      "migration": "202609090001_professional_is_the_user_facing_role.sql",
+      "sha256": "df6b0e062f2ea600c54cf4a0f418876e1817c15191e72faa54044615a313a793",
+      "environment": "production",
+      "approvedBy": "owner",
+      "approvedOn": "2026-09-09",
+      "reason": "Owner-approved exception: single UPDATE of two text columns on at most one row of private.notification_push_copy (category worker_account, language en), applying the approved Professional terminology to lock-screen copy. It touches no customer, professional or financial data, and rollback is the inverse UPDATE. Production restore capability remains an open release-readiness gap (G22).",
+      "evidence": {
+        "statements": 1,
+        "update": 1,
+        "rowsAffectedAtMost": 1,
+        "table": "private.notification_push_copy",
+        "createOrReplaceFunction": 0,
+        "alterTable": 0,
+        "dropOfExistingAuthority": 0,
+        "insert": 0,
+        "delete": 0,
+        "touchesUserData": false,
+        "rollback": "update private.notification_push_copy set title = 'Worker account update', body = 'Your worker account has an update.' where category = 'worker_account' and language = 'en';"
+      }
+    },
+    {
       "migration": "202609090002_push_configuration_authority.sql",
       "sha256": "4f409c151edbca7107899b56a6f75ead864680267a37ef436157b28e20293f5a",
       "environment": "production",
