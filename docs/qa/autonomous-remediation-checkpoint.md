@@ -1,0 +1,168 @@
+# Autonomous remediation checkpoint
+
+Written so the next session resumes without asking the owner to reconstruct
+anything.
+
+**Updated:** 2026-09-09 · **HEAD = origin/main = `2ac4e1a`** · working tree clean
+
+---
+
+## State
+
+| | |
+| --- | --- |
+| Repository | `D:\Warsha`, branch `main` |
+| HEAD / origin | `2ac4e1a` — pushed, verified equal |
+| Local validation | typecheck 0, `test:all` exit 0, lint 0 errors (4 pre-existing warnings) |
+| CI on `2ac4e1a` | **NOT YET CONFIRMED** — started after push, unverified at checkpoint time |
+| Last confirmed CI | `9127ac2` and earlier: Validate 4/4, **API 24 ✓, API 25 ✓** |
+| Emulator | `emulator-5554`, 320×640 @160dpi (320dp), API 35 |
+| Installed APK | built 2026-09-09 18:05Z from `2ac4e1a` source, production mode (no QA flag) |
+| Docker | running; **must be stopped** — the owner wants it installed, auto-start disabled, stack down when unused |
+
+**First action next session:** confirm CI on `2ac4e1a` (Validate + Android API
+24/25). If red, read the real logs and fix before anything else.
+
+---
+
+## Completed and evidenced
+
+**Production database deployment** — `202609090001` and `202609090002` applied.
+Verified: `staff_set_push_configuration` returned 404 before and **403 MFA
+required** after, which proves the authority landed *and* the gate chain runs.
+Configuration untouched: provider `disabled`, 0 devices, delivery and
+registration off. Deployment installed authority only.
+
+**RTL layout architecture — PROVEN.** Warsha had two mirroring layers of its
+own. Root Yoga `direction` derived from language, plus 65 explicit
+`row-reverse` rows, cancelled to no mirroring at all. Root pinned to constant
+`ltr`; the explicit layer is now the only authority. Measured before/after,
+first launch, cold relaunch, device EN and AR. `I18nManager.isRTL` stays `true`
+throughout and no longer matters.
+
+**RTL layout — RENDERED CORRECT** on the gateway, Arabic, 320dp: trust icons on
+the reading edge beside their labels; links mirrored (Help 181–239, Privacy
+81–143); English byte-identical to before (Help 59–90, Privacy 128–179).
+
+**Other landed work:** currency authority (country → ISO 4217, never language);
+role marks (house / person); Arabic help-content parity plus a guard; backup
+exception mechanism covering whole deployment sets; guarded Production approval
+helper; build helper that cannot report a success it did not have.
+
+---
+
+## Open — highest priority first
+
+### 1. RTL visual certification — still **FAIL**
+
+Architecture is proven; the **matrix is not run**. Needed before the row moves:
+
+- viewports 320dp and ~411dp
+- device/app: EN/EN, EN/AR, **AR/AR**, AR/EN, AR/FR
+- light and dark, default and enlarged text
+- components: role cards, auth fields, consents, settings, lists, provider
+  profile, booking creation, chat, job status, tabs, headers/back, modal/sheet
+- bidi: Arabic + phone, + EGP, + dates, + Latin names, + address
+
+Two specific items carried forward:
+
+- **Navigation RTL is wired but never rendered.** `LocaleDirContext` is
+  supplied from Warsha `isRTL`; back arrow side, header alignment, transitions,
+  tabs, modal presentation and accessibility traversal are all unverified.
+- **Chat preview close** was moved to trailing *without rendered evidence* —
+  reaching it needs an authenticated conversation carrying an image. Stated in
+  the commit, must be confirmed or reverted.
+
+### 2. Portals and separate native surfaces — unmeasured
+
+The neutral baseline only helps descendants that inherit it. React Native
+`Modal`, sheets, dialogs, navigation overlays and map overlays may mount their
+own root and resolve RTL independently, reproducing the double-authority bug.
+**Measure before adding anything**, and if a baseline is needed apply it at the
+shared surface boundary, not in screens.
+
+### 3. Currency visual gate — formatters proven, layout not
+
+`formatMoney` is unit-proven and web/native agree character-for-character. No
+money screen has been rendered at 320dp, in AR/FR, dark, or enlarged text.
+Long currency strings could clip cards or buttons.
+
+### 4. Certification Layer 2 — mostly UNTESTED
+
+28 lifecycle transitions, 11 update messages, 11 cross-cutting capabilities.
+Visual column is UNTESTED for everything except two gateway rows.
+
+### 5. Not started
+
+Customer journey audit; professional journey past onboarding step 2 (photo
+fixture exists, journey not driven); live arrival tracking (designed, decisions
+recorded, nothing built); 404 parity for app./admin./native.
+
+---
+
+## Owner decisions
+
+`docs/product/owner-decision-backlog.md` — **OD-001** Supabase Pro (deferred by
+owner; G22 stays open), **OD-002** Production staff identity for push
+activation, **OD-003** role mark (resolved).
+
+Push Phase A/B is blocked only by OD-002. Everything else continues.
+
+---
+
+## Temporary infrastructure
+
+**None outstanding.** The on-device RTL probe was removed — component deleted,
+`welcome` unwired, no QA route left in the auth policy — and
+`rtl-layout-baseline.test.mts` asserts all three.
+
+`scripts/android-release-build.mjs` and
+`scripts/approve-production-deployment.mjs` are **permanent** tooling, not
+diagnostics.
+
+---
+
+## How to resume
+
+```bash
+# CI (authenticated; unauthenticated is 60/hour and this session exhausted it)
+node scratchpad/ci.mjs <sha>
+
+# Build — never pipe gradle; the helper requires exit 0 AND "BUILD SUCCESSFUL"
+# AND an APK newer than a marker taken before the build
+set -a; . ./.env; set +a
+node scripts/android-release-build.mjs
+
+# Emulator: adb device paths need MSYS_NO_PATHCONV=1 under Git Bash,
+# or /sdcard/x.xml silently becomes /Files/Git/sdcard/x.xml and dumps empty.
+export MSYS_NO_PATHCONV=1
+adb shell cmd locale set-app-locales com.warsha.app --locales ar-EG
+```
+
+Arabic is reached **only** by per-app locale. `system_locales` alone does not
+work, and clearing app data does not either — Warsha keeps its own preference
+and defaults to English. Setting the *device* locale to Arabic destabilises this
+emulator (Pixel Launcher and Digital Wellbeing ANRs, package-service broken pipe
+mid-install); a reboot clears it, and device-EN/app-AR is both stable and the
+more decisive configuration.
+
+---
+
+## Lessons that cost time here
+
+**Three wrong RTL diagnoses came from inference.** A gap between an icon and its
+label was read as a double mirror, then blamed on `I18nManager`, then on the
+root style — each plausible, each wrong. Only on-device measurement of the
+flattened style and the resolved child order settled it. **Measure before
+concluding**; one screenshot cannot separate three candidate causes.
+
+**A pipe hid a failed build for thirty minutes.** `gradlew … | tail` reports the
+exit code of `tail`. Fixed permanently in the build helper.
+
+**Prose matched code four times.** Tests searching for a construct matched the
+comment explaining it. Comment-stripping is now standard for code-shape
+assertions.
+
+**Two assertions encoded beliefs that caused bugs** — `allowRTL(true)` and the
+root direction style. Both were re-encoded to assert the architecture, not
+deleted to go green.
