@@ -39,14 +39,26 @@ import page from './page.module.css';
  * `staff_activate_external_provider` refuses while the flag is already enabled;
  * doing it the intuitive way round does not shortcut the process, it blocks it.
  *
- * How many people the order needs is also the database's. Where the policy is
- * two distinct identities, this page draws the request-and-second-approval
- * steps and cannot approve its own request: that refusal lives in a table
- * constraint and in `staff_approve_dual_control`, and this page only declines
- * to offer a button that would be refused anyway. Where the policy is one
- * authorised administrator, those two steps are not drawn greyed out — they are
- * not drawn at all, because describing an approver who is not coming is how an
- * operator ends up waiting for nobody.
+ * WHAT THIS PAGE NO LONGER DOES.
+ *
+ * It used to offer "Activate provider" and "Enable feature", and a
+ * request-and-second-approval pair to gate them. Those are technical
+ * activation: pressing them switches hosted capability on. Warsha's operating
+ * model puts operational execution on the agent and authorisation on the owner,
+ * so an activation button in a browser is a third path that nobody needs and
+ * that invites the owner to run infrastructure by hand.
+ *
+ * The control plane is untouched and this is important:
+ * `staff_activate_external_provider`, `staff_set_feature_flag`,
+ * `staff_request_dual_control` and `staff_approve_dual_control` all still
+ * exist, still check their capability, still demand fresh auth where they did,
+ * still enforce environment binding, and still write their audit rows. Removing
+ * a caller is not removing an authority. Activation happens through the
+ * governed backend path instead.
+ *
+ * What this page is now: what is configured, what is switched on, in which
+ * environment, whether the credentials are healthy, what is blocking, and the
+ * two legal decisions that are genuinely a person's to make.
  *
  * No credential value, digest, or environment-variable name is displayed. The
  * page asks the proxy whether a credential is configured and shows that one
@@ -95,7 +107,6 @@ export default function ProvidersPage() {
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<string | null>(null);
   const [reason, setReason] = useState('');
-  const [note, setNote] = useState('');
   const [showTechnical, setShowTechnical] = useState(false);
 
   const environment = session.environment ?? null;
@@ -232,27 +243,6 @@ export default function ProvidersPage() {
       doneMessage: words.providerActionDone,
     });
 
-  const requestApproval = () => run('request', ACTIVATION_CAPABILITY, async () =>
-    supabase().rpc('staff_request_dual_control', {
-      p_capability_key: ACTIVATION_CAPABILITY,
-      p_action_key: ACTIVATION_ACTION_KEY,
-      p_subject_ref: activationSubject(providerKey, environment ?? ''),
-      p_reason: reason.trim(),
-    }));
-
-  const approve = (id: string) => run('approve', ACTIVATION_CAPABILITY, async () =>
-    supabase().rpc('staff_approve_dual_control', {
-      p_request_id: id,
-      p_approval_note: note.trim(),
-    }));
-
-  const activate = () => run('activate', ACTIVATION_CAPABILITY, async () =>
-    supabase().rpc('staff_activate_external_provider', {
-      p_provider_key: providerKey,
-      p_expected_environment: environment,
-      p_reason: reason.trim() || providerWords('providerActivateDefaultReason'),
-    }));
-
   // The two internal decisions that had no button.
   //
   // WPS-024 registered a lawful basis as `pending` and a supplier agreement as
@@ -282,16 +272,6 @@ export default function ProvidersPage() {
       p_status: 'incorporated',
       p_reference: agreementReference.trim(),
       p_reason: reason.trim() || words.providerAgreementDefaultReason,
-    }));
-
-  const enableFeature = () => run('feature', 'manage_feature_flags', async () =>
-    supabase().rpc('staff_set_feature_flag', {
-      p_flag_key: governed.featureFlag,
-      p_environment: environment,
-      p_enabled: true,
-      p_audience: 'all',
-      p_rollout_percentage: 100,
-      p_reason: reason.trim() || providerWords('providerFeatureDefaultReason'),
     }));
 
   // Two calls, both harmless reads at the provider, both billed once. Nothing
@@ -505,130 +485,45 @@ export default function ProvidersPage() {
         </ol>
       </section>
 
-      {/* --- Approval ------------------------------------------------------- */}
-      {approvals >= 2 ? (
+      {/* --- Why a decision below will be recorded the way it is -------------
+          Warsha runs single-operator: `requiredApprovalCount()` returns 1, so
+          the two-approver request/approve pair this section used to carry never
+          rendered. It is gone rather than left as an unreachable branch.
+
+          What remains is the context the recorded decisions below need: which
+          governance mode is in force, and the reason string that is written
+          into the audit row for the legal reviews. -------------------------- */}
       <section className={styles.block} aria-labelledby="approval">
-        <h2 id="approval" className={styles.title}>{words.providerApprovalTitle}</h2>
-        <p className={styles.lead}>{providerWords('providerApprovalWhy')}</p>
-
-        {request ? (
-          <div className={styles.impact}>
-            <dl className={page.facts}>
-              <div><dt>{words.providerApprovalRequestedBy}</dt><dd>{request.requestedByName}</dd></div>
-              <div><dt>{words.providerApprovalRequestedAt}</dt>
-                <dd><Timestamp value={request.requestedAt} locale={locale} /></dd></div>
-              <div><dt>{words.providerApprovalExpires}</dt>
-                <dd><Timestamp value={request.expiresAt} locale={locale} /></dd></div>
-              <div><dt>{words.providerApprovalState}</dt>
-                <dd>
-                  <Badge tone={request.approvedAt ? 'plain' : 'strong'}>
-                    {request.approvedAt ? words.providerApprovalApproved : words.providerApprovalPending}
-                  </Badge>
-                </dd></div>
-              {request.approvedByName ? (
-                <div><dt>{words.providerApprovalApprovedBy}</dt><dd>{request.approvedByName}</dd></div>
-              ) : null}
-            </dl>
-            <p className={styles.hint}>{words.providerApprovalReason}: {request.reason}</p>
-
-            {request.requestedByMe && !request.approvedAt ? (
-              <p className={styles.hint} role="status">{words.providerApprovalNotYours}</p>
-            ) : null}
-
-            {request.canApprove ? (
-              <div className={styles.form}>
-                <div className={styles.field}>
-                  <label className={styles.label} htmlFor="note">{words.providerApprovalNote}</label>
-                  <textarea id="note" className={styles.textarea} value={note}
-                    onChange={(event) => setNote(event.target.value)} />
-                  <p className={styles.hint}>{words.providerApprovalNoteHint}</p>
-                </div>
-                <div className={styles.actions}>
-                  <button type="button" className={styles.submit}
-                    disabled={(busy ?? reauth.pendingKey) !== null || note.trim().length < 3}
-                    onClick={() => approve(request.id)}>
-                    {busy === 'approve' ? words.loading : words.providerApproveAction}
-                  </button>
-                </div>
-              </div>
-            ) : null}
+        <h2 id="approval" className={styles.title}>{words.providerGovernanceTitle}</h2>
+        <p className={styles.lead}>{words.providerGovernanceSingleAdmin}</p>
+        <ul className={styles.impactList}>
+          <li>{words.providerGovernanceMode}: {words.providerGovernanceModeSingle}</li>
+          <li>{words.providerGovernanceApprovals}: {approvals}</li>
+          <li>{words.providerGovernanceRecorded}</li>
+        </ul>
+        <div className={styles.form}>
+          <div className={styles.field}>
+            <label className={styles.label} htmlFor="reason">{words.providerReason}</label>
+            <textarea id="reason" className={styles.textarea} value={reason}
+              onChange={(event) => setReason(event.target.value)} />
+            <p className={styles.hint}>{words.providerReasonHint}</p>
           </div>
-        ) : states.approvalRequested === 'ready' ? (
-          <div className={styles.form}>
-            <div className={styles.field}>
-              <label className={styles.label} htmlFor="reason">{words.providerReason}</label>
-              <textarea id="reason" className={styles.textarea} value={reason}
-                onChange={(event) => setReason(event.target.value)} />
-              <p className={styles.hint}>{words.providerReasonHint}</p>
-            </div>
-            <div className={styles.actions}>
-              <button type="button" className={styles.submit}
-                disabled={(busy ?? reauth.pendingKey) !== null || reason.trim().length < 10}
-                onClick={requestApproval}>
-                {busy === 'request' ? words.loading : words.providerRequestAction}
-              </button>
-            </div>
-          </div>
-        ) : (
-          <Empty>{words.providerApprovalUnavailable}</Empty>
-        )}
+        </div>
       </section>
-      ) : (
-        <section className={styles.block} aria-labelledby="approval">
-          <h2 id="approval" className={styles.title}>{words.providerGovernanceTitle}</h2>
-          {/* Said plainly rather than left to be inferred from an absence. An
-              operator who has seen the two-approver sequence before needs to
-              know it is gone by policy, not broken. */}
-          <p className={styles.lead}>{words.providerGovernanceSingleAdmin}</p>
-          <ul className={styles.impactList}>
-            <li>{words.providerGovernanceMode}: {words.providerGovernanceModeSingle}</li>
-            <li>{words.providerGovernanceApprovals}: {approvals}</li>
-            <li>{words.providerGovernanceRecorded}</li>
-          </ul>
-          <div className={styles.form}>
-            <div className={styles.field}>
-              <label className={styles.label} htmlFor="reason">{words.providerReason}</label>
-              <textarea id="reason" className={styles.textarea} value={reason}
-                onChange={(event) => setReason(event.target.value)} />
-              <p className={styles.hint}>{words.providerReasonHint}</p>
-            </div>
-          </div>
-        </section>
-      )}
 
-      {/* --- Activation and switch-on --------------------------------------- */}
+      {/* --- Is the provider actually reachable? ----------------------------
+          This section used to offer "Activate provider" and "Enable feature",
+          which are technical activation: they switch hosted capability on. That
+          is operational execution, and it now happens through the governed
+          backend path rather than by inviting the owner to press a button in a
+          browser. `staff_activate_external_provider` and
+          `staff_set_feature_flag` are untouched — same capability checks, same
+          fresh-auth requirement, same audit rows.
+
+          What is left is the one action here that changes nothing: a read-only
+          reachability probe, which is diagnosis rather than operation. --- */}
       <section className={styles.block} aria-labelledby="actions">
         <h2 id="actions" className={styles.title}>{words.providerActionsTitle}</h2>
-
-        <GovernedAction
-          words={words}
-          title={words.providerActivateTitle}
-          body={providerWords('providerActivateBody')}
-          capability={words.capability_manage_subprocessors}
-          mutates
-          freshAuth
-          secondPerson={approvals >= 2}
-          irreversible
-          audit="external_provider_activated"
-          availability={actionAvailability(states.activate, busy ?? reauth.pendingKey, refreshing)}
-          label={busy === 'activate' ? words.loading : words.providerActivateAction}
-          onRun={activate}
-        />
-
-        <GovernedAction
-          words={words}
-          title={providerWords('providerFeatureTitle')}
-          body={providerWords('providerFeatureBody')}
-          capability={words.capability_manage_feature_flags}
-          mutates
-          freshAuth={false}
-          secondPerson={false}
-          irreversible={false}
-          audit="feature_flag_changed"
-          availability={actionAvailability(states.feature, busy ?? reauth.pendingKey, refreshing)}
-          label={busy === 'feature' ? words.loading : providerWords('providerFeatureAction')}
-          onRun={enableFeature}
-        />
 
         <GovernedAction
           words={words}

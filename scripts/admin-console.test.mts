@@ -1267,10 +1267,72 @@ check(/rpc\('staff_provider_health'/.test(providersPage)
   && /providerHealthVerified/.test(providersPage),
   'device health is re-read from the staff-only rollup without another provider call');
 check(/providerWords\('providerMapsName'\)/.test(providersPage)
-  && /providerWords\('providerMapsPurpose'\)/.test(providersPage)
-  && /providerWords\('providerApprovalWhy'\)/.test(providersPage)
-  && /providerWords\('providerFeatureTitle'\)/.test(providersPage),
+  && /providerWords\('providerMapsPurpose'\)/.test(providersPage),
   'provider-specific identity copy replaces Maps wording throughout the Vision view');
+
+/*
+ * THE CONSOLE DOES NOT ACTIVATE ANYTHING.
+ *
+ * Warsha's operating model puts operational execution on the agent and
+ * authorisation on the owner. An "Activate provider" button in a browser is a
+ * third path: it invites the owner to run infrastructure by hand, and it is the
+ * one path with no validation, no evidence and no rollback attached to it.
+ *
+ * So the console offers status, diagnosis, moderation and the legal decisions
+ * that are genuinely a person's — and does not offer technical activation.
+ *
+ * The distinction this asserts is between REMOVING A CALLER and REMOVING AN
+ * AUTHORITY. The four RPCs below are untouched in the database. If a later
+ * change deletes one of them believing the UI work made it dead, the second
+ * half of this check fails and says so.
+ */
+const activationRpcs = [
+  'staff_activate_external_provider',
+  'staff_set_feature_flag',
+  'staff_request_dual_control',
+  'staff_approve_dual_control',
+];
+const migrationsDir = join('supabase', 'migrations');
+const migrationSql = readdirSync(migrationsDir)
+  .filter(file => file.endsWith('.sql'))
+  .map(file => readFileSync(join(migrationsDir, file), 'utf8'))
+  .join('\n');
+
+for (const rpc of activationRpcs) {
+  check(!new RegExp(`rpc\\('${rpc}'`).test(providersPage),
+    `THE CONSOLE DOES NOT CALL ${rpc}`);
+  check(migrationSql.includes(rpc),
+    `and ${rpc} still exists in the database, because removing a caller is not removing an authority`);
+}
+
+// The capability that gates activation is still declared and still checked
+// server-side. The console reads it to decide what to SHOW, never to decide
+// what is allowed.
+check(/ACTIVATION_CAPABILITY/.test(providersPage),
+  'the activation capability is still read, so status can say what is blocked');
+check(migrationSql.includes('manage_subprocessors')
+  && migrationSql.includes('manage_feature_flags'),
+  'and both activation capabilities still exist in the database');
+
+// Audit rows are the evidence that survives the UI.
+for (const audit of ['external_provider_activated', 'feature_flag_changed']) {
+  check(migrationSql.includes(audit), `${audit} is still an audited action`);
+}
+
+// What a person genuinely decides stays on the page: two legal reviews and a
+// read-only reachability probe. Removing those would be removing judgement, not
+// removing a button.
+check(/rpc\('staff_record_processing_basis_review'/.test(providersPage),
+  'the lawful-basis review is still a decision a person records here');
+check(/rpc\('staff_record_subprocessor_agreement'/.test(providersPage),
+  'and so is the subprocessor agreement reference');
+check(/rpc\('staff_provider_health'/.test(providersPage),
+  'and the read-only health probe stays, because diagnosis is not operation');
+
+// Nothing became implicitly enabled by removing the controls: the console still
+// reads flag state rather than assuming it.
+check(/rpc\('get_staff_feature_flags'/.test(providersPage),
+  'feature state is still read and displayed, not assumed');
 
 for (const key of [
   'providerMapsName_vision', 'providerMapsPurpose_vision',
