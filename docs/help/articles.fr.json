@@ -40,7 +40,7 @@
       "title": "Adresses et localisation",
       "summary": "Enregistrez une adresse claire tout en conservant la position exacte.",
       "version": 3,
-      "lastReviewedDate": "2026-08-26",
+      "lastReviewedDate": "2026-09-10",
       "features": [
         "addresses",
         "location"

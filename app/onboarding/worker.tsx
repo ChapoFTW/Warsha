@@ -336,27 +336,32 @@ export default function WorkerOnboarding() {
 
         {!onboarding.refreshing && progress.step === 'basic_information' ? (
           <JourneyCard icon="person" title={wt.text('basicTitle')} body={wt.text('basicBody')}>
-            <OnboardingFieldMeta label={wt.text('addPhoto')} required purpose={wt.text('photoPurpose')} />
-            <WorkerPhotoPicker currentUri={draft.avatarUrl} uploading={busy} onUse={savePhoto} />
-            <OnboardingFieldMeta label={wt.text('fullName')} required purpose={wt.text('fullNamePurpose')} />
-            <BrandTextField accessibilityLabel={wt.text('fullName')} value={draft.displayName} maxLength={100} onChangeText={displayName => setDraft(current => ({ ...current, displayName }))} />
-            <OnboardingFieldMeta label={wt.text('about')} required={false} purpose={wt.text('aboutPurpose')} />
-            <BrandTextField accessibilityLabel={wt.text('about')} value={draft.about} maxLength={500} multiline helper={wt.text('aboutExample')} onChangeText={about => setDraft(current => ({ ...current, about }))} />
-            <OnboardingFieldMeta label={wt.text('experience')} required={false} purpose={wt.text('experiencePurpose')} />
-            <BrandTextField accessibilityLabel={wt.text('experience')} value={experienceInput} placeholder={wt.text('experienceExample')} keyboardType="number-pad" maxLength={2} onChangeText={value => /^\d{0,2}$/.test(value) && setExperienceInput(value)} />
+            <OnboardingFieldMeta label={wt.text('addPhoto')} required purpose={wt.text('photoPurpose')}>
+              <WorkerPhotoPicker currentUri={draft.avatarUrl} uploading={busy} onUse={savePhoto} />
+            </OnboardingFieldMeta>
+            <OnboardingFieldMeta label={wt.text('fullName')} required purpose={wt.text('fullNamePurpose')}>
+              <BrandTextField accessibilityLabel={wt.text('fullName')} value={draft.displayName} maxLength={100} onChangeText={displayName => setDraft(current => ({ ...current, displayName }))} />
+            </OnboardingFieldMeta>
+            <OnboardingFieldMeta label={wt.text('about')} required={false} purpose={wt.text('aboutPurpose')}>
+              <BrandTextField accessibilityLabel={wt.text('about')} value={draft.about} maxLength={500} multiline helper={wt.text('aboutExample')} onChangeText={about => setDraft(current => ({ ...current, about }))} />
+            </OnboardingFieldMeta>
+            <OnboardingFieldMeta label={wt.text('experience')} required={false} purpose={wt.text('experiencePurpose')}>
+              <BrandTextField accessibilityLabel={wt.text('experience')} value={experienceInput} placeholder={wt.text('experienceExample')} keyboardType="number-pad" maxLength={2} onChangeText={value => /^\d{0,2}$/.test(value) && setExperienceInput(value)} />
+            </OnboardingFieldMeta>
             <BrandButton label={wt.text('saveContinue')} loading={busy} onPress={saveBasic} />
           </JourneyCard>
         ) : null}
 
         {!onboarding.refreshing && progress.step === 'trade' ? (
           <JourneyCard icon="handyman" title={wt.text('tradeTitle')} body={wt.text('tradeBody')}>
-            <OnboardingFieldMeta label={wt.text('professionPlural')} required purpose={wt.text('professionPurpose')} />
             {/* One question at a time: the trade names the work, so the work
                 cannot be offered before the trade has been chosen. */}
-            <ProfessionSelector
-              selected={selectedProfessionKeys(draft)}
-              onChange={keys => applyTrade(current => withTradeSelection(current, keys, options))}
-            />
+            <OnboardingFieldMeta label={wt.text('professionPlural')} required purpose={wt.text('professionPurpose')}>
+              <ProfessionSelector
+                selected={selectedProfessionKeys(draft)}
+                onChange={keys => applyTrade(current => withTradeSelection(current, keys, options))}
+              />
+            </OnboardingFieldMeta>
             {withdrawnProfessionSelections(draft).length ? (
               <AppText accessibilityRole="alert" style={styles.note}>
                 {wt.text('withdrawnProfessionNotice')}
@@ -386,9 +391,16 @@ export default function WorkerOnboarding() {
 
         {!onboarding.refreshing && progress.step === 'service_area' ? (
           <JourneyCard icon="location-on" title={wt.text('areaTitle')} body={wt.text('areaBody')}>
-            <OnboardingFieldMeta label={wt.text('governorate')} required purpose={wt.text('governoratePurpose')} />
-            <OnboardingFieldMeta label={wt.text('district')} required purpose={wt.text('districtPurpose')} />
+            {/* No meta block here. This control draws a labelled field for the
+                governorate and another for the area, so a manifest above it
+                stated both names a second time and pushed the first thing you
+                could touch to the bottom edge of a 320dp screen. The reasons
+                are passed in as each field's helper instead, which is where
+                they were always meant to be read. */}
             <EgyptLocationSelector
+              required
+              governorateHelper={wt.text('governoratePurpose')}
+              districtHelper={wt.text('districtPurpose')}
               governorate={draft.areas[0]?.governorate ?? ''}
               district={draft.areas[0]?.district ?? ''}
               onChange={area => setDraft(current => ({

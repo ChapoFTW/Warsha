@@ -124,7 +124,8 @@
           "isAndroidForegroundServiceEnabled": false
         }
       ],
-      "./plugins/warsha-android-permissions"
+      "./plugins/warsha-android-permissions",
+      "./plugins/warsha-android-dialog-theme"
     ],
     "experiments": {
       "typedRoutes": false,

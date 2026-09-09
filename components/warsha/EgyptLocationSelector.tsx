@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { BrandTextField } from '@/components/warsha/BrandUI';
+import { BrandTextField, StateBadge } from '@/components/warsha/BrandUI';
 import { OptionRow } from '@/components/warsha/OptionRow';
 import { AppText } from '@/components/warsha/Typography';
 import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
@@ -36,11 +36,25 @@ export function EgyptLocationSelector({
   district,
   onChange,
   copy,
+  required = false,
+  governorateHelper,
+  districtHelper,
 }: {
   governorate: string;
   district: string;
   onChange: (next: { governorate: string; district: string }) => void;
   copy?: EgyptLocationSelectorCopy;
+  /**
+   * Marks both fields required, on the fields themselves.
+   *
+   * Worker onboarding used to state this in a block above the control, which
+   * repeated both field names and pushed the first dropdown to the bottom edge
+   * of a 320dp screen. A badge belongs beside the thing it qualifies.
+   */
+  required?: boolean;
+  /** Why Warsha asks. Shown under its own field rather than ahead of both. */
+  governorateHelper?: string;
+  districtHelper?: string;
 }) {
   const colors = useThemeColors();
   const styles = useThemedStyles(makeStyles);
@@ -80,7 +94,8 @@ export function EgyptLocationSelector({
         label={text.governorate}
         value={governorateOption?.[language] ?? governorate}
         placeholder={text.selectGovernorate}
-        helper={text.governorateHelper}
+        helper={governorateHelper ?? text.governorateHelper}
+        required={required}
         icon="map"
         onPress={() => open('governorate')}
       />
@@ -88,7 +103,8 @@ export function EgyptLocationSelector({
         label={text.district}
         value={areaOption?.[language] ?? district}
         placeholder={text.selectDistrict}
-        helper={text.districtHelper}
+        helper={districtHelper ?? text.districtHelper}
+        required={required}
         icon="location-on"
         disabled={!governorateOption}
         onPress={() => open('area')}
@@ -148,6 +164,7 @@ function SelectorButton({
   helper,
   icon,
   disabled,
+  required,
   onPress,
 }: {
   label: string;
@@ -156,14 +173,19 @@ function SelectorButton({
   helper?: string;
   icon: React.ComponentProps<typeof MaterialIcons>['name'];
   disabled?: boolean;
+  required?: boolean;
   onPress: () => void;
 }) {
   const colors = useThemeColors();
   const styles = useThemedStyles(makeStyles);
   const { isRTL } = useLocalization();
+  const wt = useWorkerText();
   return (
     <View style={styles.field}>
-      <AppText style={styles.fieldLabel}>{label}</AppText>
+      <View style={[styles.labelRow, isRTL && styles.reverse]}>
+        <AppText style={styles.fieldLabel}>{label}</AppText>
+        {required ? <StateBadge label={wt.text('required')} compact /> : null}
+      </View>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`${label}. ${value || placeholder}`}
@@ -183,16 +205,17 @@ function SelectorButton({
 const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   group: { gap: spacing.md },
   field: { gap: spacing.sm },
-  fieldLabel: { color: colors.textSecondary, fontWeight: typography.semibold },
+  labelRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: spacing.sm },
+  fieldLabel: { ...typography.body, color: colors.textPrimary, fontWeight: typography.semibold },
   selector: { minHeight: 54, flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.md, borderWidth: 1, borderColor: colors.border, borderRadius: radii.sm, backgroundColor: colors.surface },
   selectorValue: { flex: 1, color: colors.textPrimary },
   placeholder: { color: colors.textMuted },
   disabled: { opacity: 0.45 },
-  helper: { color: colors.textMuted, fontSize: 13, lineHeight: 19 },
+  helper: { ...typography.bodySmall, color: colors.textMuted },
   reverse: { flexDirection: 'row-reverse' },
   modalSafe: { flex: 1, padding: spacing.lg, gap: spacing.md, backgroundColor: colors.canvas },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md },
-  title: { flex: 1, fontSize: 24, lineHeight: 31, fontWeight: typography.bold, color: colors.textPrimary },
+  title: { ...typography.h2, flex: 1, fontWeight: typography.bold, color: colors.textPrimary },
   close: { width: 48, height: 48, borderWidth: 1, borderColor: colors.border, borderRadius: radii.pill, alignItems: 'center', justifyContent: 'center' },
   list: { gap: spacing.sm, paddingBottom: spacing.xl },
 
