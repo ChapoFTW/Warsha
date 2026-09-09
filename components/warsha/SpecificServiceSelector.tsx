@@ -4,6 +4,7 @@ import { Modal, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PressableSurface } from '@/components/warsha/PressableSurface';
+import { OptionRow } from '@/components/warsha/OptionRow';
 import { AppText } from '@/components/warsha/Typography';
 import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
 import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
@@ -132,6 +133,15 @@ export function SpecificServiceSelector({
   );
 }
 
+/*
+ * A local name kept for readability; the row itself is the shared control.
+ *
+ * This was a hand-drawn radio: a Material glyph, a label, and a check that
+ * appeared on the trailing edge only once chosen — so an unchosen row had
+ * nothing there at all and the list had no consistent right edge. `OptionRow`
+ * always draws the mark, empty or filled, which is what makes a column of them
+ * scannable.
+ */
 function Option({
   label,
   icon,
@@ -144,19 +154,14 @@ function Option({
   onPress: () => void;
 }) {
   const colors = useThemeColors();
-  const styles = useThemedStyles(makeStyles);
-  const { isRTL } = useLocalization();
   return (
-    <PressableSurface
-      accessibilityRole="radio"
-      accessibilityState={{ checked }}
-      accessibilityLabel={label}
+    <OptionRow
+      mode="radio"
+      label={label}
+      selected={checked}
       onPress={onPress}
-      style={[styles.option, isRTL && styles.reverse, checked && styles.optionSelected]}>
-      <MaterialIcons name={icon} size={23} color={colors.textPrimary} />
-      <AppText style={styles.optionLabel}>{label}</AppText>
-      {checked ? <MaterialIcons name="check" size={22} color={colors.textPrimary} /> : null}
-    </PressableSurface>
+      leading={<MaterialIcons name={icon} size={22} color={colors.textSecondary} />}
+    />
   );
 }
 
@@ -170,10 +175,7 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   reverse: { flexDirection: 'row-reverse' },
   modalSafe: { flex: 1, padding: spacing.lg, gap: spacing.md, backgroundColor: colors.canvas },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md },
-  title: { flex: 1, fontSize: 24, lineHeight: 31, fontWeight: typography.bold, color: colors.textPrimary },
+  title: { ...typography.h2, flex: 1, fontWeight: typography.bold, color: colors.textPrimary },
   close: { width: 48, height: 48, borderWidth: 1, borderColor: colors.border, borderRadius: radii.pill, alignItems: 'center', justifyContent: 'center' },
   list: { gap: spacing.sm, paddingBottom: spacing.xl },
-  option: { minHeight: 56, flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.md, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, backgroundColor: colors.surface },
-  optionSelected: { borderColor: colors.textPrimary, backgroundColor: colors.surfaceElevated },
-  optionLabel: { flex: 1, color: colors.textPrimary, fontSize: 16, lineHeight: 23 },
 });

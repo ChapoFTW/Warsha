@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { PressableSurface } from '@/components/warsha/PressableSurface';
+import { OptionRow } from '@/components/warsha/OptionRow';
 import { AppText } from '@/components/warsha/Typography';
 import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
 import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
@@ -75,7 +76,7 @@ export function OfferedServicesSection<T extends CatalogueServiceRow>({
             {historicalServices.map(service => (
               <View key={service.serviceId} style={styles.legacyRow}>
                 <MaterialIcons name="history" size={21} color={colors.textMuted} />
-                <AppText style={styles.optionLabel}>
+                <AppText style={styles.legacyLabel}>
                   {(service.translationKey
                     ? specificServiceLabel(service.translationKey, language)
                     : null) ?? service.name}
@@ -161,39 +162,27 @@ function TradeAccordion<T extends CatalogueServiceRow>({
             <AppText style={styles.summaryEmpty}>{wt.text('noServicesAvailable')}</AppText>
           ) : (
             <>
-              <PressableSurface
-                accessibilityRole="checkbox"
-                accessibilityState={{ checked: all, disabled: Boolean(disabled) }}
-                accessibilityLabel={wt.text('selectAllServices')}
+              {/* "Everything in this trade" is a different KIND of answer from
+                  a single job, so it is separated by a rule rather than sitting
+                  in the list as though it were the first job. */}
+              <OptionRow
+                label={wt.text('selectAllServices')}
+                selected={all}
                 disabled={disabled}
                 onPress={() => onToggleAll(section.professionKey, !all)}
-                style={[styles.selectAll, isRTL && styles.reverse]}>
-                <MaterialIcons
-                  name={all ? 'check-box' : 'check-box-outline-blank'}
-                  size={24}
-                  color={colors.textPrimary}
-                />
-                <AppText style={styles.selectAllLabel}>{wt.text('selectAllServices')}</AppText>
-              </PressableSurface>
+                style={styles.selectAll}
+              />
               {section.services.map(service => {
                 const checked = section.selectedServiceIds.includes(service.id);
                 const label = catalogueServiceLabel(service, language);
                 return (
-                  <PressableSurface
+                  <OptionRow
                     key={service.id}
-                    accessibilityRole="checkbox"
-                    accessibilityState={{ checked, disabled: Boolean(disabled) }}
-                    accessibilityLabel={label}
+                    label={label}
+                    selected={checked}
                     disabled={disabled}
                     onPress={() => onToggleService(service, !checked)}
-                    style={[styles.option, isRTL && styles.reverse, checked && styles.optionSelected]}>
-                    <MaterialIcons
-                      name={checked ? 'check-box' : 'check-box-outline-blank'}
-                      size={24}
-                      color={colors.textPrimary}
-                    />
-                    <AppText style={styles.optionLabel}>{label}</AppText>
-                  </PressableSurface>
+                  />
                 );
               })}
             </>
@@ -216,9 +205,8 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   summary: { fontSize: 13, lineHeight: 20, color: colors.textSecondary },
   summaryEmpty: { color: colors.textMuted },
   body: { gap: spacing.sm, paddingHorizontal: spacing.md, paddingBottom: spacing.md },
-  selectAll: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.sm, borderRadius: radii.sm, backgroundColor: colors.surfaceElevated },
-  selectAllLabel: { flex: 1, fontWeight: typography.semibold, color: colors.textPrimary },
-  option: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, borderRadius: radii.sm },
-  optionSelected: { backgroundColor: colors.surfaceElevated },
-  optionLabel: { flex: 1, fontSize: 15, lineHeight: 23, color: colors.textPrimary },
+  selectAll: { marginBottom: spacing.xs },
+  // Withdrawn services are shown, not offered: no row treatment, because
+  // nothing here is selectable.
+  legacyLabel: { ...typography.body, flex: 1, color: colors.textSecondary },
 });

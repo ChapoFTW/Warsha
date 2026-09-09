@@ -350,10 +350,31 @@ function row(key: string, categoryId: string, name: string, id = `uuid-${key}`):
 
 // --- Mobile quality: the house patterns, not a new one ----------------------
 {
-  check(/accessibilityRole="radio"/.test(picker),
-    'options are radios, matching single-select elsewhere in the app');
-  check(/accessibilityState=\{\{ checked \}\}/.test(picker),
-    'and report their checked state to a screen reader');
+  /*
+   * These two used to search this file for `accessibilityRole="radio"` and for
+   * a literal `accessibilityState={{ checked }}`, and they were right to: a
+   * single-select list that announces itself as a list of buttons tells a
+   * screen-reader user nothing about what they have chosen.
+   *
+   * The role now comes from `OptionRow`, the shared selection control, so the
+   * literal is no longer in this file. The assertions are re-encoded rather
+   * than dropped, and they cover MORE than they did: the role and the state
+   * are asserted at the one place every selection list in the product gets
+   * them from, so the picker cannot lose them and neither can the trade list,
+   * the job list or the governorate list.
+   */
+  check(/mode="radio"/.test(picker),
+    'options are single-select, matching single-select elsewhere in the app');
+  check(/<OptionRow/.test(picker),
+    'and they are the shared selection control rather than a private copy');
+
+  const optionRow = readFileSync('components/warsha/OptionRow.tsx', 'utf8');
+  check(/accessibilityRole=\{mode === 'button' \? 'button' : mode\}/.test(optionRow),
+    'the shared control announces radio mode as a radio');
+  check(/checked: selected/.test(optionRow),
+    'and reports its checked state to a screen reader');
+  check(/accessibilityLabel=\{detail \? `\$\{label\}\. \$\{detail\}` : label\}/.test(optionRow),
+    'and names itself from data, so a decorative icon cannot compose ", Plumber"');
   check(/accessibilityRole="header"/.test(picker), 'the sheet titles itself');
   check(/onRequestClose=/.test(picker), 'ANDROID BACK CLOSES THE SHEET');
   check(/SafeAreaView/.test(picker), 'and it respects the safe area');

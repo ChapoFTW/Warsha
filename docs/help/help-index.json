@@ -526,8 +526,8 @@
       "locale": "en",
       "title": "Onboarding, service areas, and verification",
       "summary": "Understand every application stage and what customers can see.",
-      "version": 6,
-      "lastReviewedDate": "2026-09-09",
+      "version": 7,
+      "lastReviewedDate": "2026-09-10",
       "features": [
         "worker_onboarding",
         "location",
@@ -554,8 +554,8 @@
       "locale": "ar",
       "title": "التقديم ومناطق الشغل والتوثيق",
       "summary": "افهم كل مرحلة في التقديم وإيه اللي العميل يقدر يشوفه.",
-      "version": 6,
-      "lastReviewedDate": "2026-09-09",
+      "version": 7,
+      "lastReviewedDate": "2026-09-10",
       "features": [
         "worker_onboarding",
         "location",
@@ -1315,8 +1315,8 @@
       "locale": "fr",
       "title": "Profil, métiers, zone de service et vérification",
       "summary": "Comprenez les étapes nécessaires avant de pouvoir recevoir des interventions.",
-      "version": 5,
-      "lastReviewedDate": "2026-09-05",
+      "version": 6,
+      "lastReviewedDate": "2026-09-10",
       "features": [
         "worker_onboarding",
         "location",

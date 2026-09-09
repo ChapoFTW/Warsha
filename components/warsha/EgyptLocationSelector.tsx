@@ -4,6 +4,7 @@ import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BrandTextField } from '@/components/warsha/BrandUI';
+import { OptionRow } from '@/components/warsha/OptionRow';
 import { AppText } from '@/components/warsha/Typography';
 import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
 import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
@@ -110,15 +111,28 @@ export function EgyptLocationSelector({
             onChangeText={setQuery}
           />
           <ScrollView automaticallyAdjustKeyboardInsets contentContainerStyle={styles.list} keyboardShouldPersistTaps="handled">
+            {/* `OptionRow` in `button` mode: choosing a governorate closes the
+                sheet rather than toggling anything, so it shows a chevron and
+                no state mark. It also names itself from the option, which is
+                what this list was missing — with no explicit label Android
+                composed one from the children, the icon contributed an empty
+                segment, and every place announced as ", Cairo". Exactly the
+                defect that was fixed once in the trade list and left here,
+                because the fix lived in a screen instead of in a control. */}
             {options.map(option => (
-              <Pressable
+              <OptionRow
                 key={option.id}
-                accessibilityRole="button"
+                mode="button"
+                label={option[language]}
                 onPress={() => select(option)}
-                style={[styles.option, isRTL && styles.reverse]}>
-                <MaterialIcons name={kind === 'governorate' ? 'map' : 'location-on'} size={23} color={colors.textPrimary} />
-                <AppText style={styles.optionLabel}>{option[language]}</AppText>
-              </Pressable>
+                leading={(
+                  <MaterialIcons
+                    name={kind === 'governorate' ? 'map' : 'location-on'}
+                    size={22}
+                    color={colors.textSecondary}
+                  />
+                )}
+              />
             ))}
           </ScrollView>
         </SafeAreaView>
@@ -181,6 +195,6 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   title: { flex: 1, fontSize: 24, lineHeight: 31, fontWeight: typography.bold, color: colors.textPrimary },
   close: { width: 48, height: 48, borderWidth: 1, borderColor: colors.border, borderRadius: radii.pill, alignItems: 'center', justifyContent: 'center' },
   list: { gap: spacing.sm, paddingBottom: spacing.xl },
-  option: { minHeight: 56, flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.md, borderWidth: 1, borderColor: colors.border, borderRadius: radii.md, backgroundColor: colors.surface },
+
   optionLabel: { flex: 1, color: colors.textPrimary, fontSize: 16, lineHeight: 23 },
 });
