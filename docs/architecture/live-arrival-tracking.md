@@ -57,17 +57,75 @@ differs sharply across Android versions, and the compatibility matrix already
 proves API 24 and 25 in CI. Whatever execution model is chosen has to work there
 and must not raise `minSdk`.
 
-## Open questions that are product decisions, not engineering ones
+## Decisions taken
 
-- **Does the customer see the professional's position before "on the way"?** The
-  lifecycle says `confirmed → traveling`, so the honest answer is no, and the
-  copy must not imply otherwise while a job is merely confirmed.
-- **Is a movement history retained at all?** A latest-position model is smaller,
-  cheaper and much easier to defend. History needs a stated product or safety
-  reason, and none has been given.
-- **Privacy disclosure and Play data declarations** change the moment background
-  location ships. That is a legal review, and it is recorded here as required
-  rather than assumed done.
+These were open questions in the first draft of this note. They are now
+answered, by the owner, and the answers are constraints rather than preferences.
+
+**1. No position before "on the way".** The customer does not see the
+professional's precise location while a job is merely `confirmed`. Visibility
+begins at `traveling` and the copy must not imply otherwise beforehand. This
+follows the lifecycle rather than fighting it: `confirmed → traveling` is
+already the moment the professional declares they are moving.
+
+**2. Latest position only — no movement history.** One row per active journey,
+overwritten in place. **Do not persist a breadcrumb trail of coordinates.** A
+history has no stated product or safety purpose here, and an unused trail of
+where a named person was, minute by minute, is a liability that grows every day
+it is kept. The record stops and expires on `arrived`, `cancelled`, `completed`,
+revocation and logout — and **server-side expiry is mandatory regardless**,
+because a client that crashes must not leave a position that reads as live.
+
+**3. The minimum permission model, determined rather than assumed.** See below.
+
+## The Android permission model, and why it is the smaller one
+
+The instruction was to establish whether a foreground service alone can
+truthfully deliver locked-phone tracking **before** reaching for
+`ACCESS_BACKGROUND_LOCATION`. It can. Warsha does not need that permission.
+
+Android's rule is that an app is accessing location "in the background" *unless*
+an activity is visible **or the app is running a foreground service that has
+declared the `location` foreground service type*. A location-typed foreground
+service is therefore not background access by definition, and the platform asks
+only for `ACCESS_FINE_LOCATION` (or coarse) when one is launched.
+
+So the permission set is:
+
+| Permission | Why |
+| --- | --- |
+| `ACCESS_FINE_LOCATION` | the position itself, granted while-in-use |
+| `FOREGROUND_SERVICE` | to run the journey service at all |
+| `FOREGROUND_SERVICE_LOCATION` | required from Android 14; `targetSdk` is 36 |
+
+And `ACCESS_BACKGROUND_LOCATION` is **not** requested. Expo's SDK 54
+documentation draws the same line: `FOREGROUND_SERVICE_LOCATION` is "to be able
+to access location while the app is open but backgrounded", whereas
+`ACCESS_BACKGROUND_LOCATION` is "while the app is backgrounded **or closed**".
+Warsha's case is the first: a journey the professional deliberately started,
+running with a persistent notification, ending when they arrive.
+
+**The one constraint this imposes.** A location foreground service cannot be
+*started* from the background without `ACCESS_BACKGROUND_LOCATION`. Warsha's
+service is always started by a foreground tap — "On my way" — so the ordinary
+path is fine. The consequence is that a journey service killed by the system
+cannot silently restart itself while the app is backgrounded. That must surface
+as an honest "tracking stopped" state rather than a silent gap, which is the
+same requirement as decision 7 below: never draw a professional who is still
+moving when the data says otherwise.
+
+**What this avoids.** `ACCESS_BACKGROUND_LOCATION` triggers a Play Console
+background-location declaration, a recorded justification, and a review that can
+block a release. Not needing it is worth more than the effort saved — it means
+Warsha can state plainly that it collects the professional's location only while
+a journey is running and visible in the notification shade.
+
+`minSdk` stays 24. Nothing here raises it.
+
+**Still required before this ships:** the privacy policy, in-app disclosure and
+Play data-safety declarations change the moment any location is collected, even
+while-in-use. That review is **pending, not done**, and is not recorded here as
+approved.
 
 ## Not started
 
