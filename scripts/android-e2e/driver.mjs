@@ -258,7 +258,31 @@ export async function type(selector, value, { timeout = 20000 } = {}) {
 }
 
 export const back = async () => { shell('input keyevent 4'); await sleep(700); };
-export const scrollDown = async () => { shell('input swipe 540 1400 540 600 300'); await sleep(700); };
+/**
+ * Scroll, using this device's geometry rather than one remembered from another.
+ *
+ * This swiped `540 1400 -> 540 600`, which are coordinates from a 1080x2400
+ * phone. On a 320x640 device every one of them is off-screen, so the swipe did
+ * nothing at all — silently. The signup form then looked as though it had no
+ * Create account button, when in fact the harness had never managed to scroll
+ * to it, and the flow reported a product defect that did not exist.
+ *
+ * The screen size is read once and cached: `wm size` is a shell round-trip, and
+ * a device does not resize itself mid-run.
+ */
+let viewport = null;
+export const scrollDown = async () => {
+  if (!viewport) {
+    const reported = /(\d+)x(\d+)/.exec(shell('wm size'));
+    viewport = reported
+      ? { width: Number(reported[1]), height: Number(reported[2]) }
+      : { width: 1080, height: 1920 };
+  }
+  const x = Math.round(viewport.width / 2);
+  shell(`input swipe ${x} ${Math.round(viewport.height * 0.75)} `
+    + `${x} ${Math.round(viewport.height * 0.25)} 350`);
+  await sleep(800);
+};
 
 export function screenshot(name) {
   const remote = '/sdcard/warsha-shot.png';

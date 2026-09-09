@@ -27,7 +27,8 @@
  */
 import { existsSync } from 'node:fs';
 import {
-  describeScreen, find, install, screenshot, shell, sleep, tap,
+  describeScreen, find, findAll, hideKeyboard, install, screenshot, scrollDown,
+  setText, shell, sleep, tap,
 } from '../driver.mjs';
 
 const PACKAGE = 'com.warsha.app';
@@ -114,6 +115,85 @@ const chose = await tapAny([
 ]);
 console.log(chose ? `\n-> chose worker via ${JSON.stringify(chose)}` : '\n-> could not find the worker role');
 if (chose) record('after-role-worker');
+
+/*
+ * Fill and submit the registration, because everything worth auditing is behind
+ * it.
+ *
+ * Mock mode accepts a registration without a backend, so this creates a
+ * synthetic professional and walks on. The values are obviously synthetic and
+ * the build points at Development, never Production — no real account is
+ * touched.
+ */
+async function completeSignup() {
+  const fields = findAll({ cls: 'EditText' });
+  if (fields.length < 3) {
+    console.log(`\n-> expected 3 fields on the signup form, found ${fields.length}`);
+    return false;
+  }
+  // Order matters and is asserted rather than assumed: the form is name, phone,
+  // password since the UX-008 reorder, and typing a password into the phone box
+  // is exactly the failure `setText` was written to catch.
+  await setText({ cls: 'EditText', index: 0 }, 'Warsha QA Professional');
+  await setText({ cls: 'EditText', index: 1 }, '01012345678');
+  await setText({ cls: 'EditText', index: 2 }, 'Warsha!QA9pass');
+  await hideKeyboard();
+
+  // Both consents are separate decisions and neither is pre-selected, so both
+  // have to be pressed. That is the point of them.
+  // 'I agree' and not 'I agree to Warsha': the second consent reads "I agree to
+  // the Worker Verification Policy", so the narrower string checked one box,
+  // left the other unchecked, and Create account stayed correctly disabled —
+  // which looked like a broken button rather than a working gate.
+  // Scroll the consents into view before looking for them.
+  //
+  // UIAutomator only reports what is on screen, so running the search first
+  // found nothing and reported "consents checked: 0" while the boxes sat one
+  // screen below. Filling the password also grows the form — the checklist
+  // expands from one line to five rules — which pushes them further down than
+  // they were when the screen opened.
+  for (let i = 0; i < 8; i += 1) {
+    if (find({ descContains: 'I agree' }) ?? find({ descContains: 'أوافق' })) break;
+    await scrollDown();
+  }
+
+  // Clickable nodes only, and one tap per row.
+  //
+  // React Native puts the accessible name on the pressable row AND on the text
+  // inside it, so a consent appears twice in the tree at the same coordinates.
+  // Tapping every match therefore checked each box and immediately unchecked
+  // it, and Create account stayed correctly disabled — a working gate that
+  // looked like a broken button. Rows are de-duplicated by their vertical
+  // centre, which is what makes two nodes the same control.
+  const seen = new Set();
+  for (const label of ['I agree', 'أوافق']) {
+    for (const node of findAll({ descContains: label, clickable: true })) {
+      if (!node.bounds || seen.has(node.bounds.cy)) continue;
+      seen.add(node.bounds.cy);
+      shell(`input tap ${node.bounds.cx} ${node.bounds.cy}`);
+      await sleep(700);
+    }
+  }
+  console.log(`   consents checked: ${seen.size}`);
+
+  // The action is below the legal block, which is why UX-008 called it buried.
+  for (let i = 0; i < 6; i += 1) {
+    if (find({ descContains: 'Create account' }) ?? find({ descContains: 'إنشاء حساب' })) break;
+    await scrollDown();
+  }
+  const pressed = await tapAny([
+    { descContains: 'Create account' },
+    { descContains: 'إنشاء حساب' },
+  ]);
+  await sleep(6000);
+  return Boolean(pressed);
+}
+
+if (chose) {
+  const submitted = await completeSignup();
+  console.log(submitted ? '\n-> registration submitted' : '\n-> could not submit registration');
+  if (submitted) record('after-signup');
+}
 
 /*
  * From here the journey is a sequence of "continue"-shaped steps whose labels

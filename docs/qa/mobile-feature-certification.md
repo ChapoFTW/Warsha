@@ -46,7 +46,7 @@ Arabic professional rendering is a hard gate, not an axis to get to later.
 | --- | --- | --- | --- |
 | `welcome` | both | **PASS** | supabase mode, API 24. EN/AR/FR, 320dp, dark, 1.3× text. `gw-05-gateway-{ar,fr,en}.png`, `gw-06-gateway-320dp.png` |
 | `create-account` (role choice) | both | **PARTIAL** | mock, API 24, EN + AR. Not yet: FR, 320dp, dark, enlarged |
-| `create-account` (professional form) | professional | **PARTIAL** | mock, API 24, EN + AR, accessibility tree measured (101 words/6 tappable EN, 92/7 AR). Not yet: FR, 320dp, dark, enlarged |
+| `create-account` (professional form) | professional | **PARTIAL** | mock, API 24 + API 35, EN + AR, tree measured (101 words/6 tappable EN, 92/7 AR). **Registration completed end to end** on API 35: fields, both consents, submit. Not yet: FR, 320dp, dark, enlarged |
 | `create-account` (customer form) | customer | UNTESTED | |
 | `sign-in` | both | **PARTIAL** | production APK, API 35, EN only, via `push-proof.mjs`. Sign-in latency now reported (3.5s) |
 | `forgot-password` | both | UNTESTED | |
@@ -82,7 +82,7 @@ Priority. Arabic is a hard gate on every row here.
 
 | Route | Status |
 | --- | --- |
-| `onboarding/worker` | UNTESTED |
+| `onboarding/worker` | **PARTIAL** — step 1 and 2 of 7 rendered (mock, API 35, EN). Step 1 accepts professional terms; step 2 is profile and photo. Blocked at photo capture, which the harness cannot yet supply |
 | `onboarding/identity` | UNTESTED |
 | `onboarding/certificate` | UNTESTED |
 | `worker/index` (home) | UNTESTED |
@@ -127,6 +127,50 @@ Not routes, and each needs its own evidence.
 | Offline / network failure | UNTESTED | |
 | App resume / background | UNTESTED | |
 | Stale session | UNTESTED | |
+
+## What the professional onboarding walk found
+
+Rendered (mock, API 35, EN) by driving a synthetic registration through to
+onboarding. Recorded because a low-literacy audit should say when something is
+**right**, not only when it is wrong.
+
+**Step 1 of 7 — accept terms.** 67 words, 2 tappable. Carries `Step 1 / 7`, so
+progress is countable rather than described. "We will guide you. Finish one
+simple step at a time." is short, plain, and tells somebody what kind of thing
+is about to happen. One primary action.
+
+**Step 2 of 7 — tell customers about you.** 65 words, 2 tappable. "Add your
+photo — Required — Customers will see this photo." states the ask, the
+obligation and the reason in three short lines, which is the shape this
+programme asks for.
+
+Both screens keep the step counter, both have exactly one obvious forward
+action, and neither requires reading a paragraph to know what to do. On this
+evidence the professional onboarding entry is closer to the low-literacy bar
+than the signup form was before UX-008.
+
+Terminology confirmed rendered: "the professional terms", not "the worker
+terms".
+
+## Harness defects found and fixed while doing this
+
+Worth separating from product findings, because three of these looked exactly
+like product defects:
+
+1. **`scrollDown` used hard-coded coordinates** — `540 1400 -> 540 600`, taken
+   from a 1080-wide device. On the 320x640 emulator every one is off-screen, so
+   the swipe silently did nothing and the signup form appeared to have no
+   submit button. It now reads `wm size` once and derives the gesture.
+2. **The consent matcher was too narrow** — `'I agree to Warsha'` matched the
+   first consent but not "I agree to *the Worker Verification Policy*", so one
+   box stayed unchecked and Create account stayed correctly disabled. A working
+   gate that looked like a broken button.
+3. **Consents were tapped twice.** React Native puts the accessible name on the
+   pressable row and on the text inside it, so each consent appears twice at the
+   same coordinates; tapping every match checked and immediately unchecked it.
+4. **The consents were searched for before being scrolled into view**, so the
+   search found nothing at all — UIAutomator only reports what is on screen, and
+   filling the password grows the form by expanding the checklist.
 
 ## Blocked, and by what
 
