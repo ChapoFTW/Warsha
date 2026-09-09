@@ -182,6 +182,12 @@ export default function PlatformPage() {
           </div>
         </dl>
 
+        {/* Bootstrap and recovery, not a routine control.
+            The binding action below already renders only while this backend is
+            unbound — a bound one shows status and nothing else — so the shape
+            was right. What was missing was saying so: an action that appears
+            once in the life of an environment reads like an operations console
+            if nothing tells the reader otherwise. */}
         {!mayBind ? (
           <p className={table.error}>{words.platformEnvNoCapability}</p>
         ) : bound || offer.kind === 'bound' ? (
@@ -194,6 +200,7 @@ export default function PlatformPage() {
           <p className={table.error} role="alert">{words.platformEnvBlocked}</p>
         ) : !confirming ? (
           <div className={styles.form}>
+            <p className={styles.hint}>{words.platformEnvBootstrapNote}</p>
             <div className={styles.field}>
               <label className={styles.label} htmlFor="target">
                 {words.platformEnvTarget}

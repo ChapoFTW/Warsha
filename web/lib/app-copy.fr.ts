@@ -238,6 +238,7 @@ export const frenchAppCopyOverrides = {
   platformLead: 'Identifiez ce backend Warsha et vérifiez que ses garanties de publication tiennent toujours. Aucun de ces outils ne déploie de code, et aucun ne peut affecter la Production.',
   platformEnvHeading: 'Environnement de la plateforme',
   platformEnvExplain: 'Chaque backend Warsha démarre sans identification, car la même installation tourne sur une machine de développement et sur un projet hébergé. L’identifier permet aux outils du personnel et aux contrôles propres à chaque environnement de décrire correctement les données que vous consultez.',
+  platformEnvBootstrapNote: 'Il s’agit d’une initialisation unique, pas d’un contrôle courant. Un backend est identifié une fois puis le reste ; l’action ci-dessous n’apparaît que tant que celui-ci n’est pas lié.',
   platformEnvCurrent: 'Statut actuel',
   platformEnvProject: 'Projet Warsha',
   platformEnvUnconfigured: 'Non configuré',
