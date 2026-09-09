@@ -73,6 +73,7 @@
     "test:service-catalogue": "node --no-warnings --experimental-strip-types scripts/service-catalogue.test.mts",
     "test:address-contract": "node --no-warnings --experimental-strip-types scripts/address-contract.test.mts",
     "test:spacing-system": "node --no-warnings --experimental-strip-types scripts/spacing-system.test.mts",
+    "test:help-language-parity": "node --no-warnings --experimental-strip-types scripts/help-language-parity.test.mts",
     "test:help-docs": "node scripts/help-docs.mjs",
     "warsha:docs-check": "node scripts/help-docs.mjs",
     "warsha:docs-generate": "node scripts/help-docs.mjs --write",

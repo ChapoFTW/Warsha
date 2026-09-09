@@ -383,7 +383,7 @@
       "locale": "ar",
       "title": "الحساب والأمان والتفضيلات",
       "summary": "سجّل الدخول، استرجع كلمة السر، واختار اللغة والمظهر وتحكم في الخصوصية.",
-      "version": 12,
+      "version": 13,
       "lastReviewedDate": "2026-09-09",
       "features": [
         "auth",
@@ -498,7 +498,7 @@
       "locale": "ar",
       "title": "ابدأ كصنايعي",
       "summary": "سجّل بالموبايل وكلمة السر، كمّل التقديم، واستنى الموافقة المنظمة.",
-      "version": 12,
+      "version": 13,
       "lastReviewedDate": "2026-09-09",
       "features": [
         "worker_auth",
@@ -987,7 +987,7 @@
       "locale": "ar",
       "title": "السجل والتحليلات والتنزيل",
       "summary": "اقرأ التاريخ الدائم وافهم تعريفات الأرقام ونزّل بيانات مجمعة بأمان.",
-      "version": 4,
+      "version": 5,
       "lastReviewedDate": "2026-09-09",
       "features": [
         "audit",
