@@ -167,3 +167,29 @@ export function leadingInset(isRTL: boolean, value: number): { left: number } | 
 export function trailingInset(isRTL: boolean, value: number): { left: number } | { right: number } {
   return isRTL ? { left: value } : { right: value };
 }
+
+/**
+ * Isolates a left-to-right run inside right-to-left text.
+ *
+ * Found by reading a rendered screen: the legal document header interpolates the
+ * same ISO date twice and it came out as "2026-08-06" once and "06-08-2026" the
+ * other time. The data is identical — every corpus date is stored ISO — so the
+ * difference was the bidi algorithm resolving the neutral hyphens according to
+ * the surrounding Arabic and reversing the segment order.
+ *
+ * On a legal effective date that is not cosmetic. A reader cannot tell which
+ * reading is intended, and the two are different days.
+ *
+ * U+2066 LEFT-TO-RIGHT ISOLATE opens a run whose internal order is fixed
+ * left-to-right and whose surroundings cannot reorder it; U+2069 POP
+ * DIRECTIONAL ISOLATE closes it. Isolates rather than the older embedding marks
+ * because an isolate also stops the run from affecting the text around it.
+ *
+ * Use it for anything whose internal order is meaningful and Latin-shaped:
+ * dates, version numbers, phone numbers, IDs, URLs. Do NOT use it for ordinary
+ * numbers that should localise — a price goes through the money formatter,
+ * which renders Arabic-Indic digits on purpose.
+ */
+export function isolateLtr(value: string | number): string {
+  return `\u2066${value}\u2069`;
+}

@@ -161,4 +161,40 @@ const chatScreen = readFileSync('app/conversation/[bookingId].tsx', 'utf8');
 ok(/trailingInset\(isRTL, 22\)/.test(chatScreen),
   'and so does the full-screen preview close control');
 
+// --- Bidi: LTR-shaped values inside Arabic text ----------------------------
+/**
+ * Found by reading a rendered legal document. Its header interpolates the same
+ * ISO date twice and rendered "2026-08-06" once and "06-08-2026" the other
+ * time. Every corpus date is stored ISO, so the data was identical — the bidi
+ * algorithm reordered the hyphen-separated runs against the surrounding Arabic.
+ *
+ * On a legal effective date that is not cosmetic: the two readings are
+ * different days and nothing tells the reader which is meant.
+ */
+ok(/export function isolateLtr/.test(direction),
+  'there is one helper for isolating an LTR run inside RTL text');
+ok(/u2066/.test(direction) && /u2069/.test(direction),
+  'IT USES ISOLATES, and writes them as escapes — U+2066 and U+2069 are '
+  + 'invisible, and an invisible character that survives a careless edit as '
+  + 'nothing is the bug this exists to prevent');
+
+for (const screen of ['app/legal/document/[key].tsx', 'app/legal/index.tsx', 'app/legal/consent.tsx']) {
+  const source = readFileSync(screen, 'utf8');
+  const interpolatesVersionOrDate =
+    /\$\{(document|item)\.(version|publishedAt|effectiveAt)\}/.test(source);
+  ok(!interpolatesVersionOrDate,
+    `${screen} never drops a bare version or date into translated copy`);
+}
+
+const legalDocument = readFileSync('app/legal/document/[key].tsx', 'utf8');
+ok(/isolateLtr\(document\.publishedAt\)/.test(legalDocument)
+  && /isolateLtr\(document\.effectiveAt\)/.test(legalDocument),
+  'THE LEGAL DATES ARE ISOLATED — the defect that started this');
+
+// Prices are deliberately NOT isolated: the money formatter renders
+// Arabic-Indic digits on purpose, and isolating them would force Latin order.
+const money = readFileSync('src/payments/money.ts', 'utf8');
+ok(!/isolateLtr/.test(money),
+  'money is not isolated — Arabic prices use Arabic-Indic digits by design');
+
 console.log(`RTL layout baseline: ${checks} checks passed.`);

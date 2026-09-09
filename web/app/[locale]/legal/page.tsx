@@ -58,7 +58,7 @@ export default async function LegalIndexPage({
               {catalogueFor(document, typed).summary}
             </span>
             <span className={styles.itemMeta}>
-              {words.legalVersion} {document.version} ·{' '}
+              {words.legalVersion} <bdi>{document.version}</bdi> ·{' '}
               {document.audience === 'all' ? words.legalAudienceEveryone : document.audience}
             </span>
           </Link>

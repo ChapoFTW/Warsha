@@ -165,7 +165,7 @@ export default async function HomePage({
               >
                 <span className={styles.legalTitle}>{catalogueFor(document, typed).title}</span>
                 <span className={styles.legalMeta}>
-                  {words.legalVersion} {document.version}
+                  {words.legalVersion} <bdi>{document.version}</bdi>
                 </span>
               </Link>
             ))}

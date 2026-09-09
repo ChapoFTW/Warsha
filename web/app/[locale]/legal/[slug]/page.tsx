@@ -116,8 +116,8 @@ export default async function LegalDocumentPage({ params }: { params: Promise<Pa
           <header className={styles.documentHeader}>
             <h1 className={styles.title}>{catalogue.title}</h1>
             <p className={styles.meta}>
-              {words.legalVersion} {document.version}
-              {document.effectiveAt ? ` · ${words.legalEffective} ${document.effectiveAt}` : ''}
+              {words.legalVersion} <bdi>{document.version}</bdi>
+              {document.effectiveAt ? <> · {words.legalEffective} <bdi>{document.effectiveAt}</bdi></> : null}
               {document.requiresAcceptance ? ` · ${words.legalAcceptanceRequired}` : ''}
             </p>
             <p className={styles.summary}>{catalogue.summary}</p>

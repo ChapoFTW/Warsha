@@ -12,6 +12,7 @@ import { useLocalization } from '@/src/i18n/localization';
 import { bodyFor, findDocument } from '@/src/legal/legal-corpus';
 import { useLegal } from '@/src/legal/legal-context';
 import { changeClassKey, useLegalText } from '@/src/legal/legal-translations';
+import { isolateLtr } from '@/src/i18n/direction';
 
 /**
  * The document reader.
@@ -76,7 +77,7 @@ export default function LegalDocumentScreen() {
         <View style={styles.card}>
           <AppText style={styles.summary}>{body.summary}</AppText>
           <AppText style={styles.meta}>
-            {`${lt.text('version')} ${document.version} · ${lt.text('published')} ${document.publishedAt} · ${lt.text('effective')} ${document.effectiveAt}`}
+            {`${lt.text('version')} ${isolateLtr(document.version)} · ${lt.text('published')} ${isolateLtr(document.publishedAt)} · ${lt.text('effective')} ${isolateLtr(document.effectiveAt)}`}
           </AppText>
           <AppText style={styles.meta}>
             {`${lt.text(changeClassKey(document.changeClass))}: ${document.changeSummary[lt.locale]}`}

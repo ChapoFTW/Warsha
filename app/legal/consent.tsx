@@ -19,6 +19,7 @@ import {
   type LegalTextKey,
 } from '@/src/legal/legal-translations';
 import { mayRestrictOnDecline, type LegalDocumentKey } from '@/src/legal/legal-types';
+import { isolateLtr } from '@/src/i18n/direction';
 
 /**
  * The re-consent screen.
@@ -118,7 +119,7 @@ export default function LegalConsentScreen() {
                 {title}
               </AppText>
               <AppText style={styles.meta}>
-                {`${lt.text(changeClassKey(item.changeClass))} · ${lt.text('version')} ${item.version} · ${lt.text('effective')} ${item.effectiveAt}`}
+                {`${lt.text(changeClassKey(item.changeClass))} · ${lt.text('version')} ${isolateLtr(item.version)} · ${lt.text('effective')} ${isolateLtr(item.effectiveAt)}`}
               </AppText>
               <AppText style={styles.label}>{lt.text('changeSummary')}</AppText>
               <AppText style={styles.paragraph}>{item.changeSummary}</AppText>

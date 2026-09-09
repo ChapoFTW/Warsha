@@ -40,7 +40,7 @@ export function HelpManual({ locale, articles, heading }: { locale: Locale; arti
     <h2>{selected.title}</h2><p className={styles.lead}>{selected.summary}</p>
     {selected.capabilities.length ? <p className={styles.meta}><strong>{words.capability}:</strong> {selected.capabilities.join(', ')}</p> : null}
     <HelpBody body={selected.body} />
-    <p className={styles.meta}>{words.reviewed}: {selected.lastReviewedDate} · v{selected.version}</p>
+    <p className={styles.meta}>{words.reviewed}: <bdi>{selected.lastReviewedDate}</bdi> · v<bdi>{selected.version}</bdi></p>
   </article>;
 
   const groups = (['customer', 'worker', 'admin', 'all'] as const).map(audience => ({ audience, articles: matches.filter(article => article.audience === audience) })).filter(group => group.articles.length);

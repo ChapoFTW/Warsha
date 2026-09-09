@@ -242,7 +242,7 @@ export default function CreateAccountPage() {
                   >
                     {catalogueFor(document, locale).title}
                   </a>
-                  <span className={styles.version}> ({document.version})</span>
+                  <span className={styles.version}> (<bdi>{document.version}</bdi>)</span>
                 </span>
               ))}
             </span>

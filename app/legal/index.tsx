@@ -10,6 +10,7 @@ import { useLocalization } from '@/src/i18n/localization';
 import { useLegal } from '@/src/legal/legal-context';
 import { bodyFor, documentsForRole, legalCorpus } from '@/src/legal/legal-corpus';
 import { changeClassKey, useLegalText } from '@/src/legal/legal-translations';
+import { isolateLtr } from '@/src/i18n/direction';
 
 /**
  * The legal centre.
@@ -68,7 +69,7 @@ export default function LegalCentre() {
                     ).title}
                   </AppText>
                   <AppText style={styles.hint}>
-                    {`${lt.text(changeClassKey(item.changeClass))} · ${lt.text('version')} ${item.version}`}
+                    {`${lt.text(changeClassKey(item.changeClass))} · ${lt.text('version')} ${isolateLtr(item.version)}`}
                   </AppText>
                 </View>
                 <AppText style={styles.pending}>{lt.text('notAccepted')}</AppText>
@@ -94,7 +95,7 @@ export default function LegalCentre() {
                   {bodyFor(document, lt.locale).summary}
                 </AppText>
               </View>
-              <AppText style={styles.hint}>{`${lt.text('version')} ${document.version}`}</AppText>
+              <AppText style={styles.hint}>{`${lt.text('version')} ${isolateLtr(document.version)}`}</AppText>
             </Pressable>
           ))}
         </View>
