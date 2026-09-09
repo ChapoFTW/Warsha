@@ -103,6 +103,34 @@ screenshot suggested a typo; the accessibility tree showed the string was right.
 Worth recording as a method note — **read the tree before filing a copy defect
 from a 320px-wide image.**
 
+### Text direction is not affected by the layout fix — checked, not assumed
+
+Disabling platform mirroring could plausibly have broken Arabic **text**, which
+is a separate concern from Arabic **layout**. It does not, and the reason is
+that Warsha never relied on the platform for it either:
+
+| Primitive | Sets |
+| --- | --- |
+| `Typography.tsx` (AppText) | `textAlign: isRTL ? 'right' : 'left'`, `writingDirection: isRTL ? 'rtl' : 'ltr'` |
+| `BrandUI.tsx` (text field) | `isRTL && fieldRTL` → `textAlign: 'right'`, `writingDirection: 'rtl'` |
+
+Both read Warsha's own `isRTL`, not `I18nManager.isRTL`, so alignment and bidi
+were already JS-owned and are unchanged by the fix. The rtl-direction suite
+asserts both, across 51 shared components.
+
+### One behaviour that genuinely changes, and must be checked
+
+Platform mirroring was doing something else besides breaking rows: it also
+mirrored anything that reads `I18nManager.isRTL` for itself — navigation
+transitions and the back-gesture edge among them. For a user on an Arabic
+phone, those were mirrored and will now be LTR.
+
+This is not a regression against the intended architecture — a user on an
+English phone with Warsha in Arabic always had LTR navigation — but it is a
+change for Arabic-phone users, and it is the kind of thing that has to be
+looked at rather than reasoned about. **Navigation and back affordances are on
+the retest list for that reason.**
+
 ---
 
 # Not yet inspected
