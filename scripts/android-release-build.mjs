@@ -38,7 +38,8 @@
  * are never printed; only which names were found.
  */
 import { execFileSync, spawnSync } from 'node:child_process';
-import { existsSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 
 const APK = join('android', 'app', 'build', 'outputs', 'apk', 'release', 'app-release.apk');
@@ -73,6 +74,51 @@ for (const name of REQUIRED_ENV) {
       + 'updates-resources task and requires it. Put it in .env, which is the '
       + 'same file the Expo CLI reads.');
   }
+}
+
+/**
+ * Gradle does not know the JS bundle depends on EXPO_PUBLIC_* values.
+ *
+ * Changing only the backend the app points at leaves every Gradle input
+ * identical, so `assembleRelease` reports BUILD SUCCESSFUL, reuses the cached
+ * bundle, and produces no APK at all — or worse, on a machine where the APK
+ * already exists, an APK whose bundle still points at the previous backend.
+ *
+ * That is not hypothetical. A release build was made with .env (development),
+ * then rebuilt with Production values, and Gradle did nothing. The third
+ * success condition below caught it, but only after the fact.
+ *
+ * So the values that actually reach the bundle are fingerprinted, and when the
+ * fingerprint changes the bundle task's outputs are removed to force it to run
+ * again. The fingerprint is a hash: no secret is written to disk.
+ */
+const BUNDLE_TARGET_STAMP = join('android', 'app', 'build', 'warsha-bundle-target.sha256');
+const BUNDLE_OUTPUTS = [
+  join('android', 'app', 'build', 'generated', 'assets', 'createBundleReleaseJsAndAssets'),
+  join('android', 'app', 'build', 'generated', 'res', 'createBundleReleaseJsAndAssets'),
+  join('android', 'app', 'build', 'generated', 'assets', 'createReleaseUpdatesResources'),
+];
+
+const bundleTarget = createHash('sha256').update(JSON.stringify({
+  url: env.EXPO_PUBLIC_SUPABASE_URL ?? '',
+  key: env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? '',
+  mode: env.EXPO_PUBLIC_DATA_MODE ?? '',
+  adminSurface: env.EXPO_PUBLIC_ADMIN_SURFACE ?? '',
+})).digest('hex');
+
+const previousTarget = existsSync(BUNDLE_TARGET_STAMP)
+  ? readFileSync(BUNDLE_TARGET_STAMP, 'utf8').trim() : '';
+
+const host = (() => {
+  try { return new URL(env.EXPO_PUBLIC_SUPABASE_URL ?? '').hostname.split('.')[0]; }
+  catch { return 'unset'; }
+})();
+console.log(`backend target                   ${host} (fingerprint ${bundleTarget.slice(0, 12)})`);
+
+if (previousTarget && previousTarget !== bundleTarget) {
+  console.log('backend target CHANGED since the last build — clearing the bundle so');
+  console.log('gradle cannot reuse one built for a different backend.');
+  for (const output of BUNDLE_OUTPUTS) rmSync(output, { recursive: true, force: true });
 }
 
 // The marker is taken NOW, so "is the APK new" is answered against this build
@@ -113,6 +159,9 @@ if (built.mtimeMs < startedAt) {
   fail(`gradle reported success but ${APK} is older than this build `
     + `(${new Date(built.mtimeMs).toISOString()}). Nothing was produced.`);
 }
+
+mkdirSync(join('android', 'app', 'build'), { recursive: true });
+writeFileSync(BUNDLE_TARGET_STAMP, bundleTarget);
 
 const duration = Math.round((Date.now() - startedAt) / 1000);
 console.log(`\nBUILD SUCCESSFUL in ${duration}s`);

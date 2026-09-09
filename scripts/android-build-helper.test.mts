@@ -83,4 +83,28 @@ try {
 ok(refused === 'refused' || refused === 'ran anyway',
   `the helper behaves predictably with a blanked key (${refused})`);
 
+// --- The bundle must belong to the backend it was asked for ----------------
+/**
+ * Gradle does not know the JS bundle depends on EXPO_PUBLIC_* values, so
+ * changing only the backend leaves every Gradle input identical.
+ * `assembleRelease` then reports BUILD SUCCESSFUL and produces nothing — or, on
+ * a machine where an APK already exists, leaves one whose bundle still points
+ * at the previous backend.
+ *
+ * That happened: a development build was made from .env, then rebuilt with
+ * Production values, and gradle did nothing at all.
+ */
+ok(/BUNDLE_TARGET_STAMP/.test(helper),
+  'the helper remembers which backend the last bundle was built for');
+ok(/EXPO_PUBLIC_SUPABASE_URL/.test(helper) && /EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY/.test(helper),
+  'and fingerprints the values that actually reach the bundle');
+ok(/rmSync\(output/.test(helper),
+  'CHANGING BACKEND CLEARS THE CACHED BUNDLE so gradle cannot reuse a foreign one');
+ok(/createBundleReleaseJsAndAssets/.test(helper),
+  'it clears the real React Native bundle task outputs');
+ok(/createHash\('sha256'\)/.test(helper),
+  'the stamp is a hash — NO KEY IS WRITTEN TO DISK');
+ok(!/writeFileSync\([^)]*env\.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY/.test(helper),
+  'and the key itself never reaches a file');
+
 console.log(`Android build helper: ${checks} checks passed.`);
