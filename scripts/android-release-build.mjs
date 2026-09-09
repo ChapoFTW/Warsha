@@ -115,9 +115,16 @@ const host = (() => {
 })();
 console.log(`backend target                   ${host} (fingerprint ${bundleTarget.slice(0, 12)})`);
 
-if (previousTarget && previousTarget !== bundleTarget) {
-  console.log('backend target CHANGED since the last build — clearing the bundle so');
-  console.log('gradle cannot reuse one built for a different backend.');
+// No stamp plus an existing APK means the previous target is UNKNOWN, which is
+// indistinguishable from a mismatch and must be treated as one. The first run
+// after this check was added is exactly that case, and assuming 'probably fine'
+// is how a bundle for the wrong project survives.
+const targetUnknown = !previousTarget && existsSync(APK);
+if (targetUnknown || (previousTarget && previousTarget !== bundleTarget)) {
+  console.log(targetUnknown
+    ? 'previous backend target UNKNOWN — clearing the bundle rather than trusting it.'
+    : 'backend target CHANGED since the last build — clearing the bundle so');
+  if (!targetUnknown) console.log('gradle cannot reuse one built for a different backend.');
   for (const output of BUNDLE_OUTPUTS) rmSync(output, { recursive: true, force: true });
 }
 
