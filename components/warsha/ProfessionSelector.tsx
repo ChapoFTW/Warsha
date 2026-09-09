@@ -97,9 +97,18 @@ export function ProfessionSelector({
                   key={profession.key}
                   accessibilityRole="checkbox"
                   accessibilityState={{ checked }}
+                  // Named explicitly. Without this Android composes the name
+                  // from the children, and the two decorative marks contribute
+                  // empty segments — every one of the thirty-four trades
+                  // announced as ", Plumber", leading comma and all. The
+                  // checkbox role already carries the checked state, so the
+                  // name is just the trade.
+                  accessibilityLabel={profession[language]}
                   onPress={() => toggle(profession.key)}
                   style={[styles.option, isRTL && styles.reverse, checked && styles.optionSelected]}>
                   <MaterialIcons
+                    accessibilityElementsHidden
+                    importantForAccessibility="no"
                     name={checked ? 'check-box' : 'check-box-outline-blank'}
                     size={26}
                     color={colors.textPrimary}
@@ -108,6 +117,8 @@ export function ProfessionSelector({
                       category's where it deliberately does not. A worker
                       scanning thirty-four trades reads a silhouette faster
                       than a word. */}
+                  {/* Already decorative: WarshaIcon hides itself when it is
+                      given no label, so it contributes nothing to the name. */}
                   <WarshaIcon name={professionIconName(profession.key)} size="lg" />
                   <AppText style={styles.optionLabel}>{profession[language]}</AppText>
                 </PressableSurface>
