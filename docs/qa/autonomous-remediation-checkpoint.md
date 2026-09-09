@@ -148,6 +148,22 @@ more decisive configuration.
 
 ---
 
+## Known flake
+
+`test:recovery-state` failed once inside a `test:all` run and has passed **52
+consecutive times** since, standalone and in CI. Not reproduced, so not fixed —
+guessing at a fix for a failure I cannot trigger would be worse than recording
+it.
+
+What is known: it uses `Date.now()`, and the seal it exercises uses AES-GCM with
+a random IV. The time-based assertions pass explicit timestamps, so the obvious
+wall-clock explanation does not hold. If it recurs, capture the full assertion
+output before anything else — the message was truncated to `deepStrictEqual`
+when it happened, which is why it could not be diagnosed after the fact.
+
+Validate has been green on every commit since, including the run that executes
+the whole suite.
+
 ## Lessons that cost time here
 
 **Three wrong RTL diagnoses came from inference.** A gap between an icon and its

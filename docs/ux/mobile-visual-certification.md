@@ -125,6 +125,47 @@ change for Arabic-phone users, and it is the kind of thing that has to be
 looked at rather than reasoned about. **Navigation and back affordances are on
 the retest list for that reason.**
 
+## Representative component sweep — Arabic, 320dp, on the final build
+
+Seven surfaces rendered and measured. Every one: zero horizontal overflow, every
+tap target at least 44dp, text on the reading edge.
+
+| Surface | Evidence | Numbers | Verdict |
+| --- | --- | --- | --- |
+| Gateway trust rows + links | `final-gateway-ar-320.png` | icon 276–296, text 24–268; links mirrored | **PASS** |
+| Role chooser cards | `rolechooser-ar-320-final.png` | text 41–219, mark 242–268 | **PASS** |
+| Professional signup fields | `signup-pro-ar-320.png` | labels and hints right-aligned, overflow 0 | **PASS** |
+| Consent rows | `signup-pro-ar-consents.png` | checkbox 257–283 (right), row tap 246×48 | **PASS** |
+| Navigation header + back | `legal-doc-ar-320.png` | back 276–320, arrow points right | **PASS** |
+| Legal document body | `legal-doc-ar-bidi-fixed.png` | bidi defect found and fixed | **PASS** after fix |
+| Sign-in fields | `signin-ar-320.png` | overflow 0, CTA 272×48, no target under 44dp | **PASS** |
+
+### Two findings that measurement dismissed
+
+Both looked like defects in a 320px-wide screenshot and were not:
+
+**Consent checkboxes look like 26px tap targets.** They are not — the whole row
+is the pressable, 246×48. The box is only its indicator.
+
+**The sign-in button label looked truncated** — 84px against the same string at
+146px in the heading. Different font sizes: the heading's line box is 44px, the
+button's is 20px, and 84px is what that string measures at button size. The
+accessibility label carries the full text.
+
+The lesson is the same one the earlier "typo" taught: **read the tree before
+filing a defect from a small image.** Three times now a rendered screenshot has
+suggested something the measurements disproved.
+
+### One real defect, found by reading rather than measuring
+
+The legal header rendered the same ISO date two different ways —
+`2026-08-06` and `06-08-2026` in one sentence. Bidi reordering of
+hyphen-separated digit runs. Fixed with LTR isolates and verified on device;
+the web had the identical defect at five sites and now uses `<bdi>`.
+
+Numbers alone would not have caught it: no bound was wrong, no target was small,
+nothing overflowed. It needed somebody to read the sentence.
+
 ## What is still NOT proven, and why the programme row stays open
 
 The RTL **architecture** is proven and the gateway and role chooser **pass**.
