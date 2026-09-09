@@ -343,6 +343,32 @@ export const themeColors: Record<ResolvedAppearance, ThemeColors> = {
 };
 
 /** Shadows depend on the ground they fall on, so elevation is theme-derived. */
+/**
+ * How a surface says it is above another one.
+ *
+ * ## Light cannot do it with fill, and this is where that is written down
+ *
+ * In dark the ladder is real: canvas #080808, surface #141414, surfaceElevated
+ * #191919 — three visible steps. In light it is canvas #F4F2EE, surface
+ * #FFFFFF, surfaceElevated **#FFFFFF**. The last two are the same value, and
+ * they have to be: nothing is lighter than white, so a light theme cannot lift
+ * a surface by filling it.
+ *
+ * That is not a bug in the palette. It IS a trap for anything that lifts a
+ * layer by giving it `surfaceElevated` on top of `surface`, because such a
+ * component is correct in dark and completely invisible in the appearance
+ * Warsha opens in — which is exactly why it goes unnoticed. Forty-eight places
+ * use `surfaceElevated` as a background; most sit on `canvas`, where it reads
+ * fine.
+ *
+ * The role chooser was one that did not. Its role marks sat in a 48px well
+ * filled with `surfaceElevated` inside a `surface` card, so in light the well
+ * did not exist and the icon floated in an empty column looking lost.
+ *
+ * So layering in light is carried by SHADOW, below, and a recess inside a card
+ * is `canvas` — the page showing through, which is true and visible in both
+ * themes.
+ */
 export function elevationFor(colors: ThemeColors, scheme: ResolvedAppearance) {
   const shadowColor = colors.cardShadow;
   const cardOpacity = scheme === 'dark' ? 0.18 : 0.07;

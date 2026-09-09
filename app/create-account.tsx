@@ -9,8 +9,8 @@ import { BrandButton, BrandTextField } from '@/components/warsha/BrandUI';
 import { PasswordRequirementList } from '@/components/warsha/PasswordRequirementList';
 import { SignupLegalAcceptance, SignupLegalFootnotes } from '@/components/warsha/SignupLegalAcceptance';
 import { AppText } from '@/components/warsha/Typography';
-import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
-import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
+import { radii, rhythm, spacing, typography, type ThemeColors } from '@/constants/theme';
+import { useThemeColors, useThemedElevation, useThemedStyles } from '@/src/appearance/appearance-context';
 import { useAuth } from '@/src/auth/auth-context';
 import { authMessageKey } from '@/src/auth/auth-errors';
 import { isValidCustomerEmail } from '@/src/auth/auth-identifier';
@@ -49,6 +49,10 @@ import type { AccountRoleChoice } from '@/src/onboarding/onboarding-types';
 export default function CreateAccount() {
   const styles = useThemedStyles(makeStyles);
   const colors = useThemeColors();
+  // Resolved per theme: light's card shadow is a warm brown that belongs on
+  // paper, dark's is black. The static export is dark-resolved and would be
+  // wrong here in exactly the appearance Warsha opens in.
+  const shadow = useThemedElevation();
   const { t, isRTL, language } = useLocalization();
   const at = useAuthText();
   const ot = useOnboardingText();
@@ -240,7 +244,7 @@ export default function CreateAccount() {
                   ot.text(option === 'customer' ? 'roleCustomerHint' : 'roleWorkerHint')}`}
                 accessibilityHint={ot.text('a11yRoleNotSelected')}
                 onPress={() => chooseRole(option)}
-                style={({ pressed }) => [styles.option, isRTL && styles.optionReverse, pressed && styles.optionPressed]}>
+                style={({ pressed }) => [styles.option, shadow.card, isRTL && styles.optionReverse, pressed && styles.optionPressed]}>
                 {/* The mark is the fastest discriminator on this screen, and
                     for a reader who is not confident with text it may be the
                     only one they use. It never carries the meaning alone: the
@@ -287,11 +291,19 @@ export default function CreateAccount() {
 
           <AppText style={styles.note}>{ot.text('roleBothNote')}</AppText>
 
+          {/* Ghost, and a ghost button has no border and no fill -- so the
+              only route back for someone who already has an account rendered
+              as a line of body text with nothing saying it could be tapped.
+              Secondary gives it the same treatment as "I already have an
+              account" on the gateway, which is the same action. It still sits
+              below the note and reads as the quieter choice, because the two
+              role cards above it are elevated and it is not. */}
           <BrandButton
             label={ot.text('signIn')}
-            variant="ghost"
+            variant="secondary"
             loading={busy}
             onPress={() => void openSignIn()}
+            style={styles.signIn}
           />
           {errorKey ? (
             <AppText accessibilityRole="alert" style={styles.error}>{t(errorKey)}</AppText>
@@ -463,31 +475,51 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   title: { ...typography.h1, fontWeight: typography.bold, textAlign: 'center', color: colors.textPrimary },
   options: { width: '100%', maxWidth: 420, gap: spacing.md },
+  /*
+   * A hand-rolled card, and it looked like one: a one-pixel border on a white
+   * fill against a warm-white ground, with none of the elevation every other
+   * Warsha card gets. `elevation.card` is the authority for that and this
+   * screen simply was not using it -- the same pattern as the option rows,
+   * where four screens each drew their own version of a shared thing.
+   */
   option: {
-    minHeight: 88,
+    minHeight: 96,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
+    gap: spacing.lg,
     padding: spacing.lg,
-    borderWidth: 1,
-    borderColor: colors.borderDefault,
     borderRadius: radii.md,
     backgroundColor: colors.surface,
   },
   optionReverse: { flexDirection: 'row-reverse' },
+  /*
+   * The well was `surfaceElevated`, which in the LIGHT theme is #FFFFFF -- the
+   * same value as `surface`. So the container around the role mark did not
+   * exist at all in Warsha's default appearance, and the icon floated in a
+   * wide empty column looking lost. It was correct in dark and invisible in
+   * light, which is exactly the failure a themed token is meant to prevent and
+   * the reason nobody had noticed.
+   *
+   * `canvas` instead: a recess in a card is the page showing through, which is
+   * true in both themes and visible in both -- warm paper inside white here,
+   * near-black inside charcoal there.
+   */
   optionMark: {
-    width: 48,
-    height: 48,
+    width: 52,
+    height: 52,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: radii.md,
-    backgroundColor: colors.surfaceElevated,
+    borderRadius: radii.sm,
+    backgroundColor: colors.canvas,
   },
   optionCopy: { flex: 1, gap: spacing.xs },
   optionPressed: { backgroundColor: colors.surfacePressed },
   optionTitle: { ...typography.h3, fontWeight: typography.semibold, color: colors.textPrimary },
   optionHint: { color: colors.textSecondary },
-  note: { color: colors.textMuted, textAlign: 'center', maxWidth: 420 },
+  note: { ...typography.bodySmall, color: colors.textMuted, textAlign: 'center', maxWidth: 420 },
+  // Separated from the note by more than the gap between the cards, so it
+  // reads as a different intention rather than as a third role.
+  signIn: { width: '100%', maxWidth: 420, marginTop: rhythm.sectionGap },
   form: { width: '100%', maxWidth: 420, gap: spacing.md },
   error: { color: colors.errorText, textAlign: 'center', maxWidth: 420 },
   notice: { color: colors.successText, textAlign: 'center', maxWidth: 420 },

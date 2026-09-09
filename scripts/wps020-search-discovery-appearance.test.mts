@@ -753,4 +753,35 @@ check(
   );
 }
 
+
+/*
+ * Light cannot lift a surface with fill, so it must lift it with shadow.
+ *
+ * `surface` and `surfaceElevated` are BOTH #FFFFFF in light, because nothing is
+ * lighter than white. Anything that layers one on the other is correct in dark
+ * and invisible in the appearance Warsha opens in -- the role chooser's icon
+ * well was exactly that, and nobody had seen it because it only fails in the
+ * common case.
+ *
+ * These assert the mechanism that has to carry it instead.
+ */
+{
+  const { darkColors, lightColors, elevationFor } = await import('../constants/appearance.ts');
+  const light = elevationFor(lightColors, 'light');
+  const dark = elevationFor(darkColors, 'dark');
+
+  check(light.card.shadowOpacity > 0 && light.card.elevation > 0,
+    'LIGHT LIFTS A CARD WITH SHADOW, because it cannot lift one with fill');
+  check(dark.card.shadowOpacity > 0,
+    'and dark does too, so the two appearances layer the same way');
+  check(lightColors.cardShadow !== darkColors.cardShadow,
+    'each theme has its own shadow colour, so a card on paper is not shadowed in black');
+  check(lightColors.canvas !== lightColors.surface,
+    'a recess inside a light card is visible, which is what the canvas role is for');
+  check(darkColors.canvas !== darkColors.surface,
+    'and visible in dark as well');
+  check(/nothing is lighter than white/i.test(read('constants/appearance.ts')),
+    'and the palette says why, where the next person will look');
+}
+
 console.log(`WPS-020 search, discovery and appearance: ${checks} checks passed.`);
