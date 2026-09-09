@@ -16,7 +16,7 @@ anything.
 | Local validation | typecheck 0, `test:all` exit 0, lint 0 errors (4 pre-existing warnings) |
 | CI | `f62948a` fully green (Validate 4/4, **API 24 ✓, API 25 ✓**); `990f886` Validate green, Android was still running; `a4d1dde` not yet checked |
 | Emulator | `emulator-5554`, 320×640 @160dpi (320dp), API 35 |
-| Installed APK | built 2026-09-09 19:28Z, production mode (no QA flag), carries the RTL baseline, role marks and bidi isolates |
+| Installed APK | built 2026-09-09 19:28Z; carries the RTL baseline, role marks and bidi isolates. **Points at warsha-DEVELOPMENT**, because `.env` holds the development URL and key — see the backend-target note below |
 | Docker | running; **must be stopped** — the owner wants it installed, auto-start disabled, stack down when unused |
 
 **First action next session:** confirm CI on `a4d1dde` (Validate + Android API
@@ -156,6 +156,41 @@ mid-install); a reboot clears it, and device-EN/app-AR is both stable and the
 more decisive configuration.
 
 ---
+
+## The backend a local build points at
+
+`.env` holds `EXPO_PUBLIC_SUPABASE_URL=https://lrhipbcapzfxuwixfoog.supabase.co`
+— that is **warsha-development**. Production is `ekgwzljpcxpxnklzxuvj`.
+
+So every APK built with plain `.env` is a development build. That is correct for
+ordinary work and it cost an hour here, because signing in with the Production
+QA credentials produced "Invalid sign-in details or password." and looked
+exactly like a product defect: the same credential succeeded against the
+Production auth boundary from the host, and the emulator had network.
+
+It was not a defect. The account exists in Production and not in development.
+
+Comparing the key FINGERPRINT in `.env` against the one extracted from
+`warsha-prod.apk` is what settled it, and is the check to run first whenever an
+authenticated journey fails on a locally-built APK:
+
+```bash
+node -e "…resolvePublicKey({apkPath:'D:/Warsha-Temp/apk-audit/warsha-prod.apk'})"
+# compare url and fingerprint against .env
+```
+
+To exercise authenticated Production journeys, build with the Production values
+layered over `.env`:
+
+```bash
+set -a; . ./.env; . D:/Warsha-Temp/prod-env.txt; set +a
+export EXPO_PUBLIC_DATA_MODE=supabase
+node scripts/android-release-build.mjs
+```
+
+**None of the RTL, bidi, role-mark or currency evidence depends on this.** Those
+are layout and text concerns and render identically against either backend. Only
+authenticated journeys are affected.
 
 ## Known flake
 

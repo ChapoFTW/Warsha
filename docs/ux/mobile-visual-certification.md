@@ -203,7 +203,7 @@ Everything else. Listed so the gaps are visible rather than implied.
 ## Method note for whoever continues this
 
 The emulator used here is 320×640 at 160dpi — 320dp, the compact hard gate — on
-API 35, running the Production APK in supabase mode.
+API 35, running a locally built APK in supabase mode. Note that a plain `.env` build points at warsha-DEVELOPMENT, not Production — irrelevant to layout and text, which is all the evidence here depends on, but decisive for anything authenticated.
 
 Arabic is reached with `adb shell cmd locale set-app-locales com.warsha.app
 --locales ar-EG`. Setting `system_locales` alone does **not** work, and neither
