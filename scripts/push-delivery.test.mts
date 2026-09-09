@@ -354,4 +354,74 @@ ok(appConfig.expo.plugins.some((plugin) => Array.isArray(plugin)
   ? plugin[0] === 'expo-notifications' : plugin === 'expo-notifications'),
   'AND ITS CONFIG PLUGIN IS REGISTERED, SO THE ICON AND COLOUR REACH THE MANIFEST');
 
+
+// ---------------------------------------------------------------------------
+// 10. The configuration authority
+// ---------------------------------------------------------------------------
+/**
+ * `202609010001` dropped WPS-014's prohibitions and made enabling push
+ * REPRESENTABLE. It did not make it REACHABLE: no statement anywhere in this
+ * repository could write the three switches, so `get_my_push_state` answered
+ * `provider: disabled` no matter who asked or what credential they held.
+ *
+ * `202609090002` fits the handle. The assertions that matter are not that it
+ * works — pgTAP owns that — but that it stayed the ONLY handle, that it does
+ * not itself turn anything on, and that turning something on costs more than
+ * turning it off.
+ */
+const sqlComments = (source: string) => source.replace(/^\s*--.*$/gm, '');
+const configAuthority = sqlComments(
+  read('supabase/migrations/202609090002_push_configuration_authority.sql'));
+
+// The rule that keeps this a single authority. A second writer is how the
+// governed path becomes the one nobody uses.
+const configWriters: string[] = [];
+for (const file of readdirSync(join(root, 'supabase', 'migrations')).sort()) {
+  if (!file.endsWith('.sql')) continue;
+  const sql = sqlComments(read(join('supabase', 'migrations', file)));
+  if (/update\s+private\.notification_configuration/i.test(sql)) configWriters.push(file);
+}
+equal(configWriters, ['202609090002_push_configuration_authority.sql'],
+  'EXACTLY ONE MIGRATION WRITES private.notification_configuration');
+
+match(configAuthority, /create or replace function private\.set_push_configuration_core/,
+  'the rules live in one core, as they do for feature flags');
+match(configAuthority,
+  /require_staff_capability\('manage_notification_configuration'\)/,
+  'the staff door resolves the notification configuration capability');
+match(configAuthority, /p_environment <> private\.platform_environment\(\)/,
+  'and refuses to configure a platform it was not aimed at');
+match(configAuthority, /record_governed_audit/, 'every change writes a governed audit row');
+match(configAuthority, /'push_configuration_changed'/, 'under its own action name');
+
+// The escalation, and its deliberate asymmetry.
+match(configAuthority, /v_enabling\s*:=/, 'the direction of the change is computed');
+match(configAuthority,
+  /if v_enabling[\s\S]{0,120}staff_recent_reauth[\s\S]{0,80}raise exception/,
+  'ENABLING A SWITCH REQUIRES RECENT RE-AUTHENTICATION');
+ok(!/if not v_enabling[\s\S]{0,120}raise exception/.test(configAuthority),
+  'and disabling is never made harder than enabling');
+
+// Grants: the core is unreachable, the door is reachable only when signed in.
+match(configAuthority,
+  /revoke all on function private\.set_push_configuration_core\([\s\S]{0,120}from public, anon, authenticated/,
+  'the core is revoked from every client role');
+match(configAuthority,
+  /grant execute on function public\.staff_set_push_configuration\([\s\S]{0,80}to authenticated/,
+  'and only the staff wrapper is granted, to authenticated');
+notMatch(configAuthority, /to service_role/,
+  'no service_role door exists: the automation principal does not hold this capability');
+
+// It installs the ability to decide, not a decision.
+notMatch(configAuthority, /(push_delivery_enabled|token_registration_enabled)\s*=\s*true/,
+  'THE MIGRATION TURNS NOTHING ON');
+notMatch(configAuthority, /push_provider\s*=\s*'expo'/,
+  'and selects no provider on anybody behalf');
+
+// The coherence the table cannot state as clearly as an error message can.
+match(configAuthority, /Enable token registration before delivery/,
+  'delivery without registration is refused with a reason, not a constraint violation');
+match(configAuthority, /Disable the notification scheduler before removing the provider/,
+  'and the scheduler is named rather than silently switched off as a side effect');
+
 console.log(`Push delivery: ${checks} checks passed.`);

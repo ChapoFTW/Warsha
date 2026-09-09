@@ -174,16 +174,48 @@ like product defects:
 
 ## Blocked, and by what
 
-**Push, end to end.** The backend reports the push provider disabled and token
-registration unavailable in Production. Enabling it goes through
-`private.notification_configuration`, gated by the
-`manage_notification_configuration` capability — which needs a **staff session on
-Production**, and the only credential available here is a QA professional
-account. This is an authorisation boundary, not a technical one.
+**Push, end to end.** Recorded here until 2026-09-09 as an authorisation
+boundary — "needs a staff session on Production, and the only credential
+available here is a QA professional account". **That diagnosis was wrong**, and
+the correction matters more than the original entry.
 
-Note the ordering constraint it creates: the instruction is not to enable
-`push_notifications` until the proof is green, and the proof cannot run until
-token registration is enabled. Those are two different switches —
-`token_registration_enabled` and `push_delivery_enabled` are independent columns
-— so the proof can be run with registration on and delivery still off. That
-sequencing is a decision to take deliberately rather than by accident.
+The blocker was never a credential. `private.notification_configuration` holds
+the three switches the whole push system reads, and until today **nothing in
+Warsha could write them**. Across 115 migrations there was not one `update`
+against that table; no admin screen reached it, no staff RPC named it, and the
+development automation principal did not hold its capability. WPS-014 seeded the
+row with everything off, `202609010001_push_delivery_authority` removed the
+CHECK constraints that had made enabling it impossible — stating in its own
+comment "Nothing here turns push on; it makes turning it on possible" — and then
+no handle was ever fitted.
+
+So `get_my_push_state` answered `provider: disabled` to every caller, and would
+have answered that to a Production owner with every capability in the catalogue.
+No credential would have changed it.
+
+`202609090002_push_configuration_authority` fits the handle:
+`public.staff_set_push_configuration`, capability
+`manage_notification_configuration`, bound to the current platform environment,
+audited as `push_configuration_changed`, with recent re-authentication required
+to turn a switch ON and deliberately not required to turn one OFF.
+
+**What remains genuinely blocked, and it is now a real boundary.** Executing that
+function against Production needs a Production *staff session* — an account
+holding the capability, MFA satisfied, freshly re-authenticated. No such
+credential exists in this environment, and the automation principal cannot
+substitute: `private.automation_principals.environment` carries a CHECK
+constraint restricting it to `development`, so a Production automation principal
+cannot be stored at all. That constraint is a deliberate architectural boundary
+and is not being weakened to get past it.
+
+The ordering constraint still holds and is now enforced in the database rather
+than only written down: `token_registration_enabled` and `push_delivery_enabled`
+are independent, so Phase A can run with registration on and delivery off, and
+the authority refuses delivery-without-registration outright.
+
+| Phase | State | Blocked on |
+| --- | --- | --- |
+| Authority to configure push | **BUILT** | — |
+| Phase A — provider on, registration on, delivery off | **READY** | a Production staff session |
+| Phase B — delivery on for the synthetic QA proof | NOT STARTED | Phase A |
+| `push_notifications` public flag | **CORRECTLY OFF** | the complete proof |
