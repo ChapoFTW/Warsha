@@ -3,7 +3,7 @@
 Written so the next session resumes without asking the owner to reconstruct
 anything.
 
-**Updated:** 2026-09-09 · **HEAD = origin/main = `2ac4e1a`** · working tree clean
+**Updated:** 2026-09-09 · **HEAD = origin/main = `a4d1dde`** · working tree clean
 
 ---
 
@@ -12,15 +12,14 @@ anything.
 | | |
 | --- | --- |
 | Repository | `D:\Warsha`, branch `main` |
-| HEAD / origin | `2ac4e1a` — pushed, verified equal |
+| HEAD / origin | `a4d1dde` — pushed, verified equal |
 | Local validation | typecheck 0, `test:all` exit 0, lint 0 errors (4 pre-existing warnings) |
-| CI on `2ac4e1a` | **NOT YET CONFIRMED** — started after push, unverified at checkpoint time |
-| Last confirmed CI | `9127ac2` and earlier: Validate 4/4, **API 24 ✓, API 25 ✓** |
+| CI | `f62948a` fully green (Validate 4/4, **API 24 ✓, API 25 ✓**); `990f886` Validate green, Android was still running; `a4d1dde` not yet checked |
 | Emulator | `emulator-5554`, 320×640 @160dpi (320dp), API 35 |
-| Installed APK | built 2026-09-09 18:05Z from `2ac4e1a` source, production mode (no QA flag) |
+| Installed APK | built 2026-09-09 19:28Z, production mode (no QA flag), carries the RTL baseline, role marks and bidi isolates |
 | Docker | running; **must be stopped** — the owner wants it installed, auto-start disabled, stack down when unused |
 
-**First action next session:** confirm CI on `2ac4e1a` (Validate + Android API
+**First action next session:** confirm CI on `a4d1dde` (Validate + Android API
 24/25). If red, read the real logs and fix before anything else.
 
 ---
@@ -53,9 +52,17 @@ helper; build helper that cannot report a success it did not have.
 
 ## Open — highest priority first
 
-### 1. RTL visual certification — still **FAIL**
+### 1. RTL visual certification — architecture PROVEN, sweep PARTIAL
 
-Architecture is proven; the **matrix is not run**. Needed before the row moves:
+Seven Arabic surfaces at 320dp now pass with numbers: gateway, role chooser,
+signup fields, consent rows, navigation header (back on the right, arrow points
+right), legal document, sign-in. Zero overflow and no sub-44dp tap target on any
+of them. Also passing: AR dark, AR 1.3x text, AR at 411dp, FR, and EN
+byte-identical to before the fix.
+
+Navigation RTL is no longer merely wired — it is rendered and verified.
+
+Still needed before the programme row closes:
 
 - viewports 320dp and ~411dp
 - device/app: EN/EN, EN/AR, **AR/AR**, AR/EN, AR/FR
@@ -66,12 +73,14 @@ Architecture is proven; the **matrix is not run**. Needed before the row moves:
 
 Two specific items carried forward:
 
-- **Navigation RTL is wired but never rendered.** `LocaleDirContext` is
-  supplied from Warsha `isRTL`; back arrow side, header alignment, transitions,
-  tabs, modal presentation and accessibility traversal are all unverified.
+- **Authenticated surfaces are unreached**: settings, lists, chat, job cards,
+  tabs, provider profile, booking creation. Every surface verified so far is
+  signed-out, because the QA professional account's onboarding is incomplete and
+  the app routes there.
+- **Transitions, tabs and accessibility traversal order** remain unverified.
+  Bounds prove visual order, not announcement order.
 - **Chat preview close** was moved to trailing *without rendered evidence* —
-  reaching it needs an authenticated conversation carrying an image. Stated in
-  the commit, must be confirmed or reverted.
+  reaching it needs an authenticated conversation carrying an image.
 
 ### 2. Portals and separate native surfaces — unmeasured
 
