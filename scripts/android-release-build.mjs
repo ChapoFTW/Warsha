@@ -38,7 +38,7 @@
  * are never printed; only which names were found.
  */
 import { execFileSync, spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 
@@ -128,6 +128,63 @@ if (targetUnknown || (previousTarget && previousTarget !== bundleTarget)) {
   for (const output of BUNDLE_OUTPUTS) rmSync(output, { recursive: true, force: true });
 }
 
+/**
+ * Native configuration changes reach the build only through `expo prebuild`.
+ *
+ * `android/` is generated output. A config plugin that adds a theme, a
+ * permission or a resource changes nothing at all until prebuild runs, and
+ * `assembleRelease` on its own will happily produce a perfectly good APK that
+ * does not contain the change — reporting success the whole way.
+ *
+ * That is exactly the failure the bundle-target stamp above exists to prevent,
+ * one layer down, so it gets the same treatment: fingerprint the inputs that
+ * decide what prebuild writes, and run prebuild when they move.
+ *
+ * It cost a full build to learn. A dialog-theme plugin was added, `styles.xml`
+ * was never regenerated, and the resource the theme referenced was missing —
+ * which at least failed loudly. The quiet version of the same mistake is worse:
+ * the plugin is correct, prebuild does not run, and the build succeeds WITHOUT
+ * the theme, so the screenshots show the old appearance and there is nothing
+ * anywhere saying why.
+ */
+const NATIVE_CONFIG_STAMP = join('android', 'app', 'build', 'warsha-native-config.sha256');
+const NATIVE_CONFIG_INPUTS = [
+  'app.json',
+  'app.config.js',
+  ...(existsSync('plugins')
+    ? readdirSync('plugins').filter((name) => name.endsWith('.js')).map((name) => join('plugins', name))
+    : []),
+];
+
+const nativeConfig = createHash('sha256').update(
+  NATIVE_CONFIG_INPUTS
+    .filter((file) => existsSync(file))
+    .map((file) => `${file}:${readFileSync(file, 'utf8')}`)
+    .join('\u0000'),
+).digest('hex');
+
+const previousConfig = existsSync(NATIVE_CONFIG_STAMP)
+  ? readFileSync(NATIVE_CONFIG_STAMP, 'utf8').trim() : '';
+
+// Unknown is treated as changed, for the same reason as the target stamp: it is
+// indistinguishable from a mismatch, and "probably fine" is how a plugin that
+// never reached a build gets certified.
+if (previousConfig !== nativeConfig) {
+  console.log(previousConfig
+    ? 'native configuration CHANGED — running expo prebuild before gradle.'
+    : 'native configuration state UNKNOWN — running expo prebuild rather than assuming.');
+  const prebuild = spawnSync('npx', ['expo', 'prebuild', '-p', 'android'], {
+    env, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024,
+    shell: process.platform === 'win32',
+  });
+  if (prebuild.status !== 0) {
+    console.error('\nBUILD REFUSED: expo prebuild failed, so the native project is stale.');
+    console.error((prebuild.stderr ?? prebuild.stdout ?? '').slice(-2000));
+    process.exit(1);
+  }
+  console.log('prebuild complete.\n');
+}
+
 // The marker is taken NOW, so "is the APK new" is answered against this build
 // rather than against an unrelated file's timestamp.
 const startedAt = Date.now();
@@ -169,6 +226,7 @@ if (built.mtimeMs < startedAt) {
 
 mkdirSync(join('android', 'app', 'build'), { recursive: true });
 writeFileSync(BUNDLE_TARGET_STAMP, bundleTarget);
+writeFileSync(NATIVE_CONFIG_STAMP, nativeConfig);
 
 const duration = Math.round((Date.now() - startedAt) / 1000);
 console.log(`\nBUILD SUCCESSFUL in ${duration}s`);

@@ -107,4 +107,21 @@ ok(/createHash\('sha256'\)/.test(helper),
 ok(!/writeFileSync\([^)]*env\.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY/.test(helper),
   'and the key itself never reaches a file');
 
+// --- Native configuration reaches the build --------------------------------
+// `android/` is generated output. A config plugin that adds a theme, a
+// permission or a resource changes nothing until `expo prebuild` runs, and
+// `assembleRelease` will otherwise produce a perfectly good APK without it and
+// report success. That is the bundle-target failure one layer down, so it gets
+// the same stamp.
+ok(/NATIVE_CONFIG_STAMP/.test(helper),
+  'the helper fingerprints what decides the native project');
+ok(/'app\.json'/.test(helper) && /plugins/.test(helper),
+  'and the fingerprint covers the app config and every config plugin');
+ok(/expo', 'prebuild'/.test(helper),
+  'a change runs prebuild rather than trusting the existing android/ tree');
+ok(/previousConfig !== nativeConfig/.test(helper),
+  'and an unknown previous state counts as changed, not as probably fine');
+ok(/BUILD REFUSED: expo prebuild failed/.test(helper),
+  'A FAILED PREBUILD STOPS THE BUILD, because the native project is then stale');
+
 console.log(`Android build helper: ${checks} checks passed.`);
