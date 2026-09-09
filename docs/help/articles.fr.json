@@ -401,8 +401,8 @@
       "locale": "fr",
       "title": "Audit, analyses et exports",
       "summary": "Lisez l’historique immuable, interprétez les métriques et exportez des agrégats en sécurité.",
-      "version": 3,
-      "lastReviewedDate": "2026-08-21",
+      "version": 4,
+      "lastReviewedDate": "2026-09-09",
       "features": [
         "audit",
         "analytics",
@@ -427,7 +427,7 @@
         "export",
         "financier"
       ],
-      "body": "L’audit est une preuve ajoutée sans modification des actions passées. Recherchez par période bornée, source, acteur ou sujet exact ; ce n’est pas une note de dossier modifiable. La lecture de sources sensibles est elle-même auditée.\n\nLes analyses calculent des faits agrégés depuis les tables et historiques officiels de Warsha. Lisez la définition avant de comparer une métrique. Les journées de rapport suivent Africa/Cairo, tandis que le stockage reste en UTC. Les cartes financières ne s’affichent qu’avec `view_financial_ledger` et ne prétendent pas qu’un règlement externe a eu lieu.\n\nL’export CSV exige `export_operational_report`, une authentification récente, une raison et une demande temporaire auditée. Il ne contient pas de données personnelles.\n\nLes filtres de catégorie et les répartitions affichent le nom localisé du service. L’identifiant de catégorie stable reste la valeur stockée et exportée : un rapport exporté dans une langue reste comparable à un rapport exporté dans une autre.\n\nUn export interrompu par une confirmation reprend de lui-même. L’export d’un rapport opérationnel exige une connexion récente ; lorsque Warsha vous demande de confirmer, c’est l’export que vous aviez demandé — même période, mêmes filtres, même motif indiqué — qui s’exécute une fois la confirmation donnée. Il s’exécute une seule fois. Annuler n’exporte rien."
+      "body": "L’audit est une preuve ajoutée sans modification des actions passées. Recherchez par période bornée, source, acteur ou sujet exact ; ce n’est pas une note de dossier modifiable. La lecture de sources sensibles est elle-même auditée.\n\nLes analyses calculent des faits agrégés depuis les tables et historiques officiels de Warsha. Lisez la définition avant de comparer une métrique. Les journées de rapport suivent Africa/Cairo, tandis que le stockage reste en UTC. Les cartes financières ne s’affichent qu’avec `view_financial_ledger` et ne prétendent pas qu’un règlement externe a eu lieu. Les montants sont en livres égyptiennes, car la devise suit le pays de service et jamais la langue de lecture : le même montant est en EGP que la console soit lue en anglais, en arabe ou en français. Le formatage provient de l’autorité monétaire unique, afin qu’un montant s’affiche ici exactement comme dans les applications client et professionnel.\n\nL’export CSV exige `export_operational_report`, une authentification récente, une raison et une demande temporaire auditée. Il ne contient pas de données personnelles.\n\nLes filtres de catégorie et les répartitions affichent le nom localisé du service. L’identifiant de catégorie stable reste la valeur stockée et exportée : un rapport exporté dans une langue reste comparable à un rapport exporté dans une autre.\n\nUn export interrompu par une confirmation reprend de lui-même. L’export d’un rapport opérationnel exige une connexion récente ; lorsque Warsha vous demande de confirmer, c’est l’export que vous aviez demandé — même période, mêmes filtres, même motif indiqué — qui s’exécute une fois la confirmation donnée. Il s’exécute une seule fois. Annuler n’exporte rien."
     },
     {
       "id": "admin-recovery",

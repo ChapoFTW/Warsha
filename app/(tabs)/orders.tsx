@@ -17,7 +17,8 @@ import { useMarketplaceData } from '@/src/data/marketplace-context';
 import { useLocalization } from '@/src/i18n/localization';
 import { useReviews } from '@/src/reviews/review-context';
 import { cataloguedServiceReferenceLabel } from '@/src/services/specific-services';
-import { formatBookingDateTime, formatNumber, localeFor } from '@/src/utils/date-format';
+import { formatBookingDateTime, localeFor } from '@/src/utils/date-format';
+import { formatMoneyMajor } from '@/src/payments/money';
 import { bookingLifecycleSemantic, lifecycleBadgeTone } from '@/src/lifecycle/lifecycle-presentation';
 
 type Tab = 'upcoming' | 'past' | 'cancelled';
@@ -172,7 +173,7 @@ function OrderCard({ booking, reviewed, reviewStateLoading, canReview }: { booki
         </View>
       </View>
       <View style={styles.bottom}>
-        <AppText style={styles.price}>{formatNumber(booking.priceBreakdown?.estimatedTotal ?? booking.price, language)} {t('currency')}</AppText>
+        <AppText style={styles.price}>{formatMoneyMajor(booking.priceBreakdown?.estimatedTotal ?? booking.price, { language })}</AppText>
         <View style={styles.detailLink}>
           <AppText style={styles.details}>{t('viewDetails')}</AppText>
           <MaterialIcons name={isRTL ? 'arrow-back' : 'arrow-forward'} size={15} color={colors.white} />

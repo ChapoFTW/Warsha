@@ -813,8 +813,8 @@
       "locale": "en",
       "title": "Audit, analytics, and exports",
       "summary": "Read immutable history, interpret metric definitions, and export aggregate data safely.",
-      "version": 3,
-      "lastReviewedDate": "2026-08-21",
+      "version": 4,
+      "lastReviewedDate": "2026-09-09",
       "features": [
         "audit",
         "analytics",
@@ -839,7 +839,7 @@
         "export",
         "financial"
       ],
-      "body": "Audit is append-only evidence of actions that happened. Search by bounded period, source, actor, or exact subject; do not treat it as an editable case note. Reading sensitive sources is itself logged.\n\nAnalytics derives first-party aggregate facts from authoritative Warsha tables and histories. Read the metric definition before comparing numbers. Reporting days use Africa/Cairo while storage remains UTC. A partial period includes today. Financial cards show ledger facts only and do not claim external settlement or revenue.\n\nCSV export requires `export_operational_report`, fresh authentication, a reason, an expiring request owned by the operator, and an audit entry. It contains aggregate snake_case columns and no PII. Do not combine it with another dataset to identify people. Detailed exports are not available without separate privacy authority.\n\nCategory filters and dimension breakdowns show the localized service name. The stable category identifier remains the value stored and exported, so a report exported in one language is comparable with one exported in another.\n\nAn export interrupted by a confirmation resumes on its own. Exporting an operational report requires a recent sign-in; when Warsha asks you to confirm, the export you requested — the same period, filters and stated reason — is the one that runs once you have confirmed. It runs once. Cancelling exports nothing."
+      "body": "Audit is append-only evidence of actions that happened. Search by bounded period, source, actor, or exact subject; do not treat it as an editable case note. Reading sensitive sources is itself logged.\n\nAnalytics derives first-party aggregate facts from authoritative Warsha tables and histories. Read the metric definition before comparing numbers. Reporting days use Africa/Cairo while storage remains UTC. A partial period includes today. Financial cards show ledger facts only and do not claim external settlement or revenue. Monetary figures are Egyptian pounds, because currency follows the service country and never the reading language: the same figure is EGP whether the console is read in English, Arabic or French. Formatting comes from the one shared money authority, so an amount here reads identically to the same amount in the customer and professional apps.\n\nCSV export requires `export_operational_report`, fresh authentication, a reason, an expiring request owned by the operator, and an audit entry. It contains aggregate snake_case columns and no PII. Do not combine it with another dataset to identify people. Detailed exports are not available without separate privacy authority.\n\nCategory filters and dimension breakdowns show the localized service name. The stable category identifier remains the value stored and exported, so a report exported in one language is comparable with one exported in another.\n\nAn export interrupted by a confirmation resumes on its own. Exporting an operational report requires a recent sign-in; when Warsha asks you to confirm, the export you requested — the same period, filters and stated reason — is the one that runs once you have confirmed. It runs once. Cancelling exports nothing."
     },
     {
       "id": "admin-audit-analytics",

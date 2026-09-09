@@ -30,7 +30,8 @@ import { getSupabaseClient } from '@/src/lib/supabase';
 import { marketplaceRepository } from '@/src/marketplace-intelligence/marketplace-repository';
 import { marketplaceIdempotency } from '@/src/marketplace-intelligence/marketplace-types';
 import { cataloguedServiceReferenceLabel } from '@/src/services/specific-services';
-import { formatBookingDateTime, formatNumber, formatTimestamp, localeFor, toLocalISODate } from '@/src/utils/date-format';
+import { formatBookingDateTime, formatTimestamp, localeFor, toLocalISODate } from '@/src/utils/date-format';
+import { formatMoneyMajor } from '@/src/payments/money';
 import { bookingLifecycleSemantic, lifecycleBadgeTone } from '@/src/lifecycle/lifecycle-presentation';
 
 const reasons:{value:CancellationReason;label:TranslationKey}[]=[{value:'plans_changed',label:'plansChanged'},{value:'booked_by_mistake',label:'bookedMistake'},{value:'provider_delay',label:'providerDelay'},{value:'price_concern',label:'priceConcern'},{value:'other',label:'other'}];
@@ -58,7 +59,7 @@ export default function BookingDetails(){
     {cancelOpen?<Section title={t('cancellationReason')}><View style={styles.wrap}>{reasons.map(item=><Choice key={item.value} label={t(item.label)} selected={reason===item.value} onPress={()=>setReason(item.value)}/>)}</View><AppText style={styles.warning}>{t('historyRetention')}</AppText><Pressable disabled={!reason} onPress={()=>{if(reason)void bookings.cancelBooking(booking.id,reason);setCancelOpen(false)}} style={styles.danger}><AppText style={styles.dangerText}>{t('confirmCancellation')}</AppText></Pressable></Section>:null}
     {__DEV__&&nextStatuses.length?<Section title={t('devControls')}><AppText style={styles.muted}>{t('devControlsHint')}</AppText><View style={styles.wrap}>{nextStatuses.map(status=><Pressable key={status} disabled={bookings.actionInFlight!==null} onPress={()=>void bookings.simulateStatus(booking.id,status)} style={[styles.dev,bookings.actionInFlight!==null&&styles.disabled]}><AppText style={styles.devText}>{t(bookingStatusTranslationKeys[status])}</AppText></Pressable>)}</View></Section>:null}
   </ScrollView></SafeAreaView>;
-  function Price({label,value}:{label:string;value:number}){return <Row label={label} value={`${formatNumber(value,language)} ${t('currency')}`}/>}
+  function Price({label,value}:{label:string;value:number}){return <Row label={label} value={formatMoneyMajor(value, { language })}/>}
 }
 function Section({title,children}:{title:string;children:React.ReactNode}){
   const styles = useThemedStyles(makeStyles);return <View style={styles.section}><AppText style={styles.sectionTitle}>{title}</AppText>{children}</View>}

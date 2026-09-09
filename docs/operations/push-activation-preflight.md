@@ -188,6 +188,39 @@ deployment:
 3. **Apply the configuration** — `scripts/push-e2e/activate.mjs`, which is the
    agent's part.
 
+### Two things found while preparing that deployment
+
+**The migration is additive and reversible.** `202609090002` contains six
+statements: two `create or replace function`, two `revoke`, one `grant`, one
+`comment`. No `alter table`, no `drop`, no `insert`, `update` or `delete` — the
+grep returns zero for all of them. Both function names are new (Production
+answers 404 for `staff_set_push_configuration`), so nothing is being replaced.
+It cannot alter or destroy a single row, and its rollback is two `drop function`
+statements. That is worth stating precisely, because the backup gate below
+exists for migrations that *can* destroy data, and this is not one.
+
+**The Production environment has no protection rules.** The workflow header says
+schema deployment is "environment-approved" and "never touches production
+without a recorded approval", and the deploy step comments that the GitHub
+environment supplies "for production, the required reviewers". Queried directly:
+
+```
+GET /repos/ChapoFTW/Warsha/environments/Production
+protection_rules: []
+deployment_branch_policy: null
+```
+
+**There are no required reviewers and no branch policy on that environment.** The
+only guards actually in force are the two inside the workflow file — the
+confirmation input must equal the environment name, and the ref must be a
+protected branch. Those are real, but they are not the human approval the
+comments describe.
+
+This does not make the deployment unsafe; it makes the *documentation* wrong
+about why it is safe. It is recorded here rather than quietly fixed, because
+adding reviewers to a Production environment is an owner's decision about their
+own release process, not a tidy-up an agent should perform unasked.
+
 None of step 1 can be performed from here: the workflow is dispatch-only, the
 credentials live in a GitHub Environment, and production carries a reviewer
 gate. That is the correct design and is not something to work around.

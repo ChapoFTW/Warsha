@@ -204,8 +204,18 @@ export function referralShareUrl(baseUrl: string, code: string): string {
   return `${trimmed}/join?ref=${normalizeReferralCode(code)}`;
 }
 
-/** Minor units to a display string. Kept here so Mock and UI agree exactly. */
-export function formatMinorAsEgp(minor: string | number): string {
+/**
+ * Minor units to a plain decimal string — "5000" becomes "50".
+ *
+ * This is NOT a money formatter, despite once being called formatMinorAsEgp:
+ * it returns a bare number with no currency, no grouping and no locale digits.
+ * The screens that used it appended a translated currency word themselves,
+ * which is precisely the language-derived currency Warsha no longer does.
+ *
+ * For anything a person reads, use formatMoney from src/payments/money.ts,
+ * which derives the currency from the service country.
+ */
+export function minorToDecimalString(minor: string | number): string {
   const value = typeof minor === 'string' ? Number(minor) : minor;
   if (!Number.isFinite(value)) return '0';
   return (value / 100).toFixed(2).replace(/\.00$/, '');

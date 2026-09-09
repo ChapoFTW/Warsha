@@ -954,8 +954,8 @@
       "locale": "en",
       "title": "Audit, analytics, and exports",
       "summary": "Read immutable history, interpret metric definitions, and export aggregate data safely.",
-      "version": 3,
-      "lastReviewedDate": "2026-08-21",
+      "version": 4,
+      "lastReviewedDate": "2026-09-09",
       "features": [
         "audit",
         "analytics",
@@ -1521,8 +1521,8 @@
       "locale": "fr",
       "title": "Audit, analyses et exports",
       "summary": "Lisez l’historique immuable, interprétez les métriques et exportez des agrégats en sécurité.",
-      "version": 3,
-      "lastReviewedDate": "2026-08-21",
+      "version": 4,
+      "lastReviewedDate": "2026-09-09",
       "features": [
         "audit",
         "analytics",

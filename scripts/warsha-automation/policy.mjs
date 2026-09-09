@@ -89,6 +89,7 @@ export const DETERMINISTIC_TEST_SCRIPTS = [
   'test:criminal-record-contract',
   'test:photo-fixture',
   'test:mobile-certification',
+  'test:currency-authority',
   'test:worker-auth-password-contract',
   'test:staff-mfa-enrolment',
   'test:urgent-service-pricing',

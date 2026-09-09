@@ -15,6 +15,7 @@ import { professionLabel } from '@/src/providers/profession-taxonomy';
 
 import { PressableSurface } from './PressableSurface';
 import { AppText } from './Typography';
+import { formatMoneyMajor } from '@/src/payments/money';
 
 /**
  * A search or discovery result.
@@ -26,7 +27,7 @@ import { AppText } from './Typography';
 export function DiscoveryResultCard({ provider }: { provider: DiscoveryProviderCard }) {
   const colors = useThemeColors();
   const styles = useThemedStyles(makeStyles);
-  const { t, isRTL, language } = useLocalization();
+  const { isRTL, language } = useLocalization();
   const dt = useDiscoveryText();
   const { user, mode } = useAuth();
   const { isFavourite, toggleFavourite } = useLocalPreferences();
@@ -87,7 +88,7 @@ export function DiscoveryResultCard({ provider }: { provider: DiscoveryProviderC
             </AppText>
           </View>
           {provider.startingPriceEgp !== null
-            ? <AppText style={styles.price}>{dt.text('startingFrom')} {provider.startingPriceEgp} {t('currency')}</AppText>
+            ? <AppText style={styles.price}>{dt.text('startingFrom')} {formatMoneyMajor(provider.startingPriceEgp, { language })}</AppText>
             : null}
         </View>
       </View>

@@ -1,4 +1,5 @@
 import { intlLocale, type Locale } from './preferences.ts';
+import { formatMoney } from '../../src/payments/money.ts';
 
 /**
  * Browser projections of the worker authorities already consumed by mobile.
@@ -365,11 +366,20 @@ export function newWorkerKey(prefix: string): string {
   return `${prefix}:${id}`;
 }
 
+/**
+ * Delegates to the one money authority, so a price cannot read differently on
+ * the web than it does in the app.
+ *
+ * It used to call `Intl.NumberFormat` with a hardcoded EGP, which rendered
+ * "EGP 1,250.00" where the app rendered "EGP 1,250" — and in Arabic produced
+ * "\u200F\u0661\u066C\u0662\u0665\u0660\u066B\u0660\u0660 \u062C.\u0645.\u200F", with directional marks and a
+ * trailing dot the app never showed. The same booking therefore quoted two
+ * different-looking totals depending on which surface a person opened, which is
+ * exactly the sort of disagreement cross-platform parity exists to prevent.
+ */
 export function egpFromMinor(value: string, locale: Locale): string {
   let minor = 0n;
   try { minor = BigInt(value || '0'); } catch { /* malformed server value renders zero */ }
-  const major = Number(minor) / 100;
-  return new Intl.NumberFormat(intlLocale(locale), {
-    style: 'currency', currency: 'EGP', maximumFractionDigits: 2,
-  }).format(major);
+  if (minor < 0n) minor = 0n;
+  return formatMoney(minor.toString(), { language: locale });
 }

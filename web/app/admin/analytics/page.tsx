@@ -25,6 +25,7 @@ import { useAppLocale } from '@/lib/use-app-locale';
 import { serviceCategoryLabel } from '@/src/i18n/service-labels';
 
 import styles from './reporting.module.css';
+import { formatMoney } from '@/src/payments/money';
 
 type Category = { id: string; translationKey: string };
 const verificationStatuses = [
@@ -236,7 +237,7 @@ function MetricSection({ title, keys, report, locale, words, money = false }: {
     const value = Number(report.metrics[key] ?? 0);
     const change = analyticsChange(value, report.comparisonMetrics?.[key]);
     const shown = money
-      ? new Intl.NumberFormat(intlLocale(locale), { style: 'currency', currency: 'EGP' }).format(value / 100)
+      ? formatMoney(String(Math.round(value)), { language: locale })
       : value.toLocaleString(intlLocale(locale));
     return <article key={key} className={styles.metric}><span>{words[`analyticsMetric_${key}`]}</span><strong>{shown}</strong>
       {report.comparisonMetrics ? <small>{change === null ? '—' : `${change >= 0 ? '+' : ''}${change.toFixed(1)}%`}</small> : null}

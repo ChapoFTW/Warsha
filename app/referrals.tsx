@@ -12,11 +12,11 @@ import { useGrowthText } from '@/src/growth/growth-translations';
 import {
   daysUntilExpiry,
   effectiveRewardStatus,
-  formatMinorAsEgp,
   formatReferralCodeForDisplay,
   referralCodeAccessibilityLabel,
   type ReferralReward,
 } from '@/src/growth/growth-types';
+import { formatMoney } from '@/src/payments/money';
 import { useLocalization } from '@/src/i18n/localization';
 
 /**
@@ -36,7 +36,7 @@ import { useLocalization } from '@/src/i18n/localization';
 export default function ReferralsScreen() {
   const colors = useThemeColors();
   const styles = useThemedStyles(makeStyles);
-  const { isRTL } = useLocalization();
+  const { isRTL, language } = useLocalization();
   const gt = useGrowthText();
   const { ready, referral, summary, claimCode } = useGrowth();
 
@@ -174,7 +174,7 @@ export default function ReferralsScreen() {
   function RewardRow({ reward }: { reward: ReferralReward }) {
     const status = effectiveRewardStatus(reward);
     const statusText = gt.rewardStatus(status);
-    const worth = `${gt.text('rewardWorth')} ${formatMinorAsEgp(reward.maxRewardMinor)} ${gt.text('currency')}`;
+    const worth = `${gt.text('rewardWorth')} ${formatMoney(reward.maxRewardMinor, { language })}`;
 
     // Only a live reward shows an expiry. Saying "expires in 0 days" on a
     // reward that already expired is worse than saying nothing.
@@ -212,8 +212,7 @@ export default function ReferralsScreen() {
         ) : null}
         {status === 'available' && Number(reward.minimumBookingMinor) > 0 ? (
           <AppText style={styles.hint}>
-            {gt.text('rewardMinimum')}: {formatMinorAsEgp(reward.minimumBookingMinor)}{' '}
-            {gt.text('currency')}
+            {gt.text('rewardMinimum')}: {formatMoney(reward.minimumBookingMinor, { language })}
           </AppText>
         ) : null}
       </View>

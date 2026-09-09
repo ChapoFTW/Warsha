@@ -8,8 +8,9 @@ import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-con
 import { useGrowth } from '@/src/growth/growth-context';
 import { growthRepository } from '@/src/growth/growth-repository';
 import { useGrowthText } from '@/src/growth/growth-translations';
-import { formatMinorAsEgp, type BookingBenefit } from '@/src/growth/growth-types';
+import { type BookingBenefit } from '@/src/growth/growth-types';
 import { useLocalization } from '@/src/i18n/localization';
+import { formatMoney } from '@/src/payments/money';
 
 type Props = {
   bookingId: string;
@@ -34,7 +35,7 @@ type Props = {
 export function EligiblePromotionBanner({ bookingId, baseMinor, onApplied }: Props) {
   const colors = useThemeColors();
   const styles = useThemedStyles(makeStyles);
-  const { isRTL } = useLocalization();
+  const { isRTL, language } = useLocalization();
   const gt = useGrowthText();
   const { accountKey, role } = useGrowth();
 
@@ -93,7 +94,7 @@ export function EligiblePromotionBanner({ bookingId, baseMinor, onApplied }: Pro
     : gt.locale === 'ar'
       ? benefit.titleAr
       : benefit.titleEn;
-  const saves = `${gt.text('benefitSaves')} ${formatMinorAsEgp(benefit.discountMinor)} ${gt.text('currency')}`;
+  const saves = `${gt.text('benefitSaves')} ${formatMoney(benefit.discountMinor, { language })}`;
 
   return (
     <View

@@ -17,7 +17,7 @@ import {
   daysUntilExpiry,
   effectiveRewardStatus,
   emptyReferralSummary,
-  formatMinorAsEgp,
+  minorToDecimalString,
   formatReferralCodeForDisplay,
   isReferralCodeShape,
   normalizeReferralCode,
@@ -128,9 +128,9 @@ has(migration, /referral_codes_code_check check \(code ~ '\^\[2-9A-HJKMNP-Z\]\{1
 // ---------------------------------------------------------------------------
 // Pure reward rules
 // ---------------------------------------------------------------------------
-is(formatMinorAsEgp('5000'), '50', 'minor units render as EGP');
-is(formatMinorAsEgp('5050'), '50.50', 'piastres are preserved');
-is(formatMinorAsEgp('not a number'), '0', 'a malformed amount renders as zero, never as NaN');
+is(minorToDecimalString('5000'), '50', 'minor units become a plain decimal string');
+is(minorToDecimalString('5050'), '50.50', 'piastres are preserved');
+is(minorToDecimalString('not a number'), '0', 'a malformed amount renders as zero, never as NaN');
 
 const fixedReward = { rewardType: 'fixed' as const, rewardValue: 50, maxRewardMinor: '5000' };
 is(rewardDiscountMinor(fixedReward, 100000), 5000, 'a fixed 50 EGP reward is 5000 minor units');

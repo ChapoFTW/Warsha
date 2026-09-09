@@ -37,9 +37,9 @@ import { useAddressFormText } from "@/src/i18n/address-form-copy";
 import type { TranslationKey } from "@/src/i18n/translations";
 import { catalogueServiceLabel } from "@/src/services/specific-services";
 import { resolvedAddressFields } from "@/src/providers/location-address";
+import { formatMoneyMajor } from "@/src/payments/money";
 import {
   formatBookingDateTime,
-  formatNumber,
   localeFor,
   normalizeProblem,
   toLocalISODate,
@@ -368,7 +368,7 @@ export default function NewBookingScreen() {
                       </AppText>
                     </View>
                     <AppText style={styles.price}>
-                      {item.price} {t("currency")}
+                      {formatMoneyMajor(item.price, { language })}
                     </AppText>
                     <MaterialIcons
                       name={
@@ -560,7 +560,7 @@ export default function NewBookingScreen() {
                     {pricing.emergencySurcharge > 0
                       ? t("emergencyWarning").replace(
                           "{amount}",
-                          `${formatNumber(pricing.emergencySurcharge, language)} ${t("currency")}`,
+                          formatMoneyMajor(pricing.emergencySurcharge, { language }),
                         )
                       : t("emergencyWarningNoFee")}
                   </AppText>
@@ -653,7 +653,7 @@ export default function NewBookingScreen() {
                       ? t("inspection")
                       : t("servicePrice")
                   }
-                  value={`${formatNumber(service.price, language)} ${t("currency")}`}
+                  value={formatMoneyMajor(service.price, { language })}
                 />
                 {/* A fee line is shown when there is a fee. Printing
                     "Transportation fee — 0" invites the reader to look for a
@@ -662,13 +662,13 @@ export default function NewBookingScreen() {
                 {pricing.transportationFee > 0 ? (
                   <Summary
                     label={t("transportationFee")}
-                    value={`${formatNumber(pricing.transportationFee, language)} ${t("currency")}`}
+                    value={formatMoneyMajor(pricing.transportationFee, { language })}
                   />
                 ) : null}
                 {pricing.emergencySurcharge > 0 ? (
                   <Summary
                     label={t("emergencySurcharge")}
-                    value={`${formatNumber(pricing.emergencySurcharge, language)} ${t("currency")}`}
+                    value={formatMoneyMajor(pricing.emergencySurcharge, { language })}
                   />
                 ) : null}
                 {/* This was the literal string "0 EGP", which is a hardcoded
@@ -679,12 +679,12 @@ export default function NewBookingScreen() {
                 {pricing.discount > 0 ? (
                   <Summary
                     label={t("discount")}
-                    value={`${formatNumber(pricing.discount, language)} ${t("currency")}`}
+                    value={formatMoneyMajor(pricing.discount, { language })}
                   />
                 ) : null}
                 <Summary
                   label={t("estimatedTotal")}
-                  value={`${formatNumber(pricing.estimatedTotal, language)} ${t("currency")}`}
+                  value={formatMoneyMajor(pricing.estimatedTotal, { language })}
                 />
               </View>
               <AppText style={styles.warningText}>

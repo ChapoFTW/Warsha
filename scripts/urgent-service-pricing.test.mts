@@ -161,8 +161,12 @@ check(/emergencyWarningNoFee/.test(screen),
 check(/t\("emergencyWarning"\)\.replace\(\s*\n?\s*"\{amount\}"/.test(screen)
   || /replace\(\s*"\{amount\}"/.test(screen),
   'and interpolates the amount rather than trusting a constant in the string');
-check(/formatNumber\(pricing\.emergencySurcharge, language\)/.test(screen),
-  'formatted with the reader’s own numerals');
+// Was `formatNumber(..., language)`, which localised the digits and left the
+// screen to append a currency word itself. `formatMoneyMajor` does both, so
+// this now asserts the stronger property: the reader's own numerals AND a
+// currency derived from the service country rather than from their language.
+check(/formatMoneyMajor\(pricing\.emergencySurcharge, \{ language \}\)/.test(screen),
+  'formatted with the reader’s own numerals, in the service country’s currency');
 
 // ===========================================================================
 // 5. NO HARDCODED MONEY ANYWHERE THE CUSTOMER READS A PRICE
@@ -181,14 +185,21 @@ check(/pricing\.transportationFee > 0/.test(screen),
 // Every MONEY value the summary renders goes through the locale formatter, so
 // an Arabic reader never sees Latin digits in their own price summary. Scoped
 // to money: an address line is not a price and does not want a number format.
-const moneyValues = [...screen.matchAll(/value=\{`\$\{([^}]+)\}/g)]
-  .map(([, expr]) => expr)
+// These used to be template literals pasting a formatted number next to a
+// translated currency word. They are now single calls into the money
+// authority, so the shape being matched changed — and matching the NEW shape
+// is what keeps this a real check rather than one that quietly matches nothing.
+const moneyValues = [...screen.matchAll(/value=\{formatMoneyMajor\(([^,]+),/g)]
+  .map(([, expr]) => expr.trim())
   .filter((expr) => /pricing\.|service\.price/.test(expr));
 check(moneyValues.length >= 3, 'the summary renders several money values');
 for (const expr of moneyValues) {
-  check(/formatNumber\(/.test(expr),
-    `money value ${expr.slice(0, 44)} is formatted for the reader's locale`);
+  check(/^(pricing\.[A-Za-z]+|service\.price)$/.test(expr),
+    `money value ${expr.slice(0, 44)} is a real price, passed straight to the formatter`);
 }
+// And nothing in the summary formats a price by hand any more.
+check(!/formatNumber\((?:pricing\.|service\.price)/.test(screen),
+  'NO PRICE GOES THROUGH THE PLAIN NUMBER FORMATTER — money is not just a number');
 
 for (const locale of ['en', 'ar', 'fr'] as const) {
   const transport = String(translations[locale].transportationFee);

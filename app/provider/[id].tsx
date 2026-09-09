@@ -1,4 +1,5 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { formatMoneyMajor } from '@/src/payments/money';
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
@@ -249,7 +250,7 @@ function ServiceRow({ service }: { service: Service }) {
       </View>
       <View style={styles.inline}>
         <AppText style={styles.price}>
-          {service.price} {t("currency")}
+          {formatMoneyMajor(service.price, { language })}
         </AppText>
         <MaterialIcons
           name={isRTL ? "arrow-back" : "arrow-forward"}
