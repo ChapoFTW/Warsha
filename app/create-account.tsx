@@ -246,12 +246,29 @@ export default function CreateAccount() {
                     only one they use. It never carries the meaning alone: the
                     label and the accessible name still say which is which, and
                     the icon is hidden from screen readers so it is not
-                    announced twice. */}
+                    announced twice.
+
+                    These were `home-repair-service` (a toolbox) and
+                    `handyman` (hammer and wrench). Both were tools, so the two
+                    cards read as two KINDS OF TRADESPERSON rather than as the
+                    choice they actually are. For the reader who needs the mark
+                    most, that is the one distinction it failed to draw.
+
+                    Now the marks carry the two meanings: a house for "I need
+                    help at my home", a person for "I do the work". They are
+                    different shapes before they are different pictures, which
+                    is what lets them be told apart at 24px without reading.
+
+                    `home` rather than a service mark: the Warsha icon family
+                    is for trades and categories, and a customer is neither.
+                    `engineering` rather than a tool: it is a person with a
+                    work cue, so it reads as a role across plumbing, cleaning,
+                    painting and the rest, instead of naming one of them. */}
                 <View style={styles.optionMark}>
                   <MaterialIcons
                     accessibilityElementsHidden
                     importantForAccessibility="no"
-                    name={option === 'customer' ? 'home-repair-service' : 'handyman'}
+                    name={option === 'customer' ? 'home' : 'engineering'}
                     size={26}
                     color={colors.textPrimary}
                   />

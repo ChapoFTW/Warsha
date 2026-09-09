@@ -147,7 +147,10 @@ export default function WorkerDashboard() {
         </View>
 
         <BrandCard style={styles.customerCard}>
-          <MaterialIcons name="home-repair-service" size={30} color={colors.textPrimary} />
+          {/* The customer mark, because this card is the professional stepping
+              into the customer role — asking for help at their own home. It used
+              to be a toolbox, which is what they already are. */}
+          <MaterialIcons name="home" size={30} color={colors.textPrimary} />
           <View style={styles.grow}>
             <AppText style={styles.actionTitle}>{wt.text('requestService')}</AppText>
             <AppText style={styles.body}>{wt.text('requestServiceHint')}</AppText>
