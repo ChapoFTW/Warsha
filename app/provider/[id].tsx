@@ -18,6 +18,7 @@ import { useMarketplaceText } from "@/src/marketplace-intelligence/marketplace-t
 import { useWorkerProfileText } from "@/src/i18n/worker-profile-translations";
 import { professionLabel } from "@/src/providers/profession-taxonomy";
 import { catalogueServiceLabel, serviceMetaLine } from "@/src/services/specific-services";
+import { leadingInset, trailingInset } from '@/src/i18n/direction';
 
 const servicePricingLabels: Record<Language, Record<Service["pricingType"], string>> = {
   en: { fixed: "Fixed price", starting: "Starting from", hourly: "Hourly", inspection: "Inspection fee", quote: "Quote required" },
@@ -181,11 +182,16 @@ function Circle({
   right?: boolean;
   accessibilityLabel: string;
 }) {
+  const { isRTL: circleIsRTL } = useLocalization();
   return (
     <Pressable
       accessibilityLabel={accessibilityLabel}
       onPress={onPress}
-      style={[styles.circle, left && styles.left, right && styles.right]}
+      style={[
+        styles.circle,
+        styles.circleInset,
+        left ? leadingInset(circleIsRTL, 16) : trailingInset(circleIsRTL, 16),
+      ]}
     >
       <MaterialIcons name={icon} size={22} color={colors.white} />
     </Pressable>
@@ -282,8 +288,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  left: { left: 16 },
-  right: { right: 16 },
+  // Horizontal placement comes from leadingInset/trailingInset at the call
+  // site: the back control belongs where reading starts, which is the right
+  // edge in Arabic. The glyph already flipped; the position did not.
+  circleInset: { top: 16 },
   staticBack: {
     margin: spacing.lg,
     width: 42,

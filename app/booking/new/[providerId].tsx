@@ -38,6 +38,7 @@ import type { TranslationKey } from "@/src/i18n/translations";
 import { catalogueServiceLabel } from "@/src/services/specific-services";
 import { resolvedAddressFields } from "@/src/providers/location-address";
 import { formatMoneyMajor } from "@/src/payments/money";
+import { trailingInset } from "@/src/i18n/direction";
 import {
   formatBookingDateTime,
   localeFor,
@@ -439,7 +440,7 @@ export default function NewBookingScreen() {
                           current.filter((image) => image.id !== item.id),
                         );
                       }}
-                      style={styles.remove}
+                      style={[styles.remove, trailingInset(isRTL, 5)]}
                     >
                       <MaterialIcons
                         name="close"

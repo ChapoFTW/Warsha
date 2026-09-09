@@ -140,3 +140,30 @@ export function mirroredIcon(name: string, language: string): string {
   };
   return pairs[name] ?? name;
 }
+
+/**
+ * Logical edges, for the few places that pin something to a corner.
+ *
+ * Most of Warsha never needs these: rows mirror with `row-reverse`, text aligns
+ * itself, and padding is symmetric. What is left is absolute positioning — a
+ * back button on a hero image, a remove badge on a thumbnail, a close control on
+ * a full-screen preview. Those carry a physical `left` or `right`, and a
+ * physical edge does not move when the reading direction does.
+ *
+ * `leading` is where reading starts: left in English and French, right in
+ * Arabic. `trailing` is the other one. Expressed as helpers rather than as
+ * `isRTL ? { right: n } : { left: n }` written out at each site, because that
+ * spelling is easy to get backwards and impossible to grep for.
+ *
+ * Note what these do NOT cover: physical borders used as dividers between
+ * columns. A `borderRightWidth` separating stat cells still separates the same
+ * adjacent cells when the row reverses, so it is correctly physical and is left
+ * alone deliberately.
+ */
+export function leadingInset(isRTL: boolean, value: number): { left: number } | { right: number } {
+  return isRTL ? { right: value } : { left: value };
+}
+
+export function trailingInset(isRTL: boolean, value: number): { left: number } | { right: number } {
+  return isRTL ? { left: value } : { right: value };
+}

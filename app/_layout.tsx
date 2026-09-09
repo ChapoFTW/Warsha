@@ -11,7 +11,7 @@ import {
   Inter_700Bold,
 } from '@expo-google-fonts/inter';
 import { useFonts } from 'expo-font';
-import { ThemeProvider } from '@react-navigation/native';
+import { LocaleDirContext, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -109,7 +109,19 @@ function ThemedRoot() {
     document.querySelector('meta[name="color-scheme"]')?.setAttribute('content', scheme);
   }, [colors.brandMark, colors.canvas, scheme]);
 
+  // Navigation presentation follows the WARSHA language, not the device.
+  // React Navigation reads its direction from this context and defaults it
+  // from I18nManager, which on an Arabic-configured Android device is true
+  // even when Warsha is in English. Supplying it here — below the container
+  // Expo Router mounts, so this value wins — makes the header, the back
+  // affordance and the transitions agree with the language the reader
+  // actually chose.
+  //
+  // This is presentation only. It does not mirror flex layout: that stays
+  // the explicit per-component authority against the neutral root baseline,
+  // and native system gestures stay platform-owned.
   return (
+    <LocaleDirContext.Provider value={isRTL ? 'rtl' : 'ltr'}>
     <ThemeProvider value={navigationTheme}>
       {/* No `direction` here, deliberately.
 
@@ -197,6 +209,7 @@ function ThemedRoot() {
         <StatusBar style={statusBarStyle(scheme)} />
       </View>
     </ThemeProvider>
+    </LocaleDirContext.Provider>
   );
 }
 

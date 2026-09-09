@@ -118,4 +118,47 @@ const routePolicy = readFileSync('src/navigation/auth-route-policy.ts', 'utf8');
 ok(!/rtl-probe/.test(routePolicy),
   'and no QA route was left behind in the auth policy');
 
+// --- Navigation presentation follows Warsha, not the platform --------------
+/**
+ * React Navigation defaults its direction from `I18nManager`, which on an
+ * Arabic-configured Android device is true even when Warsha is in English. Expo
+ * Router mounts a forked NavigationContainer and does not pass `direction`, so
+ * the supported override is the context it publishes — supplied below that
+ * container, where this value wins.
+ *
+ * Presentation only. It must not become a second flex-layout authority.
+ */
+ok(/LocaleDirContext/.test(rootCode),
+  'navigation direction is supplied explicitly rather than left to I18nManager');
+ok(/LocaleDirContext\.Provider value=\{isRTL \? 'rtl' : 'ltr'\}/.test(rootCode),
+  'AND IT FOLLOWS THE WARSHA LANGUAGE');
+ok(!/patch-package|@react-navigation\/native\/lib/.test(rootCode),
+  'achieved through the supported API, not by patching library internals');
+
+// --- Logical edges, for the few places that pin to a corner ----------------
+const direction = readFileSync('src/i18n/direction.ts', 'utf8');
+ok(/export function leadingInset/.test(direction) && /export function trailingInset/.test(direction),
+  'logical edge helpers live with the direction authority');
+
+const providerScreen = readFileSync('app/provider/[id].tsx', 'utf8');
+ok(/leadingInset\(circleIsRTL, 16\)/.test(providerScreen),
+  'THE HERO BACK CONTROL SITS WHERE READING STARTS — right in Arabic');
+ok(/arrow-forward" : "arrow-back"/.test(providerScreen),
+  'and its glyph points the right way, which it already did');
+ok(!/left: \{ left: 16 \}/.test(providerScreen),
+  'the physical pair it replaced is gone');
+// A divider between columns is correctly physical: with row-reverse it still
+// separates the same adjacent cells. Kept deliberately, asserted so a later
+// sweep does not "fix" it.
+ok(/borderRightWidth: 1/.test(providerScreen),
+  'the stat column divider stays physical, because that is what it means');
+
+const bookingScreen = readFileSync('app/booking/new/[providerId].tsx', 'utf8');
+ok(/trailingInset\(isRTL, 5\)/.test(bookingScreen),
+  'the thumbnail remove badge sits on the trailing corner');
+
+const chatScreen = readFileSync('app/conversation/[bookingId].tsx', 'utf8');
+ok(/trailingInset\(isRTL, 22\)/.test(chatScreen),
+  'and so does the full-screen preview close control');
+
 console.log(`RTL layout baseline: ${checks} checks passed.`);

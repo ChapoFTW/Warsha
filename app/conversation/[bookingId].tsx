@@ -45,6 +45,7 @@ import {
   type MessageDraft,
 } from '@/src/chat/chat-types';
 import { useLocalization } from '@/src/i18n/localization';
+import { trailingInset } from '@/src/i18n/direction';
 import { useMarketplaceData } from '@/src/data/marketplace-context';
 import type { SupportedLanguage } from '@/src/i18n/language-preference';
 import { useProviderJobs } from '@/src/provider-jobs/provider-job-context';
@@ -431,7 +432,7 @@ export default function ConversationScreen() {
       </KeyboardAvoidingView>
       <Modal visible={Boolean(preview)} transparent animationType="fade" onRequestClose={() => setPreview(null)}>
         <View style={styles.previewModal}>
-          <Pressable accessibilityLabel={ct('close')} style={styles.close} onPress={() => setPreview(null)}><MaterialIcons name="close" size={26} color={colors.white} /></Pressable>
+          <Pressable accessibilityLabel={ct('close')} style={[styles.close, trailingInset(isRTL, 22)]} onPress={() => setPreview(null)}><MaterialIcons name="close" size={26} color={colors.white} /></Pressable>
           {preview ? <Image source={{ uri: preview }} contentFit="contain" style={styles.preview} /> : null}
         </View>
       </Modal>
@@ -554,7 +555,11 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   disabled: { opacity: 0.45 },
   previewModal: { flex: 1, backgroundColor: colors.scrim, alignItems: 'center', justifyContent: 'center' },
   preview: { width: '100%', height: '85%' },
-  close: { position: 'absolute', top: 56, right: 22, zIndex: 2, padding: spacing.sm },
+  // Trailing corner of the preview overlay, mirrored like the rest of the
+  // product. NOT yet confirmed by rendered evidence — reaching this state
+  // needs an authenticated conversation carrying an image, so it is on the
+  // visual matrix rather than claimed here.
+  close: { position: 'absolute', top: 56, zIndex: 2, padding: spacing.sm },
   reportBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: colors.overlay },
   reportSheet: { maxHeight: '88%', gap: spacing.md, padding: spacing.lg, paddingBottom: spacing.xxl, borderTopLeftRadius: radii.lg, borderTopRightRadius: radii.lg, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface },
   reportHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
