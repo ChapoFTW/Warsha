@@ -103,6 +103,7 @@ const discoveryContext = read('src/discovery/discovery-context.tsx');
 const mockState = read('src/discovery/mock-discovery-state.ts');
 const searchScreen = read('app/search.tsx');
 const appearanceScreen = read('app/appearance.tsx');
+const appearanceProvider = read('src/appearance/appearance-context.tsx');
 const recentlyViewedScreen = read('app/recently-viewed.tsx');
 const homeScreen = read('app/(tabs)/index.tsx');
 const profileScreen = read('app/(tabs)/profile.tsx');
@@ -711,5 +712,45 @@ const mockSource = readFileSync(
 check(/provider\.distance !== null\s*\n?\s*&& provider\.distance > filters\.maximumDistanceKm/
   .test(mockSource),
   'and Mock does not hide a provider whose distance it never knew');
+
+
+/*
+ * The platform is told what Warsha decided.
+ *
+ * Warsha resolved Light/Dark/System in JavaScript and never mentioned it to
+ * Android, so every surface the platform draws followed the PHONE instead --
+ * `Alert.alert` dialogs, text-selection handles, the keyboard. Choosing Dark
+ * inside Warsha on a light phone produced white confirmation dialogs: the app
+ * disagreeing with itself at the moment a decision mattered.
+ */
+check(
+  /Appearance\.setColorScheme\(preference === 'system' \? null : scheme\)/.test(appearanceProvider),
+  'the resolved appearance is pushed to the platform, and System restores following the phone',
+);
+check(
+  /if \(preferenceRef\.current !== 'system'\) return;/.test(appearanceProvider),
+  'the change listener ignores Warsha\'s own forced value coming back as a device event',
+);
+/*
+ * `android/` is prebuild output and is not committed, so the generated manifest
+ * cannot be read here -- a fresh clone in CI has no such file. The template
+ * that PRODUCES it ships in `@expo/config-plugins`, which `npm ci` installs, so
+ * that is what is checked. If the path ever moves this fails loudly, which is
+ * the right outcome: the guarantee would be unverified either way, and an
+ * assertion that quietly stops looking is worse than one that breaks.
+ */
+{
+  const template = readFileSync(
+    'node_modules/@expo/config-plugins/build/plugins/withAndroidBaseMods.js', 'utf8');
+  const activity = template.match(/<activity android:name="\.MainActivity"[^>]*>/)?.[0] ?? '';
+  check(
+    /android:configChanges="[^"]*uiMode/.test(activity),
+    'the activity handles uiMode itself, so forcing a night mode does not restart it',
+  );
+  check(
+    !/configChanges/.test(read('app.json')),
+    'and nothing in Warsha\'s own config narrows that list',
+  );
+}
 
 console.log(`WPS-020 search, discovery and appearance: ${checks} checks passed.`);

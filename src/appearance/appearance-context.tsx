@@ -70,6 +70,17 @@ export function AppearanceProvider({ children }: PropsWithChildren) {
   // OS switch must reach Warsha without a relaunch.
   useEffect(() => {
     const subscription = Appearance.addChangeListener(({ colorScheme }) => {
+      /*
+       * Ignored while Warsha is forcing a scheme, because then this event is
+       * Warsha's own value coming back: the effect below sets the night mode,
+       * Android reports a configuration change, and the "device" scheme that
+       * arrives is an echo of ourselves.
+       *
+       * Recording it would overwrite the last thing actually known about the
+       * phone, so switching back to System would resolve to whatever had been
+       * forced rather than to what the phone is set to.
+       */
+      if (preferenceRef.current !== 'system') return;
       setDeviceScheme(colorScheme === 'light' || colorScheme === 'dark' ? colorScheme : null);
     });
     return () => subscription.remove();
@@ -109,6 +120,31 @@ export function AppearanceProvider({ children }: PropsWithChildren) {
   }, []);
 
   const scheme = resolveAppearance(preference, deviceScheme);
+
+  /*
+   * Tell the platform, so the surfaces Warsha does not draw agree with the ones
+   * it does.
+   *
+   * Warsha resolved its own Light/Dark/System preference and never mentioned it
+   * to Android, so everything the platform draws followed the PHONE instead:
+   * `Alert.alert` dialogs, text-selection handles, the keyboard, the overscroll
+   * glow. Choose Dark inside Warsha on a light phone and every confirmation
+   * dialog came back white — the app disagreeing with itself at exactly the
+   * moment a decision mattered.
+   *
+   * `setColorScheme` maps to `AppCompatDelegate.setDefaultNightMode`, which is
+   * a configuration change. That would normally recreate the Activity and cost
+   * a visible restart, but Warsha's manifest already declares `uiMode` in
+   * `android:configChanges`, so the Activity handles it in place. Checked in
+   * the manifest rather than assumed, because a restart here would be a worse
+   * defect than the one being fixed.
+   *
+   * `null` means "follow the phone" and is what restores normal behaviour when
+   * the preference is System.
+   */
+  useEffect(() => {
+    Appearance.setColorScheme(preference === 'system' ? null : scheme);
+  }, [preference, scheme]);
 
   const value = useMemo<AppearanceValue>(() => ({
     preference,
