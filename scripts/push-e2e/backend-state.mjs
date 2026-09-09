@@ -20,13 +20,10 @@
  *   node scripts/push-e2e/backend-state.mjs
  *     WARSHA_SUPABASE_URL  project URL
  *     WARSHA_SUPABASE_KEY  publishable/anon key
- *     WARSHA_QA_CREDS      path to the QA credentials JSON (phone, password)
+ *     WARSHA_QA_CREDENTIALS  QA credentials JSON; must name its environment
  */
-import { readFileSync } from 'node:fs';
-
 import { resolvePublicKey } from './public-key.mjs';
-
-const credsPath = process.env.WARSHA_QA_CREDS ?? 'D:/Warsha-Temp/qa-worker.json';
+import { assertCredentialProject, loadCredentials } from '../warsha-projects.mjs';
 const apkPath = process.env.WARSHA_APK;
 
 // One authority for the credential, shared with every other push-E2E step, so a
@@ -35,7 +32,11 @@ const resolved = await resolvePublicKey({ apkPath });
 const { url, key } = resolved;
 console.log(`project ${url}  key fingerprint ${resolved.fingerprint} (len ${resolved.length})`);
 
-const creds = JSON.parse(readFileSync(credsPath, 'utf8'));
+// And one check that the ACCOUNT belongs to that project too. Resolving the
+// key from the build proves which project the test will reach; it says
+// nothing about whether this account lives there.
+const creds = loadCredentials({ purpose: 'the push backend-state check' });
+assertCredentialProject({ creds, url, purpose: 'the push backend-state check' });
 
 /** Cross the worker-auth boundary exactly as `worker-auth-client.ts` does. */
 async function signIn() {

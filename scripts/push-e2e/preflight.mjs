@@ -16,20 +16,21 @@
  *
  * Usage:
  *   node scripts/push-e2e/preflight.mjs
- *     WARSHA_QA_CREDS  path to the QA credentials JSON (phone, password)
+ *     WARSHA_QA_CREDENTIALS  QA credentials JSON; must name its environment
  */
-import { readFileSync } from 'node:fs';
-
 import { resolvePublicKey } from './public-key.mjs';
-
-const credsPath = process.env.WARSHA_QA_CREDS ?? 'D:/Warsha-Temp/qa-worker.json';
+import { assertCredentialProject, loadCredentials } from '../warsha-projects.mjs';
 
 const resolved = await resolvePublicKey({ apkPath: process.env.WARSHA_APK });
 const { url, key } = resolved;
 console.log(`project ${url}`);
 console.log(`key fingerprint ${resolved.fingerprint} (len ${resolved.length})\n`);
 
-const creds = JSON.parse(readFileSync(credsPath, 'utf8'));
+// The credentials name their project; the resolved URL names the one about to
+// be talked to. If those disagree the sign-in below fails with
+// `invalid_credentials`, which reads as a broken account and is not one.
+const creds = loadCredentials({ purpose: 'the push preflight' });
+assertCredentialProject({ creds, url, purpose: 'the push preflight' });
 
 async function signIn() {
   const response = await fetch(`${url}/functions/v1/worker-auth`, {

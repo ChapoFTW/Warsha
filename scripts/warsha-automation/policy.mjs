@@ -94,6 +94,7 @@ export const DETERMINISTIC_TEST_SCRIPTS = [
   'test:mobile-certification',
   'test:currency-authority',
   'test:backup-exception',
+  'test:backend-target-gate',
   'test:deployment-approval',
   'test:worker-auth-password-contract',
   'test:staff-mfa-enrolment',

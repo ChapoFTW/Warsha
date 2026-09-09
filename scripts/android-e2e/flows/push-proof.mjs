@@ -9,13 +9,17 @@
  *
  * Usage: node scripts/android-e2e/flows/push-proof.mjs
  */
-import { readFileSync } from 'node:fs';
 import {
   clearLog, describeScreen, find, findAll, hideKeyboard, logcat, screenshot,
   setText, shell, sleep, tap, tree, waitFor,
 } from '../driver.mjs';
+import { loadQaCredentials } from '../backend-target.mjs';
 
-const creds = JSON.parse(readFileSync('D:/Warsha-Temp/qa-worker.json', 'utf8'));
+// Loading the credential proves the installed build targets the project the
+// credential belongs to. A Production push proof driven against a Development
+// build would not error — it would produce a token, a delivery and a green
+// report about a system nobody meant to exercise.
+const creds = loadQaCredentials({ purpose: 'the push proof' });
 
 let checks = 0, failures = 0;
 const check = (ok, label, detail = '') => {
