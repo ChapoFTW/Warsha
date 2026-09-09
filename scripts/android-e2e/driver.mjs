@@ -187,8 +187,26 @@ export const hideKeyboard = async () => {
  * verifies afterwards too: the target holds the value and no sibling field
  * changed. A test that cannot tell "typed into the wrong box" from "typed" is
  * worse than no test.
+ *
+ * ## Why nothing here quotes a field's contents
+ *
+ * The failure message used to. When a password landed in the phone field, the
+ * diagnostic printed the phone field's contents to explain the mismatch — and
+ * the QA account's password went into a transcript and had to be rotated. The
+ * message was doing its job; the job was wrong.
+ *
+ * A masked field never gave anything away, because it reports its mask. The
+ * hole was the ORDINARY field, and the value in it was ordinary right up to the
+ * moment a secret went astray into it. Which is the case a diagnostic exists to
+ * report, so the two are not separable: the message that leaks is the message
+ * that fires.
+ *
+ * Nothing is quoted now unless the caller says the value is not sensitive, and
+ * a screen holding any masked field is treated as sensitive whatever the caller
+ * says — a password can only go astray on a screen that has one. Lengths,
+ * masking and drift are still reported, which is what actually diagnoses this.
  */
-export async function setText(selector, value, { timeout = 20000, attempts = 3 } = {}) {
+export async function setText(selector, value, { attempts = 3, secret } = {}) {
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     await hideKeyboard();
     const before = tree();
@@ -242,10 +260,19 @@ export async function setText(selector, value, { timeout = 20000, attempts = 3 }
     const untouched = JSON.stringify(siblings) === JSON.stringify(others);
     if (landed && untouched) return true;
     if (attempt === attempts) {
-      console.log(written?.masked
-        ? `  setText: masked field holds ${written.text.length} characters, wanted ${String(value).length}`
-        : `  setText: wanted ${JSON.stringify(value)}, field holds ${JSON.stringify(written?.text)}`);
-      console.log(`  setText: siblings ${untouched ? 'unchanged' : 'CHANGED — text went astray'}`);
+      // A password can only go astray on a screen that has a password field, so
+      // the presence of one — anywhere in the tree — is what decides this, not
+      // whether the field being typed into happens to be masked.
+      const sensitive = secret ?? findAll({ cls: 'EditText' }, after).some((n) => n.masked);
+      if (written?.masked || sensitive) {
+        console.log(`  setText: field holds ${written?.text.length ?? 0} characters, wanted ${String(value).length}`);
+      } else {
+        console.log(`  setText: wanted ${JSON.stringify(value)}, field holds ${JSON.stringify(written?.text)}`);
+      }
+      // Counted, never quoted: the field a secret drifts INTO is an ordinary
+      // one, and quoting it is exactly how the password escaped.
+      const drifted = siblings.filter((text, index) => text !== others[index]).length;
+      console.log(`  setText: siblings ${untouched ? 'unchanged' : `CHANGED — text went astray into ${drifted} of ${siblings.length}`}`);
       return false;
     }
   }
@@ -253,8 +280,8 @@ export async function setText(selector, value, { timeout = 20000, attempts = 3 }
 }
 
 /** Kept for callers that only need a keystroke appended. */
-export async function type(selector, value, { timeout = 20000 } = {}) {
-  return setText(selector, value, { timeout });
+export async function type(selector, value, { secret } = {}) {
+  return setText(selector, value, { secret });
 }
 
 export const back = async () => { shell('input keyevent 4'); await sleep(700); };

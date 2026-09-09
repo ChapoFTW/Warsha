@@ -144,6 +144,7 @@
     "test:backend-target-gate": "node --no-warnings --experimental-strip-types scripts/backend-target-gate.test.mts",
     "test:currency-authority": "node --no-warnings --experimental-strip-types scripts/currency-authority.test.mts",
     "test:mobile-certification": "node --no-warnings --experimental-strip-types scripts/mobile-certification.test.mts",
+    "test:device-driver-secrecy": "node --no-warnings --experimental-strip-types scripts/device-driver-secrecy.test.mts",
     "test:photo-fixture": "node --no-warnings --experimental-strip-types scripts/photo-fixture.test.mts",
     "test:signed-url-policy": "node --no-warnings --experimental-strip-types scripts/signed-url-policy.test.mts"
   },
