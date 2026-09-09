@@ -24,14 +24,16 @@
  */
 import { readFileSync } from 'node:fs';
 
-const url = process.env.WARSHA_SUPABASE_URL;
-const key = process.env.WARSHA_SUPABASE_KEY;
-const credsPath = process.env.WARSHA_QA_CREDS ?? 'D:/Warsha-Temp/qa-worker.json';
+import { resolvePublicKey } from './public-key.mjs';
 
-if (!url || !key) {
-  console.error('WARSHA_SUPABASE_URL and WARSHA_SUPABASE_KEY are required.');
-  process.exit(2);
-}
+const credsPath = process.env.WARSHA_QA_CREDS ?? 'D:/Warsha-Temp/qa-worker.json';
+const apkPath = process.env.WARSHA_APK;
+
+// One authority for the credential, shared with every other push-E2E step, so a
+// test can never end up talking to a different project than the build does.
+const resolved = await resolvePublicKey({ apkPath });
+const { url, key } = resolved;
+console.log(`project ${url}  key fingerprint ${resolved.fingerprint} (len ${resolved.length})`);
 
 const creds = JSON.parse(readFileSync(credsPath, 'utf8'));
 

@@ -61,12 +61,46 @@ const submit = find({ descContains: 'Sign in', clickable: true })
   ?? find({ textContains: 'Sign in' });
 check(Boolean(submit), 'and a submit control');
 await tap({ descContains: 'Sign in', clickable: true });
-await sleep(6000);
+
+/*
+ * Wait for the signed-in state, and say how long it took.
+ *
+ * This was `sleep(6000)` and then one look at the screen. Sign-in crosses the
+ * worker-auth boundary, mints a session, and then loads the account state, and
+ * on a cold emulator that took longer than six seconds — so the check sampled
+ * the form mid-transition and reported a sign-in failure for an account that
+ * had signed in perfectly well.
+ *
+ * The fix is not a bigger sleep. A generous fixed wait hides exactly the thing
+ * this proof exists to notice: sign-in getting slower. So this polls for an
+ * observable signed-in state, stops as soon as it sees one, fails at a bounded
+ * ceiling, and REPORTS THE ELAPSED TIME either way. A regression from two
+ * seconds to nineteen still passes, and still shows up in the output as the
+ * number it is.
+ *
+ * "Signed in" is the absence of the gateway rather than the presence of any one
+ * screen, because where a session lands depends on how far that account got
+ * through onboarding: a finished worker sees their home, an unfinished one sees
+ * the setup notice, and both are signed in.
+ */
+const SIGN_IN_CEILING_MS = 45000;
+const startedAt = Date.now();
+let signedIn = false;
+while (Date.now() - startedAt < SIGN_IN_CEILING_MS) {
+  await sleep(1000);
+  const nodes = tree();
+  const onGateway = findAll({ descContains: 'Create account' }, nodes).length > 0
+    || findAll({ textContains: 'Create account' }, nodes).length > 0;
+  const stillLoading = findAll({ textContains: 'Loading' }, nodes).length > 0;
+  if (!onGateway && !stillLoading && nodes.length > 3) { signedIn = true; break; }
+}
+const signInMs = Date.now() - startedAt;
 screenshot('04-after-signin');
 
-const signedIn = !find({ descContains: 'Create account' });
 check(signedIn, 'SIGN-IN SUCCEEDED through the app, not through an API',
-  signedIn ? '' : describeScreen().slice(0, 300));
+  signedIn
+    ? `took ${(signInMs / 1000).toFixed(1)}s`
+    : `still not signed in after ${(signInMs / 1000).toFixed(1)}s -- ${describeScreen().slice(0, 240)}`);
 
 // --- The notification permission, as this Android version asks for it --------
 // API 33+ requires POST_NOTIFICATIONS at runtime. The prompt is a system
