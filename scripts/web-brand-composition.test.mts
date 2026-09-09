@@ -238,6 +238,92 @@ const surfaceScale = Number(/surfaceScale: ([0-9.]+),/.exec(themeSource)?.[1] ??
 check(controlScale > 0.97 && controlScale < 1 && surfaceScale > 0.96 && surfaceScale < controlScale,
   'the native press scale stays imperceptible as a number and legible as a feeling, and a surface travels further than a control');
 
+// --- One type scale, two platforms ------------------------------------------
+// Colour is asserted equal above and motion just below it. Type is the third
+// value of the same kind and had no protection at all: `constants/theme.ts` has
+// carried a seven-step scale from the beginning and the web had no scale
+// whatever, so 372 `font-size` declarations named their own pixels across a
+// dozen values. A heading that is 22px on the phone and 21px in the browser is
+// not a bug anybody files, and it is exactly why the two surfaces stopped
+// looking like one product.
+//
+// Same values on both sides, deliberately. The evidence pointed that way rather
+// than towards a larger web body: the web's four commonest sizes were 12, 13,
+// 14 and 15, already at or below the mobile body size.
+const webType = (name: string) =>
+  Number(new RegExp(String.raw`--type-${name}:\s*(\d+)px;`).exec(globalsCss)?.[1] ?? NaN);
+
+/** A step out of the mobile scale, e.g. `h2: { fontSize: 22, lineHeight: 28 …` */
+const nativeType = (step: string) => {
+  const body = new RegExp(String.raw`\b${step}: \{([^}]*)\}`).exec(themeSource)?.[1] ?? '';
+  return {
+    size: Number(/fontSize: (\d+)/.exec(body)?.[1] ?? NaN),
+    leading: Number(/lineHeight: (\d+)/.exec(body)?.[1] ?? NaN),
+  };
+};
+
+for (const [web, native] of [
+  ['display', 'display'],
+  ['h1', 'h1'],
+  ['h2', 'h2'],
+  ['h3', 'h3'],
+  ['body', 'body'],
+  ['body-small', 'bodySmall'],
+  ['caption', 'caption'],
+] as const) {
+  const step = nativeType(native);
+  check(Number.isFinite(step.size) && Number.isFinite(step.leading),
+    `the mobile ${native} step parsed, so the comparison below means something`);
+  check(webType(web) === step.size,
+    `the web --type-${web} is the mobile ${native} size (${step.size}px), not a second opinion`);
+  check(webType(`${web}-leading`) === step.leading,
+    `and its line height is the mobile one (${step.leading}px) — the half Arabic depends on`);
+}
+
+// A scale whose steps are not distinct is not a scale.
+const steps = ['display', 'h1', 'h2', 'h3', 'body', 'body-small', 'caption'].map(webType);
+check(new Set(steps).size === steps.length, 'every web type step is a distinct size');
+check(steps.every((value, index) => index === 0 || value < steps[index - 1]),
+  'and they descend, so the names mean what they say');
+
+// --- One set of relationships, two platforms --------------------------------
+// The web named its form rhythm in semantic tokens -- label to control, control
+// to helper, field to field, content to the call to action -- and mobile had
+// nothing equivalent, so every form there picked raw distances and the same
+// hierarchy came out slightly differently on each screen. That gap is one of
+// the concrete reasons the two surfaces stopped reading as one product.
+//
+// What has to agree is the RELATIONSHIP, not merely the number: a label must be
+// nearer its control than the control is to the next field, on both platforms,
+// or the two hierarchies disagree even when every value is defensible alone.
+const webSpace = (name: string) =>
+  Number(new RegExp(String.raw`--space-${name}:\s*(\d+)px;`).exec(globalsCss)?.[1] ?? NaN);
+const nativeRhythm = (name: string) =>
+  Number(new RegExp(String.raw`\b${name}: (\d+),`).exec(themeSource)?.[1] ?? NaN);
+
+for (const [web, native] of [
+  ['field-label', 'fieldLabel'],
+  ['field-help', 'fieldHelp'],
+  ['field-gap', 'fieldGap'],
+  ['section-gap', 'sectionGap'],
+  ['action-gap', 'actionGap'],
+  ['action-between', 'actionBetween'],
+  ['panel', 'panel'],
+] as const) {
+  const expected = webSpace(web);
+  check(Number.isFinite(expected), `the web --space-${web} parsed, so the comparison means something`);
+  check(nativeRhythm(native) === expected,
+    `mobile rhythm.${native} is the web --space-${web} value (${expected}px), not a second opinion`);
+}
+
+// The ordering IS the hierarchy, and it is what a reader actually perceives.
+check(nativeRhythm('fieldHelp') < nativeRhythm('fieldLabel'),
+  'a helper line sits nearer its control than a label does');
+check(nativeRhythm('fieldLabel') < nativeRhythm('fieldGap'),
+  'a label sits nearer its control than the next field does');
+check(nativeRhythm('fieldGap') < nativeRhythm('actionGap'),
+  'and a call to action is further off than the next field, so it reads as a new intention');
+
 // --- Reduced motion is honoured, delays included ----------------------------
 // Crushing the duration is not enough on its own. An animation with a fill mode
 // and a 190ms delay still hides its element for 190ms after the duration has

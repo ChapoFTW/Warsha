@@ -113,6 +113,47 @@
   --page-max: 1180px;
   --gutter: clamp(16px, 4vw, 40px);
 
+  /* --- Type scale ---------------------------------------------------------
+
+     Restated from `typography` in `constants/theme.ts`, the way the palette and
+     the motion table already are: the values are the authority on both sides
+     and `test:web-brand` asserts the two agree, so a size cannot drift on one
+     platform without failing on the other.
+
+     Before this the web had no type scale at all. `--text-*` are colours; there
+     was nothing naming a size, so 372 `font-size` declarations named their own
+     pixels across a dozen values — 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
+     26. That is not a hierarchy, and it is the reason a well-coloured page can
+     still read as assembled rather than designed.
+
+     Same values as mobile, deliberately, and not because a phone and a browser
+     are the same thing. Warsha is one product with two front doors, and the
+     evidence pointed the same way: the web's four commonest sizes were 12, 13,
+     14 and 15 — already at or below the mobile body size, so there was never a
+     case that the web wanted larger text.
+
+     Every step carries its leading. That is the half that matters most in
+     Arabic: Cairo has taller ascenders and deeper descenders than Inter, and a
+     size without a line height inherits the browser's ~1.2, which crowds. */
+  --type-display: 34px;
+  --type-display-leading: 40px;
+  --type-display-tracking: -0.8px;
+  --type-h1: 28px;
+  --type-h1-leading: 34px;
+  --type-h1-tracking: -0.45px;
+  --type-h2: 22px;
+  --type-h2-leading: 28px;
+  --type-h2-tracking: -0.2px;
+  --type-h3: 17px;
+  --type-h3-leading: 23px;
+  --type-body: 15px;
+  --type-body-leading: 24px;
+  --type-body-small: 13px;
+  --type-body-small-leading: 20px;
+  --type-caption: 11px;
+  --type-caption-leading: 16px;
+  --type-caption-tracking: 0.8px;
+
   /* --- Motion -------------------------------------------------------------
 
      The same six ideas `constants/theme.ts` declares for mobile, restated for

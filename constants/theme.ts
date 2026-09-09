@@ -33,6 +33,51 @@ export const spacing = {
 
 export type SpacingToken = keyof typeof spacing;
 
+/**
+ * Spacing that names a RELATIONSHIP rather than a distance.
+ *
+ * The raw scale above says how far apart two things are; it cannot say why. So
+ * every form in the product picked its own gaps from it, and the hierarchy that
+ * makes a form readable — a label belongs to its control, a helper line belongs
+ * to the control above it, one field group is separated from the next, and a
+ * call to action is separated from all of them — was re-decided screen by
+ * screen and came out slightly differently each time.
+ *
+ * The web already had this. `web/app/globals.css` has carried
+ * `--space-field-label`, `--space-field-help`, `--space-field-gap`,
+ * `--space-section-gap`, `--space-action-gap` and `--space-panel` for a while,
+ * and the mobile app had nothing equivalent — which is one of the concrete
+ * reasons the two surfaces stopped feeling like one product.
+ *
+ * Same values, restated, and `test:web-brand` asserts the two agree, exactly as
+ * it already does for colour, motion and now type.
+ *
+ * Use these in form and panel layout in preference to the raw scale: a gap
+ * chosen for its meaning cannot drift into a gap chosen for its size.
+ */
+export const rhythm = {
+  /** Label to its control. Tighter than the gap to the next field, on purpose. */
+  fieldLabel: 10,
+  /** Control to its helper or error. Tighter still: the line belongs to it. */
+  fieldHelp: 6,
+  /** One field group to the next. */
+  fieldGap: 22,
+  /** A heading or explanation to the content it introduces. */
+  sectionGap: 14,
+  /**
+   * Last content to the primary action. Clearly larger than the gap between two
+   * fields, so a call to action reads as a new intention rather than as the
+   * next item in a list.
+   */
+  actionGap: 32,
+  /** Two adjacent actions in a group. */
+  actionBetween: 12,
+  /** Card and panel internal padding. */
+  panel: 24,
+} as const;
+
+export type RhythmToken = keyof typeof rhythm;
+
 /** Approved radii: 6, 10, 16, 22, and full-round. */
 export const radii = {
   xs: 6,

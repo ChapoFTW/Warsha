@@ -9,7 +9,7 @@ import {
   type ViewProps,
 } from 'react-native';
 
-import { brandFontFamily, elevation, radii, spacing, typography, type ThemeColors } from '@/constants/theme';
+import { brandFontFamily, elevation, radii, rhythm, spacing, typography, type ThemeColors } from '@/constants/theme';
 import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
 import { useLocalization } from '@/src/i18n/localization';
 
@@ -113,7 +113,7 @@ export function BrandTextField({
    */
   const [focused, setFocused] = useState(false);
   return (
-    <View style={styles.fieldGroup}>
+    <View>
       {label ? <AppText style={styles.fieldLabel}>{label}</AppText> : null}
       <TextInput
         {...props}
@@ -132,6 +132,12 @@ export function BrandTextField({
           style,
         ]}
       />
+      {/* A helper or an error sits closer to its control than the label above
+          it does, so it reads as belonging to that control rather than floating
+          between two fields. One `gap` could not say that -- it gave all three
+          the same 8px and left the reader to guess which field an error was
+          about. `rhythm` names the relationship; the web has expressed the same
+          one in `--space-field-help` for a while. */}
       {error ? <AppText accessibilityRole="alert" style={styles.errorText}>{error}</AppText> : null}
       {!error && helper ? <AppText style={styles.helperText}>{helper}</AppText> : null}
     </View>
@@ -246,8 +252,7 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   reverse: { flexDirection: 'row-reverse' },
   card: { backgroundColor: colors.surface, borderRadius: radii.md, padding: spacing.lg },
   cardModal: { borderRadius: radii.lg },
-  fieldGroup: { gap: spacing.sm },
-  fieldLabel: { ...typography.caption, color: colors.textSecondary, fontWeight: typography.semibold },
+  fieldLabel: { ...typography.caption, marginBottom: rhythm.fieldLabel, color: colors.textSecondary, fontWeight: typography.semibold },
   field: {
     minHeight: 48,
     borderWidth: 1,
@@ -263,8 +268,8 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   fieldRTL: { textAlign: 'right', writingDirection: 'rtl' },
   fieldFocused: { borderColor: colors.borderFocus, backgroundColor: colors.surfaceElevated },
   fieldError: { borderColor: colors.error },
-  errorText: { ...typography.caption, color: colors.error },
-  helperText: { ...typography.caption, color: colors.textMuted },
+  errorText: { ...typography.caption, marginTop: rhythm.fieldHelp, color: colors.error },
+  helperText: { ...typography.caption, marginTop: rhythm.fieldHelp, color: colors.textMuted },
   badge: {
     minHeight: 30,
     maxWidth: '100%',
