@@ -114,6 +114,27 @@ as an honest "tracking stopped" state rather than a silent gap, which is the
 same requirement as decision 7 below: never draw a professional who is still
 moving when the data says otherwise.
 
+### What must be proven on a device before any of this is claimed
+
+The permission determination above is a reading of the platform rules, and a
+reading is not evidence. None of the following has been run, and none of it may
+be described as working until it has been — on real devices, with rendered
+proof, at the API levels the compatibility matrix already covers.
+
+| Case | Status | What would count as proof |
+| --- | --- | --- |
+| App in the foreground | UNTESTED | position updates while the map is visible |
+| App backgrounded | UNTESTED | updates continue with the app off-screen, notification present |
+| Screen locked | UNTESTED | updates continue through a lock, which is the whole point |
+| Process interrupted / killed | UNTESTED | tracking stops honestly and says so; no silent gap, no phantom position |
+| Foreground-service restrictions by Android version | UNTESTED | API 24, 25 (the current floor legs) and a 14+ device, where `FOREGROUND_SERVICE_LOCATION` becomes mandatory |
+| Permission denied / revoked mid-journey | UNTESTED | the journey degrades honestly rather than appearing to continue |
+| Battery optimisation / doze | UNTESTED | behaviour under aggressive OEM power management, which is where Egypt's common devices differ most |
+
+The fifth row is the one most likely to embarrass a confident claim: Android
+changed foreground-service rules at 8, 10, 12 and 14, and "it worked on the
+emulator I had" has never been evidence about that spread.
+
 **What this avoids.** `ACCESS_BACKGROUND_LOCATION` triggers a Play Console
 background-location declaration, a recorded justification, and a review that can
 block a release. Not needing it is worth more than the effort saved — it means
@@ -130,30 +151,61 @@ approved.
 ## What routing will cost, measured before it is switched on
 
 The instruction was to establish expected call volume and cost **before**
-Production activation rather than discover it on a bill. Assumptions are stated
-so they can be argued with: a 20-minute Cairo journey, a 5-second GPS sample
-rate, and Routes API Compute Routes billed at the Essentials rate.
+Production activation rather than discover it on a bill.
 
-| | Calls per journey | 100 jobs/day | 1,000 jobs/day | 5,000 jobs/day |
+### Pricing provenance — read this before trusting the table
+
+| | |
+| --- | --- |
+| **SKU** | `Routes: Compute Routes Pro` — 02F7-1B55-DC90 |
+| **Retrieved** | 2026-09-09, from `developers.google.com/maps/billing-and-pricing/pricing` |
+| **Rates used** | $10.00 / 1,000 (0–100k), $8.00 (100k–500k), $6.00 (500k–1M), $3.00 (1M–5M), $0.75 (5M+) |
+| **Free cap** | 5,000 events per month |
+| **Region** | Global list price, not the India list |
+
+**These numbers are a snapshot with a date on it, not a standing fact.** Google
+re-tiers this pricing periodically. Anyone reading this after 2026 should
+re-retrieve the SKU rate before quoting the figures below; an old number that
+has quietly become permanent truth is worse than no number.
+
+**Why Pro rather than Essentials.** A live arrival ETA is only useful if it is
+traffic-aware, and a request carrying `TRAFFIC_AWARE` or `TRAFFIC_AWARE_OPTIMAL`
+falls in the Pro category — twice the Essentials rate. The first version of this
+estimate used the Essentials rate and a single flat band; both were wrong, in
+opposite directions, and the corrected table is below.
+
+### The comparison
+
+Assumptions: a 20-minute Cairo journey, a 5-second GPS sample rate, 30 days.
+Volume banding and the free cap are applied.
+
+| Jobs/day | Journeys/mo | Naive — one call per GPS sample | Triggered — 16 calls/journey | Ratio |
 | --- | --- | --- | --- | --- |
-| One route call per GPS sample | 240 | $3,600/mo | $36,000/mo | $180,000/mo |
-| Recalculated on triggers | 16 | $240/mo | $2,400/mo | $12,000/mo |
+| 100 | 3,000 | 720,000 calls — **$5,490/mo** | 48,000 calls — **$430/mo** | 12.8x |
+| 1,000 | 30,000 | 7,200,000 calls — **$20,846/mo** | 480,000 calls — **$4,000/mo** | 5.2x |
+| 5,000 | 150,000 | 36,000,000 calls — **$42,446/mo** | 2,400,000 calls — **$11,385/mo** | 3.7x |
 
-**A 93% reduction, and at realistic volume the difference between $2,400 and
-$36,000 a month.** The triggered model recalculates on a 90-second ceiling, on
-meaningful movement, on route deviation, and on ETA staleness — with an
-allowance of two genuine reroutes per journey.
+The ratio narrows as volume grows, because the naive model buys its way into the
+cheap high-volume bands — which is a trap worth naming. It means the naive
+approach looks *less* catastrophic per call exactly when the absolute bill is
+largest, and at 1,000 jobs a day the difference is still roughly $17,000 a
+month, every month.
 
-This is why the recalculation policy is not a refinement to add later. At one
-call per sample, live tracking is the most expensive feature Warsha operates
-and its cost scales with journey duration, so the worst bills come from the
-journeys that went badly. The deviation test has to exist before the map does.
+### What this decides
 
-Two honest caveats: the per-call price must be re-checked against Google's
-current published rate before activation rather than trusted from this table,
-and the 16 calls assume a journey that mostly goes to plan. A pathological
-journey — circling a district looking for an address — costs more, which is an
-argument for the elapsed-time ceiling being a ceiling rather than a target.
+Route recalculation stays **event-, movement-, deviation- and time-triggered,
+never tied to a GPS sample.** The triggered model recalculates on a 90-second
+ceiling, on meaningful movement, on route deviation, and on ETA staleness, with
+an allowance of two genuine reroutes per journey.
+
+The deviation test therefore has to exist before the map does. This is not a
+refinement to add after launch: at one call per sample, live tracking becomes
+the most expensive thing Warsha operates, and its cost scales with journey
+duration — so the worst bills arrive from the journeys that went worst.
+
+A pathological journey, circling a district hunting for an address, costs more
+than 16 calls. That is an argument for the elapsed-time trigger being a ceiling
+rather than a target.
 
 ## Not started
 

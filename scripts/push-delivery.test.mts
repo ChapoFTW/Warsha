@@ -424,4 +424,68 @@ match(configAuthority, /Enable token registration before delivery/,
 match(configAuthority, /Disable the notification scheduler before removing the provider/,
   'and the scheduler is named rather than silently switched off as a side effect');
 
+
+// ---------------------------------------------------------------------------
+// 11. The two-writer property, which the activation preflight depends on
+// ---------------------------------------------------------------------------
+/**
+ * `docs/operations/push-activation-preflight.md` argues that enabling push
+ * cannot release a backlog, and the argument reduces to one structural fact:
+ * each of the two private push tables has exactly ONE writer, and each writer
+ * is gated on the configuration.
+ *
+ * If a second writer is ever added — a backfill, a migration that seeds a
+ * device, an admin tool that queues an attempt — that argument silently stops
+ * being true while the document still claims it. So the property is asserted
+ * here rather than trusted.
+ */
+const pushWriters = (table: string) => {
+  const files: string[] = [];
+  for (const file of readdirSync(join(root, 'supabase', 'migrations')).sort()) {
+    if (!file.endsWith('.sql')) continue;
+    // Whitespace-normalised substring rather than a built regex: the table
+    // names contain no regex metacharacters, and a hand-escaped pattern here
+    // was silently matching nothing at all, which reads as "no writers exist"
+    // — the most dangerous possible false pass for this particular check.
+    const sql = sqlComments(read(join('supabase', 'migrations', file)))
+      .toLowerCase().replace(/\s+/g, ' ');
+    if (sql.includes(`insert into private.${table}`)) files.push(file);
+  }
+  return files;
+};
+
+equal(pushWriters('notification_device_tokens'),
+  ['202609010001_push_delivery_authority.sql'],
+  'EXACTLY ONE MIGRATION EVER WRITES A DEVICE TOKEN');
+equal(pushWriters('notification_delivery_attempts'),
+  ['202609010001_push_delivery_authority.sql'],
+  'AND EXACTLY ONE EVER QUEUES A DELIVERY ATTEMPT');
+
+// Both writers gated, and the delivery one gated before it does any work.
+match(migration,
+  /register_my_push_device[\s\S]{0,1600}?if not coalesce\(configuration\.token_registration_enabled, false\)/,
+  'registration refuses before storing anything when registration is disabled');
+match(migration,
+  /enqueue_push_delivery[\s\S]{0,700}?if not coalesce\(configuration\.push_delivery_enabled, false\)/,
+  'and the enqueue trigger checks delivery before it queues anything');
+
+// Forward-only: an after-insert trigger cannot revisit history.
+match(migration,
+  /create trigger notifications_push_enqueue after insert on public\.notifications/,
+  'THE TRIGGER IS AFTER INSERT, SO IT NEVER REVISITS EXISTING NOTIFICATIONS');
+notMatch(migration, /create trigger notifications_push_enqueue[^\n]*update/,
+  'and it does not fire on update, which would reopen old rows');
+
+// Opt-in, not opt-out.
+const wps014 = read('supabase/migrations/202608020002_wps014_notifications_engagement.sql');
+match(wps014, /alter column push_enabled set default false/,
+  'push preference is opt-in, so delivery does not reach a user who never asked');
+
+// Nothing dispatches on a schedule.
+const allMigrations = readdirSync(join(root, 'supabase', 'migrations'))
+  .filter((f) => f.endsWith('.sql'))
+  .map((f) => sqlComments(read(join('supabase', 'migrations', f)))).join('\n');
+notMatch(allMigrations, /cron\.schedule/,
+  'NO CRON SCHEDULE EXISTS, so the dispatcher runs only when invoked');
+
 console.log(`Push delivery: ${checks} checks passed.`);
