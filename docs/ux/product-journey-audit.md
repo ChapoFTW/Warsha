@@ -306,9 +306,9 @@ writes both, because the property is what a genuinely fresh boot reads.
   `wk-04-signup-scrolled.png`, `wk-05-signup-bottom.png`, API 24. The first
   screenful measures **114 words and 3 tappable things**; the whole form runs to
   roughly three screenfuls.
-- **Status:** OPEN
+- **Status:** FIXED, commit 551fe89, verified on device in English and Arabic
 
-This is the first thing Warsha asks a technician to do, and it is the densest
+This is the first thing Warsha asks a professional to do, and it is the densest
 screen in the early journey. Five separate defects, in the order a worker meets
 them:
 
@@ -357,6 +357,70 @@ before they can comply.
 
 ---
 
+### UX-009 — Arabic had two words for the role, and one was the wrong one
+
+- **Stage:** cross-surface, Arabic
+- **Severity:** P1 (Arabic is a release gate)
+- **Evidence:** read, then rendered — `ar-03-after-role-worker.png`
+- **Status:** FIXED, commit c9efe67
+
+Onboarding, the gateway and the role chooser said صنايعي. Chat, notifications,
+bookings, payments, reviews, favourites, the address form and the auth screens
+said فني. Each surface was internally consistent, which is why nobody noticed
+that Warsha had no single name for one of its two audiences in the language most
+of that audience reads.
+
+112 replacements. Two files were swept and reverted, and that is the part worth
+remembering: فني is also an ordinary adjective. `profession-taxonomy.ts` carries
+«فني تكييف», a correct trade name for an air-conditioning technician, and
+`legal-corpus-registers.ts` contains «مشكلة فنية» — "a technical problem" — in a
+breach-notification register. A guard that only excluded «الدعم الفني» let both
+through, and only reading the diff caught them.
+
+---
+
+### UX-010 — The phone helper addressed neither reader
+
+- **Stage:** signup, both roles
+- **Severity:** P2
+- **Evidence:** rendered — visible in `su-03-after-role-worker.png`
+- **Status:** FIXED, commit c9efe67
+
+"How your professional or customer reaches you on the day" named both roles, so
+a professional registering to work read a sentence about their own professional.
+The screen knows which role is registering. It now says "How customers reach
+you" to a professional and "How your professional reaches you" to a customer.
+
+---
+
+### Rendered evidence for the signup redesign
+
+Measured from the accessibility tree, first screenful, API 24:
+
+| | words | tappable |
+| --- | --- | --- |
+| before | 114 | 3 |
+| after, English | 101 | 6 |
+| after, Arabic | 92 | 7 |
+
+Fewer words and twice the controls is the direction the low-literacy
+requirement asks for: less to read, more to recognise.
+
+**Arabic, rendered and checked against the tree.** `ar-rEG-ldrtl`. Heading
+صنايعي; every label right-aligned; the consent checkbox mirrored to the left of
+its text; legal links reversed; the phone example `01012345678` embedded
+left-to-right inside right-to-left text, which is correct bidi and the thing
+most likely to have been wrong. The password hint is one line — «٨ حروف على
+الأقل، وفيها حرف كبير وحرف صغير ورقم وعلامة.» — where five refusals used to be.
+
+Could somebody with weak reading complete this by recognition? On this screen,
+closer to yes than before: three labelled fields in the order they are asked
+for, one hint per field rather than a rule list, and a checkbox that looks like
+a checkbox. The legal block is still the densest part and still requires
+reading, which is inherent to consent and is not something to design away.
+
+---
+
 ## Coverage
 
 What has and has not been looked at, honestly, so the gaps are visible.
@@ -372,7 +436,7 @@ What has and has not been looked at, honestly, so the gaps are visible.
 | Request creation | no | no | |
 | Marketplace, quotes, worker selection | no | no | |
 | Job, chat, completion | no | no | |
-| Worker account creation | yes (mock) | yes | UX-008 |
+| Professional account creation | yes (mock), EN + AR | yes | UX-008 fixed |
 | Worker onboarding beyond signup | no | no | blocked: the form has no reachable forward action to drive |
 | Worker home, work, quotes, earnings | no | no | Part C priority |
 | Arabic RTL | gateway only | partial | hard gate; the journey beyond Welcome is not photographed |
