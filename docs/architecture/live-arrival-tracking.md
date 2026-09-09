@@ -127,6 +127,34 @@ Play data-safety declarations change the moment any location is collected, even
 while-in-use. That review is **pending, not done**, and is not recorded here as
 approved.
 
+## What routing will cost, measured before it is switched on
+
+The instruction was to establish expected call volume and cost **before**
+Production activation rather than discover it on a bill. Assumptions are stated
+so they can be argued with: a 20-minute Cairo journey, a 5-second GPS sample
+rate, and Routes API Compute Routes billed at the Essentials rate.
+
+| | Calls per journey | 100 jobs/day | 1,000 jobs/day | 5,000 jobs/day |
+| --- | --- | --- | --- | --- |
+| One route call per GPS sample | 240 | $3,600/mo | $36,000/mo | $180,000/mo |
+| Recalculated on triggers | 16 | $240/mo | $2,400/mo | $12,000/mo |
+
+**A 93% reduction, and at realistic volume the difference between $2,400 and
+$36,000 a month.** The triggered model recalculates on a 90-second ceiling, on
+meaningful movement, on route deviation, and on ETA staleness — with an
+allowance of two genuine reroutes per journey.
+
+This is why the recalculation policy is not a refinement to add later. At one
+call per sample, live tracking is the most expensive feature Warsha operates
+and its cost scales with journey duration, so the worst bills come from the
+journeys that went badly. The deviation test has to exist before the map does.
+
+Two honest caveats: the per-call price must be re-checked against Google's
+current published rate before activation rather than trusted from this table,
+and the 16 calls assume a journey that mostly goes to plan. A pathological
+journey — circling a district looking for an address — costs more, which is an
+argument for the elapsed-time ceiling being a ceiling rather than a target.
+
 ## Not started
 
 Everything below the audit. This note exists so the first line of code is

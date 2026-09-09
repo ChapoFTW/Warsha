@@ -1291,6 +1291,12 @@ const activationRpcs = [
   'staff_set_feature_flag',
   'staff_request_dual_control',
   'staff_approve_dual_control',
+  // Added with 202609090002. Push configuration is the newest live switch and
+  // the most tempting one to grow a button for, because "enable push" reads
+  // like a setting rather than a deployment. It is technical activation, so it
+  // belongs to the agent through the governed path, and the operating model
+  // says the console does not carry it.
+  'staff_set_push_configuration',
 ];
 const migrationsDir = join('supabase', 'migrations');
 const migrationSql = readdirSync(migrationsDir)
@@ -1349,10 +1355,17 @@ for (const key of [
   check(key in appCopy.fr, `${key} has French provider copy`);
 }
 
-// Generalising the page must not have loosened the governance it renders.
+// These four names still appear on the page, but only in the prose that
+// explains why the page no longer calls them — the check above asserts the
+// absence of the call itself. The message used to read "is still the only way
+// this page acts", which stopped being true when the controls were removed and
+// would have passed against a gutted page as long as the comments survived. An
+// assertion whose message describes something other than what it checks is
+// worse than no assertion, because it is read as coverage.
 for (const rpc of ['staff_request_dual_control', 'staff_approve_dual_control',
   'staff_activate_external_provider', 'staff_set_feature_flag']) {
-  check(providersPage.includes(rpc), `${rpc} is still the only way this page acts`);
+  check(providersPage.includes(rpc),
+    `${rpc} is still NAMED on the page, so the removal stays explained to whoever reads it next`);
 }
 check(/state\.approvalGranted = approved \? 'done' : requested \? 'waiting' : 'blocked';/
   .test(providersLib),
@@ -1361,7 +1374,7 @@ check(/staff_request_dual_control/.test(providersPage)
   && /staff_approve_dual_control/.test(providersPage)
   && /staff_activate_external_provider/.test(providersPage)
   && /staff_set_feature_flag/.test(providersPage),
-  'every action reuses an existing governed authority');
+  'and the page still records which governed authorities exist behind it');
 
 const queueMigration = readFileSync(
   'supabase/migrations/202608230001_dual_control_queue.sql', 'utf8');
