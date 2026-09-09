@@ -40,49 +40,43 @@ reproduce or compare it.
 
 | Axis | Evidence | Verdict |
 | --- | --- | --- |
-| EN · 320dp · light · 1.0× | `firstcontact-role-chooser-en-320dp-light.png` | **PASS** |
-| AR RTL · 320dp · light · 1.0× | `firstcontact-role-chooser-ar-320dp-light.png` | **FAIL** — V-P1 |
-| FR · dark · enlarged | not captured | UNTESTED |
+| EN · 320dp · light | `final-gateway-en-320.png` | **PASS** |
+| AR RTL · 320dp · light | `final-gateway-ar-320.png` | **PASS** |
+| AR RTL · 320dp · dark | `gw-ar-320-dark.png` | **PASS** |
+| AR RTL · 320dp · 1.3x text | `gw-ar-320-enlarged.png` | **PASS** |
+| AR RTL · 411dp · light | `gw-ar-411.png` | **PASS** |
+| FR · 320dp · light | `gw-fr-320.png` | **PASS** |
+| AR role chooser · 320dp | `rolechooser-ar-320-final.png` | **PASS** |
 
-**English reads well.** The heading wraps to two lines at 320dp without
-crowding, the two cards carry equal weight — correct, because this is a genuine
-choice and neither option is the "primary" one — and `Sign in` sits below as a
-quiet third path. The copy is honest early: *"Needs identity checks before you
-can start"* appears before anybody invests effort, which is the right place for
-it.
+### V-P1 — RESOLVED, on a build carrying the fix
 
-### V-P1 — the Arabic layout is mirrored twice, so rows run the wrong way
+The mark now sits on the reading edge beside its label, in every cell above.
 
-In Arabic the card icon sits on the **far left** while its label is
-right-aligned on the **right**, with the width of the card between them. The
-icon is detached from the word it belongs to.
+| Screen | Before | After |
+| --- | --- | --- |
+| Gateway trust row | icon 24–44, text 52–296 | text 24–268, **icon 276–296** |
+| Gateway links | Help 81–139, Privacy 177–239 | **Privacy 81–143, Help 181–239** |
+| Role chooser card | icon 24–44, text 101–279 | text 41–219, **icon 242–268** |
 
-**Root cause, and it is not this screen.** Warsha decides direction in
-JavaScript from the Warsha language preference — `src/i18n/direction.ts` — and
-every mirrored row applies `row-reverse` itself. That is a complete strategy,
-and it only works while the platform is not mirroring as well.
-`localization.tsx` called `I18nManager.allowRTL(true)`. On a phone whose own
-locale is Arabic — **most of Warsha's market** — `I18nManager.isRTL` became
-true, the platform mirrored every `flexDirection: 'row'`, and the app's own
-`row-reverse` mirrored it back.
+Help moving to the right IS the mirror: the JSX order is Help then Privacy.
 
-The blast radius is not one screen: **65 `row-reverse` sites across 64 files**,
-which is every deliberately mirrored row in the product.
+**English is byte-identical to before the fix** — Help 59–90, Privacy 128–179 —
+so the neutral baseline changed nothing for LTR readers. French renders LTR
+correctly with icons at 24–44.
 
-It was invisible on a phone set to English, where the JS mirroring was the only
-mirroring and was correct. That is exactly why it survived — the broken
-configuration is the one nobody develops on.
+No horizontal overflow in any cell, including 1.3x text at 320dp, measured by
+walking every node's bounds rather than by looking. Enlarged text grows the row
+(trust line 21px → 24px) without clipping.
 
-**Fixed** by removing the platform's permission to mirror, so the JavaScript
-rule is the only rule and all four combinations agree: Warsha in English or
-Arabic, on a phone in English or Arabic. `forceRTL` is deliberately still not
-used; it needs a restart, and restarting somebody mid-task to change a layout is
-worse than the layout.
+The root cause and its proof are in `scripts/rtl-layout-baseline.test.mts`.
 
-**Retest status: PENDING A REBUILD.** The fix is in the source and the
-regression suite asserts it, but the screenshot above was taken with the
-installed Production APK. It cannot be re-verified visually until an APK
-carrying the fix is built and installed, and this row stays FAIL until then.
+### V-P2 — RESOLVED, both role marks now mean different things
+
+`home` for the customer, `engineering` for the professional. Rendered in Arabic
+at 320dp: a house and a person, distinguishable as shapes before either label is
+read — which is the whole point for a reader who depends on the mark.
+
+### Superseded: the original V-P2 text
 
 ### V-P2 — both role icons are tools
 
@@ -130,6 +124,21 @@ English phone with Warsha in Arabic always had LTR navigation — but it is a
 change for Arabic-phone users, and it is the kind of thing that has to be
 looked at rather than reasoned about. **Navigation and back affordances are on
 the retest list for that reason.**
+
+## What is still NOT proven, and why the programme row stays open
+
+The RTL **architecture** is proven and the gateway and role chooser **pass**.
+The RTL **visual certification of the product** does not, because two screens
+are not a component sweep.
+
+| Still unproven | Why it matters |
+| --- | --- |
+| Auth fields, consent rows, settings, lists, chat, job cards, tabs | Each is a different row shape; the gateway proves the baseline, not every consumer of it |
+| Headers and back affordance | Navigation direction is wired via `LocaleDirContext` and has never been rendered |
+| Modals, sheets, portals | A separately-mounted native surface may not inherit the neutral root, which would reproduce the double-authority bug in one place |
+| Accessibility traversal order | Measured bounds prove visual order; they do not prove the order a screen reader announces |
+| Bidi content | Arabic + phone, + EGP, + dates, + Latin names, + address are untested |
+| Chat preview close | Moved to trailing without rendered evidence — it needs an authenticated conversation carrying an image |
 
 ---
 
