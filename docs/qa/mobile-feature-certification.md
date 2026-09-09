@@ -18,7 +18,8 @@ right. If you add a route, add a row.
 | **BLOCKED** | Cannot be tested here, with the reason named. |
 
 **"All features tested" is not sayable while a single row is UNTESTED or
-PARTIAL.** Today that is 57 of 62.
+PARTIAL.** Today that is 57 of 62 routes — and routes are only Layer 1. The
+capability inventory below is the larger, emptier half.
 
 ## Which build is admissible
 
@@ -127,6 +128,88 @@ Not routes, and each needs its own evidence.
 | Offline / network failure | UNTESTED | |
 | App resume / background | UNTESTED | |
 | Stale session | UNTESTED | |
+
+---
+
+# Layer 2 — capabilities, actions and states
+
+Sixty-two routes are a map of the doors, not of the building. A route renders in
+one state and is counted once; the product behind it has a lifecycle, a set of
+actions, and failure paths a render never touches. `provider-job/[id]` is a
+single row in Layer 1 and thirteen states with twenty-eight transitions here.
+
+Layer 1 is not superseded and is not restated. Its five evidenced rows stay
+exactly as they are. This is what sits on top of them.
+
+## The job lifecycle
+
+Derived from `src/job-operations/job-operation-types.ts` — `OPERATION_STATES`
+and `operationTransitions`, read from the code rather than remembered. Thirteen
+states, twenty-eight transitions, every one reachable from `confirmed`, one
+terminal state.
+
+A transition is its own test. `paused → resumed` working does not tell you
+`waiting_for_parts → resumed` works, and both land on the same screen.
+
+| State | Out | Transitions to | Status |
+| --- | --- | --- | --- |
+| `confirmed` | 1 | `traveling` | UNTESTED |
+| `traveling` | 2 | `arrived`, `waiting_for_customer` | UNTESTED |
+| `arrived` | 2 | `waiting_for_customer`, `started` | UNTESTED |
+| `waiting_for_customer` | 2 | `arrived`, `started` | UNTESTED |
+| `started` | 4 | `waiting_for_approval`, `waiting_for_parts`, `paused`, `finished` | UNTESTED |
+| `waiting_for_approval` | 3 | `resumed`, `waiting_for_parts`, `paused` | UNTESTED |
+| `waiting_for_parts` | 3 | `resumed`, `returning_later`, `paused` | UNTESTED |
+| `paused` | 2 | `resumed`, `returning_later` | UNTESTED |
+| `resumed` | 4 | `waiting_for_approval`, `waiting_for_parts`, `paused`, `finished` | UNTESTED |
+| `returning_later` | 2 | `traveling`, `resumed` | UNTESTED |
+| `finished` | 1 | `customer_inspection` | UNTESTED |
+| `customer_inspection` | 2 | `completed`, `resumed` | UNTESTED |
+| `completed` | 0 | — terminal | UNTESTED |
+
+**28 of 28 transitions unevidenced.** Not one has been driven on a device.
+
+This table is checked against the code by `scripts/mobile-certification.test.mts`:
+add a state to `OPERATION_STATES` without adding a row here and the suite fails.
+An inventory that can drift out of date in silence is not an inventory.
+
+## Operation updates
+
+`workerUpdates` (8) and `customerUpdates` (3) — what either side can say during
+a job. Each has copy in three languages and a notification consequence.
+
+| Group | Count | Status |
+| --- | --- | --- |
+| Worker updates | 8 | UNTESTED |
+| Customer updates | 3 | UNTESTED |
+
+## Cross-cutting capabilities
+
+Not routes at all, and each fails in ways a render cannot show.
+
+| Capability | Status | Note |
+| --- | --- | --- |
+| Session expiry mid-journey | UNTESTED | the token dies while a form is half-filled |
+| Offline submission | UNTESTED | tapping Submit in a lift |
+| Permission denied paths | **PARTIAL** | notifications granted; camera, media and location untested |
+| Photo capture and crop | **READY** | fixture built — `scripts/android-e2e/photo-fixture.mjs` |
+| Arabic RTL on every authenticated screen | UNTESTED | a hard gate, not an axis |
+| Enlarged text (1.3x) | **PARTIAL** | gateway only |
+| 320dp | **PARTIAL** | gateway only |
+| Dark theme | **PARTIAL** | gateway only |
+| Deep links | UNTESTED | `warsha://appearance` did not land; cause unestablished |
+| Push registration, dispatch, tap, logout | **BLOCKED** | see below — the authority now exists |
+| Live arrival tracking | NOT BUILT | `docs/architecture/live-arrival-tracking.md` |
+
+## What Layer 2 changes about the headline
+
+Layer 1 said 5 of 62. Layer 2 adds 28 transitions, 11 update messages and 11
+cross-cutting capabilities, of which two carry partial evidence and the rest
+carry none. The honest summary is that Warsha's mobile surface is near the
+beginning of certification rather than the end, and the route count flattered it
+because a route is the cheapest thing in the product to render.
+
+---
 
 ## What the professional onboarding walk found
 
