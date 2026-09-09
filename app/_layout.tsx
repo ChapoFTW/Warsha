@@ -111,7 +111,27 @@ function ThemedRoot() {
 
   return (
     <ThemeProvider value={navigationTheme}>
-      <View style={{ flex: 1, backgroundColor: colors.canvas, direction: isRTL ? 'rtl' : 'ltr' }}>
+      {/* No `direction` here, deliberately.
+
+          Warsha mirrors layout explicitly: Typography sets textAlign and
+          writingDirection, the field primitive sets its own, and every row
+          that needs mirroring applies `row-reverse` itself — 65 of them.
+          Setting Yoga's `direction` on this View added a SECOND mirror
+          underneath all of that, so in Arabic a `row` already ran
+          right-to-left and the explicit `row-reverse` turned it back.
+          Rows rendered left-to-right inside a right-aligned Arabic screen,
+          with each mark stranded across the card from its label.
+
+          Proved by measurement rather than by reading. With the DEVICE in
+          English and Warsha in Arabic — which excludes I18nManager entirely
+          — the gateway's trust icons still sat on the trailing edge. The
+          only two mirrors left were this line and the explicit one.
+
+          The explicit layer is the authority: it is documented in
+          src/i18n/direction.ts, it is what 51 components already do, and
+          rtl-direction.test.mts asserts it. This line duplicated it
+          invisibly, so this line is the one that goes. */}
+      <View style={{ flex: 1, backgroundColor: colors.canvas }}>
         {/* WPS-023. Nothing operational renders until the session and the
             onboarding state are both known, so no protected screen can appear
             for a frame before the router corrects itself. */}

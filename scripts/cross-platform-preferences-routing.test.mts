@@ -124,7 +124,27 @@ check(/router\.push\('\/appearance'\)/.test(read('app/(tabs)/profile.tsx')),
 check(/router\.push\('\/appearance'\)/.test(read('app/worker/settings.tsx')),
   'the worker reaches it from their settings');
 
-check(/direction: isRTL \? 'rtl' : 'ltr'/.test(root), 'root layout direction follows the active language');
+/**
+ * This asserted that the root layout set Yoga's `direction` from the active
+ * language. The intent — Warsha's own language decides layout direction, not
+ * the device — is right and still holds. The mechanism was wrong, and it was
+ * wrong in a way that shipped: it mirrored every row a SECOND time, underneath
+ * the 65 rows that already mirror themselves, so Arabic screens rendered their
+ * rows left-to-right with each mark stranded across the card from its label.
+ *
+ * Proved by measurement, with the device in English and Warsha in Arabic, which
+ * excludes the platform's own mirroring entirely.
+ *
+ * So the assertion now encodes the ARCHITECTURE rather than the mechanism that
+ * broke: exactly one Warsha-controlled layout authority, and it is the explicit
+ * per-component one that direction.ts documents and rtl-direction.test.mts
+ * covers across 51 components.
+ */
+const rootCode = root.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+check(!/direction:\s*isRTL/.test(rootCode),
+  'THE ROOT LAYOUT DOES NOT SET YOGA DIRECTION — one mirroring authority, not two');
+check(/isRTL/.test(root),
+  'the root layout still reads the active language for the things it legitimately drives');
 // The mobile admin shell is gone: operational administration is web-only.
 // What mattered here — that a surface owning its own preference slot does not
 // double-render the global one — still holds for the two shells that remain.

@@ -67,6 +67,7 @@ export const DETERMINISTIC_TEST_SCRIPTS = [
   'test:spacing-system',
   'test:help-docs',
   'test:help-language-parity',
+  'test:android-build-helper',
   'test:signup-legal-startup',
   'test:signup-state',
   'test:web-platform',
