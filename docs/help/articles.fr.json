@@ -337,7 +337,7 @@
       "title": "Vérification, suspension et mesures de sécurité",
       "summary": "Examinez les preuves et appliquez une mesure proportionnée avec une raison claire.",
       "version": 7,
-      "lastReviewedDate": "2026-09-06",
+      "lastReviewedDate": "2026-09-10",
       "features": [
         "worker_vetting",
         "trust",

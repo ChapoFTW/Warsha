@@ -133,8 +133,8 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   section: { gap: 3, marginTop: spacing.sm },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   reverse: { flexDirection: 'row-reverse' },
-  sectionTitle: { fontSize: 19, fontWeight: typography.semibold },
-  sectionHint: { fontSize: 11, color: colors.textMuted },
+  sectionTitle: { ...typography.h2, fontWeight: typography.semibold },
+  sectionHint: { ...typography.caption, letterSpacing: 0, color: colors.textMuted },
   shelf: { gap: spacing.md },
-  action: { fontSize: 13, color: colors.textSecondary },
+  action: { ...typography.bodySmall, color: colors.textSecondary },
 });
