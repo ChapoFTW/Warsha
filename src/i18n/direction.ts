@@ -14,6 +14,50 @@
  * from the language, and every shared primitive reads it from here.
  */
 
+/**
+ * ## The layout model, and why the root says `ltr` in Arabic
+ *
+ * Warsha has ONE layout-direction authority: the explicit per-component logic
+ * that reads `isRTL` from here. `Typography` sets `textAlign` and
+ * `writingDirection`; the field primitive sets its own; 65 rows apply
+ * `row-reverse` themselves.
+ *
+ * That strategy is complete, and it only works against a NEUTRAL coordinate
+ * system — because two mirrors compose back into none. So `app/_layout.tsx`
+ * pins the root to `direction: 'ltr'` ALWAYS. It is not an LTR authority; it is
+ * the absence of a second one.
+ *
+ * This was established by on-device measurement after three wrong diagnoses.
+ * With the root deriving direction from the language:
+ *
+ *     flattened flexDirection : row-reverse   (it did reach the view)
+ *     native baseline         : RTL
+ *     live row child order    : A B C         (cancelled back to LTR)
+ *
+ * With the root pinned to `ltr`, nothing else changed:
+ *
+ *     native baseline         : LTR
+ *     live row child order    : C B A         (genuinely mirrored)
+ *
+ * Identical on first launch, cold relaunch, and with the DEVICE locale Arabic.
+ *
+ * `I18nManager.isRTL` is `true` in every one of those cases and stays true:
+ * Android's per-app locale makes the app's configuration Arabic regardless of
+ * the system language, and `allowRTL(false)` never took effect. The baseline
+ * therefore cannot wait for the platform to settle, which is exactly why it is
+ * pinned rather than derived.
+ *
+ * `doLeftAndRightSwapInRTL` is also `true` and also harmless: measurement showed
+ * physical `left`/`right` swap only inside an explicitly `rtl` container, so the
+ * neutral baseline neutralises it.
+ *
+ * TEXT IS NOT AFFECTED. Writing direction and text alignment stay RTL in Arabic
+ * — a neutral layout baseline is not an LTR text baseline. They are separate
+ * concepts and only one of them was pinned.
+ *
+ * `scripts/rtl-layout-baseline.test.mts` holds all of this.
+ */
+
 export type Direction = 'ltr' | 'rtl';
 export type TextAlign = 'left' | 'right';
 

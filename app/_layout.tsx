@@ -131,7 +131,7 @@ function ThemedRoot() {
           src/i18n/direction.ts, it is what 51 components already do, and
           rtl-direction.test.mts asserts it. This line duplicated it
           invisibly, so this line is the one that goes. */}
-      <View style={{ flex: 1, backgroundColor: colors.canvas }}>
+      <View style={{ flex: 1, backgroundColor: colors.canvas, direction: 'ltr' }}>
         {/* WPS-023. Nothing operational renders until the session and the
             onboarding state are both known, so no protected screen can appear
             for a frame before the router corrects itself. */}

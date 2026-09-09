@@ -82,7 +82,10 @@ const previous = existsSync(APK) ? statSync(APK).mtimeMs : 0;
 console.log(`\nprevious APK: ${previous ? new Date(previous).toISOString() : 'none'}`);
 console.log('running gradlew assembleRelease…\n');
 
-const gradle = process.platform === 'win32' ? 'gradlew.bat' : './gradlew';
+// Resolved against the android/ directory rather than left to PATH: with
+// shell:true on Windows a bare 'gradlew.bat' is looked up in PATH, not in cwd,
+// and the build fails with 'not recognized as an internal or external command'.
+const gradle = join(process.cwd(), 'android', process.platform === 'win32' ? 'gradlew.bat' : 'gradlew');
 const result = spawnSync(gradle, [
   'assembleRelease',
   `-PreactNativeArchitectures=${process.env.WARSHA_ABI ?? 'x86_64'}`,

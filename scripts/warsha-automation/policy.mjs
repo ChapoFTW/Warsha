@@ -74,6 +74,7 @@ export const DETERMINISTIC_TEST_SCRIPTS = [
   'test:web-bilingual',
   'test:identity-signin',
   'test:rtl-direction',
+  'test:rtl-layout-baseline',
   'test:web-brand',
   'test:brand-assets',
   'test:web-auth',
