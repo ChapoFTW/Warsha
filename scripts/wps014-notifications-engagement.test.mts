@@ -4,7 +4,8 @@ import { join } from 'node:path';
 
 import { isQuietTime, notificationAccountId, notificationDefinition } from '../src/notifications/notification-policy.ts';
 import { externalNotificationPreview, pushDeliveryPolicy, pushPreviewCopy, readPushCapability, unknownPushCapability } from '../src/notifications/notification-push-adapter.ts';
-import { notificationCategories } from '../src/notifications/notification-types.ts';
+import { notificationCategories, notificationPriorities } from '../src/notifications/notification-types.ts';
+import { PRIORITY_COLOR_KEY, priorityMarkColor } from '../src/notifications/notification-priority-appearance.ts';
 import { legacyNotificationEventCopy } from '../src/notifications/notification-copy.ts';
 
 const root = process.cwd(); let checks = 0;
@@ -24,6 +25,7 @@ const pushAdapter = read('src/notifications/notification-push-adapter.ts');
 const reminderSimulation = read('src/notifications/notification-reminder-simulation.ts');
 const realtime = read('src/realtime/realtime-service.ts');
 const marketplaceMock = read('src/marketplace-intelligence/mock-marketplace-repository.ts');
+const banner = read('components/warsha/NotificationBanner.tsx');
 const header = read('components/warsha/Header.tsx');
 const providerOverlay = read('components/warsha/ProviderModeOverlay.tsx');
 const wps = read('docs/wps/WPS-014-notifications-engagement.md');
@@ -232,6 +234,58 @@ for (const path of ['docs/testing/WPS-014-ACCEPTANCE-EVIDENCE.md','docs/testing/
 for (const doc of ['WPS-001','WPS-002','WPS-003','WPS-004','WPS-005','WPS-006','WPS-007','WPS-008','WPS-009','WPS-010','WPS-011','WPS-012','WPS-013']) {
   const file = read(`docs/wps/${doc}-${({ 'WPS-001':'foundation-authentication','WPS-002':'customer-experience','WPS-003':'independent-worker-experience','WPS-004':'booking-lifecycle','WPS-005':'realtime-notifications','WPS-006':'trust-reviews-verification','WPS-007':'financial-system','WPS-008':'marketplace-intelligence','WPS-009':'communication-collaboration','WPS-010':'worker-profiles-portfolio','WPS-011':'reviews-reputation','WPS-012':'job-execution-operations','WPS-013':'disputes-resolution' } as Record<string,string>)[doc]}.md`);
   match(file, /WPS-014/, `${doc} cross-references WPS-014`);
+}
+
+
+// --- Priority is visible, on every surface that shows a notification --------
+// The banner used to carry none. Its accessible label said "Critical." and its
+// pixels said nothing: same bell, same surface, same border whether the notice
+// was "someone changed your password" or a routine update. For a professional
+// who does not read fluently the severity was simply unavailable, because the
+// only place it existed was the body text they cannot read.
+{
+  const { darkColors, lightColors } = await import('../constants/appearance.ts');
+
+  ok(
+    Object.keys(PRIORITY_COLOR_KEY).length === notificationPriorities.length,
+    'every priority has a mark colour, so none falls back to an accidental default',
+  );
+  for (const priority of notificationPriorities) {
+    ok(PRIORITY_COLOR_KEY[priority] !== undefined, `${priority} has a mark colour`);
+  }
+
+  // A mark that cannot distinguish the two extremes is not a mark.
+  for (const [name, colors] of [['dark', darkColors], ['light', lightColors]] as const) {
+    const distinct = new Set(
+      notificationPriorities.map((priority) => priorityMarkColor(colors, priority)),
+    );
+    equal(
+      distinct.size,
+      notificationPriorities.length,
+      `${name}: each priority is a visibly different colour`,
+    );
+    ok(
+      priorityMarkColor(colors, 'critical') !== priorityMarkColor(colors, 'informational'),
+      `${name}: critical does not look like informational`,
+    );
+  }
+
+  // Both surfaces read the same authority. Two copies would drift, and a mark
+  // that means one thing in the list and another in the banner is worse than
+  // no mark at all.
+  match(banner, /priorityMarkColor/, 'the banner paints a priority mark');
+  match(banner, /notification-priority-appearance/, 'the banner uses the shared authority');
+  match(screen, /notification-priority-appearance/, 'the list uses the shared authority');
+  notMatch(
+    banner,
+    /backgroundColor:\s*colors\.(error|warning|white)\b/,
+    'the banner does not re-derive priority colours from the legacy aliases',
+  );
+
+  // The reader still hears it. Colour is the addition, not the replacement:
+  // whoever uses a screen reader must not lose what they already had.
+  match(banner, /copy\.priority\(item\.priority\)/, 'the banner still announces the priority');
+  match(screen, /copy\.priority\(item\.priority\)/, 'the list still announces the priority');
 }
 
 console.log(`WPS-014 notification contracts: ${checks} checks passed.`);

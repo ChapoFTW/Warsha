@@ -13,7 +13,8 @@ import { useLocalization } from '@/src/i18n/localization';
 import type { SupportedLanguage } from '@/src/i18n/language-preference';
 import { useNotifications } from '@/src/notifications/notification-context';
 import { useEngagementText } from '@/src/notifications/notification-engagement-translations';
-import { notificationCategories, type WarshaNotification } from '@/src/notifications/notification-types';
+import { PRIORITY_COLOR_KEY } from '@/src/notifications/notification-priority-appearance';
+import { notificationCategories, type NotificationPriority, type WarshaNotification } from '@/src/notifications/notification-types';
 import { localeFor } from '@/src/utils/date-format';
 
 export default function NotificationsScreen() {
@@ -67,7 +68,13 @@ function NotificationCard({ item }: { item: WarshaNotification }) {
   </Pressable>;
 }
 
-const makePriorityStyle = (colors: ThemeColors) => StyleSheet.create({ critical: { backgroundColor: colors.error }, action_required: { backgroundColor: colors.warning }, important: { backgroundColor: colors.white }, informational: { backgroundColor: colors.textMuted } });
+// The mapping itself lives in src/notifications/notification-priority-appearance.ts,
+// because the banner needs the same one and used to have none.
+const makePriorityStyle = (colors: ThemeColors) => StyleSheet.create(
+  Object.fromEntries(Object.entries(PRIORITY_COLOR_KEY).map(
+    ([priority, key]) => [priority, { backgroundColor: colors[key] }],
+  )) as Record<NotificationPriority, { backgroundColor: string }>,
+);
 function State({ icon, text, body, action, onPress, loading }: { icon?: React.ComponentProps<typeof MaterialIcons>['name']; text: string; body?: string; action?: string; onPress?: () => void; loading?: boolean }) {
   const styles = useThemedStyles(makeStyles); return <View style={styles.state}><EmptyState title={text} body={body} icon={icon} action={action} onAction={onPress} loading={loading}/></View>; }
 function relativeTime(value: string, language: SupportedLanguage, justNow: string) { const elapsed = Date.now() - Date.parse(value); const formatter = new Intl.RelativeTimeFormat(localeFor(language), { numeric: 'auto' }); if (elapsed < 60_000) return justNow; if (elapsed < 3_600_000) return formatter.format(-Math.max(1, Math.round(elapsed / 60_000)), 'minute'); if (elapsed < 86_400_000) return formatter.format(-Math.max(1, Math.round(elapsed / 3_600_000)), 'hour'); return formatter.format(-Math.max(1, Math.round(elapsed / 86_400_000)), 'day'); }

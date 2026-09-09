@@ -4,7 +4,18 @@ export const notificationCategories = [
 ] as const;
 
 export type NotificationCategory = typeof notificationCategories[number];
-export type NotificationPriority = 'critical' | 'action_required' | 'important' | 'informational';
+
+/**
+ * Ordered most urgent first. This is a runtime list, like the categories above,
+ * so anything that has to cover every priority — the mark colours, a test that
+ * checks they are distinguishable — can be checked for exhaustiveness rather
+ * than trusted to have kept up.
+ */
+export const notificationPriorities = [
+  'critical', 'action_required', 'important', 'informational',
+] as const;
+
+export type NotificationPriority = typeof notificationPriorities[number];
 export type NotificationAudience = 'customer' | 'worker' | 'all';
 export type NotificationMode = 'customer' | 'worker';
 export type NotificationRouteType =
