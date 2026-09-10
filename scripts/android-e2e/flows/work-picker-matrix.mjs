@@ -51,11 +51,26 @@ assertBackendTarget({ expect: 'development', purpose: 'the work-picker matrix' }
 
 const label = (node) => `${node.text} ${node.desc}`.trim();
 
+/*
+ * Apostrophes are not one character.
+ *
+ * The French agreement button is "J'accepte" with a straight apostrophe, and
+ * this file looked for "J’accepte" with a typographic one. They read as the
+ * same word and compare as different strings, so the walk reported that it
+ * could not reach the work step from a screen where registration had just
+ * succeeded — the same failure mode as the Arabic أوافق/موافق mismatch, one
+ * character further in.
+ *
+ * Folded on both sides rather than fixed by listing both spellings, because the
+ * next label with an apostrophe would need listing too.
+ */
+const fold = (value) => value.toLowerCase().replace(/[’'‘´`]/g, "'");
+
 function target(names) {
   const nodes = tree();
   for (const needle of [names].flat()) {
     const hits = nodes.filter((node) => node.bounds
-      && label(node).toLowerCase().includes(needle.toLowerCase()));
+      && fold(label(node)).includes(fold(needle)));
     const found = hits.find((node) => node.clickable) ?? hits[0];
     if (found) return found;
   }
