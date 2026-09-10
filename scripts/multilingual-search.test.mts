@@ -231,6 +231,49 @@ for (const uiLanguage of LANGUAGES) {
   equal(nonsense, [], 'a query matching nothing widens to nothing');
 }
 
+// --- The widened query fits the budget the database enforces ----------------
+/*
+ * `search_providers` does `v_query := left(v_query, 100)`. A hundred
+ * characters, counted server-side, and truncation is silent: it does not error,
+ * it cuts mid-phrase and sends a term nobody typed.
+ *
+ * Walked across every profession and every one of its six labels rather than
+ * spot-checked, because the query that runs over is the one nobody thought to
+ * try — a vague word matching two long trades in the language with the longest
+ * words.
+ */
+{
+  const { widenDiscoveryQuery } = await import('../src/discovery/discovery-query.ts');
+  const BUDGET = 100;
+
+  for (const profession of professions) {
+    for (const term of professionSearchTerms(profession)) {
+      for (const language of LANGUAGES) {
+        const widened = widenDiscoveryQuery(term.text, language);
+        ok(widened.length <= BUDGET,
+          `"${term.text}" on ${language} widens to ${widened.length} characters — `
+          + `over the ${BUDGET} the database keeps, so it would be cut mid-phrase`);
+        // Never cut: an odd number of quotes means half a phrase went in.
+        equal((widened.match(/"/g) ?? []).length % 2, 0,
+          `"${term.text}" on ${language} widens to whole phrases, not half of one`);
+      }
+    }
+  }
+
+  // Short, vague words are the ones that resolve several trades at once.
+  for (const query of ['clean', 'tech', 'work', 'a', 'ال', 'de', 'صيانة']) {
+    for (const language of LANGUAGES) {
+      const widened = widenDiscoveryQuery(query, language);
+      ok(widened.length <= BUDGET,
+        `"${query}" on ${language} widens to ${widened.length} characters`);
+    }
+  }
+
+  // A query matching no trade crosses the wire exactly as typed.
+  equal(widenDiscoveryQuery('Hossam Adel', 'en'), 'Hossam Adel',
+    'a professional’s name is not widened, and not quoted, and not changed');
+}
+
 // --- Categories and specific services, in every language ---------------------
 /*
  * Requirement said to give categories and specific services the same treatment

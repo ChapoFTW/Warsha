@@ -357,8 +357,12 @@ export function listProfessions(language: Language, query = ''): ProfessionOptio
  * the database, which matches service and category names in all three languages
  * but has no way to know that "plumber" and "سباك" are one trade.
  */
-export function expandProfessionQuery(query: string, language: Language): string[] {
-  return expandQueryTerms(query, searchableProfessions(), language);
+export function expandProfessionQuery(
+  query: string,
+  language: Language,
+  options?: { limit?: number },
+): string[] {
+  return expandQueryTerms(query, searchableProfessions(), language, options);
 }
 
 /**
