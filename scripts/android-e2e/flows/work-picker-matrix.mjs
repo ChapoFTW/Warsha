@@ -233,6 +233,45 @@ async function captureWholeList(combination, language) {
 }
 
 /**
+ * The states the search box is actually seen in.
+ *
+ * Cross-language search is the whole point of the feature and the one state a
+ * unit test cannot show: what a professional SEES when the word they typed is
+ * not the language of the screen. The rule is that the query gets in through
+ * any language and the result comes back in theirs, so an Arabic screen
+ * answering "plumber" with "Plumbing" would be a defect the 2319 checks would
+ * not catch — they assert the identity resolved, not what was drawn.
+ */
+async function captureSearchStates(combination) {
+  const language = combination.language.slice(0, 2);
+  /*
+   * A word from another language, a partial in the screen's own, and something
+   * that matches nothing. The foreign word differs per screen so that no
+   * configuration is quietly testing its own language twice.
+   */
+  const queries = language === 'ar'
+    ? [['foreign', 'plumber'], ['partial', 'كهرب'], ['none', 'zzzzqq']]
+    : language === 'fr'
+      ? [['foreign', 'سباك'], ['partial', 'plomb'], ['none', 'zzzzqq']]
+      : [['foreign', 'plombier'], ['partial', 'كهرب'], ['none', 'zzzzqq']];
+
+  for (const [name, query] of queries) {
+    const field = tree().find((node) => node.cls?.includes('EditText'));
+    if (!field) {
+      console.log('    no search field — search states not captured');
+      return;
+    }
+    await setText({ cls: 'EditText', index: 0 }, query);
+    await sleep(1400);
+    await capture(`${combination.name}-search-${name}`, combination);
+  }
+
+  // Cleared, so the list below is photographed as a list rather than a result.
+  await setText({ cls: 'EditText', index: 0 }, '');
+  await sleep(1200);
+}
+
+/**
  * Register once per configuration and stop on the work step.
  *
  * `pm clear` before each is what makes the configurations comparable: a device
@@ -442,6 +481,8 @@ try {
      * comes along for free, which is the other half of what this control exists
      * to express.
      */
+    if (argv.includes('--search-states')) await captureSearchStates(combination);
+
     const row = tree().find((node) => node.clickable && node.bounds
       && node.bounds.top > 600 && /\S/.test(label(node)));
     if (row) {
