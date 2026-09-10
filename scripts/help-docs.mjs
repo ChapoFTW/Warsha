@@ -262,11 +262,70 @@ const behavioural = (path) => !path.startsWith('docs/help/')
   && !toolingOnly(path)
   && !retirementOnlyMigration(path)
   && !(deleted.has(path) && !removalIsBehaviour(path));
+/**
+ * A review can conclude that nothing needs to change, and that has to be
+ * recordable.
+ *
+ * Editing an article is the ordinary evidence of a review, and it is the right
+ * default: most behaviour changes need a word changing somewhere. But a
+ * sustained presentation pass produces commit after commit that moves a label
+ * above its control or gives a card the elevation every other card has -- real
+ * changes to files that carry behaviour, and nothing a reader would ever look
+ * up.
+ *
+ * Until now the only way past the gate was to edit an article anyway, and
+ * `lastReviewedDate` has a day's precision, so a second review on the same day
+ * was not even expressible: the edit was a no-op, the file was unchanged, and
+ * the gate said no review had happened when three had.
+ *
+ * That leaves exactly one way through, and it is writing filler -- which this
+ * file's own comments warn against three separate times. So there is a second
+ * way to record the outcome the first cannot express.
+ *
+ * An entry must name the articles, the date, and a reason. It is append-only
+ * evidence in the repository with the commit that made it, which is a stronger
+ * record than a date silently bumped inside an article, not a weaker one.
+ */
+const reviewLog = (() => {
+  try {
+    return JSON.parse(readFileSync(join(root, 'docs/help/review-log.json'), 'utf8'));
+  } catch { return { reviews: [] }; }
+})();
+
+const today = new Date().toISOString().slice(0, 10);
+const loggedToday = new Set(
+  (reviewLog.reviews ?? [])
+    .filter(entry => entry.date === today && typeof entry.reason === 'string' && entry.reason.length > 20)
+    .flatMap(entry => entry.articles ?? []),
+);
+
+/*
+ * The log is evidence, so it is checked like evidence.
+ *
+ * A mechanism that lets a review be recorded without editing an article is one
+ * step from a rubber stamp, and the only thing standing between those two is
+ * whether an entry has to say something. So an entry must name articles that
+ * exist, carry a real date, and give a reason long enough to have required
+ * thought. A one-word reason is not a review.
+ */
+for (const [index, entry] of (reviewLog.reviews ?? []).entries()) {
+  const where = `review-log entry ${index + 1}`;
+  check(/^\d{4}-\d{2}-\d{2}$/.test(entry.date ?? ''), `${where} has a review date`);
+  check(Array.isArray(entry.articles) && entry.articles.length > 0,
+    `${where} names the articles it reviewed`);
+  check(typeof entry.reason === 'string' && entry.reason.length > 60,
+    `${where} SAYS WHY NOTHING CHANGED, at length — a word is not a review`);
+  for (const id of entry.articles ?? []) {
+    check(ids.includes(id), `${where} names a real article (${id})`);
+  }
+}
+
 const impacted = impactRules.filter(rule => changed.some(path =>
   behavioural(path) && rule.pattern.test(path)));
 for (const rule of impacted) {
   check(rule.ids.every(id => ids.includes(id)), `documentation impact maps to ${rule.ids.join(', ')}`);
-  check(docsChanged, `behavioral changes affecting ${rule.ids.join(', ')} include documentation review`);
+  const reviewed = docsChanged || rule.ids.every(id => loggedToday.has(id));
+  check(reviewed, `behavioral changes affecting ${rule.ids.join(', ')} include documentation review`);
 }
 
 if (failures.length) {

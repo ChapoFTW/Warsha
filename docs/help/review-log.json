@@ -1,0 +1,14 @@
+{
+  "note": "Reviews that concluded the articles needed no change. Editing an article is the ordinary evidence of a review; this records the outcome that cannot be expressed by editing, because there was nothing to edit. Append only, and every entry must say what was reviewed and why nothing changed.",
+  "reviews": [
+    {
+      "date": "2026-09-10",
+      "articles": [
+        "worker-getting-started",
+        "worker-onboarding-verification",
+        "customer-addresses-location"
+      ],
+      "reason": "UX redesign pass: a field's purpose now reads above its control instead of below it, on worker onboarding and the customer address form. Ordering and spacing only. Every statement these articles make about what is required, what is kept, and what Warsha does with an address remains true, and all three were already reviewed earlier the same day."
+    }
+  ]
+}

@@ -37,8 +37,8 @@ export function EgyptLocationSelector({
   onChange,
   copy,
   required = false,
-  governorateHelper,
-  districtHelper,
+  governoratePurpose,
+  districtPurpose,
 }: {
   governorate: string;
   district: string;
@@ -52,9 +52,18 @@ export function EgyptLocationSelector({
    * of a 320dp screen. A badge belongs beside the thing it qualifies.
    */
   required?: boolean;
-  /** Why Warsha asks. Shown under its own field rather than ahead of both. */
-  governorateHelper?: string;
-  districtHelper?: string;
+  /**
+   * Why Warsha asks.
+   *
+   * Rendered ABOVE the control, which is a different thing from a helper and
+   * was briefly conflated with one. A purpose informs the choice, so it has to
+   * be read before the control is touched; a helper describes the input format
+   * ("Example: 5") and belongs under it. Putting the purpose underneath left
+   * this card explaining two of its three fields after the fact and the third
+   * beforehand -- the same screen disagreeing with itself.
+   */
+  governoratePurpose?: string;
+  districtPurpose?: string;
 }) {
   const colors = useThemeColors();
   const styles = useThemedStyles(makeStyles);
@@ -94,7 +103,7 @@ export function EgyptLocationSelector({
         label={text.governorate}
         value={governorateOption?.[language] ?? governorate}
         placeholder={text.selectGovernorate}
-        helper={governorateHelper ?? text.governorateHelper}
+        purpose={governoratePurpose ?? text.governorateHelper}
         required={required}
         icon="map"
         onPress={() => open('governorate')}
@@ -103,7 +112,7 @@ export function EgyptLocationSelector({
         label={text.district}
         value={areaOption?.[language] ?? district}
         placeholder={text.selectDistrict}
-        helper={districtHelper ?? text.districtHelper}
+        purpose={districtPurpose ?? text.districtHelper}
         required={required}
         icon="location-on"
         disabled={!governorateOption}
@@ -161,7 +170,7 @@ function SelectorButton({
   label,
   value,
   placeholder,
-  helper,
+  purpose,
   icon,
   disabled,
   required,
@@ -170,7 +179,7 @@ function SelectorButton({
   label: string;
   value: string;
   placeholder: string;
-  helper?: string;
+  purpose?: string;
   icon: React.ComponentProps<typeof MaterialIcons>['name'];
   disabled?: boolean;
   required?: boolean;
@@ -186,6 +195,7 @@ function SelectorButton({
         <AppText style={styles.fieldLabel}>{label}</AppText>
         {required ? <StateBadge label={wt.text('required')} compact /> : null}
       </View>
+      {purpose ? <AppText style={styles.purpose}>{purpose}</AppText> : null}
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`${label}. ${value || placeholder}`}
@@ -197,7 +207,6 @@ function SelectorButton({
         <AppText numberOfLines={1} style={[styles.selectorValue, !value && styles.placeholder]}>{value || placeholder}</AppText>
         <MaterialIcons name="keyboard-arrow-down" size={24} color={colors.textMuted} />
       </Pressable>
-      {helper ? <AppText style={styles.helper}>{helper}</AppText> : null}
     </View>
   );
 }
@@ -211,7 +220,7 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   selectorValue: { flex: 1, color: colors.textPrimary },
   placeholder: { color: colors.textMuted },
   disabled: { opacity: 0.45 },
-  helper: { ...typography.bodySmall, color: colors.textMuted },
+  purpose: { ...typography.bodySmall, color: colors.textMuted },
   reverse: { flexDirection: 'row-reverse' },
   modalSafe: { flex: 1, padding: spacing.lg, gap: spacing.md, backgroundColor: colors.canvas },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md },

@@ -399,8 +399,8 @@ export default function WorkerOnboarding() {
                 they were always meant to be read. */}
             <EgyptLocationSelector
               required
-              governorateHelper={wt.text('governoratePurpose')}
-              districtHelper={wt.text('districtPurpose')}
+              governoratePurpose={wt.text('governoratePurpose')}
+              districtPurpose={wt.text('districtPurpose')}
               governorate={draft.areas[0]?.governorate ?? ''}
               district={draft.areas[0]?.district ?? ''}
               onChange={area => setDraft(current => ({
