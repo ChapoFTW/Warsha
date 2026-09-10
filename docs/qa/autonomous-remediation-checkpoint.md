@@ -14,7 +14,7 @@ anything.
 | Repository | `D:\Warsha`, branch `main` |
 | Local validation | typecheck 0, `test:all` exit 0, lint clean on every touched file |
 | Emulator | `emulator-5554`, AVD `warsha_pixel`, API 35. Cold-booted at 1080×2400 @420dpi (**411dp**). The sweep drives 320dp by `wm size 720x1600` + `wm density 360` and resets afterwards |
-| Installed APK | Production-targeted, proven by `scripts/android-e2e/backend-target.mjs` |
+| Installed APK | **DEVELOPMENT-targeted** as of the last capture. `android/app/build/outputs/apk/release/app-release.apk` is the development build too — the Production one was overwritten. Rebuild with `D:/Warsha-Temp/prod-env.txt` layered over `.env` before any Production journey work, and let `backend-target.mjs` confirm it |
 | QA credential | `D:/Warsha-Temp/qa-worker.json`, **rotated 2026-09-10**, now carries `"environment": "production"` |
 | Docker | still installed with auto-start disabled; **stack should be stopped when unused** |
 
@@ -72,18 +72,25 @@ the profession/trade screens. Full findings and severities in
 
 ## Open — highest priority first
 
-### 1. The trade picker has not been seen
+### 1. The Production professional journey stands at step 4 of 7
 
-It is the screen the whole programme was anchored on, it is redesigned, and
-there is no render of it. The QA account advanced past onboarding step 3, so the
-selector is no longer on its path. Reach it from `app/worker/profile.tsx`, which
-hosts the same component, once the application completes.
+The trade picker itself is **done and rendered** — see
+`docs/ux/mobile-visual-certification.md`, "The anchor screen, rendered". That
+capture is a DEVELOPMENT build with a throwaway account, which is admissible for
+layout and text and for nothing else.
 
-### 2. The professional journey stands at step 4 of 7
+What remains on Production is the journey: step 4 needs the current address, and
+then identity, criminal record and review. A throwaway professional now also
+exists in development (`Warsha Design QA`, a 010123xxxxx phone) — harmless
+there, and worth knowing about before someone wonders where it came from.
 
-Steps 1–3 are done and saved (Plumber, three services, Cairo/Abdin). Step 4
-needs the current address; the address search works and returns live Google
-Places results. Then identity, criminal record, review.
+### 2. Two things about the address step
+
+Steps 1–3 are done and saved on Production (Plumber, three services,
+Cairo/Abdin). The address search works and returns live Google Places results,
+but it returns BUSINESSES for most queries, and a real named establishment is
+not synthetic data — a public thoroughfare is. The map picker avoids the problem
+entirely by placing a coordinate that names nobody, and is the better path.
 
 **GPS is unexercised.** "Use my current location" needs the emulator console,
 whose auth token file is sixteen null bytes, so `geo fix` is refused. A cold
