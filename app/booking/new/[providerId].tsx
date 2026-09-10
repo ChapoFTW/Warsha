@@ -810,7 +810,7 @@ const styles = StyleSheet.create({
   progressItem: { flex: 1, gap: 5 },
   bar: { height: 2, borderRadius: 2, backgroundColor: colors.border },
   barActive: { backgroundColor: colors.white },
-  progressLabel: { fontSize: 8, color: colors.textMuted, textAlign: "center" },
+  progressLabel: { ...typography.caption, letterSpacing: 0, color: colors.textMuted, textAlign: "center" },
   activeLabel: { color: colors.white },
   content: {
     paddingHorizontal: spacing.lg,
@@ -821,8 +821,8 @@ const styles = StyleSheet.create({
     alignSelf: "center",
   },
   section: { gap: spacing.lg },
-  title: { fontSize: 23, fontWeight: typography.bold },
-  help: { fontSize: 11, lineHeight: 16, color: colors.textMuted },
+  title: { ...typography.h2, fontWeight: typography.bold },
+  help: { ...typography.bodySmall, color: colors.textMuted },
   card: {
     minHeight: 76,
     flexDirection: "row",
@@ -839,8 +839,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceElevated,
   },
   grow: { flex: 1, gap: 4 },
-  cardTitle: { fontSize: 13, fontWeight: typography.semibold },
-  price: { fontSize: 14, fontWeight: typography.bold },
+  cardTitle: { ...typography.bodySmall, fontWeight: typography.semibold },
+  price: { ...typography.body, fontWeight: typography.bold },
   field: { gap: spacing.sm },
   input: {
     minHeight: 50,
@@ -907,7 +907,7 @@ const styles = StyleSheet.create({
     borderColor: colors.warning,
     borderRadius: radii.md,
   },
-  warningText: { fontSize: 11, lineHeight: 17, color: colors.warning },
+  warningText: { ...typography.bodySmall, color: colors.warning },
   dates: { gap: spacing.sm },
   times: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
   time: {
@@ -935,8 +935,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: spacing.lg,
   },
-  summaryValue: { fontSize: 13, fontWeight: typography.semibold, flex: 1.5 },
-  error: { fontSize: 12, color: colors.error, marginTop: spacing.lg },
+  summaryValue: { ...typography.bodySmall, fontWeight: typography.semibold, flex: 1.5 },
+  error: { ...typography.bodySmall, color: colors.error, marginTop: spacing.lg },
   empty: { padding: spacing.xxxl },
   footer: {
     position: "absolute",
