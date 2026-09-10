@@ -52,6 +52,42 @@ const SHARED_WITH_FRENCH: Record<string, string[]> = {
   'legal-copy.legalCopy': [],
   'growth-copy.growthCopy': [],
   'auth-outcome-copy.authOutcomeCopy': [],
+
+  /*
+   * The web. Checked because it uses the same spread, and found sound: every
+   * one of these is the same word in French, a brand, or a vendor's name.
+   * Listed individually anyway — "Services" being identical is a fact about
+   * French, and the next string to fall through will not be.
+   */
+  'web-copy.copy': [
+    'brand', 'footerWarsha',                       // Warsha
+    'navServices', 'footerServices',               // Services
+    'navMenu',                                     // Menu
+    'footerContact',                               // Contact
+    'legalVersion',                                // Version
+    // Language names are shown in their own script, in every locale.
+    'languageEnglish', 'languageArabic', 'languageFrench',
+  ],
+  'web-app-copy.appCopy': [
+    'navNotifications', 'notifications', 'category_messages',
+    'consoleSession', 'providerActionsTitle', 'analyticsColDate', 'auditSource',
+    'colAction', 'source_configuration_history', 'caseDocument',
+    'detailEnforcement', 'enforcement_suspension', 'reason_discrimination',
+    'supportMessageCount', 'quoteMinutes', 'pagerPage',
+    'currencyEgp',                                 // EGP
+    'platformEnvProduction',                       // Warsha Production
+    'providerMapsName', 'providerMapsName_vision', // vendor product names
+  ],
+  'web-worker-copy.workerCopy': ['earningsMinimum'],
+};
+
+/*
+ * Arabic legitimately shares three strings with English, and only these: the
+ * language names, which every locale shows in their own script so a reader can
+ * find their own language without already reading the current one.
+ */
+const SHARED_WITH_ARABIC: Record<string, string[]> = {
+  'web-copy.copy': ['languageEnglish', 'languageArabic', 'languageFrench'],
 };
 
 /*
@@ -90,6 +126,10 @@ const MODULES = [
   ['legal-copy', '../src/legal/legal-copy.ts'],
   ['growth-copy', '../src/growth/growth-copy.ts'],
   ['auth-outcome-copy', '../src/auth/auth-outcome-copy.ts'],
+  // The web restates its own copy, with the same spread and the same risk.
+  ['web-copy', '../web/lib/copy.ts'],
+  ['web-app-copy', '../web/lib/app-copy.ts'],
+  ['web-worker-copy', '../web/lib/worker-copy.ts'],
 ] as const;
 
 const tablesChecked: string[] = [];
@@ -111,7 +151,7 @@ for (const [name, path] of MODULES) {
     // Arabic shares no vocabulary with English, so anything identical there is
     // a forgotten translation with no exceptions worth arguing about.
     const arabicFallthrough = keys.filter((key) => ar[key] === en[key]);
-    equal(arabicFallthrough, [],
+    equal(arabicFallthrough.sort(), [...(SHARED_WITH_ARABIC[id] ?? [])].sort(),
       `${id}: these Arabic strings are still English — ${arabicFallthrough.slice(0, 8).join(', ')}`);
 
     const frenchFallthrough = keys.filter((key) => fr[key] === en[key]);
@@ -170,6 +210,9 @@ equal(tablesChecked.sort(), [
   'notification-copy.copy',
   'onboarding-copy.onboardingCopy',
   'translations.translations',
+  'web-app-copy.appCopy',
+  'web-copy.copy',
+  'web-worker-copy.workerCopy',
 ], 'the copy tables reachable at runtime are exactly the ones expected — one '
   + 'disappearing means a table stopped being auditable, not that it became correct');
 
