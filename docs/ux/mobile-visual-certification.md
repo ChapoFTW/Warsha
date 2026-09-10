@@ -467,6 +467,36 @@ walk believed it. What broke the loop was making the harness say what it saw —
 tracing every hop including optional ones, and photographing the screen it gave
 up on.
 
+## Search, rendered
+
+The feature's whole claim is that the query gets in through any language and
+the answer comes back in the reader's, and only a render can show the second
+half. `320dp-light-1x-en-US-search-foreign.png`: an English screen, `plombier`
+typed, one row returned — **Plumbing**. The English label, not the French one.
+
+`-search-none` shows the dead end: a mark, "No matches", and "Try a shorter
+word, or clear the search to see every kind of work."
+
+**V-P3 — the recovery action sits behind the keyboard at 320dp.** `EmptyState`
+is `minHeight: 188` plus `spacing.xl` padding, so with the keyboard up on a
+compact screen its "Clear search" button and the second line of its guidance are
+below the fold. Recoverable — the list scrolls and `keyboardShouldPersistTaps`
+is `"handled"`, so it can be reached and tapped without dismissing the keyboard
+— and the information that matters ("nothing matched") is fully visible with the
+user's own text still in the field above it.
+
+Not fixed. `EmptyState` is shared, `minHeight` is what gives it presence
+everywhere else, and none of its other uses has been rendered this programme.
+Trading their appearance for a convenience button on this one is not a trade to
+make blind.
+
+**Arabic cannot be typed on the device at all.** `adb input text` sends ASCII,
+so `سباك` cannot be entered without installing a helper IME onto the device
+under test — which would change what is being certified. The mirror case is
+covered by the taxonomy matrix, which walks all six terms per identity against
+every screen language; what is rendered here is the case that matters most in
+Egypt, a Latin keyboard open on a non-Latin screen.
+
 ## Still open on this screen
 
 | | |
