@@ -3,7 +3,7 @@
 Written so the next session resumes without asking the owner to reconstruct
 anything.
 
-**Updated:** 2026-09-10 · **HEAD = origin/main = `33dba8e`** · working tree clean
+**Updated:** 2026-09-10 · working tree clean, everything pushed to `origin/main`
 
 ---
 
@@ -64,9 +64,9 @@ the profession/trade screens. Full findings and severities in
 
 | | Start | Now |
 | --- | --- | --- |
-| Hardcoded font sizes (app) | 369 | 227 |
+| Hardcoded font sizes (app) | 369 | 126 |
 | Hardcoded font sizes (web) | 150 | 137 |
-| Files adopting the type scale | 9 | 28 |
+| Files adopting the type scale | 9 | 42 |
 
 ---
 
