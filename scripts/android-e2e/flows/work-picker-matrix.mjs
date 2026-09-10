@@ -17,7 +17,9 @@
 import { copyFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { describeScreen, screenshot, scrollDown, shell, sleep, tree } from '../driver.mjs';
+import {
+  describeScreen, screenshot, screenSize, scrollDown, shell, sleep, tree,
+} from '../driver.mjs';
 import { assertBackendTarget } from '../backend-target.mjs';
 import { installPhotoFixture } from '../photo-fixture.mjs';
 import { apply, combinations, resetDevice, VIEWPORTS } from '../appearance-matrix.mjs';
@@ -87,8 +89,20 @@ async function capture(name, note) {
    */
   const onScreen = (bounds) => bounds
     && bounds.right - bounds.left > 0 && bounds.bottom - bounds.top > 0;
+  /*
+   * Measured in dp, which is what the 44 refers to.
+   *
+   * Bounds come back in PIXELS. Comparing them to 44 directly passes almost
+   * everything on a modern phone: at 2.625x a 44px control is 17dp, less than
+   * half the minimum, and the check called it fine. Every "clean" verdict this
+   * produced about touch targets was measuring the wrong unit — which is worse
+   * than not checking, because it was being recorded as evidence.
+   */
+  const { density } = screenSize();
+  const dp = (pixels) => Math.round(pixels / density);
   const small = nodes.filter((node) => node.clickable && onScreen(node.bounds)
-    && (node.bounds.right - node.bounds.left < 44 || node.bounds.bottom - node.bounds.top < 44))
+    && (dp(node.bounds.right - node.bounds.left) < 44
+      || dp(node.bounds.bottom - node.bounds.top) < 44))
     .map((node) => `${label(node).slice(0, 28)} ${node.bounds.right - node.bounds.left}x${node.bounds.bottom - node.bounds.top}`);
   const composed = nodes.filter((node) => /^\s*,/.test(node.desc ?? '')).length;
   // A row whose label is clipped is the failure long Arabic and French labels

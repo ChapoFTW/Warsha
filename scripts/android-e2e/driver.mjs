@@ -133,10 +133,28 @@ export function install(apkPath) {
 export function screenSize() {
   const report = adb(['shell', 'wm', 'size']);
   const size = report.match(/Override size:\s*(\d+)x(\d+)/) ?? report.match(/(\d+)x(\d+)/);
-  return size
-    ? { width: Number(size[1]), height: Number(size[2]) }
-    : { width: 1080, height: 2400 };
+  /*
+   * Density comes back the same way, and for the same reason: `wm density`
+   * prints the physical value and then the override, and the override is the
+   * one the screen is actually being drawn at.
+   *
+   * It is here because bounds are reported in PIXELS and every rule worth
+   * checking is written in dp. A 44px control is a comfortable target on a
+   * 160dpi screen and a 17dp one at 2.625x — so a check that compares pixels to
+   * 44 passes everything on a modern phone and means nothing at all.
+   */
+  const densityReport = adb(['shell', 'wm', 'density']);
+  const density = densityReport.match(/Override density:\s*(\d+)/)
+    ?? densityReport.match(/(\d+)/);
+  return {
+    width: size ? Number(size[1]) : 1080,
+    height: size ? Number(size[2]) : 2400,
+    density: density ? Number(density[1]) / 160 : 1,
+  };
 }
+
+/** Pixels as the rules are written: in dp. */
+export const toDp = (pixels, density) => Math.round(pixels / density);
 
 
 
