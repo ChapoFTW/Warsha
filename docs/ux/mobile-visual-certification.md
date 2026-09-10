@@ -355,6 +355,22 @@ without pretending to be unavailable.
 This is a shared-primitive change, so it is certified on the work picker only;
 every other disabled button in the app inherits it uncertified.
 
+**And the primitive is not the only place it happens.** Eighteen files pair a
+solid fill with an opacity-only disabled style, counted by
+`scripts/disabled-state-contract.test.mts`:
+
+| | |
+| --- | --- |
+| 5 confirmed | `notification-preferences`, `provider-certificates`, `provider-earnings`, `provider-portfolio`, `reset-password` — each hand-rolls a primary button with a `colors.white` fill instead of using `BrandButton`, so each reproduces the defect the primitive no longer has |
+| 12 unreviewed | flagged by co-occurrence, not yet read |
+| 1 cleared | `OptionRow` — its solid fill is the selected tick while the opacity fades the whole row, which is what a row at the ten-selection cap should do |
+
+The detection is file-level and the test says so: regex cannot tell whether a
+fill and an opacity sit on the same control. It is an inventory that cannot grow
+quietly, not a verdict. The five are unfixed because the fix is to use
+`BrandButton`, and that changes how five screens look — worth seeing before
+shipping.
+
 ## Evidence
 
 `D:/Warsha-Temp/wm-2026-09-10T04-38-20/`, one folder per run, stamped with when
