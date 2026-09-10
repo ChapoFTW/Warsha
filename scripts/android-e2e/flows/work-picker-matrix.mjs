@@ -541,8 +541,6 @@ try {
      * comes along for free, which is the other half of what this control exists
      * to express.
      */
-    if (argv.includes('--search-states')) await captureSearchStates(combination);
-
     /*
      * Tap a row by its LABEL, not by its position.
      *
@@ -557,8 +555,16 @@ try {
      */
     const workLabels = new Set(professions.map((profession) =>
       profession.work[combination.language.slice(0, 2)]));
+    /*
+     * Matched on the accessibility label, not on `text`.
+     *
+     * `OptionRow` carries its name in `accessibilityLabel`, which reaches
+     * uiautomator as `content-desc` and leaves the row container's `text`
+     * empty. Matching `text` therefore found nothing and reported the enabled
+     * button as uncertified on a screen showing thirty-four matching rows.
+     */
     const row = tree().find((node) => node.clickable && node.bounds
-      && workLabels.has((node.text ?? '').trim()));
+      && workLabels.has(label(node).trim()));
     if (row) {
       shell(`input tap ${row.bounds.cx} ${row.bounds.cy}`);
       await sleep(1600);
@@ -567,11 +573,19 @@ try {
       // Proved, not assumed: the counter has to have moved, or the tap landed
       // on something that was not a row and the capture is not evidence.
       const counted = describeScreen(tree()).includes('1 / 10');
-      console.log(`    selected "${(row.text ?? '').trim()}"`
+      console.log(`    selected "${label(row).trim()}"`
         + `${counted ? '' : ' — BUT THE COUNTER DID NOT MOVE'}`);
     } else {
       console.log('    no work row found to select — the enabled button is not certified here');
     }
+
+    /*
+     * Search LAST, because typing leaves a keyboard over the list and a query
+     * in the box. Running it before the selected-state capture meant that
+     * capture was taken through a keyboard, on a filtered list, with the field
+     * still focused.
+     */
+    if (argv.includes('--search-states')) await captureSearchStates(combination);
   }
 } finally {
   resetDevice();
