@@ -498,14 +498,34 @@ try {
      */
     if (argv.includes('--search-states')) await captureSearchStates(combination);
 
+    /*
+     * Tap a row by its LABEL, not by its position.
+     *
+     * This used to take the first clickable node below y=600, and on the Arabic
+     * dark run that was the search field: the capture shows an open keyboard, a
+     * focused text box and a counter still reading 0 / 10. A screenshot named
+     * "selected" showing nothing selected is worse than no screenshot, because
+     * it is filed as evidence.
+     *
+     * The taxonomy already knows what a work row says in this language, so ask
+     * for one of those.
+     */
+    const workLabels = new Set(professions.map((profession) =>
+      profession.work[combination.language.slice(0, 2)]));
     const row = tree().find((node) => node.clickable && node.bounds
-      && node.bounds.top > 600 && /\S/.test(label(node)));
+      && workLabels.has((node.text ?? '').trim()));
     if (row) {
       shell(`input tap ${row.bounds.cx} ${row.bounds.cy}`);
       await sleep(1600);
       await capture(`${combination.name}-03-selected`, combination);
+
+      // Proved, not assumed: the counter has to have moved, or the tap landed
+      // on something that was not a row and the capture is not evidence.
+      const counted = describeScreen(tree()).includes('1 / 10');
+      console.log(`    selected "${(row.text ?? '').trim()}"`
+        + `${counted ? '' : ' — BUT THE COUNTER DID NOT MOVE'}`);
     } else {
-      console.log('    no row to select — the enabled button is not certified here');
+      console.log('    no work row found to select — the enabled button is not certified here');
     }
   }
 } finally {
