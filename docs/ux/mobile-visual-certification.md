@@ -410,6 +410,52 @@ and an endless animation never does, which would block the sweep indefinitely
 while holding the device — neither progressing nor failing. Two minutes now, and
 a stall is reported as a stall.
 
+## The certification run, and the six harness defects it took to get one
+
+Eight configurations: 320dp in EN/AR/FR, ~411dp in EN/AR/FR, light and dark,
+default and 1.3x text. Evidence in `D:/Warsha-Temp/cert-*/`, one stamped folder
+per run, each capture accompanied by the accessibility tree it was taken from.
+
+| Axis | Result |
+| --- | --- |
+| **AR RTL · 320dp · light** | **34/34 labels seen** — the hard gate |
+| EN · 320dp · light | 34/34 |
+| EN · 411dp · dark | 34/34 |
+| FR · 411dp · light | 34/34 |
+| EN · 411dp · 1.3x | 34/34 |
+
+Arabic RTL at 320dp, read off the render and its tree: title right-aligned with
+the close control on the left, the trade mark trailing and the state mark
+leading — mirrored correctly — and `0 / 10` holding LTR inside RTL text through
+its bidi isolates. No clipping on the longest label, `تركيب أنظمة المنزل الذكي`.
+Accessibility names are the plain work nouns and **zero** composed names.
+
+The disabled/enabled contract is certified in both states there. At 0 / 10, `تم`
+is an outline that recedes; one row selected, it is solid and the loudest thing
+on the screen. The selected row moves three channels at once — ground, a
+thickened border, and a filled mark.
+
+### Six harness defects, five of which looked like product defects
+
+Arabic failed six runs before any of this could be seen, and it was never
+Arabic. Recorded because each one produced a confident wrong answer, and three
+of them were mine.
+
+| Defect | What it looked like |
+| --- | --- |
+| `wm size` prints **Physical** *and* **Override**; every gesture took the first | On a device overridden to 320dp the swipe started ~150px below the bottom edge and did nothing. A swipe that does nothing is indistinguishable from a page with nothing below it — so a consent card below the fold was reported absent, and the walk pressed a Create account button disabled for want of it |
+| `driver.scrollDown` **cached** the viewport | Every configuration after the first scrolled by the first one's dimensions, on a matrix whose whole purpose is changing them |
+| Consents are not `android.widget.CheckBox` | `accessibilityRole="checkbox"` reaches a screen reader correctly and uiautomator as a plain `View`. Class matching found nothing, and "no consents pending" reads identically to "all consents accepted" |
+| `hop` tapped a **disabled** control and counted it as progress | Then spent three optional hops looking for screens that were never going to arrive, and reported failure four screens from the cause |
+| Guessed Arabic and French labels | `أوافق` for `موافق`, `اختار من المعرض` for `اختار من الصور`, `J’accepte` for `J'accepte`. Three near-misses, three lost runs; matching now folds apostrophes and the constants are taken from the copy |
+| Two "have we reached the bottom" heuristics | Both wrong, both mine. One compared the checkbox list, empty above the consent card; the other compared two dumps either side of one swipe. The coverage accounting already knows when 34/34 have been seen, which is a better reason to stop than a dropped frame |
+
+The pattern in all six: **a measurement that cannot fail is not a measurement.**
+Every one of them returned a plausible value that happened to be wrong, and the
+walk believed it. What broke the loop was making the harness say what it saw —
+tracing every hop including optional ones, and photographing the screen it gave
+up on.
+
 ## Still open on this screen
 
 | | |
