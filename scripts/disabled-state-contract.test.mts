@@ -72,10 +72,21 @@ const flagged = files.filter((file) => {
 /*
  * READ, and confirmed: each hand-rolls a primary button whose fill is
  * `colors.white` and whose disabled state is opacity on that same button. Each
- * one reproduces the defect the primitive no longer has. Unfixed, because
- * fixing them changes how five screens look and none has been rendered this
- * programme — the fix is to use `BrandButton`, and that is a change worth
- * seeing before shipping.
+ * one reproduces the defect the primitive no longer has — white at 42% over
+ * their ground is a grey slab, and it is the loudest thing on the screen.
+ *
+ * The fix is NOT simply to use `BrandButton`. These screens sit on a fixed dark
+ * brand canvas — `reset-password` styles its input text `colors.white`
+ * regardless of theme — which is why their primary is white rather than
+ * `textPrimary`. `BrandButton`'s primary grounds itself in `textPrimary`, which
+ * is near-black in the light theme, so converting them would put a black button
+ * on a dark canvas and call it a fix.
+ *
+ * What carries across is the CONTRACT, not the colour: a disabled action loses
+ * its fill and keeps a legible label. Expressing that in this palette changes
+ * how five screens look, and none has been rendered this programme. Worth
+ * seeing before shipping, which is why they are counted here rather than
+ * quietly edited.
  */
 const CONFIRMED = [
   'app/notification-preferences.tsx',
