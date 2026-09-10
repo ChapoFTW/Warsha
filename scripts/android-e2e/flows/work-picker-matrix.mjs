@@ -22,6 +22,7 @@ import { assertBackendTarget } from '../backend-target.mjs';
 import { installPhotoFixture } from '../photo-fixture.mjs';
 import { acceptAllConsents } from '../consents.mjs';
 import { apply, combinations, resetDevice, VIEWPORTS } from '../appearance-matrix.mjs';
+import { professions } from '../../../src/providers/profession-taxonomy.ts';
 
 const argv = process.argv.slice(2);
 const tagIndex = argv.indexOf('--tag');
@@ -114,6 +115,62 @@ async function capture(name, note) {
     truncated.length ? `TRUNCATED ${truncated.length}` : '',
   ].filter(Boolean).join('  ');
   console.log(`    ${name.padEnd(34)} ${flags || 'clean'}`);
+}
+
+/**
+ * Photograph the ENTIRE list, not the first viewport.
+ *
+ * Thirty-six work labels do not fit on any of these screens, and the ones most
+ * likely to be wrong are not at the top — the long French compounds, the
+ * categories whose heading was dropped, the withdrawn rows. A sweep that
+ * photographs the first screenful certifies about eight of them and calls the
+ * list clean.
+ *
+ * So this scrolls to the bottom, photographs each viewport, and accumulates
+ * every row label it saw. The accumulated set is then checked against the
+ * taxonomy, which is what turns "the whole list was inspected" into something
+ * the run either proves or fails to prove. A label the scroll never reached is
+ * reported as UNSEEN rather than silently counting as inspected.
+ */
+async function captureWholeList(combination, language) {
+  const expected = new Set(professions.map((profession) => profession.work[language]));
+  const seen = new Set();
+  const noteLabels = (nodes) => {
+    for (const node of nodes) {
+      const text = (node.text ?? '').trim();
+      if (expected.has(text)) seen.add(text);
+    }
+  };
+
+  let previous = '';
+  for (let page = 0; page < 14; page += 1) {
+    const nodes = tree();
+    noteLabels(nodes);
+    const description = describeScreen(nodes);
+    // The bottom announces itself by the screen no longer changing, which also
+    // covers a list shorter than the page budget.
+    if (page > 0 && description === previous) break;
+    previous = description;
+
+    await capture(`${combination.name}-list-${String(page).padStart(2, '0')}`, combination);
+    shell('input swipe 540 1500 540 620 420');
+    await sleep(1100);
+  }
+  noteLabels(tree());
+
+  const unseen = [...expected].filter((text) => !seen.has(text));
+  console.log(`    list: ${seen.size}/${expected.size} work labels seen`
+    + (unseen.length ? `  UNSEEN ${unseen.slice(0, 6).join(', ')}` : ''));
+  findings.push({
+    name: `${combination.name}-list-coverage`,
+    note: combination,
+    overflow: 0,
+    small: [],
+    composed: 0,
+    truncated: [],
+    unseen,
+  });
+  return unseen;
 }
 
 /**
@@ -223,6 +280,7 @@ try {
     await capture(`${combination.name}-01-step`, combination);
     await tap(OPEN_PICKER, { settle: 2800 });
     await capture(`${combination.name}-02-picker`, combination);
+    await captureWholeList(combination, combination.language.slice(0, 2));
   }
 } finally {
   resetDevice();
@@ -230,12 +288,15 @@ try {
 
 console.log(`\n${findings.length} states captured into ${OUT}`);
 const problems = findings.filter((entry) => entry.overflow || entry.small.length
-  || entry.composed || entry.truncated.length);
+  || entry.composed || entry.truncated.length || entry.unseen?.length);
 if (problems.length) {
   console.log('\nstates needing a look:');
   for (const entry of problems) {
     console.log(`  ${entry.name}`);
     for (const item of entry.small) console.log(`    small target: ${item}`);
     for (const item of entry.truncated) console.log(`    truncated: ${JSON.stringify(item)}`);
+    // Reported, not thrown: a label the scroll missed may be the scroll's fault
+    // rather than the screen's, and the screenshots are there to tell which.
+    for (const item of entry.unseen ?? []) console.log(`    never scrolled into view: ${item}`);
   }
 }

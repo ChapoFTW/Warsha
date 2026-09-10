@@ -90,6 +90,10 @@ const PROFESSIONAL_SURFACES = [
   'components/warsha/ProfessionSelector.tsx',
   'components/warsha/OfferedServicesSection.tsx',
   'app/worker/profile.tsx',
+  // The same professional, on the web. `web` sits outside the root tsconfig, so
+  // a taxonomy change can break it while `npm run typecheck` stays green — this
+  // is the only thing holding the web editor to the same audience as the app.
+  'web/components/worker-profile-editor.tsx',
 ];
 const CUSTOMER_SURFACES = [
   'app/provider/[id].tsx',
