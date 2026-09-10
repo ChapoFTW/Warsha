@@ -231,4 +231,63 @@ for (const uiLanguage of LANGUAGES) {
   equal(nonsense, [], 'a query matching nothing widens to nothing');
 }
 
+// --- Categories and specific services, in every language ---------------------
+/*
+ * Requirement said to give categories and specific services the same treatment
+ * as professions. Most of it was already there: `SERVICE_SEARCH_ALIASES` has
+ * carried a per-language vocabulary since the locksmith was found to be
+ * unreachable, and `specificTermsByCategory` folds every service's three labels
+ * into the same matcher.
+ *
+ * What was missing is the proof across the WHOLE catalogue rather than the
+ * handful of examples the feature gets described with. A service whose French
+ * label was never written is invisible until a French customer types it, and
+ * the fallback means it still renders something.
+ */
+{
+  const { matchServiceCategories } = await import('../src/services/service-search-aliases.ts');
+  const { specificServices } = await import('../src/services/specific-services.ts');
+
+  ok(specificServices.length > 40, 'the whole catalogue is being walked, not a sample');
+
+  for (const service of specificServices) {
+    for (const language of LANGUAGES) {
+      const label = service[language];
+      ok(typeof label === 'string' && label.trim().length > 0,
+        `${service.key}: has a ${language} label at all`);
+
+      const matched = matchServiceCategories(label);
+      ok(matched.includes(service.categoryId),
+        `${service.key}: its ${language} label "${label}" reaches ${service.categoryId} — `
+        + 'a customer typing the service they want, in any language, finds the trade that does it');
+    }
+  }
+
+  // And the category's own name, in each language, reaches it.
+  for (const [query, categoryId] of [
+    ['plumbing', 'plumbing'], ['سباكة', 'plumbing'], ['plomberie', 'plumbing'],
+    ['electrician', 'electrical'], ['كهربائي', 'electrical'], ['électricien', 'electrical'],
+    ['كالون', 'locksmithing'], ['serrurier', 'locksmithing'],
+  ] as const) {
+    ok(matchServiceCategories(query).includes(categoryId),
+      `"${query}" reaches the ${categoryId} category whatever the interface language`);
+  }
+}
+
+// --- One folding, shared -----------------------------------------------------
+/*
+ * The category matcher and the profession search must normalise identically, or
+ * a spelling reaches one and not the other. They did not, briefly: this file's
+ * subject grew a second implementation of a folding `foldSearchTerm` already
+ * did. Asserted rather than trusted, because two functions agreeing today is
+ * not the same as one function.
+ */
+{
+  const { foldSearchTerm } = await import('../src/services/service-search-aliases.ts');
+  for (const sample of ['Électricité', 'سَبَّاكَة', 'ســباكة', 'إسكندرية', 'Smart-Home', '  spaced  ']) {
+    equal(foldSearchTerm(sample), normalizeSearchText(sample),
+      `"${sample}" folds the same way for categories and for professions`);
+  }
+}
+
 console.log(`Multilingual search: ${checks} checks passed.`);
