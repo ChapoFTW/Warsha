@@ -15,6 +15,8 @@ export type MapRendererCopy = {
   /** Shown when no map can be drawn. Must never read as "you cannot continue". */
   unavailable: string;
   dragHint: string;
+  /** Shown while the map is coming up, so the space is never a blank rectangle. */
+  loading: string;
 };
 
 export type MapRendererProps = {

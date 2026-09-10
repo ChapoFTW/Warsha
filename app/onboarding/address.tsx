@@ -75,6 +75,7 @@ function WorkerCurrentLocationFlow({ area }: { area: ProviderAreaInput | null })
     providerUnavailable: wt.text('locationProviderUnavailable'),
     permissionOptional: wt.text('locationPermissionOptional'),
     mapUnavailable: wt.text('locationProviderUnavailable'),
+    mapLoading: wt.text('mapLoading'),
     mapDragHint: wt.text('mapDragHint'),
     loading: wt.text('locationLoading'),
   };
@@ -220,6 +221,7 @@ function CustomerDestinationAddressFlow() {
     providerUnavailable: ot.text('addressLocationUnavailableNote'),
     permissionOptional: ot.text('addressPermissionOptional'),
     mapUnavailable: ot.text('addressLocationUnavailableNote'),
+    mapLoading: ot.text('addressMapLoading'),
     mapDragHint: ot.text('addressMapDragHint'),
     loading: ot.text('addressLocationLoading'),
   };

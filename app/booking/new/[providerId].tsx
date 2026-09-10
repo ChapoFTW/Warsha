@@ -132,7 +132,7 @@ export default function NewBookingScreen() {
     locationPermissionDenied: addressText('permissionDenied'), locationServicesDisabled: addressText('servicesDisabled'),
     locationDeviceUnavailable: addressText('deviceUnavailable'), noSearchResults: addressText('noResults'),
     providerUnavailable: addressText('providerUnavailable'), permissionOptional: addressText('permissionOptional'),
-    mapUnavailable: addressText('mapUnavailable'), mapDragHint: addressText('mapHint'), loading: addressText('loading'),
+    mapUnavailable: addressText('mapUnavailable'), mapLoading: addressText('mapLoading'), mapDragHint: addressText('mapHint'), loading: addressText('loading'),
   };
   useEffect(
     () => () => {

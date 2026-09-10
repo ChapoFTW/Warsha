@@ -36,6 +36,7 @@ export type AddressLocationPickerCopy = {
   providerUnavailable: string;
   permissionOptional: string;
   mapUnavailable: string;
+  mapLoading: string;
   mapDragHint: string;
   loading: string;
 };
@@ -272,7 +273,8 @@ export function AddressLocationPicker({
           onChange={position => void choosePosition(position, 'manual_pin')}
           mapsAvailable
           rendererKey={availability.rendererKey}
-          copy={{ unavailable: copy.mapUnavailable, dragHint: copy.mapDragHint }}
+          copy={{ unavailable: copy.mapUnavailable, dragHint: copy.mapDragHint,
+            loading: copy.mapLoading }}
         />
       ) : null}
 
