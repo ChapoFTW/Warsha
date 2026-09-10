@@ -252,7 +252,16 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   reverse: { flexDirection: 'row-reverse' },
   card: { backgroundColor: colors.surface, borderRadius: radii.md, padding: spacing.lg },
   cardModal: { borderRadius: radii.lg },
-  fieldLabel: { ...typography.caption, marginBottom: rhythm.fieldLabel, color: colors.textSecondary, fontWeight: typography.semibold },
+  /*
+   * `bodySmall`, not `caption`.
+   *
+   * Measured at 320dp in Arabic, a caption label rendered 16dp tall -- the
+   * same step Warsha uses for a timestamp, carrying the words that say what
+   * to type. `caption` also has 0.8px of tracking, which is right for a
+   * short uppercase badge and wrong for a sentence, and Arabic has no
+   * uppercase at all.
+   */
+  fieldLabel: { ...typography.bodySmall, letterSpacing: 0, marginBottom: rhythm.fieldLabel, color: colors.textSecondary, fontWeight: typography.semibold },
   field: {
     minHeight: 48,
     borderWidth: 1,
@@ -268,8 +277,8 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   fieldRTL: { textAlign: 'right', writingDirection: 'rtl' },
   fieldFocused: { borderColor: colors.borderFocus, backgroundColor: colors.surfaceElevated },
   fieldError: { borderColor: colors.error },
-  errorText: { ...typography.caption, marginTop: rhythm.fieldHelp, color: colors.error },
-  helperText: { ...typography.caption, marginTop: rhythm.fieldHelp, color: colors.textMuted },
+  errorText: { ...typography.bodySmall, letterSpacing: 0, marginTop: rhythm.fieldHelp, color: colors.error },
+  helperText: { ...typography.bodySmall, letterSpacing: 0, marginTop: rhythm.fieldHelp, color: colors.textMuted },
   badge: {
     minHeight: 30,
     maxWidth: '100%',

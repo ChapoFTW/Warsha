@@ -189,8 +189,16 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingTop: spacing.xxxl,
     gap: spacing.xl,
   },
-  /** Brand, headline and the two reasons to believe it. */
-  proposition: { width: '100%', alignItems: 'center', gap: spacing.xl },
+  /**
+   * Brand, headline and the two reasons to believe it.
+   *
+   * `flex: 1` so it claims everything above the actions and centres inside
+   * it. Without that, `space-between` pooled every spare pixel into a
+   * single void between the trust rows and the buttons -- about eight
+   * hundred of them on a tall phone, which read worse than the centred
+   * column it replaced.
+   */
+  proposition: { flex: 1, width: '100%', alignItems: 'center', justifyContent: 'center', gap: spacing.xl },
   /** What to do about it, and the small print underneath. */
   decide: { width: '100%', alignItems: 'center', gap: spacing.lg },
   intro: { gap: spacing.sm, maxWidth: 520 },

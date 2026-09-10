@@ -143,9 +143,13 @@ export default function SignIn() {
           <AppText accessibilityRole="alert" style={styles.error}>{message}</AppText>
         ) : null}
 
+        {/* Full width, like the button above it. Outside `styles.form` it
+            sized to its own label -- 240px under a 612px primary -- which reads
+            as a mistake rather than as a hierarchy. */}
         <BrandButton
           label={ot.text('createAccount')}
           variant="secondary"
+          style={styles.secondaryAction}
           onPress={() => router.replace('/create-account')}
         />
       </ScrollView>
@@ -166,4 +170,5 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   form: { width: '100%', maxWidth: 420, gap: spacing.md },
   modeHelp: { ...typography.body, color: colors.textSecondary },
   error: { ...typography.body, color: colors.errorText, textAlign: 'center', maxWidth: 420 },
+  secondaryAction: { width: '100%', maxWidth: 420 },
 });

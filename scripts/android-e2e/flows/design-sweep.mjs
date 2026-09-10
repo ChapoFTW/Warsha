@@ -76,6 +76,28 @@ async function tap(needle, { optional = false, settle = 1800 } = {}) {
   return true;
 }
 
+/**
+ * Wait until the app has finished loading, rather than for a number of seconds.
+ *
+ * The first version slept seven seconds and captured whatever was there. On a
+ * cold start after an install that is the splash: four runs produced four
+ * screenshots of "Loading Warsha" and reported all four clean, because a
+ * loading screen has no overflow and no small tap targets. A fixed sleep is not
+ * a readiness check, and a sweep that photographs the wrong screen is worse
+ * than one that fails, because it produces evidence.
+ */
+async function waitForContent({ timeout = 30_000 } = {}) {
+  const deadline = Date.now() + timeout;
+  while (Date.now() < deadline) {
+    const nodes = tree();
+    const text = nodes.map(label).join(' ');
+    const loading = /Loading Warsha|جارٍ تحميل|جاري تحميل/i.test(text);
+    if (!loading && nodes.filter((node) => label(node)).length >= 4) return true;
+    await sleep(1000);
+  }
+  return false;
+}
+
 const findings = [];
 
 /**
@@ -114,24 +136,43 @@ async function walk(viewport, language) {
   const controls = CONTROLS[language];
   console.log(`\n--- ${viewport.name} ${language} ---`);
 
+  /*
+   * Cleared, not merely restarted.
+   *
+   * These are the SIGNED-OUT screens, and a device that has been used for the
+   * authenticated journey routes straight past all of them to wherever that
+   * account left off. Clearing is what makes this walk mean the same thing on
+   * every device it is run on.
+   */
+  shell('pm clear com.warsha.app');
+  await sleep(2500);
   shell(`cmd locale set-app-locales com.warsha.app --locales ${language}`);
-  shell('am force-stop com.warsha.app');
-  await sleep(1400);
+  await sleep(800);
   shell('am start -n com.warsha.app/.MainActivity');
-  await sleep(7000);
+
+  if (!await waitForContent()) {
+    console.log(`  ${viewport.name}-${language}: never finished loading; nothing captured`);
+    return;
+  }
 
   await capture(`${viewport.name}-${language}-01-gateway`);
 
   if (await tap(controls.signIn, { optional: true })) {
+    await waitForContent();
     await capture(`${viewport.name}-${language}-02-sign-in`);
     shell('input keyevent 4');
-    await sleep(1800);
+    await sleep(2000);
+  } else {
+    console.log(`  ${viewport.name}-${language}: no "${controls.signIn}" control found`);
   }
 
   if (await tap(controls.start, { optional: true })) {
+    await waitForContent();
     await capture(`${viewport.name}-${language}-03-role-choice`);
     shell('input keyevent 4');
-    await sleep(1800);
+    await sleep(2000);
+  } else {
+    console.log(`  ${viewport.name}-${language}: no "${controls.start}" control found`);
   }
 }
 

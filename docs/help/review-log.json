@@ -9,6 +9,14 @@
         "customer-addresses-location"
       ],
       "reason": "UX redesign pass: a field's purpose now reads above its control instead of below it, on worker onboarding and the customer address form. Ordering and spacing only. Every statement these articles make about what is required, what is kept, and what Warsha does with an address remains true, and all three were already reviewed earlier the same day."
+    },
+    {
+      "date": "2026-09-10",
+      "articles": [
+        "customer-account-security",
+        "worker-getting-started"
+      ],
+      "reason": "UX redesign pass: form labels, helper lines and error lines moved from the caption step to bodySmall after measuring them at 16dp on the Arabic sign-in at 320dp; the create-account button on sign-in made full width to match the primary above it; the gateway's spare vertical space redistributed. Type sizes, widths and spacing only. Nothing either article states about signing in, recovering a password, or what the first screen offers has changed."
     }
   ]
 }

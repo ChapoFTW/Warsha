@@ -183,6 +183,75 @@ are not a component sweep.
 
 ---
 
+# UX/UI redesign programme — 2026-09-10
+
+Opened on the owner's assessment that the product "feels primitive and lacks a
+unique yet familiar product feel", anchored on the profession/trade screens.
+
+## What the measurement said, before any opinion
+
+Two numbers explain most of the feeling, and neither is visible in a screenshot:
+
+| | |
+| --- | --- |
+| **Type scale adoption** | 9 files used Warsha's seven-step scale; 71 did not, between them naming FIFTEEN font sizes — 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 22, 24, 26, 27, 28. One provider profile used ten of them. |
+| **Selection controls** | Four screens each drew their own row, with three different heights and three ideas of what "selected" looks like. All four used a stock `check-box-outline-blank` at 26px. |
+
+Fifteen sizes is not a hierarchy, it is the absence of one. And nearly none of
+those ad-hoc sizes declared a line height, so they inherited the platform's
+~1.2 — which is why the screens that skipped the scale are exactly the screens
+where Arabic is crowded. Cairo has taller ascenders and deeper descenders than
+Inter at the same size.
+
+## Findings the renders produced
+
+| Severity | Finding | Status |
+| --- | --- | --- |
+| **V-P1** | The role card's icon well was filled with `surfaceElevated`, which in LIGHT resolves to #FFFFFF — the same value as the `surface` card it sits in. The container did not exist in Warsha's default appearance and the mark floated in an empty column. Correct in dark, gone in light, which is why nobody had seen it. | FIXED |
+| **V-P1** | The trade list presented 34 rows flat, discarding the category ordering the taxonomy has always had. For a professional who does not read fluently that is a wall. Grouped under the category names Warsha already translates, it is a handful of short sections found by heading. | FIXED |
+| **V-P1** | Past the ten-trade cap, taps did nothing at all — `toggle` declined in silence, which reads as breakage rather than a rule. | FIXED |
+| **V-P1** | `Alert.alert` renders in Android's stock accent, teal on a default device, with ALL CAPS buttons. Eighteen screens. Warsha's own surfaces looked designed and the moment a decision mattered the dialog looked like a different application. | FIXED at the theme |
+| **V-P1** | Warsha resolved Light/Dark/System in JavaScript and never told Android, so every platform-drawn surface followed the phone. Choose Dark inside Warsha on a light phone and every dialog came back white. | FIXED |
+| **V-P2** | "Selected" was a one-pixel border changing colour — close to invisible on a phone, and the only question a selection control exists to answer. | FIXED |
+| **V-P2** | Worker onboarding listed every field's label, badge and reason as a manifest ABOVE the form, so each name appeared twice and on a 320dp screen the first control sat at the very bottom edge. | FIXED |
+| **V-P2** | The gateway was one centred column; at 411dp that left ~700px of nothing above and below. | FIXED |
+| **V-P2** | The gateway's second trust mark was `handshake` — two interlocking hands, which at 20px has no silhouette. A grey blob beside the sentence it was meant to support. | FIXED |
+| **V-P2** | Chat message timestamps were 9px, below every accessibility floor; message bodies 14px on a 20px line, the tightest running text in the product, on the screen where the most reading happens. | FIXED |
+| **V-P2** | "Sign in" on the role screen was a ghost button — the only route back for a returning person, rendering as a line of body text with no affordance. | FIXED |
+| **V-P3** | The service-area card explained two of its three fields after the control and the third before it. | FIXED |
+
+## Cross-surface
+
+The web turned out to be AHEAD on one axis and behind on another. It had named
+its form rhythm semantically — label to control, control to helper, field to
+field — where mobile had nothing equivalent; and it had no type scale at all,
+where mobile had one it was ignoring. Both now share one scale and one set of
+relationships, and `test:web-brand` asserts they agree, exactly as it already
+did for colour and motion.
+
+## What is now measurable rather than argued
+
+| Gate | What it holds |
+| --- | --- |
+| `test:typography` | A ratchet on hardcoded font sizes, app and web. Only falls. 369 → 273 (app), 150 → 137 (web). |
+| `test:web-brand` | The two type scales and the two rhythm tables agree, step for step and leading for leading. |
+| `test:android-dialog-theme` | The dialog palette is the Warsha palette, and the plugin says what it cannot fix. |
+| `test:backend-target-gate` | No certification run can produce evidence about a backend it did not prove. |
+| `design-sweep` flow | Both languages, both widths, with overflow, tap-target and composed-name checks per state. |
+
+## Still open in this programme
+
+| | |
+| --- | --- |
+| The trade picker itself | Redesigned but **NOT YET SEEN**: the QA account advanced past step 3, so the selector is no longer on its path. Needs reaching from the profile editor. |
+| Customer journey screens | Typography converted; none rendered. |
+| Job lifecycle states | `JobOperationsPanel` converted; none rendered. |
+| 320dp pass on the redesign | The sweep covers it; not yet run against a build carrying all of it. |
+| Dark theme | Every finding above was found in light. Dark is unrendered this programme. |
+| 1.3x text scale | Unrendered this programme. |
+
+---
+
 # Not yet inspected
 
 Everything else. Listed so the gaps are visible rather than implied.
