@@ -277,7 +277,16 @@ async function captureSearchStates(combination) {
       return;
     }
     await setText({ cls: 'EditText', index: 0 }, query);
-    await sleep(1400);
+    await sleep(900);
+    // Photographed with the keyboard up, because that is how a professional
+    // sees the first results -- half the list covered while they are still
+    // typing.
+    await capture(`${combination.name}-search-${name}-typing`, combination);
+
+    // Then again with it dismissed, because the question this feature has to
+    // answer is what came BACK, and the keyboard hides most of the answer.
+    shell('input keyevent 111');
+    await sleep(1200);
     await capture(`${combination.name}-search-${name}`, combination);
   }
 
