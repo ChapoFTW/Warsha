@@ -427,8 +427,9 @@ per run, each capture accompanied by the accessibility tree it was taken from.
 | AR RTL · 411dp · 1.3x | 34/34 |
 | EN · 411dp · 1.3x | 34/34 |
 
-**All three languages pass at the narrowest width.** No truncation and no
-overflow reported in any configuration. French was the last one open, and the
+**Eight of eight configurations, 34/34 each.** No truncation and no overflow
+reported anywhere — the whole list, in every language, at both widths, in both
+themes, at both text sizes. French was the last one open, and the
 reason it was open had nothing to do with French: the button is `J'accepte`
 with a straight apostrophe and the harness looked for `J’accepte`.
 
