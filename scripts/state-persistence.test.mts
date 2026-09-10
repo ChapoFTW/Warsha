@@ -573,12 +573,33 @@ for (const path of ['web/app/app/layout.tsx', 'web/app/admin/layout.tsx'] as con
 }
 
 const middleware = read('web/middleware.ts');
-check(/addressed\[1\] !== chosen/.test(middleware),
-  'an explicit language choice outranks a locale-addressed URL');
-check(/pathWithoutLocale\(pathname\)/.test(middleware),
-  'and the redirect keeps the page rather than sending anybody Home');
+/*
+ * The precedence changed on 2026-09-10, by decision, after the old rule
+ * trapped people on iPhones.
+ *
+ * It used to be that a stored choice outranked a locale-addressed URL, so `/en`
+ * with an Arabic cookie redirected to `/ar`. The intent was that a shared link
+ * should not drag somebody out of their language. The consequence was that the
+ * footer switcher became the only way out of a language — and the switcher
+ * writes `document.cookie` and then lets an anchor navigate, which on iOS
+ * WebKit does not reliably commit before the request goes. The request arrived
+ * with the old cookie, this branch bounced it back, and choosing English did
+ * nothing. Confirmed on two iPhones, in Safari and in Edge, which are both
+ * WebKit.
+ *
+ * Now the address wins and the stored preference is synchronised to it. A URL
+ * is the one authority that cannot be lost to a race, because it is already in
+ * the request.
+ */
+check(!/addressed\[1\] !== chosen/.test(middleware)
+  || /response\.cookies\.set/.test(middleware),
+  'A LOCALE IN THE ADDRESS IS NOT OVERRULED BY A STORED PREFERENCE');
+check(/response\.cookies\.set/.test(middleware),
+  'and the stored preference is synchronised to the address that was served, '
+  + 'from the server, where no client-side write can lose a race');
 check(/307/.test(middleware),
-  'the language redirect is temporary, because it depends on who is asking');
+  'the language redirect that remains — the bare domain choosing a language — '
+  + 'is temporary, because it depends on who is asking');
 
 const preferenceControls = stripComments(read('web/components/preference-controls.tsx'));
 check(/useWarshaPreferences/.test(preferenceControls),

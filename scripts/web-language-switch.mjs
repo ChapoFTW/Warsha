@@ -117,6 +117,51 @@ for (const from of LOCALES) {
 }
 
 /*
+ * An explicit locale URL outranks whatever was stored before.
+ *
+ * This is the escape hatch, and it exists because the switcher alone was not
+ * one. Until 2026-09-10 a stored choice overruled the address, so a visitor
+ * whose cookie said Arabic could not reach a single English page on the site —
+ * every /en link redirected to /ar. The only way out was a control whose
+ * correctness depended on `document.cookie` being written before an anchor
+ * navigated, which on iOS WebKit is not reliable. Two iPhones, Safari and Edge.
+ *
+ * Every stale value against every address, because the trap is symmetrical: an
+ * English cookie hid the Arabic site just as thoroughly.
+ */
+for (const stale of LOCALES) {
+  for (const asked of LOCALES) {
+    if (stale === asked) continue;
+    const context = await browser.newContext({ locale: 'ar-EG' });
+    const url = new URL(BASE);
+    await context.addCookies([{
+      name: 'warsha-locale',
+      value: stale,
+      domain: url.hostname === 'localhost' ? 'localhost' : `.${url.hostname.replace(/^www\./, '')}`,
+      path: '/',
+    }]);
+    const page = await context.newPage();
+    await page.goto(`${BASE}/${asked}`, { waitUntil: 'networkidle', timeout: 45_000 });
+    const got = await read(page);
+
+    equal(got.lang, asked,
+      `a stored ${stale} must not stop /${asked} being ${asked} — an address is explicit`);
+    equal(got.dir, DIRECTION[asked], `/${asked} with a stored ${stale}: direction follows the address`);
+    ok(got.body.includes(CANONICAL[asked]),
+      `/${asked} with a stored ${stale}: the page says what only ${asked} says`);
+
+    // And the stored preference is brought into line, from the server, so it
+    // does not depend on a client write that iOS may not have committed.
+    const after = (await context.cookies())
+      .filter((c) => c.name === 'warsha-locale').map((c) => c.value);
+    ok(after.includes(asked),
+      `/${asked} with a stored ${stale}: the stored preference is synchronised to ${asked}`);
+    console.log(`  stored ${stale}, asked /${asked}  ok   (${got.dir}, stored now ${after.join(',')})`);
+    await context.close();
+  }
+}
+
+/*
  * Direction is the half that silently survives a bad switch: a page can carry
  * the right words and the previous language's layout. Asserted on its own so a
  * failure names direction rather than hiding inside a copy check.

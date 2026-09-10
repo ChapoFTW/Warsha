@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
 import {
-  isLocale, LOCALE_HEADER, localeFromAcceptLanguage, pathWithoutLocale,
+  isLocale, LOCALE_HEADER, localeCookieDomain, localeCookieMaxAgeSeconds,
+  localeCookieName, localeFromAcceptLanguage,
 } from './lib/preferences.ts';
 // Shared with `robots.ts` and `sitemap.ts`, which must name the same domain.
 import { CANONICAL_HOST } from './lib/site.ts';
@@ -67,6 +68,10 @@ function rewriteInto(prefix: string, request: NextRequest, pathname: string) {
  *   1. an explicit choice this visitor made before (the `warsha-locale` cookie);
  *   2. otherwise the browser's own preference (`Accept-Language`);
  *   3. otherwise English.
+ *
+ * A locale in the ADDRESS outranks all three. `/en` is English even when the
+ * cookie says Arabic — see the addressed branch below for why that is not a
+ * preference being ignored but the only thing that keeps a language reachable.
  *
  * Doing this on the server is the only way to honour "no English flash before
  * Arabic". A client-side redirect necessarily paints one language and then
@@ -148,32 +153,33 @@ export function middleware(request: NextRequest) {
   const addressed = /^\/(en|ar|fr)(\/|$)/.exec(pathname);
   if (addressed) {
     /*
-     * Already addressed in a language — but that is not the end of the
-     * decision any more.
+     * Addressed in a language, and that settles it.
      *
-     * `warsha-locale` is written by one control and nothing else, so its
-     * presence means a person opened the language menu and chose. Warsha's
-     * precedence puts that choice above the address, and this is the only
-     * place that can honour it without rendering Arabic content at an English
-     * URL: the visitor is moved to the same page in their own language,
-     * keeping the path, the query and the fragment.
+     * This used to redirect: a `warsha-locale` cookie was treated as outranking
+     * the URL, so `/en` with an Arabic cookie became `/ar`. The intent was that
+     * somebody who chose Arabic should not be dropped into English by a shared
+     * link, and that intent was reasonable. The consequence was not.
      *
-     * Without this, language really was per-page on the public site. Somebody
-     * who chose Arabic and then followed a shared `/en/...` link — or pressed
-     * Back past the switch — was reading English again with no indication that
-     * anything had changed, which is the second half of what QA reported.
+     * It made the footer switcher the ONLY way out of a language, and the
+     * switcher depends on `document.cookie` being written before the anchor it
+     * sits on navigates. On iOS WebKit — Safari, and Edge and Chrome on iPhone,
+     * which are all WebKit — that write is not reliably committed before the
+     * navigation begins. The request then arrives carrying the OLD cookie, this
+     * branch sees the address disagreeing with it, and sends the visitor
+     * straight back to the language they were trying to leave. Choosing English
+     * did nothing, twice, and there was no third thing to try: every /en and
+     * /fr link on the site redirected the same way.
      *
-     * A crawler sends no cookie, so all three languages stay independently
-     * reachable and indexable. And the language control writes the cookie
-     * before it navigates, so choosing Arabic never bounces back.
+     * So the address wins, and the stored preference is brought into line with
+     * it below rather than used to overrule it. A URL is an explicit act — more
+     * explicit than a cookie written on some earlier visit — and it is the one
+     * authority that cannot be lost to a race, because it is already in the
+     * request. That makes every locale URL a guaranteed way back to a language,
+     * which is what the switcher needed and did not have.
+     *
+     * What the original intent still gets: `/` continues to honour the cookie,
+     * so a visitor who chose Arabic and opens the bare domain gets Arabic.
      */
-    if (chosen && addressed[1] !== chosen) {
-      const preferred = request.nextUrl.clone();
-      preferred.pathname = `/${chosen}${pathWithoutLocale(pathname)}`;
-      // 307: which language this address serves depends on who is asking, and
-      // must never be cached as a permanent property of the URL.
-      return NextResponse.redirect(preferred, 307);
-    }
     // The matcher lets these through so the host redirect above can see them,
     // so the guard has to be here rather than in the matcher — without it
     // `/en` would be rewritten to `/en/en`, forever.
@@ -191,7 +197,31 @@ export function middleware(request: NextRequest) {
      */
     const forwarded = new Headers(request.headers);
     forwarded.set(LOCALE_HEADER, addressed[1]);
-    return NextResponse.next({ request: { headers: forwarded } });
+    const response = NextResponse.next({ request: { headers: forwarded } });
+
+    /*
+     * Synchronise the stored preference to the address that was just served.
+     *
+     * Written from the server, so it does not depend on any client write
+     * winning a race — which is the failure this whole branch exists to end.
+     * After `/en` renders, the bare domain and the sibling origins agree that
+     * English is the choice, and the switcher's own write becomes a
+     * belt-and-braces rather than the only thing holding the choice.
+     */
+    if (addressed[1] !== chosen) {
+      const domain = localeCookieDomain(host);
+      response.cookies.set({
+        name: localeCookieName,
+        value: addressed[1],
+        path: '/',
+        maxAge: localeCookieMaxAgeSeconds,
+        sameSite: 'lax',
+        // Only when the host has one: a preview or localhost gets a host-only
+        // cookie, which is what those need.
+        ...(domain ? { domain } : {}),
+      });
+    }
+    return response;
   }
 
   const locale = chosen ?? localeFromAcceptLanguage(request.headers.get('accept-language'));
