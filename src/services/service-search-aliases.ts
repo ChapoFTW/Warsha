@@ -1,4 +1,5 @@
 import type { Language } from '../i18n/translations.ts';
+import { normalizeSearchText } from '../search/multilingual-search.ts';
 
 import { SERVICE_DEMAND_ORDER, type ServiceCategoryId } from './service-catalogue.ts';
 import { specificServices } from './specific-services.ts';
@@ -141,17 +142,21 @@ export const SERVICE_SEARCH_ALIASES: Readonly<Record<ServiceCategoryId, AliasSet
  * accent when searching.
  */
 export function foldSearchTerm(value: string): string {
-  return value
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .normalize('NFC')
-    .replace(/[ً-ْـٰٓ-ٕ]/g, '')
-    .replace(/[آأإٱ]/g, 'ا')
-    .replace(/ة/g, 'ه')
-    .replace(/ى/g, 'ي')
-    .toLowerCase()
-    .replace(/\s+/g, ' ')
-    .trim();
+  /*
+   * One folding, not two.
+   *
+   * This had its own implementation, and `src/search/multilingual-search.ts`
+   * grew a second one for professions that did the same work by the same rules
+   * — strip Latin accents, strip harakat and tatweel, fold the alef forms, ة to
+   * ه and ى to ي. Two normalizations that agree today are two that can disagree
+   * tomorrow, and the one they would disagree about is whether a customer's
+   * spelling reaches a trade.
+   *
+   * The shared one additionally applies NFKC and treats a hyphen as a space,
+   * which this gains: both sides of every comparison are folded here, so
+   * "lave-linge" still matches its alias, and now so does "lave linge".
+   */
+  return normalizeSearchText(value);
 }
 
 /** Every term for a category, across all three languages, folded. */
