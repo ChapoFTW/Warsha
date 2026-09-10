@@ -350,6 +350,25 @@ try {
     await tap(OPEN_PICKER, { settle: 2800 });
     await capture(`${combination.name}-02-picker`, combination);
     await captureWholeList(combination, combination.language.slice(0, 2));
+
+    /*
+     * One row selected, so the ENABLED button is photographed too.
+     *
+     * The disabled state was the finding here -- a filled slab at 0 of 10 --
+     * and a sweep that only ever photographs 0 of 10 certifies the fix for it
+     * while saying nothing about the state it turns back into. The selected row
+     * comes along for free, which is the other half of what this control exists
+     * to express.
+     */
+    const row = tree().find((node) => node.clickable && node.bounds
+      && node.bounds.top > 600 && /\S/.test(label(node)));
+    if (row) {
+      shell(`input tap ${row.bounds.cx} ${row.bounds.cy}`);
+      await sleep(1600);
+      await capture(`${combination.name}-03-selected`, combination);
+    } else {
+      console.log('    no row to select — the enabled button is not certified here');
+    }
   }
 } finally {
   resetDevice();
