@@ -471,10 +471,12 @@ up on.
 
 | | |
 | --- | --- |
-| Arabic RTL at 320dp | The walk reached the work step only after the scroll fix; not yet rendered on a build carrying the removed headings. **Arabic remains a hard gate.** |
-| French at 320dp | Same. French has the longest labels — `Spécialiste des revêtements de sol` at 34 characters is customer-facing, on a different surface. |
-| Selected state at the 10 cap | Rendered in an earlier pass; not re-rendered since the labels changed. |
-| Every other disabled button | Inherits the primitive change uncertified. |
+| ~~Arabic RTL at 320dp~~ | **PASSES.** 34/34, mirrored correctly, no clipping, plain work nouns in the accessibility tree. Also passes at 411dp dark and at 1.3x text. |
+| French | The walk reached the work step and reported it had not, because the button is `J'accepte` with a straight apostrophe and this looked for `J’accepte`. Fixed; **not yet rendered**, so French is NOT certified. |
+| Search states | Cross-language query, partial, and no-results are captured from this run onward. Nothing rendered before it. |
+| Selected state at the **10 cap** | Still not rendered. The runs select one row, which certifies the enabled button but not the state where every further row goes disabled. |
+| Every other disabled button | Inherits the primitive change uncertified. Eighteen files counted, five confirmed, and the obvious conversion to `BrandButton` would be wrong — see `scripts/disabled-state-contract.test.mts`. |
+| Icon semantics | `Interior decoration` reads ambiguously at row size. Not judged properly: the icon gallery has not been rendered this programme. |
 
 ---
 
