@@ -69,6 +69,7 @@ export const DETERMINISTIC_TEST_SCRIPTS = [
   'test:multilingual-search',
   'test:locale-coverage',
   'test:touch-target-contract',
+  'test:discovery-multilingual',
   'test:help-docs',
   'test:help-language-parity',
   'test:android-build-helper',
