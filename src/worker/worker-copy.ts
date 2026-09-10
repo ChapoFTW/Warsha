@@ -437,7 +437,7 @@ const copy = {
     changeProfessions: 'Changer de travail',
     searchProfessions: 'Rechercher un travail',
     removeProfession: 'Retirer',
-    selected: 'sélectionné(s)',
+    selected: 'sélectionnés',
     professionLimitReached: 'C’est le maximum. Retirez-en un pour en ajouter un autre.',
     professionNoMatches: 'Essayez un mot plus court, ou effacez la recherche pour voir tous les types de travail.',
     done: 'Terminé',

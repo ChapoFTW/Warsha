@@ -129,6 +129,35 @@ for (const [name, path] of MODULES) {
   }
 }
 
+// --- No parenthetical agreement in French -----------------------------------
+/*
+ * "sélectionné(s)" and "{done} étape(s) sur {total} terminée(s)" are visibly
+ * template artefacts: a developer hedging a plural they did not want to
+ * resolve. They read as unfinished software, which is exactly the impression
+ * this programme exists to remove, and they appeared on the work picker's
+ * counter and the onboarding progress line.
+ *
+ * This is narrow on purpose. It matches the parenthesised agreement suffix and
+ * nothing else — a French string is free to contain parentheses for any other
+ * reason, and banning those would force worse copy.
+ */
+{
+  const PARENTHETICAL_AGREEMENT = /\((?:s|e|es|ne|nes)\)/;
+  for (const [name, path] of MODULES) {
+    const module = await import(path) as Record<string, unknown>;
+    for (const [exportName, value] of Object.entries(module)) {
+      const table = value as Record<string, Record<string, unknown>> | null;
+      if (!table?.fr || typeof table.fr !== 'object') continue;
+      for (const [key, text] of Object.entries(table.fr)) {
+        if (typeof text !== 'string') continue;
+        ok(!PARENTHETICAL_AGREEMENT.test(text),
+          `${name}.${exportName}.${key}: "${text}" hedges a plural in brackets — `
+          + 'choose the form the sentence actually needs');
+      }
+    }
+  }
+}
+
 /*
  * The tables found are pinned, not counted. Two of the modules listed above
  * export their copy in a shape this does not recognise as a locale table, and

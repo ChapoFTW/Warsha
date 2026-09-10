@@ -405,7 +405,7 @@ export const frenchAppCopyOverrides = {
   supportStatus_open: 'Ouverte', supportStatus_in_progress: 'En cours d’examen', supportStatus_waiting_participant: 'En attente de votre réponse', supportStatus_escalated: 'Transmise', supportStatus_resolved: 'Résolue', supportStatus_closed: 'Fermée',
 
   workerVerificationTitle: 'Vérification', workerActiveBody: 'Votre compte est vérifié et vous pouvez accepter des travaux.', workerNeedsAction: 'Une action est requise', workerRemainingSteps: 'Étapes restantes',
-  gateProgress: '{done} étape(s) sur {total} terminée(s)', gateNext: 'Suivant',
+  gateProgress: '{done} étapes sur {total} terminées', gateNext: 'Suivant',
   verificationUseApp: 'Les photos de votre pièce d’identité et de votre certificat sont prises dans l’application Warsha avec l’appareil photo du téléphone.',
   verificationNothingToDo: 'Aucune action n’est requise de votre part. Votre dossier est en cours d’examen.', verificationSubmit: 'Envoyer pour examen', verificationSubmitted: 'Dossier envoyé. Il va être examiné.', verificationSubmitFailed: 'Impossible d’envoyer le dossier. Réessayez.',
   verificationAppealTitle: 'Recours', verificationAppealBody: 'Vous pouvez demander à une autre personne d’examiner à nouveau la décision. Les recours se font dans l’application Warsha.',
