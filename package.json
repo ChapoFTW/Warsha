@@ -72,6 +72,7 @@
     "test:service-labels": "node --no-warnings --experimental-strip-types scripts/service-labels.test.mts",
     "test:service-catalogue": "node --no-warnings --experimental-strip-types scripts/service-catalogue.test.mts",
     "test:address-contract": "node --no-warnings --experimental-strip-types scripts/address-contract.test.mts",
+    "test:locale-coverage": "node --no-warnings --experimental-strip-types scripts/locale-coverage.test.mts",
     "test:multilingual-search": "node --no-warnings --experimental-strip-types scripts/multilingual-search.test.mts",
     "test:disabled-state-contract": "node --no-warnings --experimental-strip-types scripts/disabled-state-contract.test.mts",
     "test:spacing-system": "node --no-warnings --experimental-strip-types scripts/spacing-system.test.mts",

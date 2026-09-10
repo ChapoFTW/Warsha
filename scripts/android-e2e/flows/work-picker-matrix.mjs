@@ -116,7 +116,13 @@ async function settleScreen({ timeout = 45_000 } = {}) {
 const START = ['Get started', 'يلا نبدأ', 'Commencer', 'C’est parti'];
 const ROLE = ['Professional. Offer', 'صنايعي. قدّم', 'Professionnel'];
 const CREATE = ['Create account', 'إنشاء حساب', 'Créer un compte'];
-const ACCEPT = ['I accept', 'أوافق', 'J’accepte'];
+/*
+ * The Arabic button says موافق ("agreed"), not أوافق ("I agree"). The walk
+ * looked for the second, missed it, and reported that it could not reach the
+ * work step -- from a screen where registration had in fact just succeeded.
+ * Taken from `workerAgreementAccept` in the onboarding copy rather than guessed.
+ */
+const ACCEPT = ['I accept', 'موافق', 'J’accepte', 'Je suis d’accord'];
 const ADD_PHOTO = ['Add your photo', 'ضيف صورتك', 'Ajoutez votre photo'];
 const GALLERY = ['Choose from gallery', 'اختار من المعرض', 'Choisir dans la galerie'];
 const USE_PHOTO = ['Use this photo', 'استخدم الصورة دي', 'Utiliser cette photo'];
