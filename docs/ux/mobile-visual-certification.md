@@ -479,8 +479,25 @@ up on.
 
 The feature's whole claim is that the query gets in through any language and
 the answer comes back in the reader's, and only a render can show the second
-half. `320dp-light-1x-en-US-search-foreign.png`: an English screen, `plombier`
-typed, one row returned — **Plumbing**. The English label, not the French one.
+half.
+
+**`320dp-light-1x-ar-EG-search-foreign.png` is the case this was built for.** An
+Arabic RTL screen at the narrowest width, an Arabic keyboard open, and the word
+`plumber` typed in Latin script. One row comes back: **سباكة**.
+
+Three things hold at once in that one picture. The query got in through English.
+The answer came back in Arabic. And the professional was shown the WORK noun,
+سباكة, rather than the person noun سباك — the audience rule surviving a
+cross-language match. The Latin text right-aligns inside the RTL field, which it
+should.
+
+That is the Egyptian professional with an English keyboard active, and before
+this change the screen answered them with nothing at all — which does not read
+as "search is language-limited", it reads as Warsha not offering their trade.
+
+`320dp-light-1x-en-US-search-foreign.png` is the mirror: an English screen,
+`plombier` typed, one row returned — **Plumbing**. The English label, not the
+French one.
 
 `-search-none` shows the dead end: a mark, "No matches", and "Try a shorter
 word, or clear the search to see every kind of work."
