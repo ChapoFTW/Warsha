@@ -55,10 +55,34 @@ mkdirSync(ARTIFACTS, { recursive: true });
 
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-export function adb(args, { quiet = true } = {}) {
+/**
+ * Talk to the device, and come back either way.
+ *
+ * The timeout is the whole point. `uiautomator dump` waits for the window to
+ * report itself idle, and a screen with an animation that never ends never
+ * does — the dump then blocks forever. Without a timeout that blocks
+ * `execFileSync`, which blocks the sweep, which sits there holding the device
+ * with the run neither progressing nor failing. That is exactly what happened:
+ * eighteen minutes, a live process, no new artifact, and nothing in the log to
+ * say which screen it was on.
+ *
+ * A stall is a result. Two minutes is far longer than any real adb call here
+ * and short enough that a wedged screen is reported rather than waited on.
+ */
+export function adb(args, { quiet = true, timeout = 120_000 } = {}) {
   try {
-    return execFileSync(ADB, args, { encoding: 'utf8', stdio: ['ignore', 'pipe', quiet ? 'ignore' : 'inherit'] });
+    return execFileSync(ADB, args, {
+      encoding: 'utf8',
+      timeout,
+      stdio: ['ignore', 'pipe', quiet ? 'ignore' : 'inherit'],
+    });
   } catch (error) {
+    // ETIMEDOUT is not "the screen was empty" -- it is the harness losing the
+    // device. Saying so is what lets a flow decide to stop rather than read a
+    // blank tree and conclude the screen has nothing on it.
+    if (error.code === 'ETIMEDOUT' || error.signal === 'SIGTERM') {
+      console.log(`  adb TIMED OUT after ${timeout}ms: ${args.join(' ').slice(0, 80)}`);
+    }
     return String(error.stdout ?? '');
   }
 }

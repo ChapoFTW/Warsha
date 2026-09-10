@@ -14,7 +14,7 @@
  *
  * Usage: node scripts/android-e2e/flows/work-picker-matrix.mjs [--tag name]
  */
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { describeScreen, screenshot, setText, shell, sleep, tree } from '../driver.mjs';
@@ -27,8 +27,23 @@ import { professions } from '../../../src/providers/profession-taxonomy.ts';
 const argv = process.argv.slice(2);
 const tagIndex = argv.indexOf('--tag');
 const tag = tagIndex >= 0 ? argv[tagIndex + 1] : 'work';
-const OUT = process.env.WARSHA_TEMP ?? 'D:/Warsha-Temp/design-sweep';
-if (!existsSync(OUT)) mkdirSync(OUT, { recursive: true });
+/*
+ * Every run gets its own folder, stamped with when it started.
+ *
+ * Runs used to share one directory under a reusable tag, which means a stopped
+ * run's screenshots sit there wearing the same names the current run is about
+ * to write. I read a previous run's leftovers as this run's output and
+ * concluded a healthy sweep had hung -- then killed it five minutes into its
+ * first registration. The artifacts were four hours old and looked current.
+ *
+ * A folder per run makes "what did THIS run produce" answerable by looking,
+ * which is the only way the timestamps can ever be trusted.
+ */
+const started = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+const ROOT = process.env.WARSHA_TEMP ?? 'D:/Warsha-Temp/design-sweep';
+const OUT = join(ROOT, `${tag}-${started}`);
+mkdirSync(OUT, { recursive: true });
+console.log(`artifacts: ${OUT}`);
 
 assertBackendTarget({ expect: 'development', purpose: 'the work-picker matrix' });
 
@@ -94,8 +109,10 @@ const findings = [];
 async function capture(name, note) {
   await sleep(900);
   const nodes = tree();
-  screenshot(`${tag}-${name}`);
-  writeFileSync(join(OUT, `${tag}-${name}.txt`), describeScreen(nodes));
+  // The image lands in the driver's artifact directory; bring it alongside the
+  // text dump so the run folder holds the whole run and nothing else.
+  copyFileSync(screenshot(`${tag}-${name}`), join(OUT, `${name}.png`));
+  writeFileSync(join(OUT, `${name}.txt`), describeScreen(nodes));
 
   const width = Math.max(...nodes.map((node) => node.bounds?.right ?? 0));
   const overflow = nodes.filter((node) => node.bounds && node.bounds.right > width + 1).length;
