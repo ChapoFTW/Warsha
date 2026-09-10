@@ -37,11 +37,22 @@ export function BrandButton({
   const styles = useThemedStyles(makeStyles);
   const { isRTL } = useLocalization();
   const isDisabled = disabled || loading;
-  const foreground = variant === 'primary'
-    ? colors.background
-    : variant === 'danger'
-      ? colors.error
-      : colors.textPrimary;
+  /*
+   * Loading is not the same kind of unavailable as disabled.
+   *
+   * A loading button is the action, happening — it should keep looking like the
+   * action. A disabled one is the action you cannot take yet, and it should get
+   * out of the way. Both set `isDisabled` because neither accepts a press, but
+   * only the second changes how the button looks.
+   */
+  const isInert = Boolean(disabled) && !loading;
+  const foreground = isInert
+    ? colors.textMuted
+    : variant === 'primary'
+      ? colors.background
+      : variant === 'danger'
+        ? colors.error
+        : colors.textPrimary;
   return (
     /* `PressableSurface` rather than `Pressable`: the scale and the tonal dip
        are the shared authority, so every Warsha button answers a finger the
@@ -57,7 +68,8 @@ export function BrandButton({
         styles.button,
         styles[`button_${variant}`],
         pressed && !isDisabled && variant !== 'primary' && styles.pressed,
-        isDisabled && styles.disabled,
+        isInert && styles.inert,
+        loading && styles.loading,
         typeof style === 'function' ? style({ pressed }) : style,
       ]}>
       {loading ? (
@@ -248,7 +260,25 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
      a rim appearing on press would be a new edge rather than a response. Scale
      and opacity come from the shared primitive either way. */
   pressed: { backgroundColor: colors.surfacePressed, borderColor: colors.borderStrong },
-  disabled: { opacity: 0.42 },
+  /*
+   * A disabled button loses its fill rather than fading behind one.
+   *
+   * This was `opacity: 0.42` over the primary variant, whose ground is
+   * `textPrimary` — near-black in light, near-white in dark. Opacity keeps the
+   * SHAPE of a filled button and only washes it, so the result read as an
+   * enabled button in light and, in dark, as a pale slab that was the
+   * brightest thing on the screen. On the work picker at 0 of 10 selected,
+   * the loudest element was the one control that does nothing.
+   *
+   * Transparent ground, the quietest border, muted label: inert in both themes,
+   * for the same reason and by the same tokens.
+   */
+  inert: {
+    backgroundColor: colors.transparent,
+    borderColor: colors.borderSubtle,
+  },
+  // Still the action, still solid — just not pressable while it runs.
+  loading: { opacity: 0.72 },
   reverse: { flexDirection: 'row-reverse' },
   card: { backgroundColor: colors.surface, borderRadius: radii.md, padding: spacing.lg },
   cardModal: { borderRadius: radii.lg },
