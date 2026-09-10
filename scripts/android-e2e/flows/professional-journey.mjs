@@ -131,6 +131,55 @@ async function chooseWork(count = 3) {
   return chosen;
 }
 
+/**
+ * Open a trade's jobs and tick a few, so the step after this one can be reached.
+ *
+ * The services section lists the jobs belonging to each chosen trade behind a
+ * disclosure. Until at least one is ticked, "Save and continue" is disabled --
+ * correctly, since a professional who offers no jobs cannot be matched to work
+ * -- and the walk would stop here reporting that the next step was not reached,
+ * which would be true and useless.
+ */
+async function chooseServices(count = 3) {
+  await settleScreen();
+
+  // The disclosure headings are the work labels themselves, which is how the
+  // services belonging to a trade are found without knowing their names.
+  const workLabels = new Set(professions.map((p) => p.work[language.slice(0, 2)]));
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    const group = tree().find((node) => node.clickable && node.bounds
+      && [...workLabels].some((work) => label(node).trim().startsWith(work)));
+    if (group) {
+      shell(`input tap ${group.bounds.cx} ${group.bounds.cy}`);
+      await sleep(1400);
+      break;
+    }
+    await scrollDown();
+  }
+
+  await capture(`${combination.name}-services-open`);
+
+  /*
+   * Ticked by their checkbox state rather than by name, because the job names
+   * are catalogue data and hardcoding any of them would be another guessed
+   * label. A control that reports `checked` and is not yet checked is a job
+   * waiting to be chosen.
+   */
+  let chosen = 0;
+  for (let attempt = 0; attempt < 14 && chosen < count; attempt += 1) {
+    const box = tree().find((node) => node.clickable && node.bounds
+      && node.bounds.bottom - node.bounds.top > 0
+      && !node.checked && label(node).trim().length > 2
+      && !workLabels.has(label(node).trim()));
+    if (!box) { await scrollDown(); continue; }
+    shell(`input tap ${box.bounds.cx} ${box.bounds.cy}`);
+    await sleep(900);
+    chosen += 1;
+  }
+  console.log(`    ticked ${chosen} jobs`);
+  return chosen;
+}
+
 try {
   await installPhotoFixture();
   console.log(`\n--- ${combination.name} ---`);
@@ -144,6 +193,12 @@ try {
     const chosen = await chooseWork();
     console.log(`    chose ${chosen} kinds of work`);
     await capture(`${combination.name}-step-work-chosen`);
+
+    if (target(STEPS.services)) {
+      await capture(`${combination.name}-step-services`);
+      await chooseServices();
+      await capture(`${combination.name}-step-services-chosen`);
+    }
 
     /*
      * Each step is looked for by its heading rather than assumed to follow the

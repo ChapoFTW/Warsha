@@ -157,6 +157,14 @@ export function tree() {
       id: attr('resource-id'),
       cls: attr('class'),
       clickable: /clickable="true"/.test(node),
+      /*
+       * `checked` is on every node, so it is only meaningful together with the
+       * control being clickable. Read here because a caller that wants to know
+       * whether a box is ticked should not have to re-parse the dump — which is
+       * what `consents.mjs` was driven to do, and where the discovery lived that
+       * an accessibilityRole="checkbox" arrives as a plain View.
+       */
+      checked: /checked="true"/.test(node),
       masked: /password="true"/.test(node),
       enabled: /enabled="true"/.test(node),
       focused: /focused="true"/.test(node),
