@@ -239,11 +239,39 @@ did for colour and motion.
 | `test:backend-target-gate` | No certification run can produce evidence about a backend it did not prove. |
 | `design-sweep` flow | Both languages, both widths, with overflow, tap-target and composed-name checks per state. |
 
+## The anchor screen, rendered
+
+`pick-01-grouped.png` and `pick-02-selected.png`, on a DEVELOPMENT build — a
+throwaway professional registered through the real signup, the real consents and
+the real photo picker, because the Production QA account had already advanced
+past this step. Layout and text render identically against either backend; this
+is offered as evidence about the former and nothing else, and
+`assertBackendTarget({ expect: 'development' })` is in the capture so it cannot
+be mistaken for the Production journey's.
+
+| | Before | After |
+| --- | --- | --- |
+| Structure | 34 rows, flat | Short sections under the category names customers browse — Plumbing, Electrical, Cleaning, AC repair |
+| Row | Hairline rectangle, stock `check-box-outline-blank` at 26px | A card, the trade's own mark leading, the state mark trailing |
+| Selected | A one-pixel border changing colour | Ground shifts to `surfaceSelected`, border thickens to 2px and darkens, mark fills solid with a tick, label goes semibold |
+| Counter | Grey footnote | Legible, bidi-isolated, and it says what happens at the cap |
+| Accessible names | Every trade announced `", Plumber"` | **Zero composed names**, measured on the rendered tree |
+
+The counter renders `⁦2 / 10⁩` in the accessibility tree — U+2066 and U+2069
+around the fraction, doing their job.
+
+**One thing left unresolved rather than fixed.** The UNSELECTED mark is
+`borderDefault`, 13% ink on white, which is faint on its own. Beside a selected
+row it reads clearly, because the contrast between the two states is the thing
+being judged. Left as it is deliberately: strengthening it would flatten exactly
+the difference that makes the selected state obvious, and that trade is a
+judgement worth making with more than one screen in front of you.
+
 ## Still open in this programme
 
 | | |
 | --- | --- |
-| The trade picker itself | Redesigned but **NOT YET SEEN**: the QA account advanced past step 3, so the selector is no longer on its path. Needs reaching from the profile editor. |
+| ~~The trade picker~~ | **RENDERED AND VERIFIED**, 411dp, English. See below. |
 | Customer journey screens | Typography converted; none rendered. |
 | Job lifecycle states | `JobOperationsPanel` converted; none rendered. |
 | 320dp pass on the redesign | The sweep covers it; not yet run against a build carrying all of it. |
