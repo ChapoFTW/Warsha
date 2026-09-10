@@ -17,9 +17,7 @@
 import { copyFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import {
-  describeScreen, screenshot, screenSize, scrollDown, shell, sleep, tree,
-} from '../driver.mjs';
+import { describeScreen, screenshot, scrollDown, shell, sleep, tree } from '../driver.mjs';
 import { assertBackendTarget } from '../backend-target.mjs';
 import { installPhotoFixture } from '../photo-fixture.mjs';
 import { apply, combinations, resetDevice, VIEWPORTS } from '../appearance-matrix.mjs';
@@ -87,32 +85,30 @@ async function capture(name, note) {
    *
    * So a control has to actually be on screen before its size means anything.
    */
-  const onScreen = (bounds) => bounds
-    && bounds.right - bounds.left > 0 && bounds.bottom - bounds.top > 0;
   /*
-   * Measured in dp, which is what the 44 refers to.
+   * No small-target check here any more.
    *
-   * Bounds come back in PIXELS. Comparing them to 44 directly passes almost
-   * everything on a modern phone: at 2.625x a 44px control is 17dp, less than
-   * half the minimum, and the check called it fine. Every "clean" verdict this
-   * produced about touch targets was measuring the wrong unit — which is worse
-   * than not checking, because it was being recorded as evidence.
+   * It measured rendered bounds, which uiautomator CLIPS to the containing
+   * viewport — so a row scrolled half out of a list reports the height of the
+   * part still showing, and a chip whose own style says `minHeight: 48` came
+   * back as fourteen dp. Clipping and smallness are the same number, so the
+   * check could not tell them apart, and every finding it produced all day was
+   * clipping. One reached the certification record as a real defect on a
+   * destructive control.
+   *
+   * A signal that has never once been right is worse than no signal, because it
+   * gets believed. The question moved to `scripts/touch-target-contract.test.mts`,
+   * where a style either declares a minimum or it does not — an answer that does
+   * not depend on where the control happened to be when the screenshot was taken.
    */
-  const { density } = screenSize();
-  const dp = (pixels) => Math.round(pixels / density);
-  const small = nodes.filter((node) => node.clickable && onScreen(node.bounds)
-    && (dp(node.bounds.right - node.bounds.left) < 44
-      || dp(node.bounds.bottom - node.bounds.top) < 44))
-    .map((node) => `${label(node).slice(0, 28)} ${node.bounds.right - node.bounds.left}x${node.bounds.bottom - node.bounds.top}`);
+  /* A composed accessibility name — one starting with a comma — is the defect
+     the OptionRow rewrite removed, and it must not come back on a new screen. */
   const composed = nodes.filter((node) => /^\s*,/.test(node.desc ?? '')).length;
-  // A row whose label is clipped is the failure long Arabic and French labels
-  // actually produce, and it does not show up as overflow.
   const truncated = nodes.filter((node) => /…|\.\.\.$/.test(node.text ?? '')).map((n) => n.text.slice(0, 34));
 
-  findings.push({ name, note, overflow, small, composed, truncated });
+  findings.push({ name, note, overflow, composed, truncated });
   const flags = [
     overflow ? `OVERFLOW ${overflow}` : '',
-    small.length ? `SMALL ${small.length}` : '',
     composed ? `COMPOSED ${composed}` : '',
     truncated.length ? `TRUNCATED ${truncated.length}` : '',
   ].filter(Boolean).join('  ');
@@ -173,7 +169,6 @@ async function captureWholeList(combination, language) {
     name: `${combination.name}-list-coverage`,
     note: combination,
     overflow: 0,
-    small: [],
     composed: 0,
     truncated: [],
     unseen,
@@ -382,13 +377,12 @@ try {
 }
 
 console.log(`\n${findings.length} states captured into ${OUT}`);
-const problems = findings.filter((entry) => entry.overflow || entry.small.length
+const problems = findings.filter((entry) => entry.overflow
   || entry.composed || entry.truncated.length || entry.unseen?.length);
 if (problems.length) {
   console.log('\nstates needing a look:');
   for (const entry of problems) {
     console.log(`  ${entry.name}`);
-    for (const item of entry.small) console.log(`    small target: ${item}`);
     for (const item of entry.truncated) console.log(`    truncated: ${JSON.stringify(item)}`);
     // Reported, not thrown: a label the scroll missed may be the scroll's fault
     // rather than the screen's, and the screenshots are there to tell which.

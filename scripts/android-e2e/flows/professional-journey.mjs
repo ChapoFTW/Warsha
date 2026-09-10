@@ -23,9 +23,7 @@
 import { copyFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import {
-  describeScreen, screenshot, screenSize, scrollDown, shell, sleep, tree,
-} from '../driver.mjs';
+import { describeScreen, screenshot, scrollDown, shell, sleep, tree } from '../driver.mjs';
 import { assertBackendTarget } from '../backend-target.mjs';
 import { installPhotoFixture } from '../photo-fixture.mjs';
 import { apply, resetDevice, VIEWPORTS } from '../appearance-matrix.mjs';
@@ -69,33 +67,30 @@ async function capture(name, note = combination) {
   copyFileSync(screenshot(`${tag}-${name}`), join(OUT, `${name}.png`));
   writeFileSync(join(OUT, `${name}.txt`), describeScreen(nodes));
 
-  const onScreen = (bounds) => bounds
-    && bounds.right - bounds.left > 0 && bounds.bottom - bounds.top > 0;
   /*
-   * Measured in dp, which is what the 44 refers to.
+   * No small-target check here any more.
    *
-   * Bounds come back in PIXELS. Comparing them to 44 directly passes almost
-   * everything on a modern phone: at 2.625x a 44px control is 17dp, less than
-   * half the minimum, and the check called it fine. Every "clean" verdict this
-   * produced about touch targets was measuring the wrong unit — which is worse
-   * than not checking, because it was being recorded as evidence.
+   * It measured rendered bounds, which uiautomator CLIPS to the containing
+   * viewport — so a row scrolled half out of a list reports the height of the
+   * part still showing, and a chip whose own style says `minHeight: 48` came
+   * back as fourteen dp. Clipping and smallness are the same number, so the
+   * check could not tell them apart, and every finding it produced all day was
+   * clipping. One reached the certification record as a real defect on a
+   * destructive control.
+   *
+   * A signal that has never once been right is worse than no signal, because it
+   * gets believed. The question moved to `scripts/touch-target-contract.test.mts`,
+   * where a style either declares a minimum or it does not — an answer that does
+   * not depend on where the control happened to be when the screenshot was taken.
    */
-  const { density } = screenSize();
-  const dp = (pixels) => Math.round(pixels / density);
-  const small = nodes.filter((node) => node.clickable && onScreen(node.bounds)
-    && (dp(node.bounds.right - node.bounds.left) < 44
-      || dp(node.bounds.bottom - node.bounds.top) < 44))
-    .map((node) => `${label(node).slice(0, 28)} `
-      + `${dp(node.bounds.right - node.bounds.left)}x${dp(node.bounds.bottom - node.bounds.top)}dp`);
-  const truncated = nodes.filter((node) => /…|\.\.\.$/.test(node.text ?? ''))
+const truncated = nodes.filter((node) => /…|\.\.\.$/.test(node.text ?? ''))
     .map((node) => node.text.slice(0, 34));
   // A composed accessibility name — one that starts with a comma — is the
   // defect the OptionRow rewrite removed. It must not come back on a new screen.
   const composed = nodes.filter((node) => /^\s*,/.test(node.desc ?? '')).length;
 
-  findings.push({ name, note, small, truncated, composed });
+  findings.push({ name, note, truncated, composed });
   const flags = [
-    small.length ? `SMALL ${small.length}` : '',
     truncated.length ? `TRUNCATED ${truncated.length}` : '',
     composed ? `COMPOSED ${composed}` : '',
   ].filter(Boolean).join('  ');
@@ -256,13 +251,11 @@ try {
 }
 
 console.log(`\n${findings.length} states captured into ${OUT}`);
-const problems = findings.filter((entry) => entry.small.length
-  || entry.truncated.length || entry.composed);
+const problems = findings.filter((entry) => entry.truncated.length || entry.composed);
 if (problems.length) {
   console.log('\nstates needing a look:');
   for (const entry of problems) {
     console.log(`  ${entry.name}`);
-    for (const item of entry.small) console.log(`    small target: ${item}`);
     for (const item of entry.truncated) console.log(`    truncated: ${JSON.stringify(item)}`);
     if (entry.composed) console.log(`    composed accessibility names: ${entry.composed}`);
   }
