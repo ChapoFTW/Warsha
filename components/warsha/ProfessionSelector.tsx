@@ -18,8 +18,6 @@ import {
   professionLabel,
   type ProfessionKey,
 } from '@/src/providers/profession-taxonomy';
-import { serviceCategoryTranslationKey } from '@/src/services/service-catalogue';
-import type { TranslationKey } from '@/src/i18n/translations';
 import { useWorkerText } from '@/src/worker/worker-copy';
 
 const LIMIT = 10;
@@ -33,11 +31,18 @@ const LIMIT = 10;
  * **Thirty-four rows, flat.** The taxonomy has always been ordered by category
  * — plumbing trades together, electrical together — and the list threw that
  * ordering away visually, presenting one undifferentiated wall. A plumber
- * looking for "Plumber" had to read down thirty-four labels. Grouped under the
- * category names Warsha already translates, the same list becomes a handful of
- * short sections, and the one section that matters is found by its heading
- * rather than by reading everything above it. That is the single biggest thing
- * here for someone who does not read fluently, and it needed no new copy.
+ * looking for their trade had to read down thirty-four labels. Drawing the
+ * seams turns the same list into a handful of short sections, so the one that
+ * matters is reached without reading everything above it. That is the single
+ * biggest thing here for someone who does not read fluently, and it needed no
+ * new copy.
+ *
+ * The seams were briefly labelled with the category names Warsha already
+ * translates. They are not any more, and the reason is in the taxonomy beside
+ * the labels: once each row became the plain work noun, the category name was
+ * one of its own rows. What finds the section now is that row — "Plumbing",
+ * full width, with an icon — which is a louder landmark than a grey caption
+ * above it ever was.
  *
  * **Rows drawn by hand.** Each was a stock `check-box-outline-blank` on a
  * hairline rectangle, with "selected" expressed as a one-pixel border changing
@@ -90,17 +95,8 @@ export function ProfessionSelector({
       if (last?.categoryId === profession.categoryId) last.professions.push(profession);
       else ordered.push({ categoryId: profession.categoryId, professions: [profession] });
     }
-    return ordered.map(group => {
-      const heading = t(serviceCategoryTranslationKey(group.categoryId) as TranslationKey);
-      const same = (value: string) => value.trim().toLocaleLowerCase(language)
-        === heading.trim().toLocaleLowerCase(language);
-      // Kept only when it groups more than one row AND none of them already
-      // carries the category's own name.
-      const earnsItsSpace = group.professions.length > 1
-        && !group.professions.some(profession => same(profession.work[language]));
-      return { ...group, heading: earnsItsSpace ? heading : null };
-    });
-  }, [language, query, t]);
+    return ordered;
+  }, [language, query]);
 
   const atLimit = pending.length >= LIMIT;
 
@@ -183,23 +179,6 @@ export function ProfessionSelector({
               />
             ) : groups.map(group => (
               <View key={group.categoryId} style={styles.section}>
-                {/* A heading earns its space only when it says something the
-                    rows do not.
-
-                    Over a single row it groups nothing — "Cleaning" above
-                    "Cleaning". And above a row that already carries the
-                    category's own name it is the same word twice, which is the
-                    duplication the plain labels bring back and the reason the
-                    first attempt invented "General plumbing" instead. Renaming
-                    the row to dodge the heading was solving a layout problem
-                    with vocabulary; dropping the heading solves it where the
-                    problem is.
-
-                    The rows stay grouped either way — the spacing between
-                    sections is what carries that, not the text. */}
-                {group.heading ? (
-                  <AppText style={styles.sectionTitle}>{group.heading}</AppText>
-                ) : null}
                 <View style={styles.sectionRows}>
                   {group.professions.map(profession => {
                     const checked = pending.includes(profession.key);
@@ -283,16 +262,10 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   counterLabel: { ...typography.bodySmall, flex: 1, color: colors.textSecondary },
 
   list: { gap: spacing.xl, padding: spacing.lg, paddingBottom: spacing.xxl },
+  /* `list` puts spacing.xl between sections and `sectionRows` spacing.sm
+     between rows inside one. That difference is the whole grouping now, so it
+     has to stay large enough to read as a seam rather than as a wide gap. */
   section: { gap: spacing.sm },
-  /* Caption carries the letter-spacing that makes a short label read as a
-     heading without shouting. No uppercase transform: Arabic has no case, and a
-     rule that only works in one script is not a rule. */
-  sectionTitle: {
-    ...typography.caption,
-    color: colors.textMuted,
-    fontWeight: typography.semibold,
-    paddingHorizontal: spacing.xs,
-  },
   sectionRows: { gap: spacing.sm },
 
   footer: {

@@ -74,12 +74,36 @@ for (const entry of log.reviews) {
 ok(liveRecords.length > 0, 'at least one review is still live, or nothing below proves anything');
 
 {
-  // Superseded records must be invisible to the predicate. This is the check
-  // the blanket assertion was standing in front of.
+  /*
+   * Superseded records must be invisible to the predicate. This is the check
+   * the blanket assertion was standing in front of.
+   *
+   * "Invisible" means they carry no weight of their own — NOT that the article
+   * they name can never count again. An article that is genuinely re-reviewed
+   * ends up with both records: the old one against text that no longer exists,
+   * and a new one against the text that does. That is the mechanism working,
+   * and the first time it happened this check failed, because it asked whether
+   * the ID appeared among superseded records rather than whether it had
+   * anything live. Read literally it forbids reviewing an article twice.
+   *
+   * So the question is asked of the articles that have ONLY stale records.
+   */
   const good = reviewedArticles({ log, articles, changedOn: EARLY });
-  for (const id of new Set(supersededRecords.map((record) => record.id))) {
+  const hasLive = new Set(liveRecords.map((record) => `${record.id}/${record.locale}`));
+  const staleOnly = new Set(supersededRecords
+    .filter((record) => !hasLive.has(`${record.id}/${record.locale}`))
+    .map((record) => record.id));
+  /*
+   * This loop being empty is a good state, not an untested one: it means every
+   * article that was rewritten has since been reviewed against its new text.
+   * The staleness mechanism itself is proved unconditionally below, by moving
+   * an article's content and watching its review stop counting — so there is
+   * nothing here for a vacuity guard to protect.
+   */
+  for (const id of staleOnly) {
     ok(!good.has(id),
-      `${id}: its article was rewritten, so the review of the old text no longer counts`);
+      `${id}: its article was rewritten and never reviewed again, so the review of `
+      + 'the old text no longer counts');
   }
 }
 

@@ -229,6 +229,34 @@ export type ProfessionAudience = 'professional' | 'customer';
  * asking the question is cheaper than a customer being told they hired a
  * "Plumbing".
  */
+/*
+ * Why the work picker has no category headings.
+ *
+ * It used to have one per group, and that was right when the rows were person
+ * nouns: "Plumbing" above Plumber and Pool technician named something the rows
+ * did not. Once every row became the plain work noun, the category name turned
+ * out to BE one of its rows -- "Plumbing" above Plumbing and Pool maintenance,
+ * "Carpentry" above Carpentry and three more. The heading had become the same
+ * word twice, and the first attempt to escape that invented "General plumbing".
+ *
+ * Dropping the heading only where it collided made the SHAPE of the list depend
+ * on the language: three headings in English, two in Arabic, four in French,
+ * because collision is a property of a translation rather than of the grouping.
+ * Deciding per category instead did not escape it either -- the Arabic heading
+ * for alumetal is ألوميتال, which is exactly its own first row. That left one
+ * heading in thirty-four rows, which reads as an accident rather than
+ * structure.
+ *
+ * So: none. The first row of each group is a better heading than the heading --
+ * a full row with an icon and a touch target, rather than a small grey caption
+ * -- and for a professional who does not read fluently that is the stronger
+ * signal, not the weaker one. The grouping itself is unchanged; the spacing
+ * between sections carries it, which is what it was already doing for the
+ * seventeen categories that never had a heading to lose.
+ *
+ * Pinned by scripts/profession-audience.test.mts.
+ */
+
 export function professionLabel(
   key: string,
   language: Language,

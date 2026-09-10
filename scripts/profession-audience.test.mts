@@ -220,4 +220,42 @@ for (const profession of professions) {
   }
 }
 
+// --- The work picker shows no category headings -----------------------------
+/*
+ * It used to show one per group, correctly: when the rows were person nouns,
+ * "Plumbing" above Plumber and Pool technician named something the rows did
+ * not. Plain work nouns removed that gap -- the category name became one of its
+ * own rows -- and every attempt to keep the heading where it still fit made
+ * things worse rather than better:
+ *
+ *   drop it on collision   the list's SHAPE became language-dependent, three
+ *                          headings in English against two in Arabic and four
+ *                          in French, because collision is a property of a
+ *                          translation and not of the grouping. It also kept
+ *                          "Flooring & tiling" directly above Tiling and
+ *                          Flooring, where no single row matched the whole.
+ *   decide per category    did not escape it: the Arabic heading for alumetal
+ *                          is ألوميتال, which is exactly its own first row.
+ *                          One heading survived in thirty-four rows, which
+ *                          reads as an accident rather than as structure.
+ *
+ * The first row of each group is the better heading -- a full row with an icon
+ * and a touch target instead of a small grey caption -- which for a
+ * professional who does not read fluently is the stronger signal.
+ *
+ * This is pinned because the reasoning is invisible in the diff: the obvious
+ * "improvement" is to put the headings back.
+ */
+{
+  const source = readFileSync('components/warsha/ProfessionSelector.tsx', 'utf8');
+  ok(!/serviceCategoryTranslationKey/.test(source),
+    'the work picker does not resolve a category heading — the row carrying the '
+    + "category's own name is the heading, and it can be chosen");
+  ok(!/sectionTitle/.test(source),
+    'and it has no heading style left to render one with');
+  // The grouping itself must survive: this is about the label, not the seams.
+  ok(/categoryId/.test(source) && /sectionRows/.test(source),
+    'the rows are still grouped by category — the spacing carries it');
+}
+
 console.log(`Profession audience: ${checks} checks passed.`);

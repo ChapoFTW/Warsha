@@ -87,6 +87,27 @@
           "digest": "f058e947b9a40b44"
         }
       ]
+    },
+    {
+      "date": "2026-09-10",
+      "reason": "The work picker stopped showing category headings, and this article said kinds of work in the same area sit under one heading. That sentence described behaviour that no longer exists, so it was corrected in all three locales to say they sit together in the list. The rest of the article was read again against the rendered picker while making the change: the question it quotes, the ten-selection limit, the work-versus-person explanation and the order of the onboarding steps all still match what the screen does.",
+      "articles": [
+        {
+          "id": "worker-getting-started",
+          "locale": "en",
+          "digest": "a36018a220387517"
+        },
+        {
+          "id": "worker-getting-started",
+          "locale": "ar",
+          "digest": "0b72b97664f5482e"
+        },
+        {
+          "id": "worker-getting-started",
+          "locale": "fr",
+          "digest": "6ffae3eb8b08a751"
+        }
+      ]
     }
   ]
 }
