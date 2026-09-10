@@ -258,42 +258,65 @@ async function captureWholeList(combination, language) {
  * not catch — they assert the identity resolved, not what was drawn.
  */
 async function captureSearchStates(combination) {
-  const language = combination.language.slice(0, 2);
   /*
-   * A word from another language, a partial in the screen's own, and something
-   * that matches nothing. The foreign word differs per screen so that no
-   * configuration is quietly testing its own language twice.
+   * Typed WITHOUT `setText`, which is why this has its own helper.
+   *
+   * `setText` opens by calling `hideKeyboard()`, and hideKeyboard sends ESC.
+   * ESC on an open modal dismisses the modal — so the first version of this
+   * closed the picker, photographed the step behind it, and left the run
+   * reporting "no work row found to select" on a screen where the list had
+   * been open a second earlier. The capture was filed under `-search-foreign`
+   * and showed a validation error.
    */
-  const queries = language === 'ar'
-    ? [['foreign', 'plumber'], ['partial', 'كهرب'], ['none', 'zzzzqq']]
-    : language === 'fr'
-      ? [['foreign', 'سباك'], ['partial', 'plomb'], ['none', 'zzzzqq']]
-      : [['foreign', 'plombier'], ['partial', 'كهرب'], ['none', 'zzzzqq']];
+  const typeInSearch = async (query) => {
+    const field = tree().find((node) => node.cls?.includes('EditText') && node.bounds);
+    if (!field) return false;
+    shell(`input tap ${field.bounds.cx} ${field.bounds.cy}`);
+    await sleep(700);
+    shell('input keyevent 123');                                  // MOVE_END
+    for (let i = 0; i < 40; i += 1) shell('input keyevent 67');    // DEL
+    if (query) {
+      // Spaces separate arguments to `input text`, and an apostrophe would end
+      // the shell quoting early. Same encoding the driver uses.
+      const encoded = query.replace(/ /g, '%s').replace(/'/g, `'\\''`);
+      shell(`input text '${encoded}'`);
+    }
+    await sleep(1300);
+    return true;
+  };
+
+  /*
+   * Latin queries only, and that is a limit of the DEVICE rather than a choice.
+   * `adb input text` sends ASCII; there is no way to type سباك through it
+   * without installing a helper IME onto the device under test, which would
+   * change what is being certified.
+   *
+   * The case this leaves unrendered is the mirror one — Arabic typed into an
+   * English or French screen — and it is covered by the taxonomy matrix, which
+   * walks every one of the six terms per identity against every screen
+   * language. What only a render can show is the case below: a word in one
+   * language producing rows in another, which is exactly the Egyptian
+   * professional with an English keyboard open.
+   */
+  const language = combination.language.slice(0, 2);
+  const queries = language === 'en'
+    ? [['foreign', 'plombier'], ['partial', 'plumb'], ['none', 'zzzzqq']]
+    : [['foreign', 'plumber'], ['partial', 'electric'], ['none', 'zzzzqq']];
 
   for (const [name, query] of queries) {
-    const field = tree().find((node) => node.cls?.includes('EditText'));
-    if (!field) {
+    if (!await typeInSearch(query)) {
       console.log('    no search field — search states not captured');
       return;
     }
-    await setText({ cls: 'EditText', index: 0 }, query);
-    await sleep(900);
     // Photographed with the keyboard up, because that is how a professional
-    // sees the first results -- half the list covered while they are still
-    // typing.
-    await capture(`${combination.name}-search-${name}-typing`, combination);
-
-    // Then again with it dismissed, because the question this feature has to
-    // answer is what came BACK, and the keyboard hides most of the answer.
-    shell('input keyevent 111');
-    await sleep(1200);
+    // sees the first results: still typing, half the list covered.
     await capture(`${combination.name}-search-${name}`, combination);
   }
 
-  // Cleared, so the list below is photographed as a list rather than a result.
-  await setText({ cls: 'EditText', index: 0 }, '');
-  await sleep(1200);
+  // Cleared, so the list is a list again for whatever runs after this.
+  await typeInSearch('');
 }
+
 
 /**
  * Register once per configuration and stop on the work step.
