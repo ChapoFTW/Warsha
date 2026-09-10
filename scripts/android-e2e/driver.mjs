@@ -372,7 +372,7 @@ export const back = async () => { shell('input keyevent 4'); await sleep(700); }
  * The screen size is read once and cached: `wm size` is a shell round-trip, and
  * a device does not resize itself mid-run.
  */
-export const scrollDown = async () => {
+export const scrollDown = async ({ from = 0.75, to = 0.25, ms = 350 } = {}) => {
   /*
    * Read every time, and read the OVERRIDE size.
    *
@@ -390,8 +390,10 @@ export const scrollDown = async () => {
    */
   const { width, height } = screenSize();
   const x = Math.round(width / 2);
-  shell(`input swipe ${x} ${Math.round(height * 0.75)} `
-    + `${x} ${Math.round(height * 0.25)} 350`);
+  /* A shorter throw is what nudging a control into view needs; the default is
+     still a full screenful, so every existing caller behaves as before. */
+  shell(`input swipe ${x} ${Math.round(height * from)} `
+    + `${x} ${Math.round(height * to)} ${ms}`);
   await sleep(800);
 };
 

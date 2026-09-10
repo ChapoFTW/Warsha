@@ -30,6 +30,7 @@ import { apply, resetDevice, VIEWPORTS } from '../appearance-matrix.mjs';
 import {
   label, OPEN_PICKER, registerProfessional, settleScreen, tap, target,
 } from '../professional-signup.mjs';
+import { auditTargets } from '../touch-targets.mjs';
 import { professions } from '../../../src/providers/profession-taxonomy.ts';
 import { specificServicesFor } from '../../../src/services/specific-services.ts';
 
@@ -114,6 +115,9 @@ const STEPS = {
     'Téléversez l’extrait de casier judiciaire'],
 };
 const DONE = ['Done', 'تم', 'Terminé'];
+/* `removeProfession`, from the copy. The chip's accessibility name is this
+   word followed by the trade, which is what the runtime audit looks for. */
+const REMOVE = { en: 'Remove', ar: 'احذف', fr: 'Retirer' };
 const SAVE_CONTINUE = ['Save and continue', 'احفظ وكمّل', 'Enregistrer et continuer'];
 
 /** Pick the first few work types, so the steps after this one have something to work with. */
@@ -220,6 +224,25 @@ try {
     const chosenCategories = await chooseWork();
     console.log(`    chose ${chosenCategories.length} kinds of work`);
     await capture(`${combination.name}-step-work-chosen`);
+
+    /*
+     * The runtime half of the touch-target question, on the control that
+     * produced the false finding.
+     *
+     * The chip's own style declares 48dp and the source contract proves that.
+     * What the source cannot prove is that the rendered chip is reachable and
+     * unobscured, so it is measured here — scrolled into the middle of the
+     * screen first, away from the edges that made every previous measurement
+     * meaningless.
+     */
+    if (chosenCategories.length) {
+      const first = professions.find((p) => p.categoryId === chosenCategories[0]);
+      if (first) {
+        await auditTargets([
+          `${REMOVE[language.slice(0, 2)]} ${first.work[language.slice(0, 2)]}`,
+        ]);
+      }
+    }
 
     if (target(STEPS.services)) {
       await capture(`${combination.name}-step-services`);
