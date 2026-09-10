@@ -121,7 +121,7 @@ function WorkerCurrentLocationFlow({ area }: { area: ProviderAreaInput | null })
       <ScrollView automaticallyAdjustKeyboardInsets contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
         <AppText accessibilityRole="header" style={styles.title}>{wt.text('workLocationTitle')}</AppText>
         <OnboardingFieldMeta
-          label={wt.text('workLocationTitle')}
+          label={wt.text('workLocationPin')}
           required
           privateField
           purpose={wt.text('workLocationIntro')}

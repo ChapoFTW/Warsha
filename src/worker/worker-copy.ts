@@ -103,6 +103,9 @@ const copy = {
     districtPurpose: 'Choose the area where you work.',
     currentAddressPurpose: "Warsha uses this for job matching. Customers won't see your exact home address.",
     workLocationTitle: 'Your work location',
+    /* The field, not the page. Both used `workLocationTitle` and the screen
+       printed the same words twice in a row, then announced them twice. */
+    workLocationPin: 'Exact location',
     workLocationIntro: "Warsha uses your location to find jobs near you. Customers won't see your exact home address.",
     selectedWorkArea: 'Your selected work area',
     useCurrentLocation: 'Use my current location',
@@ -256,6 +259,7 @@ const copy = {
     districtPurpose: 'اختار المنطقة اللي بتشتغل فيها.',
     currentAddressPurpose: 'ورشة بتستخدم عنوانك لمطابقة الشغل. العميل مش هيشوف عنوان بيتك بالتفصيل.',
     workLocationTitle: 'مكان شغلك',
+    workLocationPin: 'المكان بالظبط',
     workLocationIntro: 'ورشة بتستخدم موقعك علشان تلاقي شغل قريب منك. العملاء مش هيشوفوا عنوان بيتك بالتفصيل.',
     selectedWorkArea: 'منطقة الشغل اللي اخترتها',
     useCurrentLocation: 'استخدم موقعي الحالي',
@@ -409,6 +413,7 @@ const copy = {
     districtPurpose: 'Choisissez la zone où vous travaillez.',
     currentAddressPurpose: 'Warsha s’en sert pour l’attribution des travaux. Les clients ne verront pas votre adresse exacte.',
     workLocationTitle: 'Votre lieu de travail',
+    workLocationPin: 'Emplacement exact',
     workLocationIntro: 'Warsha utilise votre position pour trouver des travaux près de chez vous. Les clients ne verront pas votre adresse exacte.',
     selectedWorkArea: 'Votre zone d’intervention choisie',
     useCurrentLocation: 'Utiliser ma position actuelle',

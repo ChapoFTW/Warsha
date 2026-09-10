@@ -31,6 +31,7 @@ import {
   label, OPEN_PICKER, registerProfessional, settleScreen, tap, target,
 } from '../professional-signup.mjs';
 import { auditTargets } from '../touch-targets.mjs';
+import { grantLocationPermission, PLACES, setDeviceLocation } from '../location.mjs';
 import { professions } from '../../../src/providers/profession-taxonomy.ts';
 import { specificServicesFor } from '../../../src/services/specific-services.ts';
 
@@ -119,6 +120,10 @@ const DONE = ['Done', 'تم', 'Terminé'];
    word followed by the trade, which is what the runtime audit looks for. */
 const REMOVE = { en: 'Remove', ar: 'احذف', fr: 'Retirer' };
 const SAVE_CONTINUE = ['Save and continue', 'احفظ وكمّل', 'Enregistrer et continuer'];
+/* From `addAddress`; the French is “Ajouter l’adresse actuelle”, not the
+   possessive form it would be easy to assume. */
+const ADD_ADDRESS = ['Add current address', 'ضيف عنوانك الحالي', 'Ajouter l’adresse actuelle'];
+const USE_LOCATION = ['Use my current location', 'استخدم موقعي الحالي', 'Utiliser ma position actuelle'];
 
 /** Pick the first few work types, so the steps after this one have something to work with. */
 async function chooseWork(count = 3) {
@@ -211,6 +216,90 @@ async function chooseServices(chosenCategories, count = 3) {
   return chosen;
 }
 
+/*
+ * The service area, driven through the real product path.
+ *
+ * Governorate, area and coordinate all name the same place: Cairo, the Abdin
+ * district, and Abdin Square. It is a public square in central Cairo — a place
+ * rather than a person — so nothing here points at anyone's home, and the three
+ * values agreeing means the reverse-geocode has something coherent to return
+ * instead of a coordinate stranded in a governorate it does not belong to.
+ *
+ * Real selection, real validation. The dropdowns are the product's own, the
+ * location comes from the emulator's location provider through the permission
+ * the product asks for, and nothing here relaxes a rule to make a walk pass.
+ */
+const QA_PLACE = {
+  governorate: { en: 'Cairo', ar: 'القاهرة', fr: 'Cairo' },
+  area: { en: 'Abdin', ar: 'قسم عابدين', fr: 'Abdin' },
+};
+const SELECT_GOVERNORATE = ['Choose governorate', 'اختار المحافظة', 'Choisir le gouvernorat'];
+const SELECT_AREA = ['Choose area', 'اختار المنطقة', 'Choisir la zone'];
+
+/** Open one of the two dropdowns, search, and take the exact row. */
+async function pickPlace(opener, wanted) {
+  if (!await tap(opener, { settle: 1800, optional: true })) return false;
+  await settleScreen();
+
+  // Typed into the modal's own search so a long list does not need scrolling,
+  // and matched on the exact label so a substring cannot take a neighbour.
+  const field = tree().find((node) => node.cls?.includes('EditText') && node.bounds);
+  if (field) {
+    shell(`input tap ${field.bounds.cx} ${field.bounds.cy}`);
+    await sleep(600);
+    shell(`input text '${wanted.replace(/ /g, '%s')}'`);
+    await sleep(1400);
+  }
+
+  for (let attempt = 0; attempt < 6; attempt += 1) {
+    const row = tree().find((node) => node.clickable && node.bounds
+      && label(node).trim() === wanted);
+    if (row) {
+      shell(`input tap ${row.bounds.cx} ${row.bounds.cy}`);
+      await sleep(1800);
+      return true;
+    }
+    await scrollDown();
+  }
+  console.log(`    no row exactly matching ${JSON.stringify(wanted)}`);
+  return false;
+}
+
+async function completeServiceArea() {
+  const code = language.slice(0, 2);
+  await settleScreen();
+
+  const gov = await pickPlace(SELECT_GOVERNORATE, QA_PLACE.governorate[code]);
+  console.log(`    governorate ${gov ? 'chosen' : 'NOT chosen'}: ${QA_PLACE.governorate[code]}`);
+  await capture(`${combination.name}-area-governorate`);
+
+  const area = await pickPlace(SELECT_AREA, QA_PLACE.area[code]);
+  console.log(`    area ${area ? 'chosen' : 'NOT chosen'}: ${QA_PLACE.area[code]}`);
+  await capture(`${combination.name}-area-district`);
+
+  /*
+   * The address is a separate, real flow behind its own button. The device is
+   * put at Abdin Square first so the product's own "use my location" path has
+   * something to resolve — the permission is granted the way the product asks
+   * for it, not bypassed.
+   */
+  grantLocationPermission();
+  const placed = await setDeviceLocation(PLACES.abdinSquare, { verify: true });
+  console.log(`    device placed at Abdin Square: ${placed ? 'yes' : 'NO'}`);
+
+  if (await tap(ADD_ADDRESS, { optional: true, settle: 3000 })) {
+    await settleScreen();
+    await capture(`${combination.name}-address-open`);
+    if (await tap(USE_LOCATION, { optional: true, settle: 4000 })) {
+      await settleScreen();
+      await capture(`${combination.name}-address-located`);
+    } else {
+      console.log('    "use my current location" not offered — capturing what is');
+    }
+  }
+  return gov && area;
+}
+
 try {
   await installPhotoFixture();
   console.log(`\n--- ${combination.name} ---`);
@@ -267,6 +356,13 @@ try {
         break;
       }
       await capture(`${combination.name}-step-${name}`);
+
+      // The service area is the one step that needs filling in before the
+      // journey can go any further.
+      if (name === 'area') {
+        await completeServiceArea();
+        await capture(`${combination.name}-area-complete`);
+      }
     }
   }
 } finally {

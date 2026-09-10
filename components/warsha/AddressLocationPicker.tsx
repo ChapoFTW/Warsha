@@ -59,6 +59,21 @@ export function AddressLocationPicker({
   const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
   const [busy, setBusy] = useState<'device' | 'search' | 'pin' | null>(null);
   const [message, setMessage] = useState('');
+  /*
+   * What KIND of thing the message is.
+   *
+   * One state used to carry both "Locating…" and "We could not get that
+   * location", and it was rendered in the error colour with
+   * `accessibilityRole="alert"`. So progress appeared in red and interrupted a
+   * screen reader as an alert — and for a reader who takes the colour before
+   * the words, which is the low-literacy case this product is built around, a
+   * working location lookup looked like a failed one.
+   */
+  const [tone, setTone] = useState<'progress' | 'notice' | 'error'>('progress');
+  const say = (text: string, kind: 'progress' | 'notice' | 'error' = 'error') => {
+    setMessage(text);
+    setTone(kind);
+  };
   const [resolution, setResolution] = useState<AddressResolutionState | null>(null);
   const sessionToken = useRef(newSessionToken());
   const { language, isRTL } = useLocalization();
@@ -92,9 +107,12 @@ export function AddressLocationPicker({
         .then(result => {
           if (active) {
             setSuggestions(result.suggestions);
-            setMessage(result.outcome === 'succeeded'
-              ? result.suggestions.length === 0 ? copy.noSearchResults : ''
-              : result.outcome === 'unavailable' ? copy.providerUnavailable : copy.locationFailed);
+            if (result.outcome === 'succeeded') {
+              say(result.suggestions.length === 0 ? copy.noSearchResults : '', 'notice');
+            } else {
+              say(result.outcome === 'unavailable'
+                ? copy.providerUnavailable : copy.locationFailed, 'error');
+            }
           }
         })
         .finally(() => { if (active) setBusy(null); });
@@ -105,28 +123,30 @@ export function AddressLocationPicker({
 
   const choosePosition = async (position: PinPosition, source: PinSource) => {
     setBusy(source === 'manual_pin' ? 'pin' : 'device');
-    setMessage(copy.resolvingAddress);
+    say(copy.resolvingAddress, 'progress');
     const place = availability?.addressSearchAvailable
       ? await providerClients.describePin(position.latitude, position.longitude, language)
       : null;
     const nextResolution = addressResolutionState(place, resolutionRequirement);
     onChange(position, source, place);
     setResolution(nextResolution);
-    setMessage(nextResolution === 'partial'
+    // Both of these tell the reader what to do next rather than reporting a
+    // failure of theirs, so neither is an alert.
+    say(nextResolution === 'partial'
       ? copy.locationPartial
-      : nextResolution === 'lookup_failed' ? copy.addressLookupFailed : '');
+      : nextResolution === 'lookup_failed' ? copy.addressLookupFailed : '', 'notice');
     setBusy(null);
   };
 
   const chooseDeviceLocation = async () => {
     setBusy('device');
     setResolution(null);
-    setMessage(copy.locating);
+    say(copy.locating, 'progress');
     const result = await requestDeviceFix();
     if (result.outcome !== 'succeeded') {
       setBusy(null);
       if (__DEV__) console.warn('Warsha device location unavailable', result);
-      setMessage(result.outcome === 'permission_denied'
+      say(result.outcome === 'permission_denied'
         ? copy.locationPermissionDenied
         : result.outcome === 'services_disabled'
           ? copy.locationServicesDisabled
@@ -140,11 +160,11 @@ export function AddressLocationPicker({
 
   const selectSuggestion = async (suggestion: PlaceSuggestion) => {
     setBusy('search');
-    setMessage('');
+    say('', 'progress');
     const place = await providerClients.resolvePlace(suggestion.placeId, sessionToken.current, language);
     if (!place) {
       setBusy(null);
-      setMessage(copy.locationFailed);
+      say(copy.locationFailed, 'error');
       return;
     }
     const nextResolution = addressResolutionState(place, resolutionRequirement);
@@ -154,7 +174,7 @@ export function AddressLocationPicker({
       place,
     );
     setResolution(nextResolution);
-    setMessage(nextResolution === 'partial' ? copy.locationPartial : '');
+    say(nextResolution === 'partial' ? copy.locationPartial : '', 'notice');
     setQuery(place.formattedAddress);
     setSuggestions([]);
     setSearchOpen(false);
@@ -173,7 +193,7 @@ export function AddressLocationPicker({
     };
     onChange({ latitude: place.latitude, longitude: place.longitude }, 'manual_pin', place);
     setResolution('resolved');
-    setMessage('');
+    say('', 'progress');
   };
 
   const controlsReady = availability !== null;
@@ -229,7 +249,7 @@ export function AddressLocationPicker({
           <BrandTextField
             accessibilityLabel={copy.searchAddress}
             value={query}
-            onChangeText={value => { setQuery(value); setMessage(''); }}
+            onChangeText={value => { setQuery(value); say('', 'progress'); }}
             placeholder={copy.searchPlaceholder}
           />
           {suggestions.map(suggestion => (
@@ -260,7 +280,17 @@ export function AddressLocationPicker({
       {value && resolution === 'resolved'
         ? <StateBadge label={copy.locationSaved} icon="check-circle" tone="success" />
         : null}
-      {message ? <AppText accessibilityRole="alert" style={styles.error}>{message}</AppText> : null}
+      {message ? (
+        /* Only a failure is an alert. Progress and advice are announced
+           politely, so a screen reader is not interrupted to be told that
+           something is still happening. */
+        <AppText
+          accessibilityRole={tone === 'error' ? 'alert' : undefined}
+          accessibilityLiveRegion={tone === 'error' ? 'assertive' : 'polite'}
+          style={tone === 'error' ? styles.error : styles.status}>
+          {message}
+        </AppText>
+      ) : null}
     </View>
   );
 }
@@ -283,4 +313,6 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   suggestionTitle: { color: colors.textPrimary },
   error: { color: colors.errorText },
+  /* Progress and advice: the ordinary secondary voice, not the red one. */
+  status: { color: colors.textSecondary },
 });
