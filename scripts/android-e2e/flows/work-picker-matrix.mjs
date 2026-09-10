@@ -104,7 +104,19 @@ async function capture(name, note) {
   /* A composed accessibility name — one starting with a comma — is the defect
      the OptionRow rewrite removed, and it must not come back on a new screen. */
   const composed = nodes.filter((node) => /^\s*,/.test(node.desc ?? '')).length;
-  const truncated = nodes.filter((node) => /…|\.\.\.$/.test(node.text ?? '')).map((n) => n.text.slice(0, 34));
+  /*
+   * An ellipsis is not always a truncation.
+   *
+   * "Locating…" and "Resolving address…" end in one on purpose, and this
+   * flagged them as clipped text on a screen where nothing was clipped. A
+   * truncation is the platform cutting a string it could not fit, which it does
+   * at the END of a line that fills its container — so a label whose ellipsis
+   * is the whole point, and which is nowhere near the width of the screen, is
+   * not one.
+   */
+  const widest = Math.max(...nodes.map((node) => (node.bounds?.right ?? 0) - (node.bounds?.left ?? 0)));
+  const truncated = nodes.filter((node) => /…|\.\.\.$/.test(node.text ?? '')
+    && node.bounds && (node.bounds.right - node.bounds.left) > widest * 0.6).map((n) => n.text.slice(0, 34));
 
   findings.push({ name, note, overflow, composed, truncated });
   const flags = [

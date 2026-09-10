@@ -85,7 +85,18 @@ async function capture(name, note = combination) {
    * where a style either declares a minimum or it does not — an answer that does
    * not depend on where the control happened to be when the screenshot was taken.
    */
-const truncated = nodes.filter((node) => /…|\.\.\.$/.test(node.text ?? ''))
+  /*
+   * An ellipsis is not always a truncation.
+   *
+   * "Locating…" and "Resolving address…" end in one on purpose, and this
+   * flagged them as clipped text on a screen where nothing was clipped. A
+   * truncation is the platform cutting a string it could not fit, which it
+   * does at the end of a line filling its container — so a short label whose
+   * ellipsis is the whole point is not one.
+   */
+  const widest = Math.max(...nodes.map((node) => (node.bounds?.right ?? 0) - (node.bounds?.left ?? 0)));
+  const truncated = nodes.filter((node) => /…|\.\.\.$/.test(node.text ?? '')
+    && node.bounds && (node.bounds.right - node.bounds.left) > widest * 0.6)
     .map((node) => node.text.slice(0, 34));
   // A composed accessibility name — one that starts with a comma — is the
   // defect the OptionRow rewrite removed. It must not come back on a new screen.
