@@ -167,7 +167,20 @@ async function capture(name, note) {
 
   const width = Math.max(...nodes.map((node) => node.bounds?.right ?? 0));
   const overflow = nodes.filter((node) => node.bounds && node.bounds.right > width + 1).length;
-  const small = nodes.filter((node) => node.clickable && node.bounds
+  /*
+   * A row scrolled half out of view is not a small touch target.
+   *
+   * uiautomator clips bounds to the visible region, so a row leaving the top of
+   * the list reports a NEGATIVE height — `648x-493` — and a naive "under 44dp"
+   * test calls that an accessibility defect. Thirty-five of them came out of one
+   * sweep, all of them rows that were simply scrolled past, and a real small
+   * target would have been somewhere in the middle of that list.
+   *
+   * So a control has to actually be on screen before its size means anything.
+   */
+  const onScreen = (bounds) => bounds
+    && bounds.right - bounds.left > 0 && bounds.bottom - bounds.top > 0;
+  const small = nodes.filter((node) => node.clickable && onScreen(node.bounds)
     && (node.bounds.right - node.bounds.left < 44 || node.bounds.bottom - node.bounds.top < 44))
     .map((node) => `${label(node).slice(0, 28)} ${node.bounds.right - node.bounds.left}x${node.bounds.bottom - node.bounds.top}`);
   const composed = nodes.filter((node) => /^\s*,/.test(node.desc ?? '')).length;
