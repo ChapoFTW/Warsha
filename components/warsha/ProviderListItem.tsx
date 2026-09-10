@@ -42,8 +42,8 @@ export function ProviderListItem({ provider }: { provider: Provider }) {
         />
         <AppText style={styles.profession}>
           {provider.distance === null
-            ? professionLabel(provider.profession, language)
-            : `${professionLabel(provider.profession, language)} · ${provider.distance.toFixed(1)} km`}
+            ? professionLabel(provider.profession, language, 'customer')
+            : `${professionLabel(provider.profession, language, 'customer')} · ${provider.distance.toFixed(1)} km`}
         </AppText>
         <View style={[styles.rating, isRTL && styles.reverse]}>
           <MaterialIcons name="star" size={15} color={colors.white} />

@@ -126,7 +126,7 @@ function TradeAccordion<T extends CatalogueServiceRow>({
   const { language, isRTL } = useLocalization();
   const wt = useWorkerText();
 
-  const trade = professionLabel(section.professionKey, language);
+  const trade = professionLabel(section.professionKey, language, 'professional');
   const count = section.selectedServiceIds.length;
   const all = count > 0 && count === section.services.length;
   const summary = count === 0

@@ -74,9 +74,11 @@ for (const entry of NEW) {
 const styling = professions.find((p) => p.key === 'personalStylist');
 check(styling !== undefined, 'the personal stylist profession exists');
 for (const language of LANGUAGES) {
-  const label = styling?.[language] ?? '';
-  check(!/hair|شعر|cheveu|coiffe/i.test(label),
-    `THE ${language.toUpperCase()} PERSONAL STYLIST LABEL IS NOT A HAIRDRESSER`);
+  for (const audience of ['work', 'person'] as const) {
+    const label = styling?.[audience]?.[language] ?? '';
+    check(!/hair|شعر|cheveu|coiffe/i.test(label),
+      `THE ${language.toUpperCase()} PERSONAL STYLIST ${audience.toUpperCase()} LABEL IS NOT A HAIRDRESSER`);
+  }
 }
 check(!/hairStylist|hair-styling|hair_stylist/i.test(migration + seed),
   'no Hair Stylist service was introduced anywhere');
@@ -224,8 +226,12 @@ for (const language of LANGUAGES) {
 equal(listProfessions('en').map((p) => p.categoryId),
   listProfessions('ar').map((p) => p.categoryId),
   'AND THE SEQUENCE OF TRADES BY CATEGORY IS THE SAME IN EVERY LANGUAGE');
-check(listProfessions('en', 'plumb').every((p) => /plumb/i.test(p.en)),
+check(listProfessions('en', 'plumb').every((p) => /plumb/i.test(p.work.en) || /plumb/i.test(p.person.en)),
   'a worker searching their trade still filters on their own words');
+check(listProfessions('en', 'plumber').some((p) => p.key === 'plumbing'),
+  'AND SEARCHING THE PERSON NOUN STILL FINDS THE WORK, because people type either');
+check(listProfessions('en', 'plumbing').some((p) => p.key === 'plumbing'),
+  'as does searching the work itself');
 
 // --- Relevance beats popularity in search ------------------------------------
 // The demand rank orders choosers. It must never reorder a result set the user

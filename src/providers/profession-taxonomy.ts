@@ -81,84 +81,85 @@ const onlyServices = (...keys: string[]): string[] => keys;
  */
 export const professions = [
   // --- Plumbing (demand 1) -------------------------------------------------
-  { key: 'plumbing', categoryId: 'plumbing', serviceCategoryIds: ['plumbing', 'water-heater-repair'], serviceKeys: everyServiceIn('plumbing', 'water-heater-repair'), en: 'Plumber', ar: 'سباك', fr: 'Plombier' },
-  { key: 'poolTechnician', categoryId: 'plumbing', serviceCategoryIds: ['plumbing'], serviceKeys: onlyServices('plumbing-pipe-repair', 'plumbing-pipe-replace', 'plumbing-water-pressure', 'plumbing-water-tank', 'plumbing-inspection'), en: 'Pool technician', ar: 'فني حمامات سباحة', fr: 'Technicien de piscine' },
+  { key: 'plumbing', categoryId: 'plumbing', serviceCategoryIds: ['plumbing', 'water-heater-repair'], serviceKeys: everyServiceIn('plumbing', 'water-heater-repair'), work: { en: 'General plumbing', ar: 'سباكة عامة', fr: 'Plomberie générale' }, person: { en: 'Plumber', ar: 'سباك', fr: 'Plombier' } },
+  { key: 'poolTechnician', categoryId: 'plumbing', serviceCategoryIds: ['plumbing'], serviceKeys: onlyServices('plumbing-pipe-repair', 'plumbing-pipe-replace', 'plumbing-water-pressure', 'plumbing-water-tank', 'plumbing-inspection'), work: { en: 'Pool maintenance', ar: 'صيانة حمامات السباحة', fr: 'Entretien de piscines' }, person: { en: 'Pool technician', ar: 'فني حمامات سباحة', fr: 'Technicien de piscine' } },
 
   // --- Electrical (demand 2) -----------------------------------------------
-  { key: 'electrical', categoryId: 'electrical', serviceCategoryIds: ['electrical'], serviceKeys: everyServiceIn('electrical'), en: 'Electrician', ar: 'كهربائي', fr: 'Électricien' },
-  { key: 'smartHomeTechnician', categoryId: 'electrical', serviceCategoryIds: ['electrical'], serviceKeys: onlyServices('electrical-socket-install', 'electrical-switch-install', 'electrical-light-install', 'electrical-wiring', 'electrical-inspection'), en: 'Smart-home technician', ar: 'فني منازل ذكية', fr: 'Technicien en maison connectée' },
-  { key: 'securitySystemTechnician', categoryId: 'electrical', serviceCategoryIds: ['electrical'], serviceKeys: onlyServices('electrical-wiring', 'electrical-panel', 'electrical-inspection'), en: 'Security-system technician', ar: 'فني أنظمة أمن', fr: 'Technicien en systèmes de sécurité' },
+  { key: 'electrical', categoryId: 'electrical', serviceCategoryIds: ['electrical'], serviceKeys: everyServiceIn('electrical'), work: { en: 'General electrical work', ar: 'أعمال كهرباء عامة', fr: 'Travaux électriques généraux' }, person: { en: 'Electrician', ar: 'كهربائي', fr: 'Électricien' } },
+  { key: 'smartHomeTechnician', categoryId: 'electrical', serviceCategoryIds: ['electrical'], serviceKeys: onlyServices('electrical-socket-install', 'electrical-switch-install', 'electrical-light-install', 'electrical-wiring', 'electrical-inspection'), work: { en: 'Smart-home installation', ar: 'تركيب المنازل الذكية', fr: 'Installation de maison connectée' }, person: { en: 'Smart-home technician', ar: 'فني منازل ذكية', fr: 'Technicien en maison connectée' } },
+  { key: 'securitySystemTechnician', categoryId: 'electrical', serviceCategoryIds: ['electrical'], serviceKeys: onlyServices('electrical-wiring', 'electrical-panel', 'electrical-inspection'), work: { en: 'Security systems', ar: 'أنظمة الأمن', fr: 'Systèmes de sécurité' }, person: { en: 'Security-system technician', ar: 'فني أنظمة أمن', fr: 'Technicien en systèmes de sécurité' } },
 
   // --- Cleaning (demand 3) -------------------------------------------------
-  { key: 'cleaning', categoryId: 'cleaning', serviceCategoryIds: ['cleaning'], serviceKeys: everyServiceIn('cleaning'), en: 'Cleaner', ar: 'عامل نظافة', fr: 'Agent de nettoyage' },
+  { key: 'cleaning', categoryId: 'cleaning', serviceCategoryIds: ['cleaning'], serviceKeys: everyServiceIn('cleaning'), work: { en: 'Cleaning', ar: 'نظافة', fr: 'Nettoyage' }, person: { en: 'Cleaner', ar: 'عامل نظافة', fr: 'Agent de nettoyage' } },
 
   // --- Air conditioning (demand 4) -----------------------------------------
-  { key: 'acRepair', categoryId: 'ac', serviceCategoryIds: ['ac'], serviceKeys: everyServiceIn('ac'), en: 'Air-conditioning technician', ar: 'فني تكييف', fr: 'Technicien en climatisation' },
+  { key: 'acRepair', categoryId: 'ac', serviceCategoryIds: ['ac'], serviceKeys: everyServiceIn('ac'), work: { en: 'Air-conditioning work', ar: 'أعمال التكييف', fr: 'Travaux de climatisation' }, person: { en: 'Air-conditioning technician', ar: 'فني تكييف', fr: 'Technicien en climatisation' } },
 
   // --- Appliance repair (demand 5) -----------------------------------------
-  { key: 'applianceRepair', categoryId: 'appliance-repair', serviceCategoryIds: ['appliance-repair', 'water-heater-repair'], serviceKeys: everyServiceIn('appliance-repair', 'water-heater-repair'), en: 'Appliance technician', ar: 'فني أجهزة منزلية', fr: 'Technicien en électroménager' },
-  { key: 'homeElectronicsTechnician', categoryId: 'appliance-repair', serviceCategoryIds: ['appliance-repair', 'satellite-tv-installation'], serviceKeys: onlyServices('appliance-microwave', 'appliance-install', 'appliance-inspection', ...everyServiceIn('satellite-tv-installation')), en: 'Home electronics technician', ar: 'فني إلكترونيات منزلية', fr: 'Technicien en électronique domestique' },
+  { key: 'applianceRepair', categoryId: 'appliance-repair', serviceCategoryIds: ['appliance-repair', 'water-heater-repair'], serviceKeys: everyServiceIn('appliance-repair', 'water-heater-repair'), work: { en: 'General appliance repair', ar: 'تصليح أجهزة منزلية عام', fr: 'Réparation générale d’électroménager' }, person: { en: 'Appliance technician', ar: 'فني أجهزة منزلية', fr: 'Technicien en électroménager' } },
+  { key: 'homeElectronicsTechnician', categoryId: 'appliance-repair', serviceCategoryIds: ['appliance-repair', 'satellite-tv-installation'], serviceKeys: onlyServices('appliance-microwave', 'appliance-install', 'appliance-inspection', ...everyServiceIn('satellite-tv-installation')), work: { en: 'Home electronics', ar: 'إلكترونيات منزلية', fr: 'Électronique domestique' }, person: { en: 'Home electronics technician', ar: 'فني إلكترونيات منزلية', fr: 'Technicien en électronique domestique' } },
 
   // --- Carpentry (demand 6) ------------------------------------------------
-  { key: 'carpentry', categoryId: 'carpentry', serviceCategoryIds: ['carpentry'], serviceKeys: everyServiceIn('carpentry'), en: 'Carpenter', ar: 'نجار', fr: 'Menuisier' },
-  { key: 'furnitureRepairer', categoryId: 'carpentry', serviceCategoryIds: ['carpentry'], serviceKeys: onlyServices('carpentry-furniture-repair', 'carpentry-furniture-assembly', 'carpentry-wardrobe', 'carpentry-shelving', 'carpentry-lock-fitting', 'carpentry-upholstery'), en: 'Furniture repairer', ar: 'فني تصليح أثاث', fr: 'Réparateur de meubles' },
-  { key: 'furnitureMaker', categoryId: 'carpentry', serviceCategoryIds: ['carpentry'], serviceKeys: onlyServices('carpentry-furniture-assembly', 'carpentry-wardrobe', 'carpentry-kitchen-cabinets', 'carpentry-shelving', 'carpentry-custom'), en: 'Furniture maker', ar: 'صانع أثاث', fr: 'Fabricant de meubles' },
-  { key: 'upholsterer', categoryId: 'carpentry', serviceCategoryIds: ['carpentry'], serviceKeys: onlyServices('carpentry-furniture-repair', 'carpentry-upholstery'), en: 'Upholsterer', ar: 'منجد', fr: 'Tapissier' },
+  { key: 'carpentry', categoryId: 'carpentry', serviceCategoryIds: ['carpentry'], serviceKeys: everyServiceIn('carpentry'), work: { en: 'General carpentry', ar: 'نجارة عامة', fr: 'Menuiserie générale' }, person: { en: 'Carpenter', ar: 'نجار', fr: 'Menuisier' } },
+  { key: 'furnitureRepairer', categoryId: 'carpentry', serviceCategoryIds: ['carpentry'], serviceKeys: onlyServices('carpentry-furniture-repair', 'carpentry-furniture-assembly', 'carpentry-wardrobe', 'carpentry-shelving', 'carpentry-lock-fitting', 'carpentry-upholstery'), work: { en: 'Furniture repair', ar: 'تصليح الأثاث', fr: 'Réparation de meubles' }, person: { en: 'Furniture repairer', ar: 'فني تصليح أثاث', fr: 'Réparateur de meubles' } },
+  { key: 'furnitureMaker', categoryId: 'carpentry', serviceCategoryIds: ['carpentry'], serviceKeys: onlyServices('carpentry-furniture-assembly', 'carpentry-wardrobe', 'carpentry-kitchen-cabinets', 'carpentry-shelving', 'carpentry-custom'), work: { en: 'Furniture making', ar: 'صناعة الأثاث', fr: 'Fabrication de meubles' }, person: { en: 'Furniture maker', ar: 'صانع أثاث', fr: 'Fabricant de meubles' } },
+  { key: 'upholsterer', categoryId: 'carpentry', serviceCategoryIds: ['carpentry'], serviceKeys: onlyServices('carpentry-furniture-repair', 'carpentry-upholstery'), work: { en: 'Upholstery', ar: 'تنجيد', fr: 'Tapisserie d’ameublement' }, person: { en: 'Upholsterer', ar: 'منجد', fr: 'Tapissier' } },
 
   // --- Painting (demand 7) -------------------------------------------------
-  { key: 'painting', categoryId: 'painting', serviceCategoryIds: ['painting'], serviceKeys: everyServiceIn('painting'), en: 'Painter', ar: 'نقاش', fr: 'Peintre' },
-  { key: 'interiorDecorator', categoryId: 'painting', serviceCategoryIds: ['painting', 'renovation-finishing'], serviceKeys: onlyServices('painting-touch-up', 'painting-wall-prep', 'painting-decorative', 'painting-wallpaper', 'renovation-gypsum-ceiling', 'renovation-gypsum-decor', 'renovation-inspection'), en: 'Interior decorator', ar: 'مصمم ديكور داخلي', fr: 'Décorateur d’intérieur' },
+  { key: 'painting', categoryId: 'painting', serviceCategoryIds: ['painting'], serviceKeys: everyServiceIn('painting'), work: { en: 'General painting', ar: 'نقاشة عامة', fr: 'Peinture générale' }, person: { en: 'Painter', ar: 'نقاش', fr: 'Peintre' } },
+  { key: 'interiorDecorator', categoryId: 'painting', serviceCategoryIds: ['painting', 'renovation-finishing'], serviceKeys: onlyServices('painting-touch-up', 'painting-wall-prep', 'painting-decorative', 'painting-wallpaper', 'renovation-gypsum-ceiling', 'renovation-gypsum-decor', 'renovation-inspection'), work: { en: 'Interior decoration', ar: 'ديكور داخلي', fr: 'Décoration d’intérieur' }, person: { en: 'Interior decorator', ar: 'مصمم ديكور داخلي', fr: 'Décorateur d’intérieur' } },
 
   // --- Moving help (demand 8) ----------------------------------------------
-  { key: 'movingHelp', categoryId: 'moving-help', serviceCategoryIds: ['moving-help'], serviceKeys: everyServiceIn('moving-help'), en: 'Mover', ar: 'عامل نقل أثاث', fr: 'Déménageur' },
+  { key: 'movingHelp', categoryId: 'moving-help', serviceCategoryIds: ['moving-help'], serviceKeys: everyServiceIn('moving-help'), work: { en: 'Furniture moving', ar: 'نقل الأثاث', fr: 'Déménagement' }, person: { en: 'Mover', ar: 'عامل نقل أثاث', fr: 'Déménageur' } },
 
   // --- Pest control (demand 9) ---------------------------------------------
-  { key: 'pestControlWorker', categoryId: 'pest-control', serviceCategoryIds: ['pest-control'], serviceKeys: everyServiceIn('pest-control'), en: 'Pest-control worker', ar: 'فني مكافحة حشرات', fr: 'Technicien en désinsectisation' },
+  { key: 'pestControlWorker', categoryId: 'pest-control', serviceCategoryIds: ['pest-control'], serviceKeys: everyServiceIn('pest-control'), work: { en: 'Pest control', ar: 'مكافحة الحشرات', fr: 'Désinsectisation' }, person: { en: 'Pest-control worker', ar: 'فني مكافحة حشرات', fr: 'Technicien en désinsectisation' } },
 
   // --- Water heaters (demand 10) -------------------------------------------
-  { key: 'waterHeaterTechnician', categoryId: 'water-heater-repair', serviceCategoryIds: ['water-heater-repair'], serviceKeys: everyServiceIn('water-heater-repair'), en: 'Water-heater technician', ar: 'فني سخانات', fr: 'Technicien chauffe-eau' },
+  { key: 'waterHeaterTechnician', categoryId: 'water-heater-repair', serviceCategoryIds: ['water-heater-repair'], serviceKeys: everyServiceIn('water-heater-repair'), work: { en: 'Water-heater repair', ar: 'تصليح السخانات', fr: 'Réparation de chauffe-eau' }, person: { en: 'Water-heater technician', ar: 'فني سخانات', fr: 'Technicien chauffe-eau' } },
 
   // --- Flooring and tiling (demand 11) -------------------------------------
-  { key: 'tiler', categoryId: 'flooring-tiling', serviceCategoryIds: ['flooring-tiling'], serviceKeys: onlyServices('flooring-ceramic-install', 'flooring-porcelain-install', 'flooring-marble', 'flooring-tile-repair', 'flooring-grout', 'flooring-removal'), en: 'Tiler', ar: 'مبلط', fr: 'Carreleur' },
-  { key: 'flooringSpecialist', categoryId: 'flooring-tiling', serviceCategoryIds: ['flooring-tiling'], serviceKeys: everyServiceIn('flooring-tiling'), en: 'Flooring specialist', ar: 'فني أرضيات', fr: 'Spécialiste des revêtements de sol' },
+  { key: 'tiler', categoryId: 'flooring-tiling', serviceCategoryIds: ['flooring-tiling'], serviceKeys: onlyServices('flooring-ceramic-install', 'flooring-porcelain-install', 'flooring-marble', 'flooring-tile-repair', 'flooring-grout', 'flooring-removal'), work: { en: 'Tiling', ar: 'تبليط', fr: 'Carrelage' }, person: { en: 'Tiler', ar: 'مبلط', fr: 'Carreleur' } },
+  { key: 'flooringSpecialist', categoryId: 'flooring-tiling', serviceCategoryIds: ['flooring-tiling'], serviceKeys: everyServiceIn('flooring-tiling'), work: { en: 'General flooring', ar: 'أعمال أرضيات عامة', fr: 'Revêtements de sol en général' }, person: { en: 'Flooring specialist', ar: 'فني أرضيات', fr: 'Spécialiste des revêtements de sol' } },
 
   // --- Renovation and finishing (demand 12) --------------------------------
-  { key: 'renovationWorker', categoryId: 'renovation-finishing', serviceCategoryIds: ['renovation-finishing', 'flooring-tiling', 'painting'], serviceKeys: everyServiceIn('renovation-finishing', 'flooring-tiling', 'painting'), en: 'Renovation worker', ar: 'فني تجديدات', fr: 'Ouvrier en rénovation' },
-  { key: 'constructionWorker', categoryId: 'renovation-finishing', serviceCategoryIds: ['renovation-finishing', 'flooring-tiling'], serviceKeys: onlyServices(...everyServiceIn('renovation-finishing'), 'flooring-ceramic-install', 'flooring-porcelain-install', 'flooring-marble', 'flooring-tile-repair', 'flooring-removal'), en: 'Construction worker', ar: 'عامل بناء', fr: 'Ouvrier du bâtiment' },
-  { key: 'mason', categoryId: 'renovation-finishing', serviceCategoryIds: ['renovation-finishing'], serviceKeys: onlyServices('renovation-plastering', 'renovation-wall-build', 'renovation-crack-repair', 'renovation-waterproofing', 'renovation-inspection'), en: 'Mason', ar: 'بنّاء', fr: 'Maçon' },
-  { key: 'gypsumWorker', categoryId: 'renovation-finishing', serviceCategoryIds: ['renovation-finishing'], serviceKeys: onlyServices('renovation-plastering', 'renovation-gypsum-ceiling', 'renovation-gypsum-decor', 'renovation-inspection'), en: 'Gypsum worker', ar: 'فني جبس', fr: 'Plâtrier' },
+  { key: 'renovationWorker', categoryId: 'renovation-finishing', serviceCategoryIds: ['renovation-finishing', 'flooring-tiling', 'painting'], serviceKeys: everyServiceIn('renovation-finishing', 'flooring-tiling', 'painting'), work: { en: 'General renovation', ar: 'تجديدات عامة', fr: 'Rénovation générale' }, person: { en: 'Renovation worker', ar: 'فني تجديدات', fr: 'Ouvrier en rénovation' } },
+  { key: 'constructionWorker', categoryId: 'renovation-finishing', serviceCategoryIds: ['renovation-finishing', 'flooring-tiling'], serviceKeys: onlyServices(...everyServiceIn('renovation-finishing'), 'flooring-ceramic-install', 'flooring-porcelain-install', 'flooring-marble', 'flooring-tile-repair', 'flooring-removal'), work: { en: 'Construction work', ar: 'أعمال البناء', fr: 'Travaux de construction' }, person: { en: 'Construction worker', ar: 'عامل بناء', fr: 'Ouvrier du bâtiment' } },
+  { key: 'mason', categoryId: 'renovation-finishing', serviceCategoryIds: ['renovation-finishing'], serviceKeys: onlyServices('renovation-plastering', 'renovation-wall-build', 'renovation-crack-repair', 'renovation-waterproofing', 'renovation-inspection'), work: { en: 'Masonry', ar: 'مباني', fr: 'Maçonnerie' }, person: { en: 'Mason', ar: 'بنّاء', fr: 'Maçon' } },
+  { key: 'gypsumWorker', categoryId: 'renovation-finishing', serviceCategoryIds: ['renovation-finishing'], serviceKeys: onlyServices('renovation-plastering', 'renovation-gypsum-ceiling', 'renovation-gypsum-decor', 'renovation-inspection'), work: { en: 'Gypsum work', ar: 'أعمال الجبس', fr: 'Travaux de plâtre' }, person: { en: 'Gypsum worker', ar: 'فني جبس', fr: 'Plâtrier' } },
 
   // --- Alumetal (demand 13) ------------------------------------------------
-  { key: 'aluminumWorker', categoryId: 'alumetal', serviceCategoryIds: ['alumetal'], serviceKeys: everyServiceIn('alumetal'), en: 'Aluminium worker', ar: 'فني ألوميتال', fr: 'Menuisier aluminium' },
-  { key: 'glassWorker', categoryId: 'alumetal', serviceCategoryIds: ['alumetal'], serviceKeys: onlyServices('alumetal-window-install', 'alumetal-window-repair', 'alumetal-glass-replace', 'alumetal-shower-cabin'), en: 'Glass worker', ar: 'فني زجاج', fr: 'Vitrier' },
-  { key: 'welder', categoryId: 'alumetal', serviceCategoryIds: ['alumetal'], serviceKeys: onlyServices('alumetal-window-install', 'alumetal-window-repair', 'alumetal-door-install', 'alumetal-door-repair', 'alumetal-kitchen', 'alumetal-shutter'), en: 'Welder', ar: 'لحام', fr: 'Soudeur' },
+  { key: 'aluminumWorker', categoryId: 'alumetal', serviceCategoryIds: ['alumetal'], serviceKeys: everyServiceIn('alumetal'), work: { en: 'Aluminium work', ar: 'أعمال الألوميتال', fr: 'Menuiserie aluminium' }, person: { en: 'Aluminium worker', ar: 'فني ألوميتال', fr: 'Menuisier aluminium' } },
+  { key: 'glassWorker', categoryId: 'alumetal', serviceCategoryIds: ['alumetal'], serviceKeys: onlyServices('alumetal-window-install', 'alumetal-window-repair', 'alumetal-glass-replace', 'alumetal-shower-cabin'), work: { en: 'Glass work', ar: 'أعمال الزجاج', fr: 'Vitrerie' }, person: { en: 'Glass worker', ar: 'فني زجاج', fr: 'Vitrier' } },
+  { key: 'welder', categoryId: 'alumetal', serviceCategoryIds: ['alumetal'], serviceKeys: onlyServices('alumetal-window-install', 'alumetal-window-repair', 'alumetal-door-install', 'alumetal-door-repair', 'alumetal-kitchen', 'alumetal-shutter'), work: { en: 'Welding', ar: 'أعمال اللحام', fr: 'Soudure' }, person: { en: 'Welder', ar: 'لحام', fr: 'Soudeur' } },
 
   // --- Satellite and TV (demand 14) ----------------------------------------
-  { key: 'satelliteTechnician', categoryId: 'satellite-tv-installation', serviceCategoryIds: ['satellite-tv-installation'], serviceKeys: everyServiceIn('satellite-tv-installation'), en: 'Satellite and TV technician', ar: 'فني دش وتلفزيون', fr: 'Technicien satellite et télévision' },
+  { key: 'satelliteTechnician', categoryId: 'satellite-tv-installation', serviceCategoryIds: ['satellite-tv-installation'], serviceKeys: everyServiceIn('satellite-tv-installation'), work: { en: 'Satellite and TV installation', ar: 'تركيب الدش والتلفزيون', fr: 'Installation satellite et télévision' }, person: { en: 'Satellite and TV technician', ar: 'فني دش وتلفزيون', fr: 'Technicien satellite et télévision' } },
 
   // --- Locks and keys (demand 15) ------------------------------------------
-  { key: 'locksmith', categoryId: 'locksmithing', serviceCategoryIds: ['locksmithing'], serviceKeys: everyServiceIn('locksmithing'), en: 'Locksmith', ar: 'فني أقفال', fr: 'Serrurier' },
+  { key: 'locksmith', categoryId: 'locksmithing', serviceCategoryIds: ['locksmithing'], serviceKeys: everyServiceIn('locksmithing'), work: { en: 'Locks and keys', ar: 'أقفال ومفاتيح', fr: 'Serrurerie' }, person: { en: 'Locksmith', ar: 'فني أقفال', fr: 'Serrurier' } },
 
   // --- Gardening (demand 16) -----------------------------------------------
-  { key: 'gardener', categoryId: 'gardening', serviceCategoryIds: ['gardening'], serviceKeys: everyServiceIn('gardening'), en: 'Gardener', ar: 'بستاني', fr: 'Jardinier' },
-  { key: 'landscaper', categoryId: 'gardening', serviceCategoryIds: ['gardening'], serviceKeys: onlyServices('gardening-maintenance', 'gardening-planting', 'gardening-pruning', 'gardening-lawn', 'gardening-irrigation', 'gardening-clearance'), en: 'Landscaper', ar: 'منسق حدائق', fr: 'Paysagiste' },
+  { key: 'gardener', categoryId: 'gardening', serviceCategoryIds: ['gardening'], serviceKeys: everyServiceIn('gardening'), work: { en: 'General gardening', ar: 'بستنة عامة', fr: 'Jardinage général' }, person: { en: 'Gardener', ar: 'بستاني', fr: 'Jardinier' } },
+  { key: 'landscaper', categoryId: 'gardening', serviceCategoryIds: ['gardening'], serviceKeys: onlyServices('gardening-maintenance', 'gardening-planting', 'gardening-pruning', 'gardening-lawn', 'gardening-irrigation', 'gardening-clearance'), work: { en: 'Landscaping', ar: 'تنسيق الحدائق', fr: 'Aménagement paysager' }, person: { en: 'Landscaper', ar: 'منسق حدائق', fr: 'Paysagiste' } },
 
   // --- Barber (demand 17) --------------------------------------------------
-  { key: 'barber', categoryId: 'barber', serviceCategoryIds: ['barber'], serviceKeys: everyServiceIn('barber'), en: 'Barber', ar: 'حلاق', fr: 'Barbier' },
+  { key: 'barber', categoryId: 'barber', serviceCategoryIds: ['barber'], serviceKeys: everyServiceIn('barber'), work: { en: 'Barbering', ar: 'حلاقة', fr: 'Coiffure pour hommes' }, person: { en: 'Barber', ar: 'حلاق', fr: 'Barbier' } },
 
   // --- Hairdressing (demand 18) --------------------------------------------
-  { key: 'hairdresser', categoryId: 'hairdressing', serviceCategoryIds: ['hairdressing'], serviceKeys: everyServiceIn('hairdressing'), en: 'Hairdresser', ar: 'كوافير', fr: 'Coiffeur' },
+  { key: 'hairdresser', categoryId: 'hairdressing', serviceCategoryIds: ['hairdressing'], serviceKeys: everyServiceIn('hairdressing'), work: { en: 'Hairdressing', ar: 'تصفيف الشعر', fr: 'Coiffure' }, person: { en: 'Hairdresser', ar: 'كوافير', fr: 'Coiffeur' } },
 
   // --- Personal styling (demand 19) ----------------------------------------
-  { key: 'personalStylist', categoryId: 'personal-styling', serviceCategoryIds: ['personal-styling'], serviceKeys: everyServiceIn('personal-styling'), en: 'Personal stylist', ar: 'ستايلست شخصي', fr: 'Conseiller en image' },
+  { key: 'personalStylist', categoryId: 'personal-styling', serviceCategoryIds: ['personal-styling'], serviceKeys: everyServiceIn('personal-styling'), work: { en: 'Personal styling', ar: 'تنسيق الإطلالة', fr: 'Conseil en image' }, person: { en: 'Personal stylist', ar: 'ستايلست شخصي', fr: 'Conseiller en image' } },
 ] as const satisfies readonly {
   key: string;
   categoryId: ServiceCategoryId;
   serviceCategoryIds: readonly ServiceCategoryId[];
   serviceKeys: readonly string[];
-  en: string;
-  ar: string;
-  fr: string;
+  /** What the professional does. Shown when they describe their own work. */
+  work: { en: string; ar: string; fr: string };
+  /** Who they are. Shown when Warsha identifies them to a customer. */
+  person: { en: string; ar: string; fr: string };
 }[];
 
 /**
@@ -171,8 +172,8 @@ export const professions = [
  * payload can carry one.
  */
 export const withdrawnProfessions = [
-  { key: 'handyman', en: 'Handyman', ar: 'فني صيانة متعدد المهارات', fr: 'Agent de maintenance polyvalent' },
-  { key: 'generalMaintenance', en: 'General home-maintenance technician', ar: 'فني صيانة منزلية عامة', fr: 'Technicien de maintenance générale' },
+  { key: 'handyman', work: { en: 'General maintenance', ar: 'صيانة عامة', fr: 'Maintenance polyvalente' }, person: { en: 'Handyman', ar: 'فني صيانة متعدد المهارات', fr: 'Agent de maintenance polyvalent' } },
+  { key: 'generalMaintenance', work: { en: 'General home maintenance', ar: 'صيانة منزلية عامة', fr: 'Maintenance générale du domicile' }, person: { en: 'General home-maintenance technician', ar: 'فني صيانة منزلية عامة', fr: 'Technicien de maintenance générale' } },
 ] as const;
 
 export type ProfessionKey = (typeof professions)[number]['key'];
@@ -204,10 +205,46 @@ export function isWithdrawnProfession(value: string): value is WithdrawnProfessi
   return withdrawnByKey.has(value);
 }
 
-export function professionLabel(key: string, language: Language): string {
+/**
+ * Who is being spoken to, and therefore which noun Warsha uses.
+ *
+ * A professional choosing what they do is describing WORK — plumbing,
+ * electrical work, cleaning. A customer looking at someone is being shown a
+ * PERSON — a plumber, an electrician, a cleaner. Both name the same profession
+ * and the stored key never changes; only the presentation does.
+ *
+ * The distinction is not cosmetic. Asking a professional to pick "Plumber" from
+ * a list makes them choose a noun for themselves; asking them to pick
+ * "Plumbing" asks what they actually do, which is the question they can answer
+ * without thinking about it.
+ */
+export type ProfessionAudience = 'professional' | 'customer';
+
+/**
+ * The name of a profession, for the audience reading it.
+ *
+ * `audience` is REQUIRED on purpose. A default would silently pick a noun for
+ * every existing call site and for every future one, and the whole point is
+ * that a screen must say which side of the conversation it is on. The compiler
+ * asking the question is cheaper than a customer being told they hired a
+ * "Plumbing".
+ */
+export function professionLabel(
+  key: string,
+  language: Language,
+  audience: ProfessionAudience,
+): string {
   const profession = professionByKey.get(key) ?? withdrawnByKey.get(key);
+  if (profession) {
+    return audience === 'professional'
+      ? profession.work[language]
+      : profession.person[language];
+  }
+  // A key from before this taxonomy existed. The legacy strings are person
+  // nouns, which is the safer of the two to show either audience: a
+  // professional reading "Plumber" is a wording miss, where a customer reading
+  // "Plumbing" for a person is a wrong sentence.
   const legacy = (translations[language] as Record<string, unknown>)[key];
-  if (profession) return profession[language];
   if (typeof legacy === 'string') return legacy;
   const words = key.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/[-_]+/g, ' ').trim();
   return words ? words.charAt(0).toUpperCase() + words.slice(1) : key;
@@ -244,8 +281,18 @@ export function professionServiceKeys(key: string): string[] {
 export function listProfessions(language: Language, query = ''): ProfessionOption[] {
   const normalizedQuery = query.trim().toLocaleLowerCase(language);
   return [...professions]
+    /*
+     * Searched against BOTH nouns, in every language.
+     *
+     * The list shows work labels, so "plumbing" has to find it. But a
+     * professional who has always called themselves a plumber will type
+     * "plumber", and finding nothing would read as Warsha not offering the
+     * trade at all. Neither noun is exposed as an alias; they are simply both
+     * searchable, which is what a person expects of a search box.
+     */
     .filter(profession => !normalizedQuery
-      || profession[language].toLocaleLowerCase(language).includes(normalizedQuery))
+      || profession.work[language].toLocaleLowerCase(language).includes(normalizedQuery)
+      || profession.person[language].toLocaleLowerCase(language).includes(normalizedQuery))
     .sort(byServiceDemand(
       profession => profession.categoryId,
       (left, right) => (professionIndex.get(left.key) ?? 0) - (professionIndex.get(right.key) ?? 0)));

@@ -132,7 +132,7 @@ export default function WorkerProfileScreen() {
 
         <BrandCard style={styles.card}>
           <AppText style={styles.title}>{draft.displayName || wt.text('fullName')}</AppText>
-          <AppText style={styles.muted}>{professionLabel(draft.profession, language) || wt.text('profession')}</AppText>
+          <AppText style={styles.muted}>{professionLabel(draft.profession, language, 'professional') || wt.text('profession')}</AppText>
           <WorkerPhotoPicker currentUri={draft.avatarUrl} uploading={state.saving} onUse={savePhoto} />
           <BrandTextField label={wt.text('fullName')} value={draft.displayName} maxLength={100} onChangeText={displayName => setDraft(current => current ? { ...current, displayName } : current)} />
           <AppText style={styles.title}>{wt.text('professionPlural')}</AppText>

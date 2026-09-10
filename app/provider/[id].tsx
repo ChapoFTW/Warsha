@@ -88,7 +88,7 @@ export default function ProviderProfileScreen() {
                 professionalCertificateVerified={provider.professionalCertificateVerified}
               />
               <AppText style={styles.muted}>
-                {serviceMetaLine([professionLabel(provider.profession, language),
+                {serviceMetaLine([professionLabel(provider.profession, language, 'customer'),
                   provider.location], ' — ')}
               </AppText>
             </View>

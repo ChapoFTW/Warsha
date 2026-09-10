@@ -103,11 +103,11 @@ export function ProfessionSelector({
             <PressableSurface
               key={key}
               accessibilityRole="button"
-              accessibilityLabel={`${wt.text('removeProfession')} ${professionLabel(key, language)}`}
+              accessibilityLabel={`${wt.text('removeProfession')} ${professionLabel(key, language, 'professional')}`}
               onPress={() => onChange(selected.filter(item => item !== key))}
               style={[styles.chip, isRTL && styles.reverse]}>
               <WarshaIcon name={professionIconName(key)} size="md" />
-              <AppText style={styles.chipLabel}>{professionLabel(key, language)}</AppText>
+              <AppText style={styles.chipLabel}>{professionLabel(key, language, 'professional')}</AppText>
               <MaterialIcons name="close" size={18} color={colors.textSecondary} />
             </PressableSurface>
           ))}
@@ -170,16 +170,24 @@ export function ProfessionSelector({
               />
             ) : groups.map(group => (
               <View key={group.categoryId} style={styles.section}>
-                <AppText style={styles.sectionTitle}>
-                  {t(serviceCategoryTranslationKey(group.categoryId) as TranslationKey)}
-                </AppText>
+                {/* A heading over a single row groups nothing -- it just says
+                    the same thing twice, which is what "Pest control / Pest
+                    control" was. Ten of the nineteen categories hold exactly
+                    one kind of work, so the heading appears only where there is
+                    something to group, and where it does the rows beneath it
+                    are genuinely different work. */}
+                {group.professions.length > 1 ? (
+                  <AppText style={styles.sectionTitle}>
+                    {t(serviceCategoryTranslationKey(group.categoryId) as TranslationKey)}
+                  </AppText>
+                ) : null}
                 <View style={styles.sectionRows}>
                   {group.professions.map(profession => {
                     const checked = pending.includes(profession.key);
                     return (
                       <OptionRow
                         key={profession.key}
-                        label={profession[language]}
+                        label={profession.work[language]}
                         selected={checked}
                         // At the cap, the trades you did NOT pick stop being
                         // offered rather than silently refusing a tap.

@@ -228,8 +228,14 @@ check(professions.length === 34, 'the canonical worker profession taxonomy conta
 check(JSON.stringify(professions.map(item => item.key))
   === JSON.stringify(listProfessions('en').map(item => item.key)),
   'THE SOURCE PROFESSION ARRAY IS WRITTEN IN RANKED ORDER, NOT ALPHABETICALLY');
-check(professions.every(item => item.ar.trim().length > 0), 'every canonical profession has an Arabic label');
-check(professions.every(item => item.fr.trim().length > 0), 'every canonical profession has a French label');
+for (const audience of ['work', 'person'] as const) {
+  check(professions.every(item => item[audience].ar.trim().length > 0),
+    `every canonical profession has an Arabic ${audience} label`);
+  check(professions.every(item => item[audience].fr.trim().length > 0),
+    `every canonical profession has a French ${audience} label`);
+  check(professions.every(item => item[audience].en.trim().length > 0),
+    `every canonical profession has an English ${audience} label`);
+}
 // Trade selection is ordered by the category's cold-start demand rank, not
 // alphabetically — so a worker meets the trades Egyptian households actually
 // call out for first, in the same order whichever language they read.
@@ -254,8 +260,9 @@ check(withdrawnProfessions.length === 2
   'WITHDRAWN CATCH-ALL TRADES REMAIN READABLE BUT CANNOT BE SELECTED');
 for (const withdrawn of withdrawnProfessions) {
   check(['en', 'ar', 'fr'].every(language =>
-    professionLabel(withdrawn.key, language as 'en' | 'ar' | 'fr').trim().length > 0),
-  `${withdrawn.key} keeps a readable label in every locale`);
+    (['customer', 'professional'] as const).every(audience =>
+      professionLabel(withdrawn.key, language as 'en' | 'ar' | 'fr', audience).trim().length > 0)),
+  `${withdrawn.key} keeps a readable label in every locale, for both audiences`);
 }
 
 // The trade-to-job relationship is exact, not category-wide. Every stored key

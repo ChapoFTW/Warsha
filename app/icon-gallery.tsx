@@ -74,7 +74,7 @@ export default function IconGalleryScreen() {
           {coverage.professions.filter(entry => entry.own).map(entry => (
             <View key={entry.key} style={styles.cell}>
               <View style={styles.ground}><WarshaIcon name={entry.icon} size="lg" /></View>
-              <AppText style={styles.caption}>{professionLabel(entry.key, language)}</AppText>
+              <AppText style={styles.caption}>{professionLabel(entry.key, language, 'professional')}</AppText>
             </View>
           ))}
         </View>
@@ -84,7 +84,7 @@ export default function IconGalleryScreen() {
           {coverage.professions.filter(entry => !entry.own).map(entry => (
             <View key={entry.key} style={styles.cell}>
               <View style={styles.ground}><WarshaIcon name={entry.icon} size="lg" /></View>
-              <AppText style={styles.caption}>{professionLabel(entry.key, language)}</AppText>
+              <AppText style={styles.caption}>{professionLabel(entry.key, language, 'professional')}</AppText>
               <AppText style={styles.inherited}>via {entry.inheritedFrom}</AppText>
             </View>
           ))}
@@ -95,7 +95,7 @@ export default function IconGalleryScreen() {
           {coverage.withdrawnProfessions.map(entry => (
             <View key={entry.key} style={styles.cell}>
               <View style={styles.ground}><WarshaIcon name={entry.icon} size="lg" /></View>
-              <AppText style={styles.caption}>{professionLabel(entry.key, language)}</AppText>
+              <AppText style={styles.caption}>{professionLabel(entry.key, language, 'professional')}</AppText>
             </View>
           ))}
         </View>

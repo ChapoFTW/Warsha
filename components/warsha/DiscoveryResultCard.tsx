@@ -56,7 +56,7 @@ export function DiscoveryResultCard({ provider }: { provider: DiscoveryProviderC
       <View style={styles.body}>
         <AppText numberOfLines={1} style={styles.name}>{provider.displayName}</AppText>
         <AppText style={styles.profession}>
-          {professionLabel(provider.professionKey, language)}
+          {professionLabel(provider.professionKey, language, 'customer')}
           {provider.areaLabel ? ` · ${provider.areaLabel}` : ''}
           {provider.distanceKm !== null ? ` · ${provider.distanceKm} ${dt.text('kilometresAway')}` : ''}
         </AppText>
