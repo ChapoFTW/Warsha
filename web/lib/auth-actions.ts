@@ -1,7 +1,7 @@
 'use client';
 
 import { classifySignInIdentity } from '@/src/auth/auth-identifier';
-import { safeAuthDiagnostic } from '@/src/auth/auth-errors';
+import { safeAuthDiagnostic, signUpWasMasked } from '@/src/auth/auth-errors';
 import { confirmationResendErrorIsNeutral } from '@/src/auth/email-confirmation';
 import { passwordMeetsPolicy } from '@/src/auth/password-policy';
 import type { SupportedLanguage } from '@/src/i18n/language-preference';
@@ -334,6 +334,17 @@ export async function signUpCustomer(input: {
       // generic "something went wrong on our side".
       reportSignUpDiagnostic(error);
       return { ok: false, failure: classifySignUpError(error) };
+    }
+    /*
+     * A success that is not one.
+     *
+     * Auth answers an already-registered address with a decoy user rather than
+     * an error, so this has to be asked before anything is believed. Mapped to
+     * the same ambiguous refusal an outright rejection produces, which is what
+     * keeps the form from becoming an enumeration oracle.
+     */
+    if (signUpWasMasked(data.user)) {
+      return { ok: false, failure: 'already_registered_or_refused' };
     }
     // A session means confirmation is disabled; otherwise the address must be
     // confirmed before the account can be used.

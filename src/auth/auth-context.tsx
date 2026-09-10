@@ -11,7 +11,9 @@ import {
   type SignupLegalAcceptance,
 } from '@/src/legal/signup-legal';
 
-import { SafeAuthError, safeAuthDiagnostic, sanitizeAuthError } from './auth-errors';
+import {
+  SafeAuthError, safeAuthDiagnostic, sanitizeAuthError, signUpWasMasked,
+} from './auth-errors';
 import { classifySignInIdentity, isValidCustomerEmail, visibleContactEmail } from './auth-identifier';
 import {
   callbackFailureFromParameters,
@@ -404,6 +406,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
           },
         });
         if (error) throw error;
+        /*
+         * The same decoy the website had to learn about: an already-registered
+         * address comes back as a success with no identities. Raised as the
+         * ordinary refusal so the person is told to sign in instead of being
+         * sent to wait for an email nobody sent.
+         */
+        if (signUpWasMasked(data.user)) throw new SafeAuthError('authSignupUnavailable');
         return customerSignUpResult({
           session: data.session,
           user: data.user ? {

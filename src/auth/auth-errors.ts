@@ -214,3 +214,35 @@ export function sanitizeAuthError(error: unknown, operation: AuthOperation = 'un
 export function authMessageKey(error: unknown): TranslationKey {
   return error instanceof SafeAuthError ? error.translationKey : 'authError';
 }
+
+
+/**
+ * A signup that succeeded, and a signup the provider only pretended to accept.
+ *
+ * Supabase does not return an error when the address already belongs to a
+ * confirmed account. That is deliberate on their side — an error there would
+ * turn any signup form into an account-enumeration oracle — so instead it
+ * returns a decoy: a user object with a fresh-looking id, no session, and an
+ * **empty `identities` array**. A real new signup has exactly one identity.
+ *
+ * Warsha read only `error` and `session`, so the decoy was indistinguishable
+ * from a new account awaiting confirmation. Someone who already had an account
+ * could register again, be told to check their email, and wait for a message
+ * that was never going to arrive. Reported by QA on the website: sign up, sign
+ * out, sign up again with the same credentials, and the flow ran to the end.
+ *
+ * This does not create an enumeration oracle of its own. The caller maps this
+ * to the same deliberately ambiguous message an outright refusal produces —
+ * "if you already have an account, sign in instead" — which is true and useful
+ * whether or not the address is registered, and says nothing a stranger could
+ * use to test addresses.
+ *
+ * `identities` missing entirely (rather than empty) is treated as a real
+ * signup: older providers and some mocked clients omit the field, and refusing
+ * those would break signup for everybody rather than for a duplicate.
+ */
+export function signUpWasMasked(user: { identities?: unknown } | null | undefined): boolean {
+  if (!user) return false;
+  const identities = user.identities;
+  return Array.isArray(identities) && identities.length === 0;
+}

@@ -73,6 +73,7 @@
     "test:service-labels": "node --no-warnings --experimental-strip-types scripts/service-labels.test.mts",
     "test:service-catalogue": "node --no-warnings --experimental-strip-types scripts/service-catalogue.test.mts",
     "test:address-contract": "node --no-warnings --experimental-strip-types scripts/address-contract.test.mts",
+    "test:signup-duplicate-account": "node --no-warnings --experimental-strip-types scripts/signup-duplicate-account.test.mts",
     "test:discovery-multilingual": "node --no-warnings --experimental-strip-types scripts/discovery-multilingual.test.mts",
     "test:touch-target-contract": "node --no-warnings --experimental-strip-types scripts/touch-target-contract.test.mts",
     "test:locale-coverage": "node --no-warnings --experimental-strip-types scripts/locale-coverage.test.mts",
