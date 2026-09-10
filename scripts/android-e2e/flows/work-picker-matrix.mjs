@@ -60,8 +60,28 @@ function target(names) {
   return null;
 }
 
+/**
+ * Look for a control, scrolling if it is not already on screen.
+ *
+ * At 320dp almost every form in this walk is taller than the screen, so "not
+ * visible" and "not there" are different answers and only one of them is a
+ * defect. The first version of the scroll lived inside `hop` alone, which fixed
+ * the create-account button and left the picker-opening button failing the same
+ * way one screen later -- the final reachability check and `tap` were still
+ * asking `target` directly. Same question, so it should be the same code.
+ */
+async function findByScrolling(names, { attempts = 4 } = {}) {
+  let node = target(names);
+  for (let attempt = 0; !node && attempt < attempts; attempt += 1) {
+    shell('input swipe 360 1200 360 600 320');
+    await sleep(900);
+    node = target(names);
+  }
+  return node;
+}
+
 async function tap(names, { optional = false, settle = 2400 } = {}) {
-  const node = target(names);
+  const node = await findByScrolling(names);
   if (!node) {
     if (optional) return false;
     throw new Error(`no control matching ${JSON.stringify([names].flat())}`);
@@ -219,12 +239,7 @@ async function reachPicker(combination) {
      * actually a control three swipes down. Arabic failed this way while
      * English at 411dp passed, so it looked like a localization defect.
      */
-    let node = target(names);
-    for (let attempt = 0; !node && attempt < 4; attempt += 1) {
-      shell('input swipe 360 1200 360 600 320');
-      await sleep(900);
-      node = target(names);
-    }
+    const node = await findByScrolling(names);
     if (!node) {
       if (!optional) {
         // A failed hop with no picture is the diagnostic this file's own
@@ -276,7 +291,10 @@ async function reachPicker(combination) {
   await sleep(6000);
   await settleScreen();
 
-  return Boolean(target(OPEN_PICKER));
+  // Scrolled, for the same reason every other lookup here is: at 320dp this
+  // button sits below the fold, and reporting "could not reach the work step"
+  // for a control that is simply further down is the exact wrong answer.
+  return Boolean(await findByScrolling(OPEN_PICKER));
 }
 
 await installPhotoFixture('com.warsha.app');
