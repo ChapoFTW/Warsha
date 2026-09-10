@@ -420,9 +420,17 @@ per run, each capture accompanied by the accessibility tree it was taken from.
 | --- | --- |
 | **AR RTL · 320dp · light** | **34/34 labels seen** — the hard gate |
 | EN · 320dp · light | 34/34 |
+| **FR · 320dp · light** | **34/34** — `Revêtements de sol`, the longest label, on one line |
+| AR RTL · 411dp · dark | 34/34 |
 | EN · 411dp · dark | 34/34 |
 | FR · 411dp · light | 34/34 |
+| AR RTL · 411dp · 1.3x | 34/34 |
 | EN · 411dp · 1.3x | 34/34 |
+
+**All three languages pass at the narrowest width.** No truncation and no
+overflow reported in any configuration. French was the last one open, and the
+reason it was open had nothing to do with French: the button is `J'accepte`
+with a straight apostrophe and the harness looked for `J’accepte`.
 
 Arabic RTL at 320dp, read off the render and its tree: title right-aligned with
 the close control on the left, the trade mark trailing and the state mark
