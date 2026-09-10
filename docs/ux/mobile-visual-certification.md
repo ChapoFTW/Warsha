@@ -450,6 +450,17 @@ of them were mine.
 | Guessed Arabic and French labels | `أوافق` for `موافق`, `اختار من المعرض` for `اختار من الصور`, `J’accepte` for `J'accepte`. Three near-misses, three lost runs; matching now folds apostrophes and the constants are taken from the copy |
 | Two "have we reached the bottom" heuristics | Both wrong, both mine. One compared the checkbox list, empty above the consent card; the other compared two dumps either side of one swipe. The coverage accounting already knows when 34/34 have been seen, which is a better reason to stop than a dropped frame |
 
+**The lesson was already written down, and it came back anyway.**
+`driver.mjs` carried a comment explaining that a previous swipe used "coordinates
+from a 1080x2400 phone" and that "on a 320x640 device every one of them is
+off-screen, so the swipe did nothing" — and that a flow had once reported "a
+product defect that did not exist" because of it. That note sat directly above a
+function which then made the same mistake in two new ways: it took the physical
+size instead of the override, and it cached the answer on a matrix whose purpose
+is changing it. A comment cannot stop a bug being rewritten somewhere else,
+which is why there is one `screenSize()` and one `scrollDown()` now, and why the
+sweep for hardcoded coordinates found none left.
+
 The pattern in all six: **a measurement that cannot fail is not a measurement.**
 Every one of them returned a plausible value that happened to be wrong, and the
 walk believed it. What broke the loop was making the harness say what it saw —
