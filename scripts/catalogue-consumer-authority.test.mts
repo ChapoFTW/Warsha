@@ -167,7 +167,7 @@ equal(rehomed.categoryIds, ['locksmithing'],
   'editing a locksmith profile replaces general-maintenance with locksmithing');
 equal(professionLabel('waterHeaterTechnician', 'fr', 'customer'), 'Technicien chauffe-eau',
   'a re-homed profession has canonical French copy for a customer');
-equal(professionLabel('waterHeaterTechnician', 'fr', 'professional'), 'Réparation de chauffe-eau',
+equal(professionLabel('waterHeaterTechnician', 'fr', 'professional'), 'Chauffe-eau',
   'and canonical French copy for the professional, describing the work');
 for (const audience of ['customer', 'professional'] as const) {
   equal(professionLabel('retired_special-worker', 'en', audience), 'Retired special worker',

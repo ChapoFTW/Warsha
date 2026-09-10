@@ -144,12 +144,76 @@ for (const path of CUSTOMER_SURFACES) {
 // --- The professional-facing copy asks about work ---------------------------
 {
   const copy = readFileSync('src/worker/worker-copy.ts', 'utf8');
-  ok(/tradeTitle: 'What work do you do\?'/.test(copy),
-    'the trade step asks what work they do, not which noun they are');
+  ok(/tradeTitle: 'What do you do\?'/.test(copy),
+    'the step asks what they do, not which noun they are');
   ok(/tradeTitle: 'بتشتغل إيه؟'/.test(copy),
     'and asks it in Egyptian Arabic the way it is actually asked');
-  ok(/tradeTitle: 'Quel travail faites-vous \?'/.test(copy),
+  ok(/tradeTitle: 'Que faites-vous \?'/.test(copy),
     'and in French');
+  ok(/searchProfessions: 'Search work'/.test(copy),
+    'and the search box is a short phrase rather than a taxonomy label');
+}
+
+// --- Every work label is one somebody actually certified ---------------------
+/*
+ * A copy audit, not a word ban.
+ *
+ * The first pass at these labels produced "General plumbing", "General
+ * electrical work" and "Air-conditioning work" — filler invented to stop a row
+ * repeating its category heading, which is a layout problem being solved with
+ * vocabulary. No plumber describes themselves as doing general plumbing.
+ *
+ * Banning "general", "work" and "services" outright would be the same mistake
+ * in reverse: some future label will legitimately need one of those words, and
+ * a rule that forbids them forces a worse phrase. So the approved set is
+ * enumerated here instead. Adding a profession means adding its label to this
+ * list, which is exactly the moment someone should be reading it aloud after
+ * the question "what do you do?".
+ */
+const CERTIFIED_WORK_LABELS = new Set([
+  'Plumbing', 'Pool maintenance',
+  'Electrical', 'Smart-home installation', 'Security systems',
+  'Cleaning', 'Air conditioning',
+  'Appliance repair', 'Home electronics',
+  'Carpentry', 'Furniture repair', 'Furniture making', 'Upholstery',
+  'Painting', 'Interior decoration',
+  'Furniture moving', 'Pest control', 'Water heaters',
+  'Tiling', 'Flooring',
+  'Renovation', 'Construction', 'Masonry', 'Gypsum',
+  'Aluminium', 'Glass', 'Welding',
+  'Satellite and TV', 'Locks and keys',
+  'Gardening', 'Landscaping',
+  'Barbering', 'Hairdressing', 'Personal styling',
+  // Withdrawn: never selectable, still rendered for a stored profile.
+  'Home maintenance', 'Household upkeep',
+]);
+
+for (const profession of [...professions, ...withdrawnProfessions]) {
+  ok(CERTIFIED_WORK_LABELS.has(profession.work.en),
+    `${profession.key}: "${profession.work.en}" is a certified work label — `
+    + 'add it to CERTIFIED_WORK_LABELS after reading it aloud after "what do you do?"');
+}
+
+// The filler that prompted the audit, named so it cannot come back quietly.
+for (const profession of professions) {
+  ok(!/^General /i.test(profession.work.en),
+    `${profession.key}: no "General X" — the plain noun already says it`);
+  ok(!/^عام |\bعامة$| عام$/.test(profession.work.ar),
+    `${profession.key}: no Arabic "عام" filler`);
+  ok(!/\bgénérale?\b/i.test(profession.work.fr),
+    `${profession.key}: no French "générale" filler`);
+}
+
+// --- A professional selector never falls back to the person noun ------------
+// The fallback in `professionLabel` exists for keys from before this taxonomy.
+// Every CURRENT profession must resolve a real work label, or a professional
+// somewhere is being shown a title for themselves.
+for (const profession of professions) {
+  for (const language of LANGUAGES) {
+    const work = professionLabel(profession.key, language, 'professional');
+    ok(work !== profession.person[language] || profession.work[language] === profession.person[language],
+      `${profession.key}/${language}: the professional form is not the person form by accident`);
+  }
 }
 
 console.log(`Profession audience: ${checks} checks passed.`);

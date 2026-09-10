@@ -90,8 +90,17 @@ export function ProfessionSelector({
       if (last?.categoryId === profession.categoryId) last.professions.push(profession);
       else ordered.push({ categoryId: profession.categoryId, professions: [profession] });
     }
-    return ordered;
-  }, [language, query]);
+    return ordered.map(group => {
+      const heading = t(serviceCategoryTranslationKey(group.categoryId) as TranslationKey);
+      const same = (value: string) => value.trim().toLocaleLowerCase(language)
+        === heading.trim().toLocaleLowerCase(language);
+      // Kept only when it groups more than one row AND none of them already
+      // carries the category's own name.
+      const earnsItsSpace = group.professions.length > 1
+        && !group.professions.some(profession => same(profession.work[language]));
+      return { ...group, heading: earnsItsSpace ? heading : null };
+    });
+  }, [language, query, t]);
 
   const atLimit = pending.length >= LIMIT;
 
@@ -124,8 +133,11 @@ export function ProfessionSelector({
         <SafeAreaView style={styles.modalSafe}>
           <View style={styles.header}>
             <View style={[styles.headerRow, isRTL && styles.reverse]}>
+              {/* The question, not a field name. "Your work" reads as a
+                  taxonomy slot; "What do you do?" is what a person is actually
+                  being asked, and it is the same question the step card asks. */}
               <AppText accessibilityRole="header" style={styles.title}>
-                {wt.text('professionPlural')}
+                {wt.text('tradeTitle')}
               </AppText>
               <PressableSurface
                 accessibilityRole="button"
@@ -135,6 +147,7 @@ export function ProfessionSelector({
                 <MaterialIcons name="close" size={22} color={colors.textPrimary} />
               </PressableSurface>
             </View>
+            <AppText style={styles.subtitle}>{wt.text('tradeBody')}</AppText>
             <BrandTextField
               accessibilityLabel={wt.text('searchProfessions')}
               placeholder={wt.text('searchProfessions')}
@@ -170,16 +183,22 @@ export function ProfessionSelector({
               />
             ) : groups.map(group => (
               <View key={group.categoryId} style={styles.section}>
-                {/* A heading over a single row groups nothing -- it just says
-                    the same thing twice, which is what "Pest control / Pest
-                    control" was. Ten of the nineteen categories hold exactly
-                    one kind of work, so the heading appears only where there is
-                    something to group, and where it does the rows beneath it
-                    are genuinely different work. */}
-                {group.professions.length > 1 ? (
-                  <AppText style={styles.sectionTitle}>
-                    {t(serviceCategoryTranslationKey(group.categoryId) as TranslationKey)}
-                  </AppText>
+                {/* A heading earns its space only when it says something the
+                    rows do not.
+
+                    Over a single row it groups nothing — "Cleaning" above
+                    "Cleaning". And above a row that already carries the
+                    category's own name it is the same word twice, which is the
+                    duplication the plain labels bring back and the reason the
+                    first attempt invented "General plumbing" instead. Renaming
+                    the row to dodge the heading was solving a layout problem
+                    with vocabulary; dropping the heading solves it where the
+                    problem is.
+
+                    The rows stay grouped either way — the spacing between
+                    sections is what carries that, not the text. */}
+                {group.heading ? (
+                  <AppText style={styles.sectionTitle}>{group.heading}</AppText>
                 ) : null}
                 <View style={styles.sectionRows}>
                   {group.professions.map(profession => {
@@ -249,6 +268,7 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   title: { ...typography.h2, flex: 1, fontWeight: typography.bold, color: colors.textPrimary },
+  subtitle: { ...typography.body, color: colors.textSecondary },
   close: {
     width: 44,
     height: 44,

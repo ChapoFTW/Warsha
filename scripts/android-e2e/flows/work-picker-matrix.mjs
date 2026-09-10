@@ -20,7 +20,8 @@ import { join } from 'node:path';
 import { describeScreen, screenshot, setText, shell, sleep, tree } from '../driver.mjs';
 import { assertBackendTarget } from '../backend-target.mjs';
 import { installPhotoFixture } from '../photo-fixture.mjs';
-import { apply, combinations, resetDevice } from '../appearance-matrix.mjs';
+import { acceptAllConsents } from '../consents.mjs';
+import { apply, combinations, resetDevice, VIEWPORTS } from '../appearance-matrix.mjs';
 
 const argv = process.argv.slice(2);
 const tagIndex = argv.indexOf('--tag');
@@ -54,13 +55,23 @@ async function tap(names, { optional = false, settle = 2400 } = {}) {
   return true;
 }
 
-async function waitForContent({ timeout = 40_000 } = {}) {
+/**
+ * Wait for the screen to STOP CHANGING, not for a fixed number of seconds.
+ *
+ * The first version waited for "not loading, and at least four labels", which a
+ * half-drawn screen satisfies. It tapped into transitions and reported "could
+ * not reach the work step" with no indication of which hop failed — a
+ * diagnostic that costs more than it saves.
+ */
+async function settleScreen({ timeout = 45_000 } = {}) {
   const deadline = Date.now() + timeout;
+  let previous = '';
   while (Date.now() < deadline) {
-    const nodes = tree();
-    if (!/Loading Warsha|تحميل|Chargement/i.test(nodes.map(label).join(' '))
-      && nodes.filter((node) => label(node)).length >= 4) return true;
-    await sleep(1000);
+    const now = describeScreen(tree());
+    if (now === previous && now.trim().length > 40
+      && !/Loading Warsha|تحميل|Chargement/i.test(now)) return true;
+    previous = now;
+    await sleep(1500);
   }
   return false;
 }
@@ -105,54 +116,71 @@ async function capture(name, note) {
   console.log(`    ${name.padEnd(34)} ${flags || 'clean'}`);
 }
 
-/** Register once per configuration: `pm clear` is what makes each run equal. */
+/**
+ * Register once per configuration and stop on the work step.
+ *
+ * `pm clear` before each is what makes the configurations comparable: a device
+ * carrying the previous run's account skips straight past the screens being
+ * photographed.
+ *
+ * Every hop reports itself. A walk that fails silently in the middle produces
+ * an empty folder and no idea why.
+ */
 async function reachPicker(combination) {
   shell('pm clear com.warsha.app');
-  await sleep(2600);
+  await sleep(3000);
   apply(combination);
   await sleep(1200);
   shell('am start -n com.warsha.app/.MainActivity');
-  if (!await waitForContent()) return false;
 
-  await tap(START, { optional: true, settle: 3200 });
-  if (!await tap(ROLE, { optional: true, settle: 3200 })) return false;
+  const hop = async (name, names, { optional = false } = {}) => {
+    await settleScreen();
+    const node = target(names);
+    if (!node) {
+      if (!optional) console.log(`    ${name}: NOT FOUND`);
+      return false;
+    }
+    shell(`input tap ${node.bounds.cx} ${node.bounds.cy}`);
+    await sleep(2200);
+    return true;
+  };
 
+  await hop('gateway', START, { optional: true });
+  if (!await hop('role', ROLE)) return false;
+
+  await settleScreen();
   const phone = `010123${String(Math.floor(Date.now() / 1000) % 100000).padStart(5, '0')}`;
   await setText({ cls: 'EditText', index: 0 }, 'Warsha Design QA');
   await setText({ cls: 'EditText', index: 1 }, phone);
   await setText({ cls: 'EditText', index: 2 }, 'Warsha!QA9pass');
   shell('input keyevent 111');
-  await sleep(900);
+  await sleep(1200);
 
-  // Each consent exactly once, decided by the state uiautomator reports.
-  for (let pass = 0; pass < 6; pass += 1) {
-    const pending = tree().find((node) => node.bounds && node.clickable
-      && node.cls.includes('CheckBox'));
-    if (!pending) break;
-    const before = describeScreen(tree());
-    shell(`input tap ${pending.bounds.cx} ${pending.bounds.cy}`);
-    await sleep(900);
-    if (describeScreen(tree()) === before) break;
-    shell('input swipe 540 1700 540 1100 300');
-    await sleep(900);
+  const { refused } = await acceptAllConsents();
+  if (refused.length) {
+    console.log(`    a consent refused to change: ${refused[0]}`);
+    return false;
   }
 
-  if (!await tap(CREATE, { optional: true, settle: 14_000 })) return false;
-  await waitForContent();
+  if (!await hop('create account', CREATE)) return false;
+  await sleep(10_000);
 
-  const consent = tree().find((node) => node.bounds && node.clickable
-    && node.cls.includes('CheckBox'));
-  if (consent) { shell(`input tap ${consent.bounds.cx} ${consent.bounds.cy}`); await sleep(900); }
-  await tap(ACCEPT, { optional: true, settle: 7000 });
+  await hop('processing consent', ['I agree to Warsha processing', 'أوافق على معالجة',
+    'J’accepte que Warsha'], { optional: true });
+  await hop('accept', ACCEPT, { optional: true });
+  await sleep(4000);
 
-  if (await tap(ADD_PHOTO, { optional: true, settle: 4500 })) {
-    await tap(GALLERY, { settle: 8000 });
-    const photo = tree().find((node) => node.bounds && node.clickable
-      && /Photo taken on|صورة|Photo/i.test(label(node)));
-    if (photo) { shell(`input tap ${photo.bounds.cx} ${photo.bounds.cy}`); await sleep(8000); }
-    await tap(USE_PHOTO, { optional: true, settle: 15_000 });
+  if (await hop('add photo', ADD_PHOTO, { optional: true })) {
+    await hop('gallery', GALLERY);
+    await sleep(5000);
+    await hop('pick photo', ['Photo taken on', 'صورة', 'Photo']);
+    await sleep(6000);
+    await hop('use photo', USE_PHOTO, { optional: true });
+    await sleep(12_000);
   }
-  await tap(SAVE, { optional: true, settle: 8000 });
+  await hop('save', SAVE, { optional: true });
+  await sleep(6000);
+  await settleScreen();
 
   return Boolean(target(OPEN_PICKER));
 }
@@ -160,7 +188,30 @@ async function reachPicker(combination) {
 await installPhotoFixture('com.warsha.app');
 
 try {
-  for (const combination of combinations()) {
+  /*
+   * `--only` runs a single configuration.
+   *
+   * Reaching this screen means a full registration, so twenty-four
+   * configurations is a long walk to discover the first one could not get
+   * there. One first, then the rest.
+   */
+  /*
+   * `--key` runs the configurations most likely to break THIS screen, rather
+   * than all twenty-four. Each one costs a full registration, so the full
+   * matrix is an hour; these four are where a work picker actually fails —
+   * long Arabic labels in the narrowest column, dark, enlarged text, and the
+   * language with the longest words.
+   */
+  const plan = argv.includes('--key')
+    ? [
+      { viewport: VIEWPORTS[1], appearance: 'light', scale: 1.0, language: 'ar-EG', name: '320dp-light-1x-ar-EG' },
+      { viewport: VIEWPORTS[0], appearance: 'dark', scale: 1.0, language: 'en-US', name: '411dp-dark-1x-en-US' },
+      { viewport: VIEWPORTS[0], appearance: 'light', scale: 1.3, language: 'en-US', name: '411dp-light-1.3x-en-US' },
+      { viewport: VIEWPORTS[1], appearance: 'light', scale: 1.0, language: 'fr-FR', name: '320dp-light-1x-fr-FR' },
+    ]
+    : [...combinations()];
+
+  for (const combination of plan) {
     console.log(`\n--- ${combination.name} ---`);
     const actual = apply(combination);
     console.log(`    device: ${actual.size} @${actual.density} scale ${actual.scale} night ${actual.night}`);
