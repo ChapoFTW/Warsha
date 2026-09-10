@@ -115,6 +115,31 @@ export function install(apkPath) {
   }
 }
 
+/**
+ * The size the screen actually is, not the size the hardware is.
+ *
+ * `wm size` prints two lines once the matrix has resized a device:
+ *
+ *     Physical size: 1080x2400
+ *     Override size: 720x1600
+ *
+ * Taking the first match gives the physical one, and a gesture computed from it
+ * starts below the bottom edge of the real screen and does nothing. That bug
+ * has now been written twice in two files — once as hardcoded coordinates and
+ * once as a proportion of the wrong number — and both times a swipe that did
+ * nothing was read as a page with nothing below it. It lives here so there is
+ * one answer to the question.
+ */
+export function screenSize() {
+  const report = adb(['shell', 'wm', 'size']);
+  const size = report.match(/Override size:\s*(\d+)x(\d+)/) ?? report.match(/(\d+)x(\d+)/);
+  return size
+    ? { width: Number(size[1]), height: Number(size[2]) }
+    : { width: 1080, height: 2400 };
+}
+
+
+
 /** The current screen as a list of nodes, each with its bounds and labels. */
 export function tree() {
   // UIAutomator writes to the device; the pull brings it back. Both paths are
@@ -321,17 +346,26 @@ export const back = async () => { shell('input keyevent 4'); await sleep(700); }
  * The screen size is read once and cached: `wm size` is a shell round-trip, and
  * a device does not resize itself mid-run.
  */
-let viewport = null;
 export const scrollDown = async () => {
-  if (!viewport) {
-    const reported = /(\d+)x(\d+)/.exec(shell('wm size'));
-    viewport = reported
-      ? { width: Number(reported[1]), height: Number(reported[2]) }
-      : { width: 1080, height: 1920 };
-  }
-  const x = Math.round(viewport.width / 2);
-  shell(`input swipe ${x} ${Math.round(viewport.height * 0.75)} `
-    + `${x} ${Math.round(viewport.height * 0.25)} 350`);
+  /*
+   * Read every time, and read the OVERRIDE size.
+   *
+   * This used to cache the viewport on first use, which is wrong in exactly the
+   * place it matters: the matrix resizes the device between configurations, so
+   * every configuration after the first scrolled by the first one's dimensions.
+   * And the pattern took the first `NxN` in `wm size`, which is the PHYSICAL
+   * size — on a device overridden to 720x1600 that put the gesture's start at
+   * y=1800, off the bottom edge, where it did nothing.
+   *
+   * A swipe that does nothing looks exactly like a page with nothing below it,
+   * which is how a consent card below the fold went unticked for several runs
+   * and was blamed on Arabic. `wm size` is one shell round-trip against a
+   * sleep of nearly a second; there is nothing to save here.
+   */
+  const { width, height } = screenSize();
+  const x = Math.round(width / 2);
+  shell(`input swipe ${x} ${Math.round(height * 0.75)} `
+    + `${x} ${Math.round(height * 0.25)} 350`);
   await sleep(800);
 };
 

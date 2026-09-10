@@ -17,7 +17,9 @@
 import { copyFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { describeScreen, screenshot, setText, shell, sleep, tree } from '../driver.mjs';
+import {
+  describeScreen, screenshot, scrollDown, setText, shell, sleep, tree,
+} from '../driver.mjs';
 import { assertBackendTarget } from '../backend-target.mjs';
 import { installPhotoFixture } from '../photo-fixture.mjs';
 import { acceptAllConsents } from '../consents.mjs';
@@ -73,8 +75,10 @@ function target(names) {
 async function findByScrolling(names, { attempts = 4 } = {}) {
   let node = target(names);
   for (let attempt = 0; !node && attempt < attempts; attempt += 1) {
-    shell('input swipe 360 1200 360 600 320');
-    await sleep(900);
+    // The shared scroll, which reads the screen's real size. The literal
+    // `360 1200 -> 360 600` here happened to be within a 720x1600 screen and so
+    // worked, which is luck rather than correctness.
+    await scrollDown();
     node = target(names);
   }
   return node;
@@ -124,7 +128,13 @@ const CREATE = ['Create account', 'إنشاء حساب', 'Créer un compte'];
  */
 const ACCEPT = ['I accept', 'موافق', 'J’accepte', 'Je suis d’accord'];
 const ADD_PHOTO = ['Add your photo', 'ضيف صورتك', 'Ajoutez votre photo'];
-const GALLERY = ['Choose from gallery', 'اختار من المعرض', 'Choisir dans la galerie'];
+/*
+ * Taken from `chooseGallery` in the worker copy. The Arabic was guessed as
+ * "اختار من المعرض" and the product says "اختار من الصور" — close enough to
+ * read past, different enough that the walk stopped dead on a screen it had
+ * reached correctly.
+ */
+const GALLERY = ['Choose from gallery', 'اختار من الصور', 'Choisir dans la galerie'];
 const USE_PHOTO = ['Use this photo', 'استخدم الصورة دي', 'Utiliser cette photo'];
 const SAVE = ['Save and continue', 'احفظ وكمّل', 'Enregistrer et continuer'];
 const OPEN_PICKER = ['Choose your work', 'Change your work', 'اختار شغلك', 'غيّر شغلك',
@@ -185,19 +195,25 @@ async function captureWholeList(combination, language) {
     }
   };
 
-  let previous = '';
-  for (let page = 0; page < 14; page += 1) {
+  /*
+   * Scrolled with the shared `scrollDown`, which reads the screen's real size.
+   *
+   * The swipe here was `540 1500 -> 540 620`, written against a 1080x2400
+   * device. On the 720x1600 compact device it is a short drag near the middle
+   * of the screen, and Arabic at 320dp reported six of thirty-four labels seen
+   * -- which the coverage line correctly called out as UNSEEN rather than
+   * calling the list clean.
+   *
+   * Stopping early on "the screen stopped changing" is also gone. It ends the
+   * sweep on one dropped frame, and the accounting below already knows when the
+   * whole list has been seen, which is a better reason to stop.
+   */
+  for (let page = 0; page < 16; page += 1) {
     const nodes = tree();
     noteLabels(nodes);
-    const description = describeScreen(nodes);
-    // The bottom announces itself by the screen no longer changing, which also
-    // covers a list shorter than the page budget.
-    if (page > 0 && description === previous) break;
-    previous = description;
-
     await capture(`${combination.name}-list-${String(page).padStart(2, '0')}`, combination);
-    shell('input swipe 540 1500 540 620 420');
-    await sleep(1100);
+    if (seen.size === expected.size) break;
+    await scrollDown();
   }
   noteLabels(tree());
 
@@ -300,6 +316,18 @@ async function reachPicker(combination) {
   shell('input keyevent 111');
   await sleep(1200);
 
+  /*
+   * Wait for the form to finish rendering before reading it.
+   *
+   * The legal card arrives after the fields do, and until it does the scroll
+   * view genuinely ends at the note above it -- so the consent step read an
+   * empty screen and concluded there was nothing to accept. `hop` never hit
+   * this because it settles first; the consent step went straight in on a
+   * 1.2-second sleep, which is the fixed-delay mistake this file already
+   * records once.
+   */
+  await settleScreen();
+  await capture(`${combination.name}-00-before-consents`, combination);
   const { refused } = await acceptAllConsents();
   if (refused.length) {
     console.log(`    a consent refused to change: ${refused[0]}`);
