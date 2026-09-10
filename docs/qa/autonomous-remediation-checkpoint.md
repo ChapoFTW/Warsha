@@ -3,7 +3,7 @@
 Written so the next session resumes without asking the owner to reconstruct
 anything.
 
-**Updated:** 2026-09-09 · **HEAD = origin/main = `a4d1dde`** · working tree clean
+**Updated:** 2026-09-10 · **HEAD = origin/main = `33dba8e`** · working tree clean
 
 ---
 
@@ -12,217 +12,158 @@ anything.
 | | |
 | --- | --- |
 | Repository | `D:\Warsha`, branch `main` |
-| HEAD / origin | `a4d1dde` — pushed, verified equal |
-| Local validation | typecheck 0, `test:all` exit 0, lint 0 errors (4 pre-existing warnings) |
-| CI | `f62948a` fully green (Validate 4/4, **API 24 ✓, API 25 ✓**); `990f886` Validate green, Android was still running; `a4d1dde` not yet checked |
-| Emulator | `emulator-5554`, 320×640 @160dpi (320dp), API 35 |
-| Installed APK | built 2026-09-09 19:28Z; carries the RTL baseline, role marks and bidi isolates. **Points at warsha-DEVELOPMENT**, because `.env` holds the development URL and key — see the backend-target note below |
-| Docker | running; **must be stopped** — the owner wants it installed, auto-start disabled, stack down when unused |
-
-**First action next session:** confirm CI on `a4d1dde` (Validate + Android API
-24/25). If red, read the real logs and fix before anything else.
+| Local validation | typecheck 0, `test:all` exit 0, lint clean on every touched file |
+| Emulator | `emulator-5554`, AVD `warsha_pixel`, API 35. Cold-booted at 1080×2400 @420dpi (**411dp**). The sweep drives 320dp by `wm size 720x1600` + `wm density 360` and resets afterwards |
+| Installed APK | Production-targeted, proven by `scripts/android-e2e/backend-target.mjs` |
+| QA credential | `D:/Warsha-Temp/qa-worker.json`, **rotated 2026-09-10**, now carries `"environment": "production"` |
+| Docker | still installed with auto-start disabled; **stack should be stopped when unused** |
 
 ---
 
-## Completed and evidenced
+## Security work completed this session
 
-**Production database deployment** — `202609090001` and `202609090002` applied.
-Verified: `staff_set_push_configuration` returned 404 before and **403 MFA
-required** after, which proves the authority landed *and* the gate chain runs.
-Configuration untouched: provider `disabled`, 0 devices, delivery and
-registration off. Deployment installed authority only.
+**The QA professional's password was rotated** through `auth.updateUser` on the
+account's own session — the same call `auth-context.tsx:511` makes. Proven both
+ways: the old credential returned HTTP 400 from the endpoint that had accepted
+it a minute earlier, and the new one authenticated. The value is not in any
+log, commit or transcript.
 
-**RTL layout architecture — PROVEN.** Warsha had two mirroring layers of its
-own. Root Yoga `direction` derived from language, plus 65 explicit
-`row-reverse` rows, cancelled to no mirroring at all. Root pinned to constant
-`ltr`; the explicit layer is now the only authority. Measured before/after,
-first launch, cold relaunch, device EN and AR. `I18nManager.isRTL` stays `true`
-throughout and no longer matters.
+**The leak path that caused it is closed.** `setText` proves a value landed
+where it was aimed and, when it has not, said what the field held instead —
+which is the correct diagnostic and is how the password reached a transcript
+after landing in the phone field. A screen containing any masked field is now
+one where nothing is quoted, whatever the caller passed. `test:device-driver-secrecy`.
 
-**RTL layout — RENDERED CORRECT** on the gateway, Arabic, 320dp: trust icons on
-the reading edge beside their labels; links mirrored (Help 181–239, Privacy
-81–143); English byte-identical to before (Help 59–90, Privacy 128–179).
+**Backend targeting is a hard gate.** `assertBackendTarget` resolves the
+project ref out of the JavaScript bundle inside the APK the device is actually
+running, located by `pm path` and cached under its on-device content hash. Both
+directions refuse, and inability to prove is a refusal. Credentials name their
+environment and cannot be loaded without the device agreeing.
+`test:backend-target-gate`.
 
-**Other landed work:** currency authority (country → ISO 4217, never language);
-role marks (house / person); Arabic help-content parity plus a guard; backup
-exception mechanism covering whole deployment sets; guarded Production approval
-helper; build helper that cannot report a success it did not have.
+---
+
+## The UX/UI redesign programme
+
+Opened on the owner's assessment that the product feels primitive, anchored on
+the profession/trade screens. Full findings and severities in
+`docs/ux/mobile-visual-certification.md`.
+
+### Foundations laid
+
+| | |
+| --- | --- |
+| `OptionRow` | One selection control. Was four hand-rolled rows across trades, jobs, governorates and services, each with its own height and its own idea of "selected". Also ends the composed-name defect structurally: `label` is required and nothing is composed from children |
+| Type scale | Restated on the web; `test:web-brand` asserts the two agree step for step and leading for leading |
+| `rhythm` | Semantic spacing brought to mobile from the web, which already had it. The parity check asserts the ORDERING, not only the numbers |
+| Dialog theme | A config plugin points `alertDialogTheme` at a Warsha overlay, reaching all eighteen `Alert.alert` call sites with no JavaScript change |
+| Native colour scheme | `Appearance.setColorScheme` so platform surfaces follow Warsha's own Light/Dark/System choice rather than the phone's |
+| `audit-typography` | A ratchet, app and web. Only falls |
+
+### Numbers
+
+| | Start | Now |
+| --- | --- | --- |
+| Hardcoded font sizes (app) | 369 | 227 |
+| Hardcoded font sizes (web) | 150 | 137 |
+| Files adopting the type scale | 9 | 28 |
 
 ---
 
 ## Open — highest priority first
 
-### 1. RTL visual certification — architecture PROVEN, sweep PARTIAL
+### 1. The trade picker has not been seen
 
-Seven Arabic surfaces at 320dp now pass with numbers: gateway, role chooser,
-signup fields, consent rows, navigation header (back on the right, arrow points
-right), legal document, sign-in. Zero overflow and no sub-44dp tap target on any
-of them. Also passing: AR dark, AR 1.3x text, AR at 411dp, FR, and EN
-byte-identical to before the fix.
+It is the screen the whole programme was anchored on, it is redesigned, and
+there is no render of it. The QA account advanced past onboarding step 3, so the
+selector is no longer on its path. Reach it from `app/worker/profile.tsx`, which
+hosts the same component, once the application completes.
 
-Navigation RTL is no longer merely wired — it is rendered and verified.
+### 2. The professional journey stands at step 4 of 7
 
-Still needed before the programme row closes:
+Steps 1–3 are done and saved (Plumber, three services, Cairo/Abdin). Step 4
+needs the current address; the address search works and returns live Google
+Places results. Then identity, criminal record, review.
 
-- viewports 320dp and ~411dp
-- device/app: EN/EN, EN/AR, **AR/AR**, AR/EN, AR/FR
-- light and dark, default and enlarged text
-- components: role cards, auth fields, consents, settings, lists, provider
-  profile, booking creation, chat, job status, tabs, headers/back, modal/sheet
-- bidi: Arabic + phone, + EGP, + dates, + Latin names, + address
+**GPS is unexercised.** "Use my current location" needs the emulator console,
+whose auth token file is sixteen null bytes, so `geo fix` is refused. A cold
+boot with a written token would fix it. The address-search path is a
+first-class alternative the screen itself offers, and that is what was used.
 
-Two specific items carried forward:
+### 3. Dark theme and 1.3x text are unrendered this programme
 
-- **Authenticated surfaces are unreached**: settings, lists, chat, job cards,
-  tabs, provider profile, booking creation. Every surface verified so far is
-  signed-out, because the QA professional account's onboarding is incomplete and
-  the app routes there.
-- **Transitions, tabs and accessibility traversal order** remain unverified.
-  Bounds prove visual order, not announcement order.
-- **Chat preview close** was moved to trailing *without rendered evidence* —
-  reaching it needs an authenticated conversation carrying an image.
+Every finding so far was found in light at default text size.
 
-### 2. Portals and separate native surfaces — unmeasured
+### 4. Live arrival tracking
 
-The neutral baseline only helps descendants that inherit it. React Native
-`Modal`, sheets, dialogs, navigation overlays and map overlays may mount their
-own root and resolve RTL independently, reproducing the double-authority bug.
-**Measure before adding anything**, and if a baseline is needed apply it at the
-shared surface boundary, not in screens.
-
-### 3. Currency visual gate — formatters proven, layout not
-
-`formatMoney` is unit-proven and web/native agree character-for-character. No
-money screen has been rendered at 320dp, in AR/FR, dark, or enlarged text.
-Long currency strings could clip cards or buttons.
-
-### 4. Certification Layer 2 — mostly UNTESTED
-
-28 lifecycle transitions, 11 update messages, 11 cross-cutting capabilities.
-Visual column is UNTESTED for everything except two gateway rows.
+`src/tracking/route-refresh-policy.ts` exists and is the deviation test the
+architecture note says must come before the map. Nothing else: no position
+record, no RLS, no `route` operation in `location-proxy`, no foreground
+service, no UI.
 
 ### 5. Not started
 
-Customer journey audit; professional journey past onboarding step 2 (photo
-fixture exists, journey not driven); live arrival tracking (designed, decisions
-recorded, nothing built); 404 parity for app./admin./native.
+Customer journey end to end; job lifecycle states; settings IA; web visual
+inspection beyond the token layer; 404 parity.
 
 ---
 
 ## Owner decisions
 
-`docs/product/owner-decision-backlog.md` — **OD-001** Supabase Pro (deferred by
-owner; G22 stays open), **OD-002** Production staff identity for push
-activation, **OD-003** role mark (resolved).
-
-Push Phase A/B is blocked only by OD-002. Everything else continues.
-
----
-
-## Temporary infrastructure
-
-**None outstanding.** The on-device RTL probe was removed — component deleted,
-`welcome` unwired, no QA route left in the auth policy — and
-`rtl-layout-baseline.test.mts` asserts all three.
-
-`scripts/android-release-build.mjs` and
-`scripts/approve-production-deployment.mjs` are **permanent** tooling, not
-diagnostics.
+`docs/product/owner-decision-backlog.md` — **OD-001** Supabase Pro (deferred;
+G22 stays open), **OD-002** Production staff identity for push activation,
+**OD-003** role mark (resolved — the house and person are settled, and a
+screenshot that looks busy is not grounds to reopen it).
 
 ---
 
 ## How to resume
 
 ```bash
-# CI (authenticated; unauthenticated is 60/hour and this session exhausted it)
-node scratchpad/ci.mjs <sha>
-
-# Build — never pipe gradle; the helper requires exit 0 AND "BUILD SUCCESSFUL"
-# AND an APK newer than a marker taken before the build
-set -a; . ./.env; set +a
-node scripts/android-release-build.mjs
-
-# Emulator: adb device paths need MSYS_NO_PATHCONV=1 under Git Bash,
-# or /sdcard/x.xml silently becomes /Files/Git/sdcard/x.xml and dumps empty.
-export MSYS_NO_PATHCONV=1
-adb shell cmd locale set-app-locales com.warsha.app --locales ar-EG
-```
-
-Arabic is reached **only** by per-app locale. `system_locales` alone does not
-work, and clearing app data does not either — Warsha keeps its own preference
-and defaults to English. Setting the *device* locale to Arabic destabilises this
-emulator (Pixel Launcher and Digital Wellbeing ANRs, package-service broken pipe
-mid-install); a reboot clears it, and device-EN/app-AR is both stable and the
-more decisive configuration.
-
----
-
-## The backend a local build points at
-
-`.env` holds `EXPO_PUBLIC_SUPABASE_URL=https://lrhipbcapzfxuwixfoog.supabase.co`
-— that is **warsha-development**. Production is `ekgwzljpcxpxnklzxuvj`.
-
-So every APK built with plain `.env` is a development build. That is correct for
-ordinary work and it cost an hour here, because signing in with the Production
-QA credentials produced "Invalid sign-in details or password." and looked
-exactly like a product defect: the same credential succeeded against the
-Production auth boundary from the host, and the emulator had network.
-
-It was not a defect. The account exists in Production and not in development.
-
-Comparing the key FINGERPRINT in `.env` against the one extracted from
-`warsha-prod.apk` is what settled it, and is the check to run first whenever an
-authenticated journey fails on a locally-built APK:
-
-```bash
-node -e "…resolvePublicKey({apkPath:'D:/Warsha-Temp/apk-audit/warsha-prod.apk'})"
-# compare url and fingerprint against .env
-```
-
-To exercise authenticated Production journeys, build with the Production values
-layered over `.env`:
-
-```bash
+# Build. The helper runs `expo prebuild` itself when app.json or any config
+# plugin changes, and refuses on a gradle failure rather than reporting one.
 set -a; . ./.env; . D:/Warsha-Temp/prod-env.txt; set +a
 export EXPO_PUBLIC_DATA_MODE=supabase
 node scripts/android-release-build.mjs
+
+# Prove what the device is actually running before trusting any screenshot
+export MSYS_NO_PATHCONV=1
+node scripts/android-e2e/backend-target.mjs production
+
+# Signed-out screens, both languages, both widths
+node scripts/android-e2e/flows/design-sweep.mjs --tag <name>
 ```
 
-**None of the RTL, bidi, role-mark or currency evidence depends on this.** Those
-are layout and text concerns and render identically against either backend. Only
-authenticated journeys are affected.
+`MSYS_NO_PATHCONV=1` is required under Git Bash or `/sdcard/x.xml` silently
+becomes `/Files/Git/sdcard/x.xml` and every dump comes back empty.
 
-## Known flake
-
-`test:recovery-state` failed once inside a `test:all` run and has passed **52
-consecutive times** since, standalone and in CI. Not reproduced, so not fixed —
-guessing at a fix for a failure I cannot trigger would be worse than recording
-it.
-
-What is known: it uses `Date.now()`, and the seal it exercises uses AES-GCM with
-a random IV. The time-based assertions pass explicit timestamps, so the obvious
-wall-clock explanation does not hold. If it recurs, capture the full assertion
-output before anything else — the message was truncated to `deepStrictEqual`
-when it happened, which is why it could not be diagnosed after the fact.
-
-Validate has been green on every commit since, including the run that executes
-the whole suite.
+---
 
 ## Lessons that cost time here
 
-**Three wrong RTL diagnoses came from inference.** A gap between an icon and its
-label was read as a double mirror, then blamed on `I18nManager`, then on the
-root style — each plausible, each wrong. Only on-device measurement of the
-flattened style and the resolved child order settled it. **Measure before
-concluding**; one screenshot cannot separate three candidate causes.
+**A fixed sleep is not a readiness check.** The first sweep slept seven seconds
+and photographed the splash screen four times, reporting all four clean —
+because a loading screen has no overflow and no small tap targets. A sweep that
+photographs the wrong screen is worse than one that fails, because it produces
+evidence.
 
-**A pipe hid a failed build for thirty minutes.** `gradlew … | tail` reports the
-exit code of `tail`. Fixed permanently in the build helper.
+**A source-shape assertion cannot know a resource exists.** The dialog plugin
+named `ThemeOverlay.AppCompat.DayNight.Dialog.Alert`, which AppCompat does not
+define. Its test passed. The resource linker is the authority for that, and a
+config plugin has to be built before it is believed.
 
-**Prose matched code four times.** Tests searching for a construct matched the
-comment explaining it. Comment-stripping is now standard for code-shape
-assertions.
+**Prose matched code for the fifth and sixth time.** A comment explaining a
+wrong resource name matched the assertion that the name was absent; a comment
+citing a dollar figure tripped the currency gate. Comment-stripping is standard
+here and both tests now do it.
 
-**Two assertions encoded beliefs that caused bugs** — `allowRTL(true)` and the
-root direction style. Both were re-encoded to assert the architecture, not
-deleted to go green.
+**The simulation falsified three of my own thresholds.** The route refresh
+policy's movement trigger was set at 250m, which fired more often than the
+ninety-second ceiling and made a twenty-minute journey cost 25 requests rather
+than 16 — the parameter meant to prevent runaway cost was causing it. Written
+as prose it would have read fine.
+
+**Measure before reverting, too.** The Arabic sign-in title wraps at 320dp and
+looked like fallout from raising page titles to h1. It needs about 311dp on a
+272dp screen, and needed more than the width at the old size as well. It wrapped
+before. Two minutes of measurement saved undoing a correct change.
