@@ -23,7 +23,9 @@
 import { copyFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { describeScreen, screenshot, scrollDown, shell, sleep, tree } from '../driver.mjs';
+import {
+  describeScreen, screenshot, screenSize, scrollDown, shell, sleep, tree,
+} from '../driver.mjs';
 import { assertBackendTarget } from '../backend-target.mjs';
 import { installPhotoFixture } from '../photo-fixture.mjs';
 import { apply, resetDevice, VIEWPORTS } from '../appearance-matrix.mjs';
@@ -135,6 +137,29 @@ const SAVE_CONTINUE = ['Save and continue', 'احفظ وكمّل', 'Enregistrer 
    possessive form it would be easy to assume. */
 const ADD_ADDRESS = ['Add current address', 'ضيف عنوانك الحالي', 'Ajouter l’adresse actuelle'];
 const USE_LOCATION = ['Use my current location', 'استخدم موقعي الحالي', 'Utiliser ma position actuelle'];
+const CONTINUE = ['Continue', 'كمّل', 'Continuer'];
+/* From `addressChooseMap`: the Arabic is “اختار الموقع على الخريطة”. */
+const CHOOSE_ON_MAP = ['Choose location on map', 'اختار الموقع على الخريطة', 'Choisir sur la carte'];
+const CONFIRM_LOCATION = ['Confirm this location', 'أكّد المكان ده', 'Confirmer cette position'];
+
+/**
+ * Wait for a control to become usable, not merely present.
+ *
+ * A disabled button is on screen from the start, so "is it there" answers
+ * nothing. This screen's Continue turns usable exactly when the address has
+ * resolved, which makes it the product's own statement that the lookup
+ * finished — better than any sleep this file could pick.
+ */
+async function waitForEnabled(names, { timeout = 20_000, each } = {}) {
+  const deadline = Date.now() + timeout;
+  while (Date.now() < deadline) {
+    const node = target(names);
+    if (node && node.enabled !== false) return true;
+    if (each) await each();
+    await sleep(1200);
+  }
+  return false;
+}
 
 /** Pick the first few work types, so the steps after this one have something to work with. */
 async function chooseWork(count = 3) {
@@ -301,11 +326,78 @@ async function completeServiceArea() {
   if (await tap(ADD_ADDRESS, { optional: true, settle: 3000 })) {
     await settleScreen();
     await capture(`${combination.name}-address-open`);
-    if (await tap(USE_LOCATION, { optional: true, settle: 4000 })) {
+
+    /*
+     * Ask again, rather than re-sending a fix nobody is waiting for.
+     *
+     * The app requests a location ONCE per press. The first version of this set
+     * the coordinate and then kept re-sending it while waiting — which changes
+     * nothing, because the request had already returned and the screen was
+     * already saying "Your device has no location fix yet". The fix was there;
+     * nobody was asking for it any more.
+     *
+     * So the retry is on the PRESS. The coordinate is set and verified first,
+     * then the product's own button is pressed, and only if that press comes
+     * back empty is the whole thing tried again. The product still asks for the
+     * permission, still requests the fix, and still refuses to continue without
+     * one — the emulator is simply being driven properly.
+     */
+    let resolved = false;
+    for (let attempt = 0; attempt < 3 && !resolved; attempt += 1) {
+      const placed = await setDeviceLocation(PLACES.abdinSquare, { verify: true });
+      if (!placed) {
+        console.log('    the emulator would not take the coordinate');
+        break;
+      }
+      if (!await tap(USE_LOCATION, { optional: true, settle: 4000 })) {
+        console.log('    "use my current location" not offered — capturing what is');
+        break;
+      }
+      resolved = await waitForEnabled(CONTINUE, { timeout: 20_000 });
+      console.log(`    attempt ${attempt + 1}: address ${resolved ? 'resolved' : 'not resolved'}`);
+    }
+
+    await capture(`${combination.name}-address-located`);
+
+    /*
+     * The map picker, when the emulator will not give a fix.
+     *
+     * expo-location cannot get one here even with a verified coordinate in the
+     * fused provider — the screen's own copy anticipates it: "If you are using
+     * an emulator, set a simulated location and try again." That is an
+     * environment limit, not a product defect, and the product offers two other
+     * real routes for exactly this reason.
+     *
+     * So the pin is placed through the real map picker, which is the path the
+     * owner asked for: a deterministic coordinate on a public square, resolved
+     * by the real reverse-geocode, validated by the real rules. Nothing is
+     * relaxed — the screen still refuses to continue until it has a pin it
+     * accepts.
+     */
+    if (!resolved && await tap(CHOOSE_ON_MAP, { optional: true, settle: 4000 })) {
       await settleScreen();
-      await capture(`${combination.name}-address-located`);
-    } else {
-      console.log('    "use my current location" not offered — capturing what is');
+      await capture(`${combination.name}-address-map`);
+
+      // The picker opens centred on the service area; the pin is placed by
+      // pressing the middle of the map, which is where the crosshair sits.
+      const { width, height } = screenSize();
+      shell(`input tap ${Math.round(width / 2)} ${Math.round(height * 0.42)}`);
+      await sleep(2500);
+      await settleScreen();
+      await capture(`${combination.name}-address-map-pinned`);
+
+      resolved = await waitForEnabled(CONFIRM_LOCATION, { timeout: 25_000 });
+      console.log(`    map pin accepted: ${resolved ? 'yes' : 'no'}`);
+      if (resolved) {
+        await tap(CONFIRM_LOCATION, { optional: true, settle: 3500 });
+        await settleScreen();
+        await capture(`${combination.name}-address-map-confirmed`);
+      }
+    }
+
+    if (resolved && await tap(CONTINUE, { optional: true, settle: 3500 })) {
+      await settleScreen();
+      await capture(`${combination.name}-address-confirmed`);
     }
   }
   return gov && area;
