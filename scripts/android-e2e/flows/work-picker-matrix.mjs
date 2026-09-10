@@ -259,6 +259,24 @@ async function reachPicker(combination) {
       }
       return false;
     }
+    /*
+     * A disabled control is not a control you can press.
+     *
+     * The walk tapped a greyed-out "إنشاء حساب" and counted it as progress,
+     * because finding a node and being able to use it were the same question
+     * here. It then walked three more optional hops looking for screens that
+     * were never going to arrive, and reported "could not reach the work step"
+     * — true, and four screens away from the reason.
+     *
+     * The button was disabled because a consent below the fold was still
+     * unticked. Saying so is the difference between a diagnosis and a symptom.
+     */
+    if (node.enabled === false) {
+      trace.push(`${name}: DISABLED`);
+      console.log(`    ${name}: found but DISABLED — something upstream is incomplete`);
+      await capture(`${combination.name}-FAILED-${name.replace(/\s+/g, '-')}-disabled`, combination);
+      return false;
+    }
     trace.push(name);
     shell(`input tap ${node.bounds.cx} ${node.bounds.cy}`);
     await sleep(2200);

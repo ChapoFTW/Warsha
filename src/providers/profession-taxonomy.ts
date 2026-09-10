@@ -1,5 +1,12 @@
 import { translations, type Language } from '../i18n/translations.ts';
 import {
+  expandQueryTerms,
+  SEARCH_LANGUAGES,
+  searchRanked,
+  type Searchable,
+  type SearchTerm,
+} from '../search/multilingual-search.ts';
+import {
   byServiceDemand,
   isLegacyCategory,
   serviceDemandRank,
@@ -306,24 +313,52 @@ export function professionServiceKeys(key: string): string[] {
  * words and does not reorder: clearing the search restores exactly the ranking
  * that was there before it.
  */
+/**
+ * Every word that finds a profession: both nouns, in all three languages.
+ *
+ * The list shows work labels, so "plumbing" has to find it. A professional who
+ * has always called themselves a plumber will type "plumber". And an Egyptian
+ * with an English keyboard active will type either one into an Arabic screen —
+ * which used to find nothing, because search compared against the current
+ * language alone and so told them Warsha does not offer their trade.
+ *
+ * None of these six is an alias in the sense of a second vocabulary to keep in
+ * step. They are the taxonomy's own approved labels, and matching on one never
+ * changes what is shown: the row still renders the label for the reader's
+ * language and audience. They are how the query gets in, not what comes out.
+ */
+export function professionSearchTerms(profession: ProfessionOption): SearchTerm[] {
+  return SEARCH_LANGUAGES.flatMap((language) => [
+    { text: profession.work[language], language },
+    { text: profession.person[language], language },
+  ]);
+}
+
+const searchableProfessions = (): Searchable<ProfessionOption>[] => [...professions]
+  .sort(byServiceDemand(
+    profession => profession.categoryId,
+    (left, right) => (professionIndex.get(left.key) ?? 0) - (professionIndex.get(right.key) ?? 0)))
+  .map((profession) => ({ entity: profession, terms: professionSearchTerms(profession) }));
+
 export function listProfessions(language: Language, query = ''): ProfessionOption[] {
-  const normalizedQuery = query.trim().toLocaleLowerCase(language);
-  return [...professions]
-    /*
-     * Searched against BOTH nouns, in every language.
-     *
-     * The list shows work labels, so "plumbing" has to find it. But a
-     * professional who has always called themselves a plumber will type
-     * "plumber", and finding nothing would read as Warsha not offering the
-     * trade at all. Neither noun is exposed as an alias; they are simply both
-     * searchable, which is what a person expects of a search box.
-     */
-    .filter(profession => !normalizedQuery
-      || profession.work[language].toLocaleLowerCase(language).includes(normalizedQuery)
-      || profession.person[language].toLocaleLowerCase(language).includes(normalizedQuery))
-    .sort(byServiceDemand(
-      profession => profession.categoryId,
-      (left, right) => (professionIndex.get(left.key) ?? 0) - (professionIndex.get(right.key) ?? 0)));
+  /*
+   * Demand order first, then the query.
+   *
+   * `searchRanked` keeps the order it was given wherever two entries score the
+   * same, so ranking by relevance does not throw away the ranking by how common
+   * a trade is. With no query it returns the list untouched, which is the right
+   * answer when nobody is searching: browsing is not searching.
+   */
+  return searchRanked(query, searchableProfessions(), language);
+}
+
+/**
+ * The words to hand a search that runs somewhere else — the provider search in
+ * the database, which matches service and category names in all three languages
+ * but has no way to know that "plumber" and "سباك" are one trade.
+ */
+export function expandProfessionQuery(query: string, language: Language): string[] {
+  return expandQueryTerms(query, searchableProfessions(), language);
 }
 
 /**

@@ -36,6 +36,33 @@ const ADB = process.env.WARSHA_ADB
 const adb = (args) => execFileSync(ADB, args, { encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 });
 const sleep = (ms) => new Promise((resolve) => { setTimeout(resolve, ms); });
 
+/**
+ * Scroll a screenful, on THIS screen rather than on the one I had open.
+ *
+ * The swipe used to be `540 1700 -> 540 1000`, which is a sensible gesture on a
+ * 1080x2400 device and lands entirely outside a 720x1600 one. So at 320dp the
+ * scroll did nothing at all: a consent below the fold was never reached, the
+ * function reported no pending boxes and no refusals, and the walk went on to
+ * tap a Create account button that was disabled precisely because that consent
+ * was still unticked.
+ *
+ * Arabic and French failed this way while English at 411dp passed, which made a
+ * geometry bug look for three runs like a localization defect on the screen the
+ * low-literacy gate cares most about.
+ *
+ * Proportions, taken from the device, cannot make that mistake.
+ */
+async function scrollDown() {
+  const size = adb(['shell', 'wm', 'size']).match(/(\d+)x(\d+)/);
+  const width = size ? Number(size[1]) : 1080;
+  const height = size ? Number(size[2]) : 2400;
+  const x = Math.round(width / 2);
+  adb(['shell', 'input', 'swipe',
+    String(x), String(Math.round(height * 0.72)),
+    String(x), String(Math.round(height * 0.34)), '320']);
+  await sleep(1000);
+}
+
 /** Every checkbox on screen, with the state the platform reports for it. */
 export function checkboxes() {
   adb(['shell', 'uiautomator', 'dump', '/sdcard/warsha-consents.xml']);
@@ -69,9 +96,8 @@ export async function acceptAllConsents({ passes = 8 } = {}) {
     const pending = checkboxes().filter((box) => !box.checked && box.enabled && box.cy > 0);
 
     if (pending.length === 0) {
-      // Nothing left here; look further down before concluding.
-      adb(['shell', 'input', 'swipe', '540', '1700', '540', '1000', '300']);
-      await sleep(1000);
+      // Nothing left HERE; look further down before concluding.
+      await scrollDown();
       if (checkboxes().filter((box) => !box.checked && box.enabled && box.cy > 0).length === 0) break;
       continue;
     }
