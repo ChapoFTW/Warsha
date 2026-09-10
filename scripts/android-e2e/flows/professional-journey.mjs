@@ -31,6 +31,7 @@ import {
   label, OPEN_PICKER, registerProfessional, settleScreen, tap, target,
 } from '../professional-signup.mjs';
 import { professions } from '../../../src/providers/profession-taxonomy.ts';
+import { specificServicesFor } from '../../../src/services/specific-services.ts';
 
 const argv = process.argv.slice(2);
 const arg = (name, fallback) => {
@@ -111,24 +112,26 @@ async function chooseWork(count = 3) {
   if (!await tap(OPEN_PICKER, { settle: 2600 })) return 0;
   await settleScreen();
 
-  const workLabels = new Set(professions.map((p) => p.work[language.slice(0, 2)]));
-  let chosen = 0;
-  for (let attempt = 0; attempt < 12 && chosen < count; attempt += 1) {
+  const byLabel = new Map(professions.map((p) => [p.work[language.slice(0, 2)], p]));
+  const chosenCategories = [];
+  for (let attempt = 0; attempt < 12 && chosenCategories.length < count; attempt += 1) {
     const row = tree().find((node) => node.clickable && node.bounds
-      && workLabels.has(label(node).trim()));
+      && byLabel.has(label(node).trim()));
     if (!row) { await scrollDown(); continue; }
+    const profession = byLabel.get(label(row).trim());
     shell(`input tap ${row.bounds.cx} ${row.bounds.cy}`);
     await sleep(1100);
-    // Chosen rows leave the unselected set, so the next pass finds a different
-    // one without tracking which have been tapped.
-    workLabels.delete(label(row).trim());
-    chosen += 1;
+    // Chosen rows leave the map, so the next pass finds a different one without
+    // tracking which have been tapped.
+    byLabel.delete(label(row).trim());
+    chosenCategories.push(profession.categoryId);
   }
+  const chosen = chosenCategories.length;
 
   await capture(`${combination.name}-picker-${chosen}-selected`);
   await tap(DONE, { settle: 2600, optional: true });
   await settleScreen();
-  return chosen;
+  return chosenCategories;
 }
 
 /**
@@ -140,7 +143,7 @@ async function chooseWork(count = 3) {
  * -- and the walk would stop here reporting that the next step was not reached,
  * which would be true and useless.
  */
-async function chooseServices(count = 3) {
+async function chooseServices(chosenCategories, count = 3) {
   await settleScreen();
 
   // The disclosure headings are the work labels themselves, which is how the
@@ -160,20 +163,35 @@ async function chooseServices(count = 3) {
   await capture(`${combination.name}-services-open`);
 
   /*
-   * Ticked by their checkbox state rather than by name, because the job names
-   * are catalogue data and hardcoding any of them would be another guessed
-   * label. A control that reports `checked` and is not yet checked is a job
-   * waiting to be chosen.
+   * Ticked by NAME, from the catalogue.
+   *
+   * The first version looked for a clickable node reporting `checked="false"`,
+   * which is every node on the screen — uiautomator emits that attribute
+   * whether or not a control is checkable, so the filter would have tapped a
+   * heading or a link. That is the same trap the consent helper fell into, and
+   * it is worth stating once: `checked` on its own says nothing.
+   *
+   * The job names are not a guess either. `specificServicesFor` is the
+   * catalogue that populates this screen, so asking it what the chosen trades
+   * offer is asking the same authority the UI asked.
    */
+  const jobs = new Set(
+    chosenCategories.flatMap((categoryId) =>
+      specificServicesFor(categoryId).map((service) => service[language.slice(0, 2)])),
+  );
+  if (jobs.size === 0) {
+    console.log('    the catalogue lists no jobs for the chosen trades — nothing to tick');
+    return 0;
+  }
+
   let chosen = 0;
-  for (let attempt = 0; attempt < 14 && chosen < count; attempt += 1) {
-    const box = tree().find((node) => node.clickable && node.bounds
-      && node.bounds.bottom - node.bounds.top > 0
-      && !node.checked && label(node).trim().length > 2
-      && !workLabels.has(label(node).trim()));
-    if (!box) { await scrollDown(); continue; }
-    shell(`input tap ${box.bounds.cx} ${box.bounds.cy}`);
+  for (let attempt = 0; attempt < 16 && chosen < count; attempt += 1) {
+    const row = tree().find((node) => node.clickable && node.bounds
+      && node.bounds.bottom - node.bounds.top > 0 && jobs.has(label(node).trim()));
+    if (!row) { await scrollDown(); continue; }
+    shell(`input tap ${row.bounds.cx} ${row.bounds.cy}`);
     await sleep(900);
+    jobs.delete(label(row).trim());
     chosen += 1;
   }
   console.log(`    ticked ${chosen} jobs`);
@@ -190,13 +208,13 @@ try {
     console.log('    could not reach the work step');
   } else {
     await capture(`${combination.name}-step-work`);
-    const chosen = await chooseWork();
-    console.log(`    chose ${chosen} kinds of work`);
+    const chosenCategories = await chooseWork();
+    console.log(`    chose ${chosenCategories.length} kinds of work`);
     await capture(`${combination.name}-step-work-chosen`);
 
     if (target(STEPS.services)) {
       await capture(`${combination.name}-step-services`);
-      await chooseServices();
+      await chooseServices(chosenCategories);
       await capture(`${combination.name}-step-services-chosen`);
     }
 
