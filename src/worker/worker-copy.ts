@@ -99,8 +99,12 @@ const copy = {
     professionPlural: 'Kinds of work',
     professionPurpose: 'Warsha uses this to send you jobs that suit you.',
     servicesPurpose: 'Choose the specific jobs you can take.',
-    governoratePurpose: 'Choose the governorate where you work.',
-    districtPurpose: 'Choose the area where you work.',
+    /* Defines the field rather than instructing. The label said "Governorate"
+       and the placeholder said "Choose governorate", so the helper was the
+       third place on the card telling you to choose one -- while every other
+       field's helper says why Warsha is asking. */
+    governoratePurpose: 'The governorate you take jobs in.',
+    districtPurpose: 'The district you cover inside it.',
     currentAddressPurpose: "Warsha uses this for job matching. Customers won't see your exact home address.",
     workLocationTitle: 'Your work location',
     /* The field, not the page. Both used `workLocationTitle` and the screen
@@ -255,8 +259,8 @@ const copy = {
     professionPlural: 'أنواع الشغل',
     professionPurpose: 'ورشة بتستخدمها علشان تبعتلك شغل يناسبك.',
     servicesPurpose: 'اختار الشغلانات اللي تقدر تستلمها.',
-    governoratePurpose: 'اختار المحافظة اللي بتشتغل فيها.',
-    districtPurpose: 'اختار المنطقة اللي بتشتغل فيها.',
+    governoratePurpose: 'المحافظة اللي بتستلم فيها شغل.',
+    districtPurpose: 'المنطقة اللي بتغطيها جواها.',
     currentAddressPurpose: 'ورشة بتستخدم عنوانك لمطابقة الشغل. العميل مش هيشوف عنوان بيتك بالتفصيل.',
     workLocationTitle: 'مكان شغلك',
     workLocationPin: 'المكان بالظبط',
@@ -409,8 +413,8 @@ const copy = {
     professionPlural: 'Types de travail',
     professionPurpose: 'Warsha s’en sert pour vous envoyer des travaux adaptés.',
     servicesPurpose: 'Choisissez les interventions précises que vous pouvez accepter.',
-    governoratePurpose: 'Choisissez le gouvernorat où vous travaillez.',
-    districtPurpose: 'Choisissez la zone où vous travaillez.',
+    governoratePurpose: 'Le gouvernorat où vous acceptez des travaux.',
+    districtPurpose: 'La zone que vous couvrez à l’intérieur.',
     currentAddressPurpose: 'Warsha s’en sert pour l’attribution des travaux. Les clients ne verront pas votre adresse exacte.',
     workLocationTitle: 'Votre lieu de travail',
     workLocationPin: 'Emplacement exact',

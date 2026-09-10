@@ -23,14 +23,12 @@
 import { copyFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import {
-  describeScreen, screenshot, screenSize, scrollDown, shell, sleep, tree,
-} from '../driver.mjs';
+import { describeScreen, screenshot, scrollDown, shell, sleep, tree } from '../driver.mjs';
 import { assertBackendTarget } from '../backend-target.mjs';
 import { installPhotoFixture } from '../photo-fixture.mjs';
 import { apply, resetDevice, VIEWPORTS } from '../appearance-matrix.mjs';
 import {
-  label, OPEN_PICKER, registerProfessional, settleScreen, tap, target,
+  findByScrolling, label, OPEN_PICKER, registerProfessional, settleScreen, tap, target,
 } from '../professional-signup.mjs';
 import { auditTargets } from '../touch-targets.mjs';
 import { grantLocationPermission, PLACES, setDeviceLocation } from '../location.mjs';
@@ -378,11 +376,22 @@ async function completeServiceArea() {
       await settleScreen();
       await capture(`${combination.name}-address-map`);
 
-      // The picker opens centred on the service area; the pin is placed by
-      // pressing the middle of the map, which is where the crosshair sits.
-      const { width, height } = screenSize();
-      shell(`input tap ${Math.round(width / 2)} ${Math.round(height * 0.42)}`);
-      await sleep(2500);
+      /*
+       * Tap the MAP, not a fraction of the screen.
+       *
+       * "Choose location on map" reveals the map inline, below the three
+       * buttons, rather than opening a picker of its own — so a tap at 42% of
+       * the screen landed back on "Use my current location". The map exposes
+       * itself as a node called "Google Map", carrying the hint "Tap the map or
+       * move the pin to your work location", which is the thing to press.
+       */
+      const map = await findByScrolling(['Google Map']);
+      if (!map) {
+        console.log('    the map did not appear');
+      } else {
+        shell(`input tap ${map.bounds.cx} ${map.bounds.cy}`);
+        await sleep(2500);
+      }
       await settleScreen();
       await capture(`${combination.name}-address-map-pinned`);
 
