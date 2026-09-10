@@ -241,7 +241,7 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   button_ghost: { backgroundColor: colors.transparent, borderColor: colors.transparent },
   button_danger: { backgroundColor: colors.errorSoft, borderColor: colors.error },
   buttonContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm },
-  buttonLabel: { fontSize: 14, lineHeight: 20, fontWeight: typography.semibold, textAlign: 'center' },
+  buttonLabel: { ...typography.body, fontWeight: typography.semibold, textAlign: 'center' },
   /* The ground moves as well as the surface, but only where there is room for
      it to. A quiet or ghost button has no fill of its own, so gaining one is
      the clearest thing it can say; a filled button already reads as solid and
@@ -296,8 +296,17 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   badge_warning: { backgroundColor: colors.warningSoft, borderColor: colors.warningBorder },
   badge_error: { backgroundColor: colors.errorSoft, borderColor: colors.errorBorder },
   badgeCompact: { minHeight: 24, paddingHorizontal: spacing.sm },
-  badgeLabel: { maxWidth: 220, fontSize: 11, lineHeight: 15, fontWeight: typography.semibold },
-  badgeLabelCompact: { maxWidth: 120, fontSize: 9, lineHeight: 12 },
+  badgeLabel: { ...typography.caption, letterSpacing: 0, maxWidth: 220, fontWeight: typography.semibold },
+  /*
+   * Compact is less PADDING, not smaller type.
+   *
+   * This was 9dp, which is below every accessibility floor there is, and it
+   * is the step that renders "Required" and "Private" on every field of
+   * worker onboarding -- the two words that tell a professional whether they
+   * must fill something in and who will see it. A badge can be tight without
+   * being unreadable; the height comes off `badgeCompact` above.
+   */
+  badgeLabelCompact: { maxWidth: 140 },
   empty: {
     minHeight: 188,
     alignItems: 'center',
