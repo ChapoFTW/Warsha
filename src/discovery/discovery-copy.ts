@@ -350,7 +350,7 @@ export const discoveryCopy = {
     historyCleared: 'Historique effacé',
     favourites: 'Favoris',
     favouritesEmpty: 'Aucun professionnel enregistré',
-    favouritesEmptyBody: "Touchez le cœur sur un professionnel pour l'enregistrer ici.",
+    favouritesEmptyBody: "Touchez le cœur d'un professionnel pour l'enregistrer ici.",
     favouritesSignedOut: 'Connectez-vous pour enregistrer des professionnels dans votre compte.',
     favouriteUnavailable: "Ce professionnel n'accepte pas de travaux en ce moment.",
     addFavourite: 'Enregistrer le professionnel',
