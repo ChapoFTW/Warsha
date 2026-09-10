@@ -95,6 +95,37 @@ Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
 Permissions-Policy: geolocation=(self), camera=(), microphone=(), payment=()
 ```
 
+## Locale precedence, and the trap it used to set
+
+Changed 2026-09-10, after the live site stranded people in one language.
+
+    an explicit locale in the URL   highest, for that navigation
+    the stored preference           when the URL names no locale
+    the browser's language          when there is neither
+    English                         last
+
+The middleware used to put the `warsha-locale` cookie above the address, so
+`/en` with an Arabic cookie redirected to `/ar`. The intent was that a shared
+link should not drag somebody out of the language they chose; the effect was
+that no English or French page was reachable at all, and the footer switcher
+was the only way out.
+
+That mattered because the switcher wrote `document.cookie` and then let an
+anchor navigate. **iOS WebKit does not reliably commit that write before the
+navigation begins** — so the request arrived with the old cookie, the
+middleware saw the address disagreeing with it, and sent the visitor back.
+Reported from two iPhones, in Safari and in Edge, both of which are WebKit;
+reproduced against Production at an iPhone viewport.
+
+The address now wins, and the middleware synchronises the cookie **on the
+response**. That is the part that ends the race: it no longer matters whether a
+client-side write lands before a navigation, because the server has already
+written it. The bare domain still honours a stored choice.
+
+`npm run test:web-language-switch` covers it — `BASE_URL` points it at a local
+production build or at the live domain. It exercises all six transitions and
+every stale-cookie/address pair; it fails against a build carrying the old rule.
+
 ## DNS, and what must not be broken
 
 `mail.usewarsha.com` carries the Resend MX, SPF, and DKIM records that make
