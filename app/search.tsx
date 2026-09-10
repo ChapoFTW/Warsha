@@ -80,7 +80,7 @@ export default function SearchScreen() {
   const [failed, setFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
 
-  const { isRTL } = useLocalization();
+  const { isRTL, language } = useLocalization();
   const generation = useRef(0);
   const offerableSorts = useMemo(() => availableSorts(filters), [filters]);
   const filterCount = activeFilterCount(filters);
@@ -95,7 +95,9 @@ export default function SearchScreen() {
     generation.current += 1;
     const current = generation.current;
     if (offset === 0) { setLoading(true); setFailed(false); } else { setLoadingMore(true); }
-    void discoveryRepository.search(submitted, filters, sort, discoveryPageSize, offset)
+    // The language is a tie-break inside the widening, not a filter: the same
+    // trades are reached whichever way the screen is set.
+    void discoveryRepository.search(submitted, filters, sort, discoveryPageSize, offset, language)
       .then(result => {
         if (generation.current !== current) return;
         setResults(previous => offset === 0 ? result.results : [...previous, ...result.results]);
@@ -109,7 +111,9 @@ export default function SearchScreen() {
         setLoading(false);
         setLoadingMore(false);
       });
-  }, [filters, sort, submitted]);
+    // `language` belongs here: changing it re-widens the query, and a stale
+    // closure would keep searching with the previous language's tie-break.
+  }, [filters, sort, submitted, language]);
 
   useEffect(() => { run(0); }, [run, attempt]);
 

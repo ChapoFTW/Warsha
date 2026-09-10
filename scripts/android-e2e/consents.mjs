@@ -63,6 +63,21 @@ async function scrollDown() {
   await sleep(1000);
 }
 
+/**
+ * Whether another swipe would move anything.
+ *
+ * Compared by the text on screen rather than by a scroll position, because the
+ * dump does not carry one. Two identical screens after a swipe means the swipe
+ * did nothing.
+ */
+let lastSeen = '';
+function atBottom() {
+  const now = checkboxes().map((box) => `${box.label}${box.checked}`).join('|');
+  const same = now === lastSeen;
+  lastSeen = now;
+  return same;
+}
+
 /** Every checkbox on screen, with the state the platform reports for it. */
 export function checkboxes() {
   adb(['shell', 'uiautomator', 'dump', '/sdcard/warsha-consents.xml']);
@@ -96,9 +111,30 @@ export async function acceptAllConsents({ passes = 8 } = {}) {
     const pending = checkboxes().filter((box) => !box.checked && box.enabled && box.cy > 0);
 
     if (pending.length === 0) {
-      // Nothing left HERE; look further down before concluding.
-      await scrollDown();
-      if (checkboxes().filter((box) => !box.checked && box.enabled && box.cy > 0).length === 0) break;
+      /*
+       * Nothing pending HERE is not nothing pending.
+       *
+       * This used to scroll once and give up. At 320dp the signup form is tall
+       * enough that after the password field is filled the consent card is more
+       * than one screenful down, so a single swipe landed short, found no
+       * checkboxes, and reported success having ticked nothing at all. The
+       * walk then pressed a Create account button that was disabled for exactly
+       * that reason.
+       *
+       * So it scrolls until something appears or the screen stops moving, which
+       * is the only honest way to say "there is nothing further down".
+       */
+      let appeared = false;
+      for (let look = 0; look < 6 && !appeared; look += 1) {
+        const before = checkboxes().length;
+        await scrollDown();
+        const now = checkboxes().filter((box) => !box.checked && box.enabled && box.cy > 0);
+        if (now.length) { appeared = true; break; }
+        // The screen stopped changing: this is the bottom, and there is
+        // genuinely nothing left to tick.
+        if (checkboxes().length === before && atBottom()) break;
+      }
+      if (!appeared) break;
       continue;
     }
 

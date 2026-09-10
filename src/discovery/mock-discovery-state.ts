@@ -2,6 +2,13 @@
 // loads this module directly in Node, which resolves no bundler alias. Metro
 // treats both forms identically.
 import { categories as mockCategories, providers as mockProviders } from '../data/mock-data.ts';
+import type { Language } from '../i18n/translations.ts';
+import {
+  expandProfessionQuery,
+  professions,
+  professionSearchTerms,
+} from '../providers/profession-taxonomy.ts';
+import { normalizeSearchText } from '../search/multilingual-search.ts';
 
 import {
   activeFilterCount,
@@ -91,17 +98,48 @@ function recommendedScore(provider: (typeof mockProviders)[number], distanceKm: 
   return rating + experience + distance + newWorker;
 }
 
-function matchesQuery(provider: (typeof mockProviders)[number], query: string): boolean {
-  if (!query) return true;
-  const haystack = [
+/**
+ * Everything a provider can be found by, including their trade in every
+ * language.
+ *
+ * `provider.profession` is a canonical taxonomy key, so the six approved labels
+ * for it join the haystack. Without them this matched Latin text only: an
+ * Arabic customer searching سباك found nobody, however many plumbers were
+ * available, because the mock data is written in English.
+ */
+function providerHaystack(provider: (typeof mockProviders)[number]): string {
+  const profession = professions.find(entry => entry.key === provider.profession);
+  return normalizeSearchText([
     provider.name,
     provider.location,
     provider.about,
     provider.profession,
+    ...(profession ? professionSearchTerms(profession).map(term => term.text) : []),
     ...provider.skills,
     ...provider.services.map(service => service.name),
-  ].join(' ').toLowerCase();
-  return query.split(' ').every(token => haystack.includes(token));
+  ].join(' '));
+}
+
+/**
+ * Matched against the query as typed OR any language's word for the same trade.
+ *
+ * ANY rather than ALL: the widened terms are alternatives, so a provider needs
+ * to satisfy one of them completely, not all of them at once. Requiring every
+ * token of every alternative would mean a plumber had to be described in three
+ * languages simultaneously to be findable in any of them.
+ */
+function matchesQuery(
+  provider: (typeof mockProviders)[number],
+  query: string,
+  language: Language,
+): boolean {
+  if (!query) return true;
+  const haystack = providerHaystack(provider);
+  const alternatives = [query, ...expandProfessionQuery(query, language)];
+  return alternatives.some(alternative => {
+    const tokens = normalizeSearchText(alternative).split(' ').filter(Boolean);
+    return tokens.length > 0 && tokens.every(token => haystack.includes(token));
+  });
 }
 
 /** Bounded approximate pass, mirroring the server's "only when exact found nothing". */
@@ -151,12 +189,15 @@ export function mockSearch(
   sort: DiscoverySort,
   limit = discoveryPageSize,
   offset = 0,
+  language: Language = 'en',
 ): DiscoverySearchResult {
-  const normalized = normalizeDiscoveryQuery(query).toLowerCase();
+  // Normalization now belongs to the matcher, which applies the same one to
+  // both sides. Lower-casing here as well would be a second, weaker rule.
+  const normalized = normalizeDiscoveryQuery(query);
   let mode: DiscoverySearchMode = normalized ? 'exact' : 'browse';
 
   const eligible = mockProviders.filter(provider => passesFilters(provider, filters));
-  let matched = eligible.filter(provider => matchesQuery(provider, normalized));
+  let matched = eligible.filter(provider => matchesQuery(provider, normalized, language));
 
   if (mode === 'exact' && matched.length === 0) {
     const approximate = eligible.filter(provider => approximatelyMatches(provider, normalized));

@@ -37,7 +37,7 @@
  * list to drift out of step with the taxonomy, and none of these terms is ever
  * shown; they are how the query gets in, not what comes out.
  */
-import type { Language } from '@/src/i18n/translations';
+import type { Language } from '../i18n/translations.ts';
 
 /** Every language a Warsha term can be written in. */
 export const SEARCH_LANGUAGES = ['en', 'ar', 'fr'] as const;

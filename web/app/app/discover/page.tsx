@@ -17,6 +17,7 @@ import {
 import { useDraft } from '@/lib/draft-store';
 import { supabase } from '@/lib/supabase';
 import { useAppLocale } from '@/lib/use-app-locale';
+import { widenDiscoveryQuery } from '@/src/discovery/discovery-query';
 import { matchServiceCategories } from '@/src/services/service-search-aliases';
 import { WarshaIcon } from '@/components/warsha-icon';
 import { categoryIconName } from '@/src/brand/warsha-icons';
@@ -92,7 +93,11 @@ export default function DiscoverPage() {
     setSearching(true);
     setSearchFailed(false);
     const { data, error } = await supabase().rpc('search_providers', {
-      p_query: query.trim(),
+      // Widened through the same authority the app uses, so a customer typing
+      // "plumber" on an Arabic page reaches the same professionals as سباك.
+      // The database already matches service and category names in all three
+      // languages; what it cannot know is which words are the same trade.
+      p_query: widenDiscoveryQuery(query, locale),
       p_filters: {},
       p_sort: 'recommended',
       p_limit: 20,

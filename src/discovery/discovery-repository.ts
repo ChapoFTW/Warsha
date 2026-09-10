@@ -12,6 +12,8 @@ import {
   mockSearch,
   mockSuggestions,
 } from './mock-discovery-state';
+import type { Language } from '../i18n/translations';
+import { widenDiscoveryQuery } from './discovery-query';
 import {
   discoveryPageSize,
   normalizeDiscoveryQuery,
@@ -39,16 +41,27 @@ function requireMock(accountKey: string | null): string {
 }
 
 export const discoveryRepository = {
+  /*
+   * `language` decides nothing about WHICH trades are reached -- the widening
+   * carries every language's word for them regardless. It is a tie-break for
+   * which identities win when a vague query matches several, and it defaults to
+   * English so a caller not yet threaded through still gets multilingual
+   * results rather than silently losing them.
+   */
   async search(
     query: string,
     filters: DiscoveryFilters,
     sort: DiscoverySort,
     limit = discoveryPageSize,
     offset = 0,
+    language: Language = 'en',
   ): Promise<DiscoverySearchResult> {
-    if (environment.dataMode === 'mock') return mockSearch(query, filters, sort, limit, offset);
+    if (environment.dataMode === 'mock') return mockSearch(query, filters, sort, limit, offset, language);
     const { data, error } = await getSupabaseClient().rpc('search_providers', {
-      p_query: normalizeDiscoveryQuery(query) || null,
+      // Widened, so "plumber" typed on an Arabic screen reaches the same
+      // professionals as سباك. What gets RECORDED as a recent search below is
+      // the query as typed -- nobody wants their own history rewritten.
+      p_query: widenDiscoveryQuery(query, language) || null,
       p_filters: filters as Record<string, unknown>,
       p_sort: sort,
       p_limit: limit,

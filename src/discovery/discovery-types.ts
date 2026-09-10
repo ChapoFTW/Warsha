@@ -149,3 +149,4 @@ export const discoveryQueryMaxLength = 100;
 export function normalizeDiscoveryQuery(query: string): string {
   return query.trim().replace(/\s+/g, ' ').slice(0, discoveryQueryMaxLength);
 }
+
