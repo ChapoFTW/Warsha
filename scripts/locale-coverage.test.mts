@@ -169,6 +169,53 @@ for (const [name, path] of MODULES) {
   }
 }
 
+// --- The public site, whose copy is nested rather than flat ------------------
+/*
+ * `pages-copy.ts` is usewarsha.com: eight pages of blocks rather than a flat
+ * table, so the walk above cannot see it. It is checked here instead, because
+ * the marketing site is the first thing anyone reads and the same
+ * `{ ...en, ...fr }` habit would hide the same gap.
+ *
+ * Checked, and sound: every one of its strings is translated in both languages.
+ *
+ * `kind` is skipped, and only `kind`. It is the block's type — "heading",
+ * "paragraph", "note", "list" — a structural discriminator that is correctly
+ * identical in every locale. Forty-eight of those are why a first pass at this
+ * appeared to find forty-eight untranslated strings on the public site.
+ */
+{
+  const { pageContent } = await import('../web/lib/pages-copy.ts') as {
+    pageContent: Record<string, Record<string, unknown>>;
+  };
+
+  const STRUCTURAL = new Set(['kind']);
+  let strings = 0;
+
+  const walk = (english: unknown, arabic: unknown, french: unknown, path: string) => {
+    if (typeof english === 'string') {
+      if (STRUCTURAL.has(path.split('.').pop() ?? '')) return;
+      strings += 1;
+      ok(typeof arabic === 'string' && arabic.length > 0, `${path}: has Arabic`);
+      ok(typeof french === 'string' && french.length > 0, `${path}: has French`);
+      ok(arabic !== english,
+        `${path}: the Arabic is still the English — "${english.slice(0, 60)}"`);
+      return;
+    }
+    if (!english || typeof english !== 'object') return;
+    for (const key of Object.keys(english as Record<string, unknown>)) {
+      walk(
+        (english as Record<string, unknown>)[key],
+        (arabic as Record<string, unknown> | undefined)?.[key],
+        (french as Record<string, unknown> | undefined)?.[key],
+        `${path}.${key}`,
+      );
+    }
+  };
+
+  walk(pageContent.en, pageContent.ar, pageContent.fr, 'pages');
+  ok(strings > 80, `the public site's copy was actually walked (${strings} strings)`);
+}
+
 // --- No parenthetical agreement in French -----------------------------------
 /*
  * "sélectionné(s)" and "{done} étape(s) sur {total} terminée(s)" are visibly
