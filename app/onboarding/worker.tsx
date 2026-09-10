@@ -352,8 +352,23 @@ export default function WorkerOnboarding() {
           </JourneyCard>
         ) : null}
 
+        {/*
+          * The trade card carries no body, deliberately.
+          *
+          * Rendered, this step read: "What do you do?", then "Choose the kinds
+          * of work you can take on.", then a field labelled "Your work", then
+          * "Warsha uses this to send you jobs that suit you." Four stacked
+          * lines before the first chip, the first and third saying the same
+          * thing twice.
+          *
+          * The card body was the duplicate: it restates the ACTION, which the
+          * field label and the picker button already carry. The field's purpose
+          * line survives because it is the only one that says WHY Warsha is
+          * asking. `tradeBody` itself is unchanged and still heads the picker,
+          * where it is the only explanation on screen.
+          */}
         {!onboarding.refreshing && progress.step === 'trade' ? (
-          <JourneyCard icon="handyman" title={wt.text('tradeTitle')} body={wt.text('tradeBody')}>
+          <JourneyCard icon="handyman" title={wt.text('tradeTitle')}>
             {/* One question at a time: the trade names the work, so the work
                 cannot be offered before the trade has been chosen. */}
             <OnboardingFieldMeta label={wt.text('professionPlural')} required purpose={wt.text('professionPurpose')}>
@@ -452,14 +467,16 @@ export default function WorkerOnboarding() {
   );
 }
 
-function JourneyCard({ icon, title, body, children }: { icon: React.ComponentProps<typeof MaterialIcons>['name']; title: string; body: string; children: React.ReactNode }) {
+function JourneyCard({ icon, title, body, children }: { icon: React.ComponentProps<typeof MaterialIcons>['name']; title: string; body?: string; children: React.ReactNode }) {
   const colors = useThemeColors();
   const styles = useThemedStyles(makeStyles);
   return (
     <BrandCard style={styles.card}>
       <View style={styles.stepIcon}><MaterialIcons name={icon} size={32} color={colors.textPrimary} /></View>
       <AppText style={styles.sectionTitle}>{title}</AppText>
-      <AppText style={styles.body}>{body}</AppText>
+      {/* Optional, because a card whose fields already explain themselves does
+          not need a third sentence saying the same thing. */}
+      {body ? <AppText style={styles.body}>{body}</AppText> : null}
       {children}
     </BrandCard>
   );
