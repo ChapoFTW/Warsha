@@ -88,7 +88,22 @@ export default function Welcome() {
 
   return (
     <SafeAreaView style={styles.safe}>
+      {/*
+        * Two blocks, not five floating children.
+        *
+        * This was one centred column, and on a 411dp phone that left roughly
+        * seven hundred pixels of nothing above it and seven hundred below --
+        * the whole proposition adrift in the middle of the screen, which reads
+        * as unfinished rather than calm.
+        *
+        * The proposition now sits in the upper part of the page and the two
+        * actions sit within thumb reach at the bottom, which is where a hand
+        * holding a phone actually is. `flexGrow` with `space-between` means a
+        * short screen compresses to the natural height instead of overflowing,
+        * and anything that still will not fit scrolls.
+        */}
       <ScrollView contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
+        <View style={styles.proposition}>
         {/* The lockup is never mirrored. RTL changes the reading order of the
             page, not the geometry of the mark. */}
         <BrandLockup size={64} />
@@ -118,7 +133,9 @@ export default function Welcome() {
             </View>
           ))}
         </View>
+        </View>
 
+        <View style={styles.decide}>
         <View style={styles.actions}>
           <BrandButton
             label={ot.text('gatewayGetStarted')}
@@ -156,6 +173,7 @@ export default function Welcome() {
             onPress={() => router.push('/legal/terms')}
           />
         </View>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -166,15 +184,20 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   page: {
     flexGrow: 1,
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     padding: spacing.xl,
+    paddingTop: spacing.xxxl,
     gap: spacing.xl,
   },
+  /** Brand, headline and the two reasons to believe it. */
+  proposition: { width: '100%', alignItems: 'center', gap: spacing.xl },
+  /** What to do about it, and the small print underneath. */
+  decide: { width: '100%', alignItems: 'center', gap: spacing.lg },
   intro: { gap: spacing.sm, maxWidth: 520 },
   trust: { width: '100%', maxWidth: 420, gap: spacing.sm },
   trustRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  trustText: { flex: 1, fontSize: 14, lineHeight: 20, color: colors.textSecondary },
-  title: { fontSize: 28, fontWeight: typography.bold, textAlign: 'center', color: colors.textPrimary },
+  trustText: { ...typography.body, flex: 1, color: colors.textSecondary },
+  title: { ...typography.h1, fontWeight: typography.bold, textAlign: 'center', color: colors.textPrimary },
   subtitle: { textAlign: 'center', color: colors.textSecondary },
   error: { textAlign: 'center', color: colors.errorText, maxWidth: 420 },
   actions: { width: '100%', maxWidth: 420, gap: spacing.md },
