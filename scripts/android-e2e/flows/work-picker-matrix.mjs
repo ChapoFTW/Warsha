@@ -227,6 +227,7 @@ async function reachPicker(combination) {
   await sleep(1200);
   shell('am start -n com.warsha.app/.MainActivity');
 
+  const trace = [];
   const hop = async (name, names, { optional = false } = {}) => {
     await settleScreen();
     /*
@@ -241,14 +242,24 @@ async function reachPicker(combination) {
      */
     const node = await findByScrolling(names);
     if (!node) {
+      /*
+       * Optional hops are traced too.
+       *
+       * Arabic failed three times with no NOT FOUND line and no capture,
+       * because everything that could report was mandatory and everything
+       * that actually varies between configurations -- the photo step, the
+       * processing consent, the save button -- was optional and silent. A walk
+       * that only narrates the parts that cannot fail tells you nothing about
+       * the parts that do.
+       */
+      trace.push(`${name}: not found${optional ? ' (optional)' : ''}`);
       if (!optional) {
-        // A failed hop with no picture is the diagnostic this file's own
-        // comments complain about. Leave evidence.
         console.log(`    ${name}: NOT FOUND`);
         await capture(`${combination.name}-FAILED-${name.replace(/\s+/g, '-')}`, combination);
       }
       return false;
     }
+    trace.push(name);
     shell(`input tap ${node.bounds.cx} ${node.bounds.cy}`);
     await sleep(2200);
     return true;
@@ -294,7 +305,12 @@ async function reachPicker(combination) {
   // Scrolled, for the same reason every other lookup here is: at 320dp this
   // button sits below the fold, and reporting "could not reach the work step"
   // for a control that is simply further down is the exact wrong answer.
-  return Boolean(await findByScrolling(OPEN_PICKER));
+  const opener = await findByScrolling(OPEN_PICKER);
+  if (!opener) {
+    console.log(`    walked: ${trace.join(' -> ')}`);
+    await capture(`${combination.name}-FAILED-open-picker`, combination);
+  }
+  return Boolean(opener);
 }
 
 await installPhotoFixture('com.warsha.app');
@@ -314,12 +330,26 @@ try {
    * long Arabic labels in the narrowest column, dark, enlarged text, and the
    * language with the longest words.
    */
+  /*
+   * `--key` is the certification set for this screen: 320dp in all three
+   * languages, ~411dp in all three, light and dark, default and enlarged text.
+   *
+   * Not the full twenty-four. Each configuration costs a full registration, so
+   * the whole matrix is well over an hour, and the axes that break a list of
+   * work labels are language against width, plus the two theme and text-size
+   * cases that change how a control reads rather than where it sits. Arabic
+   * appears at every width and at enlarged text because it is a hard gate.
+   */
   const plan = argv.includes('--key')
     ? [
       { viewport: VIEWPORTS[1], appearance: 'light', scale: 1.0, language: 'ar-EG', name: '320dp-light-1x-ar-EG' },
-      { viewport: VIEWPORTS[0], appearance: 'dark', scale: 1.0, language: 'en-US', name: '411dp-dark-1x-en-US' },
-      { viewport: VIEWPORTS[0], appearance: 'light', scale: 1.3, language: 'en-US', name: '411dp-light-1.3x-en-US' },
+      { viewport: VIEWPORTS[1], appearance: 'light', scale: 1.0, language: 'en-US', name: '320dp-light-1x-en-US' },
       { viewport: VIEWPORTS[1], appearance: 'light', scale: 1.0, language: 'fr-FR', name: '320dp-light-1x-fr-FR' },
+      { viewport: VIEWPORTS[0], appearance: 'dark', scale: 1.0, language: 'ar-EG', name: '411dp-dark-1x-ar-EG' },
+      { viewport: VIEWPORTS[0], appearance: 'dark', scale: 1.0, language: 'en-US', name: '411dp-dark-1x-en-US' },
+      { viewport: VIEWPORTS[0], appearance: 'light', scale: 1.0, language: 'fr-FR', name: '411dp-light-1x-fr-FR' },
+      { viewport: VIEWPORTS[0], appearance: 'light', scale: 1.3, language: 'ar-EG', name: '411dp-light-1.3x-ar-EG' },
+      { viewport: VIEWPORTS[0], appearance: 'light', scale: 1.3, language: 'en-US', name: '411dp-light-1.3x-en-US' },
     ]
     : [...combinations()];
 
