@@ -146,6 +146,19 @@ becomes `/Files/Git/sdcard/x.xml` and every dump comes back empty.
 
 ---
 
+## Do not drive the emulator while gradle is building
+
+Three separate times, `wm size` and `pm install` came back
+`Can't find service: window` / `Broken pipe (32)` while a release build was
+running, and each time the emulator needed a full restart to recover. The
+device survives a build perfectly well when nothing is talking to it; what it
+does not survive is a build plus a UI-automation sweep competing for the same
+machine.
+
+So: start a build, or drive the device. Not both. The background-build pattern
+is still right for code work — typecheck, tests, edits — just not for anything
+that touches adb.
+
 ## Lessons that cost time here
 
 **A fixed sleep is not a readiness check.** The first sweep slept seven seconds
