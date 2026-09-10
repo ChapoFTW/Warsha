@@ -523,6 +523,37 @@ covered by the taxonomy matrix, which walks all six terms per identity against
 every screen language; what is rendered here is the case that matters most in
 Egypt, a Latin keyboard open on a non-Latin screen.
 
+## A check that was never right, and what replaced it
+
+The sweep measured rendered bounds for touch targets under 44. It found
+thirty-five "small targets" in one run whose dimensions were negative —
+`648x-493` — and after that was fixed, three more with plausible numbers, one
+of which was written into this document as a real defect on a destructive
+control: the X on a chosen-trade chip, apparently fourteen dp tall.
+
+It is not. That chip's own style declares `minHeight: 48`. uiautomator CLIPS
+bounds to the containing viewport, so a control scrolled half out of a card
+reports the height of the part still showing — and clipping and smallness are
+the same number. The check could not tell them apart and never could. Changing
+the units from pixels to dp, which was itself a real bug, made the false
+positives more precise rather than more true.
+
+**Every touch-target finding this programme produced was clipping.** A signal
+that has never once been right is worse than no signal, because it gets
+believed — and this one got believed, here, in the certification record.
+
+`scripts/touch-target-contract.test.mts` asks the question where it has a
+definite answer: `OptionRow`'s row declares 60dp, the chip 48, the button 48,
+the field 48, each asserted by name. A style either declares a minimum or it
+does not, which does not depend on where a control happened to be when the
+screenshot was taken. It also records that `badge` at 30dp and `badgeCompact`
+at 24dp are correct and not to be "fixed": they report a state — Required,
+Private, Verified — and nothing happens when you press one.
+
+What it cannot see is a control shrunk by its parent, or one whose height comes
+from padding rather than a declaration. It is a contract about intent, not a
+measurement, and is named that way.
+
 ## Still open on this screen
 
 | | |
