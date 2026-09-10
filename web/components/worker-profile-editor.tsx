@@ -380,7 +380,7 @@ export function WorkerProfileEditor({
                   <input type="checkbox" checked={selected.includes(item.key)}
                     onChange={() => toggleProfession(item.key)} disabled={busy} />
                   <WarshaIcon name={professionIconName(item.key)} size="md" />
-                  <span className={styles.cardName}>{item[locale]}</span>
+                  <span className={styles.cardName}>{item.work[locale]}</span>
                 </label>
               ))}
             </div>
@@ -406,7 +406,7 @@ export function WorkerProfileEditor({
                   <summary className={styles.label}>
                     <WarshaIcon name={professionIconName(tradeSection.professionKey)} size="md" />
                     {' '}
-                    {professionLabel(tradeSection.professionKey, locale)}
+                    {professionLabel(tradeSection.professionKey, locale, 'professional')}
                     {' — '}
                     {count === 0
                       ? words.workerNoServicesChosen
