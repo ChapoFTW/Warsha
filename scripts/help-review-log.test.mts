@@ -46,20 +46,46 @@ const log = JSON.parse(readFileSync('docs/help/review-log.json', 'utf8')) as Log
 /** A copy, so nothing here can leave the repository altered. */
 const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value));
 
-// --- The recorded reviews are currently good --------------------------------
+// --- Live records and superseded ones ---------------------------------------
+/*
+ * Records go stale, and that is the mechanism working rather than a failure.
+ *
+ * The first version of this asserted that EVERY record still matched the
+ * article it pinned. That held for about an hour, until an article was
+ * legitimately rewritten and the suite went red for the one reason it should
+ * never go red: the safety catch catching something.
+ *
+ * A stale record is not a problem to fix. It is a review of text that no longer
+ * exists, and the only thing that must be true of it is that it stops counting.
+ */
 ok(log.reviews.length > 0, 'the log has entries to check');
 
 const EARLY = '2000-01-01';
-const live = reviewedArticles({ log, articles, changedOn: EARLY });
-const claimed = new Set(log.reviews.flatMap((entry) => entry.articles.map((r) => r.id)));
 
-for (const id of claimed) {
-  ok(live.has(id), `${id}: the recorded review still matches the article as it stands`);
+const liveRecords: Record[] = [];
+const supersededRecords: Record[] = [];
+for (const entry of log.reviews) {
+  for (const record of entry.articles) {
+    const article = articles.find((item) => item.id === record.id && item.locale === record.locale);
+    if (!article) continue; // French lives in its own file; help-docs covers it.
+    (record.digest === articleDigest(article) ? liveRecords : supersededRecords).push(record);
+  }
+}
+ok(liveRecords.length > 0, 'at least one review is still live, or nothing below proves anything');
+
+{
+  // Superseded records must be invisible to the predicate. This is the check
+  // the blanket assertion was standing in front of.
+  const good = reviewedArticles({ log, articles, changedOn: EARLY });
+  for (const id of new Set(supersededRecords.map((record) => record.id))) {
+    ok(!good.has(id),
+      `${id}: its article was rewritten, so the review of the old text no longer counts`);
+  }
 }
 
 // --- It goes stale when the content moves -----------------------------------
 {
-  const pinned = log.reviews.at(-1)!.articles[0];
+  const pinned = liveRecords[0];
   const mutated = clone(articles);
   const victim = mutated.find((a) => a.id === pinned.id && a.locale === pinned.locale)!;
   ok(victim, `the pinned article ${pinned.id}/${pinned.locale} exists`);
@@ -69,7 +95,8 @@ for (const id of claimed) {
   ok(!after.has(pinned.id),
     'A REVIEW GOES STALE WHEN ITS ARTICLE CHANGES — the pin no longer matches');
   // And only that article. A stale review must not invalidate unrelated ones.
-  for (const id of claimed) {
+  const stillGoodBefore = reviewedArticles({ log, articles, changedOn: EARLY });
+  for (const id of stillGoodBefore) {
     if (id === pinned.id) continue;
     ok(after.has(id), `${id}: unaffected by a change to a different article`);
   }
@@ -77,7 +104,7 @@ for (const id of claimed) {
 
 // --- One stale LOCALE invalidates the whole article -------------------------
 {
-  const pinned = log.reviews.at(-1)!.articles[0];
+  const pinned = liveRecords[0];
   const mutated = clone(articles);
   // Deliberately a locale the entry pinned but a reader might skip.
   const other = mutated.find((a) => a.id === pinned.id && a.locale !== pinned.locale);
@@ -118,11 +145,13 @@ for (const id of claimed) {
 // --- A half-read article is not a reviewed article --------------------------
 {
   const partial = clone(log);
-  const id = partial.reviews.at(-1)!.articles[0].id;
-  // Keep one locale of that article, drop the rest.
-  const first = partial.reviews.at(-1)!.articles.find((r) => r.id === id)!;
-  partial.reviews.at(-1)!.articles = partial.reviews.at(-1)!.articles
-    .filter((r) => r.id !== id).concat(first);
+  const id = liveRecords[0].id;
+  // Keep one locale of that article across every entry, drop the rest.
+  for (const entry of partial.reviews) {
+    const first = entry.articles.find((r) => r.id === id);
+    if (!first) continue;
+    entry.articles = entry.articles.filter((r) => r.id !== id).concat(first);
+  }
 
   const after = reviewedArticles({ log: partial, articles, changedOn: EARLY });
   ok(!after.has(id), 'reading one locale does not review the article');
