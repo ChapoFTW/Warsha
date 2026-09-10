@@ -280,6 +280,131 @@ judgement worth making with more than one screen in front of you.
 
 ---
 
+# Work-type language — 2026-09-10
+
+The owner's reading was that the generated labels sounded machine-made:
+"General plumbing", "General electrical work", "Air-conditioning work", and a
+screen headed "Your work". The instruction was explicit about how NOT to fix the
+category/row duplication — *"Do not solve this by renaming the row to 'General
+plumbing'. That is exactly the wrong solution."*
+
+## What the labels became
+
+All thirty-six work labels are the plain noun, in three languages. Extra words
+survive only where they separate two things: Pool maintenance beside Plumbing,
+Smart-home installation beside Electrical. Arabic drops عام / أعمال / خدمات;
+French drops "générale" and "travaux de".
+
+Two English labels were naming a **material where French already named the
+work**, which the render did not show and the taxonomy did:
+
+| Key | Was | Now | Settled by |
+| --- | --- | --- | --- |
+| `glassWorker` | Glass · Vitrerie | **Glazing** | its four jobs are window install, window repair, glass replacement, shower cabins |
+| `gypsumWorker` | Gypsum · Plâtrerie | **Plastering** | its first service is literally `renovation-plastering` |
+
+`aluminumWorker` stays **Aluminium**, and the category keeps the heading name
+**Alumetal**: `docs/product/service-demand-ranking.md` records FilKhedma, Egypt's
+largest home-services platform, publishing Alumetal as a category. It is the
+market's word, chosen with evidence, not jargon to clean up.
+
+Arabic `أنظمة الأمن` → `أنظمة أمن`, matching its own practitioner label
+`فني أنظمة أمن`. The definite article reads as a topic heading; the row is an
+answer to a question.
+
+## The heading, and why it is gone
+
+**V-P2 — RESOLVED.** Category headings are removed from the picker entirely.
+
+They were right when the rows were person nouns: "Plumbing" above Plumber and
+Pool technician named something the rows did not. Plain work nouns took that
+away — the category name turned out to BE one of its rows.
+
+Two attempts to keep it, both rejected on evidence rather than taste:
+
+| Attempt | What the evidence said |
+| --- | --- |
+| Drop it only where it collides with a row | The list's SHAPE became language-dependent — three headings in English, two in Arabic, four in French — because collision is a property of a translation, not of the grouping. It also left **"Flooring & tiling" directly above Tiling and Flooring**, since no single row equalled the whole heading. Visible at 411dp in `411dp-light-1.3x-en-US-list-04.png`. |
+| Decide per category, recorded once | Did not escape it. The Arabic heading for `alumetal` is ألوميتال, which is exactly its own first row — caught by `scripts/profession-audience.test.mts`, not by me. One heading survived in thirty-four rows, which reads as an accident rather than as structure. |
+
+What finds a section now is its first row — "Plumbing", full width, with an icon
+and a touch target — which for a professional who does not read fluently is a
+louder landmark than a grey caption, not a quieter one. The grouping is
+unchanged; the spacing carries it, as it already did for the seventeen
+categories that never had a heading.
+
+## V-P1 — the disabled button was the loudest element on the screen
+
+Found by looking, and invisible in the tokens.
+
+`disabled` was `opacity: 0.42`, applied over a primary variant whose ground is
+`textPrimary` — near-black in light, near-white in dark. Opacity preserves the
+shape of a filled button and only washes it, so 42% of two opposite grounds
+behaves in two opposite ways and neither is "inert":
+
+| Theme | Evidence | What it read as |
+| --- | --- | --- |
+| Dark | `411dp-dark-1x-en-US-list-00.png` | A pale slab, the brightest thing on the screen — at **0 / 10 selected**, when Done does nothing |
+| Light 1.3x | `411dp-light-1.3x-en-US-list-04.png` | A mid-grey filled button with a pale label — an enabled button gone quiet |
+
+Fixed in the shared primitive: a disabled button loses its fill. Transparent
+ground, quietest border, muted label. **Loading is kept separate** — a loading
+button is the action happening and stays solid at 72%, refusing the press
+without pretending to be unavailable.
+
+This is a shared-primitive change, so it is certified on the work picker only;
+every other disabled button in the app inherits it uncertified.
+
+## Evidence
+
+`D:/Warsha-Temp/wm-2026-09-10T04-38-20/`, one folder per run, stamped with when
+the run started. The sweep photographs the **whole list** rather than the first
+viewport and accounts for what it saw: each run prints `34/34 work labels seen`
+or names the ones it never reached, so "the whole list was inspected" is proved
+by the run rather than claimed about a folder of images.
+
+| Axis | Evidence | Verdict |
+| --- | --- | --- |
+| EN · 411dp · dark · 1x | `411dp-dark-1x-en-US-list-00..06` | **PASS** — 34/34, no truncation, no overflow |
+| EN · 411dp · light · 1.3x | `411dp-light-1.3x-en-US-list-00..07` | **PASS** — 34/34, subtitle wraps to two lines without clipping |
+| AR RTL · 320dp | — | **NOT YET** — see below |
+| FR · 320dp | — | **NOT YET** — see below |
+
+## Three harness defects this exposed
+
+Worth recording because each one produced a confident wrong answer.
+
+**A control below the fold is not a missing control.** Arabic at 320dp reported
+`create account: NOT FOUND` and gave up, while English at 411dp walked straight
+through — which reads exactly like a localization defect on the screen the
+low-literacy gate cares most about. The string was correct; the form is taller
+than a 320dp screen and, once the consent boxes are ticked, the button sits
+below the fold. The walk only looked at what was already visible. It now scrolls
+before concluding anything, and photographs the screen it gave up on.
+
+**One shared folder made a stopped run look like a live one.** Runs wrote into
+one directory under a reusable tag, so a previous run's screenshots sat there
+wearing the names the current run was about to write. Four-hour-old leftovers
+were read as live output, a healthy sweep was declared hung, and it was killed
+five minutes into its first registration. Each run now gets its own stamped
+folder.
+
+**`adb` had no timeout.** `uiautomator dump` waits for the window to report idle
+and an endless animation never does, which would block the sweep indefinitely
+while holding the device — neither progressing nor failing. Two minutes now, and
+a stall is reported as a stall.
+
+## Still open on this screen
+
+| | |
+| --- | --- |
+| Arabic RTL at 320dp | The walk reached the work step only after the scroll fix; not yet rendered on a build carrying the removed headings. **Arabic remains a hard gate.** |
+| French at 320dp | Same. French has the longest labels — `Spécialiste des revêtements de sol` at 34 characters is customer-facing, on a different surface. |
+| Selected state at the 10 cap | Rendered in an earlier pass; not re-rendered since the labels changed. |
+| Every other disabled button | Inherits the primitive change uncertified. |
+
+---
+
 # Not yet inspected
 
 Everything else. Listed so the gaps are visible rather than implied.
