@@ -380,7 +380,12 @@ export function WorkerProfileEditor({
                   <input type="checkbox" checked={selected.includes(item.key)}
                     onChange={() => toggleProfession(item.key)} disabled={busy} />
                   <WarshaIcon name={professionIconName(item.key)} size="md" />
-                  <span className={styles.cardName}>{item.work[locale]}</span>
+                  {/* Through the authority, not around it: `professionLabel` is
+                      where the audience is resolved, and reaching for the field
+                      directly would miss any fallback it grows. */}
+                  <span className={styles.cardName}>
+                    {professionLabel(item.key, locale, 'professional')}
+                  </span>
                 </label>
               ))}
             </div>
