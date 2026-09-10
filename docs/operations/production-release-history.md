@@ -428,6 +428,43 @@ non-legal blocker, recorded truthfully:
   it refuses every caller. That is the intended posture: it is a Development
   governance path.
 
+
+## 2026-09-11 — web: a stored language could make every other language unreachable
+
+Reported from an iPhone: usewarsha.com stuck in Arabic, the footer switcher
+apparently doing nothing. Seen on two iPhones, in Safari and in Edge, which are
+both WebKit.
+
+**Cause.** The middleware treated the `warsha-locale` cookie as outranking the
+address, so `/en` with an Arabic cookie redirected to `/ar` — no English or
+French page on the site was reachable. That made the footer switcher the only
+escape, and the switcher wrote `document.cookie` and then let an anchor
+navigate. iOS WebKit does not reliably commit that write before the navigation
+begins, so the request arrived with the old cookie and the middleware sent the
+visitor straight back.
+
+**Fix.** Precedence is now: an explicit locale in the URL, then the stored
+preference, then the browser's language, then English. The middleware
+synchronises the cookie on the RESPONSE, which is what ends the race — it no
+longer matters whether a client write lands before a navigation. The bare
+domain still honours a stored choice.
+
+**Release.** Staged as `warsha-j16g0w3vi` and verified there (182 checks, both
+engines) before promotion. Promoting rebuilt it for Production as
+`warsha-4rasr0fde` from the same source.
+
+**Verified live**, `https://usewarsha.com`:
+
+| | |
+| --- | --- |
+| `/en`, `/fr`, `/ar` against every stale cookie | 200, no redirect, preference synchronised |
+| Six footer transitions, Chromium | copy, `lang`, `dir`, reload persistence |
+| Six footer transitions, iPhone WebKit | same |
+| Bare domain with a stored choice | still honoured |
+
+`npm run test:web-language-switch` reproduces all of it; `BASE_URL` points it at
+a preview or at the live domain.
+
 ### Known defect, reported not fixed
 
 `public.legal_acceptances` carries `ON DELETE CASCADE` from `profiles` and a
