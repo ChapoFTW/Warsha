@@ -209,9 +209,29 @@ async function reachPicker(combination) {
 
   const hop = async (name, names, { optional = false } = {}) => {
     await settleScreen();
-    const node = target(names);
+    /*
+     * Scroll to find it before giving up.
+     *
+     * At 320dp the signup form is taller than the screen, and once the consent
+     * checkboxes are ticked the create-account button sits below the fold. The
+     * first version looked only at what was visible and reported
+     * "create account: NOT FOUND" -- which reads as a missing control and is
+     * actually a control three swipes down. Arabic failed this way while
+     * English at 411dp passed, so it looked like a localization defect.
+     */
+    let node = target(names);
+    for (let attempt = 0; !node && attempt < 4; attempt += 1) {
+      shell('input swipe 360 1200 360 600 320');
+      await sleep(900);
+      node = target(names);
+    }
     if (!node) {
-      if (!optional) console.log(`    ${name}: NOT FOUND`);
+      if (!optional) {
+        // A failed hop with no picture is the diagnostic this file's own
+        // comments complain about. Leave evidence.
+        console.log(`    ${name}: NOT FOUND`);
+        await capture(`${combination.name}-FAILED-${name.replace(/\s+/g, '-')}`, combination);
+      }
       return false;
     }
     shell(`input tap ${node.bounds.cx} ${node.bounds.cy}`);
@@ -285,7 +305,21 @@ try {
     ]
     : [...combinations()];
 
-  for (const combination of plan) {
+  /*
+   * `--config <substring>` re-runs one configuration. Each costs a full
+   * registration, so re-running four to look at the one that failed wastes
+   * twenty minutes and creates three accounts nobody needed.
+   */
+  const wanted = argv.indexOf('--config');
+  const filtered = wanted >= 0
+    ? plan.filter((entry) => entry.name.includes(argv[wanted + 1]))
+    : plan;
+  if (wanted >= 0 && filtered.length === 0) {
+    throw new Error(`no configuration matching ${argv[wanted + 1]}: `
+      + plan.map((entry) => entry.name).join(', '));
+  }
+
+  for (const combination of filtered) {
     console.log(`\n--- ${combination.name} ---`);
     const actual = apply(combination);
     console.log(`    device: ${actual.size} @${actual.density} scale ${actual.scale} night ${actual.night}`);
