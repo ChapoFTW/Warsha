@@ -141,6 +141,7 @@
     "test:criminal-record-contract": "node --no-warnings --experimental-strip-types scripts/criminal-record-contract.test.mts",
     "test:deployment-approval": "node --no-warnings --experimental-strip-types scripts/deployment-approval.test.mts",
     "test:backup-exception": "node --no-warnings --experimental-strip-types scripts/backup-exception.test.mts",
+    "test:help-review-log": "node --no-warnings --experimental-strip-types scripts/help-review-log.test.mts",
     "test:route-refresh": "node --no-warnings --experimental-strip-types scripts/route-refresh-policy.test.mts",
     "test:typography": "node scripts/audit-typography.mjs",
     "test:android-dialog-theme": "node --no-warnings --experimental-strip-types scripts/android-dialog-theme.test.mts",

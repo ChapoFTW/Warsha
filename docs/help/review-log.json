@@ -1,22 +1,92 @@
 {
-  "note": "Reviews that concluded the articles needed no change. Editing an article is the ordinary evidence of a review; this records the outcome that cannot be expressed by editing, because there was nothing to edit. Append only, and every entry must say what was reviewed and why nothing changed.",
+  "note": "Reviews that concluded the articles needed no change. Editing an article is the ordinary evidence of a review; this records the outcome that cannot be expressed by editing, because there was nothing to edit. Every entry PINS the content it reviewed — a digest of each locale's title, summary and body — so a review of an article that has since changed is stale and stops counting. Append only, and every entry must say what was reviewed and why nothing changed.",
   "reviews": [
     {
       "date": "2026-09-10",
+      "reason": "UX redesign pass: a field's purpose now reads above its control instead of below it, on worker onboarding and the customer address form. Ordering and spacing only. Every statement these articles make about what is required, what is kept, and what Warsha does with an address remains true, and all three were already reviewed earlier the same day.",
       "articles": [
-        "worker-getting-started",
-        "worker-onboarding-verification",
-        "customer-addresses-location"
-      ],
-      "reason": "UX redesign pass: a field's purpose now reads above its control instead of below it, on worker onboarding and the customer address form. Ordering and spacing only. Every statement these articles make about what is required, what is kept, and what Warsha does with an address remains true, and all three were already reviewed earlier the same day."
+        {
+          "id": "worker-getting-started",
+          "locale": "en",
+          "digest": "2f84349f50d19de5"
+        },
+        {
+          "id": "worker-getting-started",
+          "locale": "ar",
+          "digest": "54762ff60abe4fb9"
+        },
+        {
+          "id": "worker-getting-started",
+          "locale": "fr",
+          "digest": "f058e947b9a40b44"
+        },
+        {
+          "id": "worker-onboarding-verification",
+          "locale": "en",
+          "digest": "4ee2a7143a441f50"
+        },
+        {
+          "id": "worker-onboarding-verification",
+          "locale": "ar",
+          "digest": "0554843a357f3c6c"
+        },
+        {
+          "id": "worker-onboarding-verification",
+          "locale": "fr",
+          "digest": "b903c3b21a873459"
+        },
+        {
+          "id": "customer-addresses-location",
+          "locale": "en",
+          "digest": "02c5b3ca4238b773"
+        },
+        {
+          "id": "customer-addresses-location",
+          "locale": "ar",
+          "digest": "cd3c1fea41342229"
+        },
+        {
+          "id": "customer-addresses-location",
+          "locale": "fr",
+          "digest": "421778f165983ffc"
+        }
+      ]
     },
     {
       "date": "2026-09-10",
+      "reason": "UX redesign pass: form labels, helper lines and error lines moved from the caption step to bodySmall after measuring them at 16dp on the Arabic sign-in at 320dp; the create-account button on sign-in made full width to match the primary above it; the gateway's spare vertical space redistributed. Type sizes, widths and spacing only. Nothing either article states about signing in, recovering a password, or what the first screen offers has changed.",
       "articles": [
-        "customer-account-security",
-        "worker-getting-started"
-      ],
-      "reason": "UX redesign pass: form labels, helper lines and error lines moved from the caption step to bodySmall after measuring them at 16dp on the Arabic sign-in at 320dp; the create-account button on sign-in made full width to match the primary above it; the gateway's spare vertical space redistributed. Type sizes, widths and spacing only. Nothing either article states about signing in, recovering a password, or what the first screen offers has changed."
+        {
+          "id": "customer-account-security",
+          "locale": "en",
+          "digest": "272ceada8b686e4a"
+        },
+        {
+          "id": "customer-account-security",
+          "locale": "ar",
+          "digest": "b7ee0e4badc392f6"
+        },
+        {
+          "id": "customer-account-security",
+          "locale": "fr",
+          "digest": "473411b5de472a9c"
+        },
+        {
+          "id": "worker-getting-started",
+          "locale": "en",
+          "digest": "2f84349f50d19de5"
+        },
+        {
+          "id": "worker-getting-started",
+          "locale": "ar",
+          "digest": "54762ff60abe4fb9"
+        },
+        {
+          "id": "worker-getting-started",
+          "locale": "fr",
+          "digest": "f058e947b9a40b44"
+        }
+      ]
     }
   ]
 }

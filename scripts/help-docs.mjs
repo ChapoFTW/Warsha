@@ -4,6 +4,8 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 
+import { articleDigest, reviewedArticles } from './help-review-log.mjs';
+
 const root = resolve(process.cwd());
 const write = process.argv.includes('--write');
 const locales = ['en', 'ar', 'fr'];
@@ -285,6 +287,22 @@ const behavioural = (path) => !path.startsWith('docs/help/')
  * An entry must name the articles, the date, and a reason. It is append-only
  * evidence in the repository with the commit that made it, which is a stronger
  * record than a date silently bumped inside an article, not a weaker one.
+ *
+ * ## And it must expire
+ *
+ * A record with no tie to what was read is a permanent rubber stamp: review one
+ * article once, and every future change to that area is waved through forever.
+ * So every entry pins the CONTENT it reviewed — a digest of the title, summary
+ * and body of each locale — and a review whose digest no longer matches is
+ * stale. It reviewed something that is not there any more.
+ *
+ * The digest alone is not enough either. An article can sit unchanged for
+ * months while the behaviour it describes changes underneath it, and a review
+ * from before that change would still match. So an entry must also be dated on
+ * or after the change it is offered as evidence for, taken from the commit
+ * dates of the behaviour-bearing files in the diff rather than from the wall
+ * clock — otherwise the same PR would pass locally today and fail in CI next
+ * week for no reason but the date.
  */
 const reviewLog = (() => {
   try {
@@ -293,11 +311,29 @@ const reviewLog = (() => {
 })();
 
 const today = new Date().toISOString().slice(0, 10);
-const loggedToday = new Set(
-  (reviewLog.reviews ?? [])
-    .filter(entry => entry.date === today && typeof entry.reason === 'string' && entry.reason.length > 20)
-    .flatMap(entry => entry.articles ?? []),
+
+const currentDigest = new Map(
+  articles.map(article => [`${article.id}/${article.locale}`, articleDigest(article)]),
 );
+
+/**
+ * The day the behaviour under review last changed.
+ *
+ * Committed changes carry their own date, which is what makes this stable: a
+ * branch opened last week still validates next month, because the comparison is
+ * against the commit rather than against today. Uncommitted work has no commit
+ * date yet, so it is treated as happening now.
+ */
+function lastChangeDate(paths) {
+  const behaviourFiles = paths.filter(path => !path.startsWith('docs/help/'));
+  if (behaviourFiles.length === 0) return today;
+  try {
+    const out = execFileSync('git', ['log', '-1', '--format=%cs', '--', ...behaviourFiles],
+      { cwd: root, encoding: 'utf8' }).trim();
+    // No commit touches these yet: they are working-tree changes, i.e. now.
+    return out || today;
+  } catch { return today; }
+}
 
 /*
  * The log is evidence, so it is checked like evidence.
@@ -315,8 +351,26 @@ for (const [index, entry] of (reviewLog.reviews ?? []).entries()) {
     `${where} names the articles it reviewed`);
   check(typeof entry.reason === 'string' && entry.reason.length > 60,
     `${where} SAYS WHY NOTHING CHANGED, at length — a word is not a review`);
-  for (const id of entry.articles ?? []) {
-    check(ids.includes(id), `${where} names a real article (${id})`);
+
+  for (const record of entry.articles ?? []) {
+    const label = `${record?.id ?? '?'}/${record?.locale ?? '?'}`;
+    check(Boolean(record?.id) && Boolean(record?.locale) && Boolean(record?.digest),
+      `${where} pins an article, a locale and a digest (${label})`);
+    check(ids.includes(record?.id), `${where} names a real article (${record?.id})`);
+    check(currentDigest.has(`${record?.id}/${record?.locale}`),
+      `${where} names a locale that exists (${label})`);
+    check(/^[0-9a-f]{16}$/.test(record?.digest ?? ''),
+      `${where} pins a real digest, not a placeholder (${label})`);
+  }
+
+  // Every locale of a reviewed article, or the record covers part of an
+  // article and claims the whole of it.
+  for (const id of new Set((entry.articles ?? []).map(record => record?.id))) {
+    const locales = articles.filter(article => article.id === id).map(article => article.locale);
+    const named = new Set((entry.articles ?? [])
+      .filter(record => record?.id === id).map(record => record.locale));
+    check(locales.every(locale => named.has(locale)),
+      `${where} covers every locale of ${id} (${locales.join(', ')})`);
   }
 }
 
@@ -324,7 +378,11 @@ const impacted = impactRules.filter(rule => changed.some(path =>
   behavioural(path) && rule.pattern.test(path)));
 for (const rule of impacted) {
   check(rule.ids.every(id => ids.includes(id)), `documentation impact maps to ${rule.ids.join(', ')}`);
-  const reviewed = docsChanged || rule.ids.every(id => loggedToday.has(id));
+
+  const changedOn = lastChangeDate(changed.filter(path =>
+    behavioural(path) && rule.pattern.test(path)));
+  const stillGood = reviewedArticles({ log: reviewLog, articles, changedOn });
+  const reviewed = docsChanged || rule.ids.every(id => stillGood.has(id));
   check(reviewed, `behavioral changes affecting ${rule.ids.join(', ')} include documentation review`);
 }
 
