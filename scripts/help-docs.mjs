@@ -5,6 +5,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 
 import { articleDigest, reviewedArticles } from './help-review-log.mjs';
+import { RangeUnavailable, resolveRange } from './help-docs-range.mjs';
 
 const root = resolve(process.cwd());
 const write = process.argv.includes('--write');
@@ -114,33 +115,60 @@ for (const [path, value] of Object.entries(outputs)) {
  * Needed because a deletion is a different kind of event from an edit, and the
  * impact rules below match on the path rather than on what happened to it.
  */
-function gitDeletedFiles() {
-  const commands = [
-    ['diff', '--name-only', '--diff-filter=D', 'origin/main...HEAD'],
-    ['diff', '--name-only', '--diff-filter=D'],
-    ['diff', '--cached', '--name-only', '--diff-filter=D'],
-  ];
-  const files = new Set();
-  for (const args of commands) {
-    try {
-      for (const line of execFileSync('git', args, { cwd: root, encoding: 'utf8' }).split(/\r?\n/)) {
-        if (line.trim()) files.add(line.trim().replaceAll('\\', '/'));
-      }
-    } catch { /* not a repository, or no such range */ }
+/*
+ * The range is resolved once, named, and printed. `help-docs-range.mjs` carries
+ * the reasoning; the short version is that `origin/main...HEAD` empties the
+ * moment you push, so a gate built on it alone protects the pre-push window and
+ * nothing after it.
+ */
+const range = (() => {
+  try {
+    return resolveRange(root);
+  } catch (error) {
+    if (!(error instanceof RangeUnavailable)) throw error;
+    console.error('');
+    console.error('REFUSING TO VALIDATE DOCUMENTATION IMPACT');
+    console.error('');
+    console.error(`  ${error.message}`);
+    console.error('');
+    console.error('  An unknown comparison range is not an empty one. Reporting "nothing');
+    console.error('  changed" here would be a green result about no commits at all.');
+    console.error('');
+    process.exit(1);
   }
-  return files;
-}
+})();
 
-function gitChangedFiles() {
-  const commands = [['diff', '--name-only', 'origin/main...HEAD'], ['diff', '--name-only'], ['diff', '--cached', '--name-only']];
+const LINES = /\r?\n/;
+const collect = (files, command) => {
+  try {
+    const out = execFileSync('git', command, { cwd: root, encoding: 'utf8' });
+    for (const line of out.split(LINES)) {
+      if (line.trim()) files.add(line.trim().replaceAll('\\', '/'));
+    }
+  } catch { /* an unanswerable range is refused by resolveRange, not swallowed here */ }
+};
+
+const changedIn = (deletionsOnly) => {
   const files = new Set();
-  for (const args of commands) {
-    try { for (const line of execFileSync('git', args, { cwd: root, encoding: 'utf8' }).split(/\r?\n/)) if (line.trim()) files.add(line.trim().replaceAll('\\', '/')); } catch {}
+  const args = deletionsOnly ? ['--diff-filter=D'] : [];
+  for (const base of range.diffArgs) {
+    collect(files, [...base.slice(0, 2), ...args, ...base.slice(2)]);
   }
-  try { for (const line of execFileSync('git', ['ls-files', '--others', '--exclude-standard'], { cwd: root, encoding: 'utf8' }).split(/\r?\n/)) if (line.trim()) files.add(line.trim().replaceAll('\\', '/')); } catch {}
+  if (range.includeWorkingTree) {
+    collect(files, ['diff', '--name-only', ...args]);
+    collect(files, ['diff', '--cached', '--name-only', ...args]);
+    // An untracked file is an addition, never a deletion.
+    if (!deletionsOnly) collect(files, ['ls-files', '--others', '--exclude-standard']);
+  }
   return [...files];
-}
+};
 
+/* A Set, because the caller asks `deleted.has(path)`. The list of changes is an
+   array because it is iterated. Keeping both shapes as they were. */
+const gitDeletedFiles = () => new Set(changedIn(true));
+const gitChangedFiles = () => changedIn(false);
+
+console.log(`Documentation impact judged over ${range.mode}: ${range.describe}`);
 const changed = gitChangedFiles();
 const deleted = gitDeletedFiles();
 const docsChanged = changed.some(path => sources.includes(path));

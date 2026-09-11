@@ -85,6 +85,7 @@
     "test:android-build-helper": "node --no-warnings --experimental-strip-types scripts/android-build-helper.test.mts",
     "test:help-language-parity": "node --no-warnings --experimental-strip-types scripts/help-language-parity.test.mts",
     "test:help-docs": "node scripts/help-docs.mjs",
+    "test:help-docs-range": "node --no-warnings --experimental-strip-types scripts/help-docs-range.test.mts",
     "warsha:docs-check": "node scripts/help-docs.mjs",
     "warsha:docs-generate": "node scripts/help-docs.mjs --write",
     "test:signup-legal-startup": "node --no-warnings --experimental-strip-types scripts/signup-legal-startup.test.mts",

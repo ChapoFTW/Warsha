@@ -104,7 +104,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
+      # Full history, because `test:help-docs` judges documentation impact over
+      # a commit range. A shallow clone cannot answer what a push contained, and
+      # the gate refuses rather than reporting an empty change set.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22.x
@@ -113,7 +118,18 @@ jobs:
 
       # The inventory is explicit in policy.mjs. A package script cannot be
       # added and silently omitted from the high-level gate.
+      #
+      # The two GITHUB_* values are what make the documentation gate
+      # authoritative after a push. Locally it compares against origin/main,
+      # which empties the moment you push; here it compares the commits the push
+      # actually carried, so a push past a red gate is caught rather than
+      # blessed by the green run that follows it.
       - name: Run every regression suite
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_EVENT_BEFORE: ${{ github.event.before }}
+          GITHUB_BASE_REF: ${{ github.base_ref }}
+          GITHUB_SHA: ${{ github.sha }}
         run: npm run test:all
 
   database:
