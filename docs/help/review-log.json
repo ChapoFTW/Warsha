@@ -180,6 +180,42 @@
           "digest": "b903c3b21a873459"
         }
       ]
+    },
+    {
+      "date": "2026-09-11",
+      "reason": "Two location changes reviewed together. The mapless confirmation: when the renderer cannot draw, its route withdraws and the resolved address is confirmed in words instead of behind a dead map frame. And a decision record tracing what the server actually requires — coordinates, enforced by confirm_my_service_address, which is why geocoding failure stays a recoverable block rather than a degraded completion. Neither changes what either article states: the same location information is required, obtained the same three ways, stored and validated identically, and the customer address flow is untouched. What changed is that a map which cannot paint no longer looks like a failure to find the address.",
+      "articles": [
+        {
+          "id": "customer-addresses-location",
+          "locale": "ar",
+          "digest": "cd3c1fea41342229"
+        },
+        {
+          "id": "customer-addresses-location",
+          "locale": "en",
+          "digest": "02c5b3ca4238b773"
+        },
+        {
+          "id": "customer-addresses-location",
+          "locale": "fr",
+          "digest": "421778f165983ffc"
+        },
+        {
+          "id": "worker-onboarding-verification",
+          "locale": "ar",
+          "digest": "0554843a357f3c6c"
+        },
+        {
+          "id": "worker-onboarding-verification",
+          "locale": "en",
+          "digest": "4ee2a7143a441f50"
+        },
+        {
+          "id": "worker-onboarding-verification",
+          "locale": "fr",
+          "digest": "b903c3b21a873459"
+        }
+      ]
     }
   ]
 }
