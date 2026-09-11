@@ -53,6 +53,40 @@ Because nothing deploys automatically, a release is an explicit operation:
 Steps 1-4 are safe to perform at any time. Step 5 is the only irreversible one
 and always needs a human decision.
 
+### Validation and publication are separate phases
+
+**Run the checks. Read the result. Then publish.** Never in one command.
+
+```
+make changes -> run checks -> CONFIRM THE RESULT -> commit -> push
+             -> CI -> staged deployment -> verify the artifact -> promote
+```
+
+On 2026-09-11 work left the machine twice while a check was red, both times
+because the checks and the publication were chained in a single shell command
+and the output arrived after the push. A gate read too late is a gate that did
+not run, and the green run that follows it is a result about the wrong tree.
+
+`npm run hooks:install` points git at `.githooks`, whose `pre-push` runs
+`typecheck`, `lint` and `test:help-docs` — fourteen seconds, and precisely the
+three that escaped. The type error was invisible to the regression suite because
+`--experimental-strip-types` removes types without checking them, and the
+documentation gate's authority ends at the push.
+
+`test:all` is deliberately NOT in the hook. Ten minutes of pre-push cost gets
+bypassed, and a bypassed hook is worse than none because it looks like
+protection. CI runs the full suite over the pushed range.
+
+The scripted release paths were audited at the same time and are sound:
+`qa-release.mjs` runs `validate()` through a `run()` that exits on any non-zero
+status, so the build genuinely cannot start after a failed check. The gap was
+never the scripts. It was the unscripted path, where a person is the only thing
+between a red check and `origin/main`.
+
+A local hook protects a machine, not the repository — it is bypassable with
+`--no-verify`, which AGENTS.md already forbids. CI is the control; this is the
+thing that makes the control arrive before the mistake.
+
 ### The staged artifact must prove which commit it contains
 
 **Invariant, from the stale-preview incident of 2026-09-11.** Before promoting,

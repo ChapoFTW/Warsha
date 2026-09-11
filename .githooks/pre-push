@@ -1,0 +1,4 @@
+#!/bin/sh
+# Validation before publication. See scripts/pre-push-gate.mjs for why these
+# three checks and not the whole suite.
+exec node ./scripts/pre-push-gate.mjs
