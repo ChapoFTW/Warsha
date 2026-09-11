@@ -46,9 +46,24 @@ const sourceState = status ? 'dirty' : 'clean';
 console.log(`Staging a deployment of ${sha.slice(0, 7)} — ${subject}`);
 console.log(`  source state: ${sourceState}\n`);
 
+/*
+ * `--env`, not `--build-env`.
+ *
+ * `/api/health` is `force-dynamic`: it runs in the serverless function at
+ * request time, where build-time variables do not exist. Stamping with
+ * `--build-env` produced a deployment carrying the right commit and reporting
+ * `source: null` — which the release gate correctly refused, and which is how
+ * this was found. Both are passed now: the runtime one is what the route reads,
+ * and the build one costs nothing and keeps the value available to anything
+ * evaluated during the build later.
+ */
 const result = spawnSync(
   'npx',
-  ['--yes', 'vercel@latest', 'deploy', '--yes', '--build-env', `WARSHA_SOURCE_STATE=${sourceState}`],
+  [
+    '--yes', 'vercel@latest', 'deploy', '--yes',
+    '--env', `WARSHA_SOURCE_STATE=${sourceState}`,
+    '--build-env', `WARSHA_SOURCE_STATE=${sourceState}`,
+  ],
   { encoding: 'utf8', shell: process.platform === 'win32' },
 );
 
