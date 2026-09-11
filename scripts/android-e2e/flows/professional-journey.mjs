@@ -23,7 +23,7 @@
 import { copyFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { describeScreen, screenshot, scrollDown, shell, sleep, tree } from '../driver.mjs';
+import { describeScreen, screenshot, scrollDown, setText, shell, sleep, tree } from '../driver.mjs';
 import { assertBackendTarget } from '../backend-target.mjs';
 import { installPhotoFixture } from '../photo-fixture.mjs';
 import { apply, resetDevice, VIEWPORTS } from '../appearance-matrix.mjs';
@@ -139,6 +139,9 @@ const CONTINUE = ['Continue', 'كمّل', 'Continuer'];
 /* From `addressChooseMap`: the Arabic is “اختار الموقع على الخريطة”. */
 const CHOOSE_ON_MAP = ['Choose location on map', 'اختار الموقع على الخريطة', 'Choisir sur la carte'];
 const CONFIRM_LOCATION = ['Confirm this location', 'أكّد المكان ده', 'Confirmer cette position'];
+/* `searchAddress`. The third of the three routes and the only one that needs
+   neither a GPS fix nor a painted map tile. */
+const SEARCH_ADDRESS = ['Search for an address', 'دور على العنوان', 'Rechercher une adresse'];
 
 /**
  * Wait for a control to become usable, not merely present.
@@ -266,6 +269,10 @@ async function chooseServices(chosenCategories, count = 3) {
 const QA_PLACE = {
   governorate: { en: 'Cairo', ar: 'القاهرة', fr: 'Cairo' },
   area: { en: 'Abdin', ar: 'قسم عابدين', fr: 'Abdin' },
+  /* A public square in the area already chosen. Deliberately a landmark and
+     never a residence: the standing rule is that no real person's address is
+     used, and a square is a real place the real geocoder can resolve. */
+  search: { en: 'Abdin Square Cairo', ar: 'ميدان عابدين القاهرة', fr: 'Abdin Square Cairo' },
 };
 const SELECT_GOVERNORATE = ['Choose governorate', 'اختار المحافظة', 'Choisir le gouvernorat'];
 const SELECT_AREA = ['Choose area', 'اختار المنطقة', 'Choisir la zone'];
@@ -457,6 +464,52 @@ async function completeServiceArea() {
         await tap(CONFIRM_LOCATION, { optional: true, settle: 3500 });
         await settleScreen();
         await capture(`${combination.name}-address-map-confirmed`);
+      }
+    }
+
+    /*
+     * The third route, and on this device the only one that can work.
+     *
+     * "Use my current location" needs a GPS fix the emulator will not produce.
+     * "Choose location on map" needs a painted tile, and the Maps key this
+     * locally-signed build carries is not authorised for one. "Search for an
+     * address" needs neither: it is a real geocode against a typed place, and
+     * it resolves here — the walk was stopping one button short of a working
+     * path the product had offered all along.
+     *
+     * A public square, never a residence. The standing rule is that no real
+     * person's address is used, and a landmark is a real place the real
+     * geocoder can resolve without belonging to anybody.
+     */
+    if (!resolved && await tap(SEARCH_ADDRESS, { optional: true, settle: 2500 })) {
+      await settleScreen();
+      await capture(`${combination.name}-address-search`);
+
+      await setText({ cls: 'EditText', index: 0 }, QA_PLACE.search[code]);
+      await sleep(5000);
+      await settleScreen();
+      await capture(`${combination.name}-address-search-results`);
+
+      /*
+       * The first suggestion, taken by its own accessibility name rather than
+       * by position. A results list re-queries as it types, so a coordinate
+       * captured a moment ago can be pointing at a row that has since moved.
+       */
+      const suggestion = tree().find((node) => node.clickable
+        && (node.desc ?? '').length > 12
+        && /Abdin|عابدين/i.test(node.desc ?? ''));
+      if (!suggestion) {
+        console.log('    the address search returned nothing to choose');
+      } else {
+        console.log(`    choosing "${(suggestion.desc ?? '').slice(0, 48)}"`);
+        shell(`input tap ${suggestion.bounds.cx} ${suggestion.bounds.cy}`);
+        await sleep(3500);
+        await settleScreen();
+        await capture(`${combination.name}-address-search-chosen`);
+        resolved = await waitForEnabled(CONFIRM_LOCATION, { timeout: 20_000 })
+          || await waitForEnabled(CONTINUE, { timeout: 8_000 });
+        console.log(`    searched address accepted: ${resolved ? 'yes' : 'no'}`);
+        if (resolved) await tap(CONFIRM_LOCATION, { optional: true, settle: 3500 });
       }
     }
 
