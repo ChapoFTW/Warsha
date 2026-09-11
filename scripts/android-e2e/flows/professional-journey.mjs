@@ -481,8 +481,17 @@ try {
      * Each step is looked for by its heading rather than assumed to follow the
      * last. The journey is seven steps and a professional can be sent back to
      * an earlier one, so "what is on screen" is the only honest question.
+     *
+     * `services` is deliberately not walked here. It is not a step of its own:
+     * "What do you do?" and "Services you offer" are both on Step 3 of 7, and
+     * the block above has already chosen from them. Leaving it in this loop
+     * meant the walk looked for a screen that had already been and gone, found
+     * Step 4 instead, and stopped with "step services not reached" — while the
+     * application was in fact sitting on the service area, one step further on
+     * than the harness believed. A model of the product that is a step behind
+     * reports a wall where there is a door.
      */
-    for (const [name, names] of Object.entries(STEPS)) {
+    for (const [name, names] of Object.entries(STEPS).filter(([step]) => step !== 'services')) {
       await settleScreen();
       if (!target(names)) {
         // Try to advance: several steps sit behind a save.
