@@ -33,7 +33,7 @@ const subject = git('log', '-1', '--format=%s');
 if (status && !allowDirty) {
   console.error(
     'REFUSING TO DEPLOY A DIRTY TREE\n\n'
-    + `${status.split('\n').map((line) => `  ${line}`).join('\n')}\n\n'`
+    + `${status.split('\n').map((line) => `  ${line}`).join('\n')}\n\n`
     + '  The build would report the SHA of HEAD while containing files that are\n'
     + '  in no commit at all. Commit or stash first.\n\n'
     + '  `--allow-dirty` exists for a local experiment. A deployment made that\n'
