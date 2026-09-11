@@ -53,6 +53,45 @@ Because nothing deploys automatically, a release is an explicit operation:
 Steps 1-4 are safe to perform at any time. Step 5 is the only irreversible one
 and always needs a human decision.
 
+### The staged artifact must prove which commit it contains
+
+**Invariant, from the stale-preview incident of 2026-09-11.** Before promoting,
+the staged deployment must be shown to contain the exact commit being released.
+
+```
+npm run deploy:web                                    # refuses a dirty tree, stamps the build
+npm run test:release-artifact -- --url <deployment>   # fails closed on any doubt
+```
+
+`test:release-artifact` asks the running deployment what it contains, over the
+network, and compares it to the SHA being released. It refuses on a mismatch, on
+a missing commit, on an unreachable endpoint, and on a build whose source state
+is not `clean`.
+
+The following are **not** evidence that a deployment is current, and none of
+them is read by the gate:
+
+- **its creation time** — a build takes minutes and a commit takes seconds,
+  so "recent" and "current" are different properties
+- **`readyState: READY`** — that says the build finished, not what it built
+- **the existence of a preview URL** — one from ten minutes ago looks exactly
+  like one from ten seconds ago
+- **a green browser gate against it** — the gate proves the artifact behaves,
+  not that it is the artifact you mean
+
+What happened: a preview was deployed, returned a URL, reported READY, and
+passed a 510-check browser gate. Two commits then landed. Every signal said the
+release was verified, and promoting at that point would have published an
+artifact predating both. It was caught by comparing against `git log` by hand —
+which is a person remembering, not a control.
+
+A clean tree is part of the claim, not a separate courtesy.
+`VERCEL_GIT_COMMIT_SHA` is the SHA of `HEAD` whether or not the uploaded files
+match it, so a deploy from a dirty tree produces an artifact that truthfully
+names a commit it does not contain. `deploy:web` refuses that, and stamps
+`WARSHA_SOURCE_STATE` into the build so the claim can be checked later over the
+network rather than trusted from whoever ran the deploy.
+
 ## Branches
 
 | Branch | Purpose | Protection |

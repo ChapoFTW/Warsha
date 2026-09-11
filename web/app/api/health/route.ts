@@ -40,6 +40,19 @@ export function GET() {
       service: 'warsha-web',
       checkedAt: new Date().toISOString(),
       commit: (process.env.VERCEL_GIT_COMMIT_SHA ?? '').slice(0, 7) || null,
+      /*
+       * Whether the tree the artifact was built from had uncommitted changes.
+       *
+       * `commit` alone cannot answer that. It is the SHA of HEAD, and a deploy
+       * from a dirty tree carries files that are in no commit at all while
+       * still reporting the SHA of the last one — an artifact that truthfully
+       * names a commit it does not contain.
+       *
+       * `npm run deploy:web` refuses a dirty tree and stamps this `clean`.
+       * Anything deployed another way leaves it null, and
+       * `test:release-artifact` fails closed on null rather than assuming.
+       */
+      source: process.env.WARSHA_SOURCE_STATE ?? null,
     },
     {
       status: 200,
