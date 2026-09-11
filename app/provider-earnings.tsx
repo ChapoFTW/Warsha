@@ -198,8 +198,13 @@ export default function ProviderEarningsScreen() {
                   autoCapitalize="none"
                   keyboardType={destinationType === 'mobile_wallet' ? 'phone-pad' : 'default'}
                 />
+                {/* Named explicitly. Composed from children this announced as
+                    ", <the confirmation>" — the decorative icon contributing an
+                    empty first segment — and this one is somebody confirming
+                    they own the account money will be sent to. */}
                 <Pressable
                   accessibilityRole="checkbox"
+                  accessibilityLabel={pt('ownershipConfirm')}
                   accessibilityState={{ checked: ownershipConfirmed }}
                   onPress={() => setOwnershipConfirmed(current => !current)}
                   style={styles.check}>

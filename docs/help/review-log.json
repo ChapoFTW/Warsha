@@ -144,6 +144,42 @@
           "digest": "d0e8785b0bdff895"
         }
       ]
+    },
+    {
+      "date": "2026-09-11",
+      "reason": "Accessibility-only change on the professional verification screen: three checkboxes that drew their own icon and label — the Skill Certificate question, the criminal-record confirmation and the payout ownership confirmation — were given explicit accessible names. With none, Android composes a name from the children and the decorative icon contributes an empty first segment, so each announced itself with a missing opening word. No behaviour, no visible copy, no field, no requirement and no lifecycle changed; what these controls do, what they require and what they record is exactly as both articles describe.",
+      "articles": [
+        {
+          "id": "admin-verification-enforcement",
+          "locale": "ar",
+          "digest": "081ea90bdbb1dc9f"
+        },
+        {
+          "id": "admin-verification-enforcement",
+          "locale": "en",
+          "digest": "39f7ef1ced5b6f25"
+        },
+        {
+          "id": "admin-verification-enforcement",
+          "locale": "fr",
+          "digest": "6e260f4906cb0542"
+        },
+        {
+          "id": "worker-onboarding-verification",
+          "locale": "ar",
+          "digest": "0554843a357f3c6c"
+        },
+        {
+          "id": "worker-onboarding-verification",
+          "locale": "en",
+          "digest": "4ee2a7143a441f50"
+        },
+        {
+          "id": "worker-onboarding-verification",
+          "locale": "fr",
+          "digest": "b903c3b21a873459"
+        }
+      ]
     }
   ]
 }

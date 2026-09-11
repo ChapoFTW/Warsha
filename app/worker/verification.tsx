@@ -473,7 +473,14 @@ export default function WorkerVerificationJourney() {
             <OnboardingFieldMeta label={ot.text('identityExpiry')} required={false} privateField purpose={wt.text('identityPurpose')} />
             <BrandTextField label={ot.text('identityExpiry')} value={expiryDate} onChangeText={setExpiryDate} placeholder="YYYY-MM-DD" />
             <OnboardingFieldMeta label={vt('certificateQuestion')} required={false} privateField purpose={wt.text('certificatePurpose')} />
-            <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: hasSkillCertificate }} onPress={() => setHasSkillCertificate(value => !value)} style={styles.check}>
+            {/* The name is given, never composed. With no `accessibilityLabel`
+                Android builds one out of the children, and the decorative icon
+                contributes an empty segment — which is how this announced itself
+                as ", Do you already have a Skill Certificate?". That is the exact
+                defect the OptionRow rewrite removed from the trade and
+                governorate lists, back on a screen that draws its own checkbox.
+                Photographed on 2026-09-11 on the verification step. */}
+            <Pressable accessibilityRole="checkbox" accessibilityLabel={vt('certificateQuestion')} accessibilityState={{ checked: hasSkillCertificate }} onPress={() => setHasSkillCertificate(value => !value)} style={styles.check}>
               <MaterialIcons name={hasSkillCertificate ? 'check-box' : 'check-box-outline-blank'} size={25} color={colors.textPrimary} />
               <AppText style={styles.grow}>{vt('certificateQuestion')}</AppText>
             </Pressable>
@@ -502,7 +509,10 @@ export default function WorkerVerificationJourney() {
               autoCorrect={false}
             />
             <OnboardingFieldMeta label={ot.text('certificateAcknowledge')} required privateField purpose={wt.text('certificatePurpose')} />
-            <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: certificateAcknowledged }} onPress={() => setCertificateAcknowledged(value => !value)} style={styles.check}>
+            {/* Same defect, same fix, and it matters more here: this one is a
+                declaration somebody is making about their own criminal record,
+                and a screen reader was announcing it with a missing first word. */}
+            <Pressable accessibilityRole="checkbox" accessibilityLabel={ot.text('certificateAcknowledge')} accessibilityState={{ checked: certificateAcknowledged }} onPress={() => setCertificateAcknowledged(value => !value)} style={styles.check}>
               <MaterialIcons name={certificateAcknowledged ? 'check-box' : 'check-box-outline-blank'} size={25} color={colors.textPrimary} />
               <AppText style={styles.grow}>{ot.text('certificateAcknowledge')}</AppText>
             </Pressable>
