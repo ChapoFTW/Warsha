@@ -7,6 +7,8 @@ import { copy } from '@/lib/copy';
 import { isLocale, type Locale } from '@/lib/preferences';
 import { APP_SIGN_IN, localeHref } from '@/lib/routes';
 
+import surface from '@/components/product-surface.module.css';
+
 import styles from './page.module.css';
 
 export async function generateMetadata(
@@ -76,12 +78,17 @@ export default async function SignInPage({
           {words.signIn}
         </a>
 
-        <p className={styles.footNote}>
-          {words.signInFootNote}{' '}
-          <Link href={localeHref(typed, '/create-account')} className={styles.link}>
+        {/* The mirror of `/create-account`'s foot, and deliberately identical to
+            it. These two pages sit either side of the same question — do you
+            have an account or not — and each ends by offering the other. Giving
+            one a compact control and the other an underlined word inside a
+            sentence would be two answers to one question. */}
+        <div className={styles.haveAccount}>
+          <span>{words.signInFootNote}</span>
+          <Link href={localeHref(typed, '/create-account')} className={surface.compact}>
             {words.signInFootLink}
-          </Link>.
-        </p>
+          </Link>
+        </div>
       </main>
       <SiteFooter locale={typed} />
     </>

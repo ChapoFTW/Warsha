@@ -77,16 +77,17 @@
   transition-duration: var(--motion-press);
 }
 
-.footNote {
+/* A question and the answer to it, identical to the foot of `/create-account`.
+   `flex-start` rather than centred, so Arabic begins at the reading edge with
+   no mirrored rule. */
+.haveAccount {
   margin-top: 28px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--space-md);
   font-size: 14.5px;
   color: var(--text-secondary);
   max-width: 68ch;
-}
-
-.link {
-  color: var(--text-primary);
-  font-weight: 650;
-  text-decoration: underline;
-  text-underline-offset: 3px;
 }
