@@ -33,9 +33,11 @@ type Props = {
   /** Named by the server's render descriptor. Null falls back to the sole renderer. */
   rendererKey?: string | null;
   copy: MapRendererCopy;
+  /** Forwarded: the chosen renderer could not draw a map. */
+  onUnavailable?: () => void;
 };
 
-export function AddressMap({ value, onChange, mapsAvailable, rendererKey, copy }: Props) {
+export function AddressMap({ value, onChange, mapsAvailable, rendererKey, copy, onUnavailable }: Props) {
   const styles = useThemedStyles(makeStyles);
   const Renderer = resolveMapRenderer(rendererKey);
 
@@ -47,7 +49,7 @@ export function AddressMap({ value, onChange, mapsAvailable, rendererKey, copy }
     );
   }
 
-  return <Renderer value={value} onChange={onChange} copy={copy} />;
+  return <Renderer value={value} onChange={onChange} copy={copy} onUnavailable={onUnavailable} />;
 }
 
 const makeStyles = (colors: ThemeColors) => StyleSheet.create({

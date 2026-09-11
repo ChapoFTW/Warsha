@@ -44,7 +44,7 @@ const FALLBACK_REGION: Region = {
   longitudeDelta: 0.08,
 };
 
-export function GoogleMapRenderer({ value, onChange, copy }: MapRendererProps) {
+export function GoogleMapRenderer({ value, onChange, copy, onUnavailable }: MapRendererProps) {
   const styles = useThemedStyles(makeStyles);
   const mapRef = useRef<MapView | null>(null);
 
@@ -89,6 +89,22 @@ export function GoogleMapRenderer({ value, onChange, copy }: MapRendererProps) {
     const timer = setTimeout(() => setGaveUp(true), MAP_READY_TIMEOUT_MS);
     return () => clearTimeout(timer);
   }, [ready]);
+
+  /*
+   * Say so upward, once.
+   *
+   * The surface around this one offers the map as one of three ways to set a
+   * location. If the map cannot be drawn it needs to stop offering it and show
+   * what it already has instead — otherwise two of the three routes work, the
+   * third leads to a rectangle that says it is unavailable, and the person is
+   * left to work out which.
+   */
+  const announced = useRef(false);
+  useEffect(() => {
+    if (!gaveUp || ready || announced.current) return;
+    announced.current = true;
+    onUnavailable?.();
+  }, [gaveUp, ready, onUnavailable]);
   const [region] = useState<Region>(
     value && isValidCoordinate(value.latitude, value.longitude)
       ? { ...value, latitudeDelta: 0.01, longitudeDelta: 0.01 }

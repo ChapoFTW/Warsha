@@ -23,6 +23,20 @@ export type MapRendererProps = {
   value: PinPosition | null;
   onChange: (position: PinPosition) => void;
   copy: MapRendererCopy;
+  /**
+   * The renderer could not draw a map, and has stopped waiting for one.
+   *
+   * Not the same question as "does this deployment have a map provider" — the
+   * server answers that before anything mounts. This is the renderer reporting
+   * that the provider it was given never painted: an unauthorised key, tiles
+   * that never arrive, a device without the services the SDK needs. Announced
+   * exactly once per mount.
+   *
+   * A surface that offers "choose on map" as one of several ways to do
+   * something needs to know, or it goes on offering a route that leads nowhere
+   * while the other routes are working.
+   */
+  onUnavailable?: () => void;
 };
 
 /**

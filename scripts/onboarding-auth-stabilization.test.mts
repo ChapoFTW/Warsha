@@ -122,9 +122,26 @@ check(unavailable.deviceLocationAvailable
   && !unavailable.addressSearchAvailable,
   'device location stays enabled while governed Maps and Places remain off');
 const picker = read('components/warsha/AddressLocationPicker.tsx');
-check(picker.includes("{mapAvailable || environment.dataMode === 'mock' ? (")
+check(picker.includes('mapAvailable && !mapFailed')
   && picker.includes('{searchAvailable ? ('),
   'unavailable map/search actions are explained instead of shown as mysterious disabled controls');
+/*
+ * And the map route now answers a second question the first one cannot.
+ *
+ * `interactiveMapAvailable` is the server's answer about this deployment, known
+ * before anything mounts. It cannot see a map that was supposed to work and did
+ * not — an unauthorised key, tiles that never arrive — which is the case that
+ * can only happen AFTER somebody has pressed the button. The renderer reports
+ * that upward and the route stops being offered, because an alternative that
+ * leads to the same dead end is not an alternative.
+ */
+check(picker.includes('onUnavailable={() => { setMapFailed(true); setMapOpen(false); }}'),
+  'a map that cannot draw withdraws its own route rather than leaving it on offer');
+const renderer = read('components/warsha/GoogleMapRenderer.tsx');
+check(renderer.includes('onMapLoaded={() => setReady(true)}'),
+  'readiness means the map RENDERED, not that the SDK initialised');
+check(/onUnavailable\?\.\(\)/.test(renderer) && /announced\.current = true/.test(renderer),
+  'and the renderer says so upward, exactly once per mount');
 
 // The privacy surface remains useful while separately governed destructive
 // services are off.
