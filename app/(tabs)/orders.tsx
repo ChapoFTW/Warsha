@@ -158,8 +158,32 @@ function OrderCard({ booking, reviewed, reviewStateLoading, canReview }: { booki
     pathname: '/booking/[id]',
     params: { id: booking.id, ...(focusReview ? { focusReview: '1' } : {}) },
   });
+  const statusText = t(bookingStatusTranslationKeys[booking.status]);
+  const scheduleText = formatBookingDateTime(booking.date, booking.time, localeFor(language), t('asap'));
+  const priceText = formatMoneyMajor(booking.priceBreakdown?.estimatedTotal ?? booking.price, { language });
+  /*
+   * The card named itself from its children, so the forward arrow landed as an
+   * empty segment and the rate button's label was absorbed into the end of it.
+   * Said deliberately instead, in the order a person would ask: who, what,
+   * when, how much, where it stands.
+   */
+  const cardName = [provider.name, serviceLabel, scheduleText, priceText, statusText]
+    .filter(Boolean).join('. ');
+  const offersReview = canReview && booking.status === 'completed' && !reviewStateLoading && !reviewed;
+
   return (
-    <Pressable onPress={() => openDetails()} style={[styles.card, isRTL && { direction: 'rtl' }]}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={cardName}
+      /* A Pressable inside a Pressable is merged away by the reader, so the
+         rate action was unreachable there. This is how it comes back. */
+      accessibilityActions={offersReview
+        ? [{ name: 'rate', label: t('rateService') }]
+        : undefined}
+      onAccessibilityAction={(event) => {
+        if (event.nativeEvent.actionName === 'rate') openDetails(true);
+      }}
+      onPress={() => openDetails()} style={[styles.card, isRTL && { direction: 'rtl' }]}>
       <View style={styles.top}>
         <Image source={{ uri: provider.image }} style={styles.avatar} />
         <View style={styles.grow}>
@@ -176,7 +200,7 @@ function OrderCard({ booking, reviewed, reviewStateLoading, canReview }: { booki
         <AppText style={styles.price}>{formatMoneyMajor(booking.priceBreakdown?.estimatedTotal ?? booking.price, { language })}</AppText>
         <View style={styles.detailLink}>
           <AppText style={styles.details}>{t('viewDetails')}</AppText>
-          <MaterialIcons name={isRTL ? 'arrow-back' : 'arrow-forward'} size={15} color={colors.white} />
+          <MaterialIcons accessibilityElementsHidden importantForAccessibility="no" name={isRTL ? 'arrow-back' : 'arrow-forward'} size={15} color={colors.white} />
         </View>
       </View>
       {canReview && booking.status === 'completed' && !reviewStateLoading ? reviewed ? (
@@ -185,8 +209,10 @@ function OrderCard({ booking, reviewed, reviewStateLoading, canReview }: { booki
         </AppText>
       ) : (
         <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`${t('rateServiceAccessibility')}: ${provider.name}, ${serviceLabel}`}
+          /* Hidden from the reader, which is where it already was: the card
+             offers it as an action instead. A finger still gets the button. */
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
           onPress={event => {
             event.stopPropagation();
             openDetails(true);

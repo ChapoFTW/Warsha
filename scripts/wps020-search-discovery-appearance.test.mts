@@ -561,7 +561,20 @@ has(resultCard, /Every state carries an icon and a word, never a colour alone/,
   'the card states its accessibility rule');
 has(resultCard, /provider\.isAvailable \? dt\.text\('availableNow'\) : dt\.text\('unavailableNow'\)/,
   'availability is announced in words');
-has(resultCard, /accessibilityState=\{\{ selected: saved \}\}/, 'the favourite state is announced');
+/*
+ * The favourite state used to ride on the heart's own `accessibilityState`. It
+ * could not stay there: the heart is a PressableSurface inside a
+ * PressableSurface, which a screen reader merges into the card, so the control
+ * carrying the state was never reachable to the reader the state was for.
+ *
+ * It is now an accessibility action on the card, and an action has a label but
+ * no state — so both halves are asserted here rather than one. The requirement
+ * did not move; the place that satisfies it did.
+ */
+has(resultCard, /saved \? dt\.text\('savedProvider'\) : ''/,
+  'the favourite state is announced, in words, in the name of the card');
+has(resultCard, /accessibilityActions=\{\[\{ name: 'favourite'/,
+  'and the favourite is offered as an action a screen reader can actually reach');
 has(resultCard, /noReviewsYet/, 'no reviews is stated rather than shown as a zero');
 has(resultCard, /radio-button-unchecked/, 'unavailability carries a distinct shape');
 lacks(codeOf(resultCard), /opacity: 0\.[0-4]/, 'inactive content is not dimmed by default');

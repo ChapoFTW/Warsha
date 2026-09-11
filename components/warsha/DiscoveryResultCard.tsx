@@ -47,7 +47,30 @@ export function DiscoveryResultCard({ provider }: { provider: DiscoveryProviderC
     <PressableSurface
       accessibilityRole="button"
       feedback="surface"
-      accessibilityLabel={`${provider.displayName}. ${provider.isAvailable ? dt.text('availableNow') : dt.text('unavailableNow')}. ${reviews}`}
+      /*
+       * `saved` is said in words rather than carried as state, because the
+       * control that used to carry it is a Pressable inside a Pressable and a
+       * reader never reached it. An accessibility action has a label and no
+       * state, so moving the heart into one would have taken the fact with it —
+       * which is the same rule this card already follows for availability:
+       * every state carries a word, never a colour alone.
+       */
+      accessibilityLabel={[
+        provider.displayName,
+        provider.isAvailable ? dt.text('availableNow') : dt.text('unavailableNow'),
+        reviews,
+        saved ? dt.text('savedProvider') : '',
+      ].filter(Boolean).join('. ')}
+      /* The heart is a PressableSurface inside a PressableSurface, which a
+         screen reader merges into the card — named correctly and unreachable
+         anyway. The action carries the same two labels, so it still says which
+         way it will go. */
+      accessibilityActions={[{ name: 'favourite', label: saved ? dt.text('removeFavourite') : dt.text('addFavourite') }]}
+      onAccessibilityAction={(event) => {
+        if (event.nativeEvent.actionName !== 'favourite') return;
+        if (mode === 'supabase' && !user) { router.push('/(tabs)/profile'); return; }
+        toggleFavourite(provider.id);
+      }}
       onPress={open}
       style={({ pressed }) => [styles.card, isRTL && styles.reverse, pressed && styles.pressed]}>
       {provider.avatarRef
@@ -94,9 +117,8 @@ export function DiscoveryResultCard({ provider }: { provider: DiscoveryProviderC
       </View>
 
       <PressableSurface
-        accessibilityRole="button"
-        accessibilityState={{ selected: saved }}
-        accessibilityLabel={saved ? dt.text('removeFavourite') : dt.text('addFavourite')}
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
         hitSlop={8}
         onPress={(event) => {
           event.stopPropagation();

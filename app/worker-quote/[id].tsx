@@ -121,7 +121,9 @@ export default function WorkerQuoteDetail() {
         </View>
       ) : null}
       {emergency
-        ? <Pressable disabled={!actionable || saving} onPress={async () => {
+        ? <Pressable accessibilityRole="button" accessibilityLabel={mt('emergencyAccept')}
+            accessibilityState={{ disabled: !actionable || saving, busy: saving }}
+            disabled={!actionable || saving} onPress={async () => {
             setSaving(true);
             try { await market.acceptEmergency(invitation.id); router.back(); }
             catch { Alert.alert(mt('error')); }
@@ -137,7 +139,9 @@ export default function WorkerQuoteDetail() {
             {/* Disabled at capacity, and the notice above says why. Disabling
                 without an explanation is how a control becomes a bug report. */}
             <Pressable
-              accessibilityState={{ disabled: !actionable || saving || Number(price) <= 0 || blockedByCapacity }}
+              accessibilityRole="button"
+              accessibilityLabel={invitation.quoteId ? mt('reviseQuote') : mt('sendQuote')}
+              accessibilityState={{ disabled: !actionable || saving || Number(price) <= 0 || blockedByCapacity, busy: saving }}
               disabled={!actionable || saving || Number(price) <= 0 || blockedByCapacity}
               onPress={() => void send()}
               style={[styles.primary, (!actionable || Number(price) <= 0 || blockedByCapacity) && styles.disabled]}>

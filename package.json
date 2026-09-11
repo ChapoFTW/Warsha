@@ -86,6 +86,8 @@
     "test:help-language-parity": "node --no-warnings --experimental-strip-types scripts/help-language-parity.test.mts",
     "test:help-docs": "node scripts/help-docs.mjs",
     "test:help-docs-range": "node --no-warnings --experimental-strip-types scripts/help-docs-range.test.mts",
+    "audit:accessible-names": "node ./scripts/accessible-names.mjs",
+    "test:accessible-names": "node --no-warnings --experimental-strip-types scripts/accessible-names.test.mts",
     "warsha:docs-check": "node scripts/help-docs.mjs",
     "warsha:docs-generate": "node scripts/help-docs.mjs --write",
     "test:signup-legal-startup": "node --no-warnings --experimental-strip-types scripts/signup-legal-startup.test.mts",

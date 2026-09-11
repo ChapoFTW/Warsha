@@ -448,10 +448,15 @@ export default function ConversationScreen() {
                 accessibilityState={{ checked: reportCategory === category }}
                 onPress={() => setReportCategory(category)}
                 style={[styles.category, reportCategory === category && styles.categorySelected, isRTL && styles.reverse]}
-              ><MaterialIcons name={reportCategory === category ? 'radio-button-checked' : 'radio-button-unchecked'} size={20} color={reportCategory === category ? colors.white : colors.textMuted} /><AppText>{ct(abuseCategoryCopyKey(category))}</AppText></Pressable>)}
+                accessibilityLabel={ct(abuseCategoryCopyKey(category))}
+              ><MaterialIcons accessibilityElementsHidden importantForAccessibility="no" name={reportCategory === category ? 'radio-button-checked' : 'radio-button-unchecked'} size={20} color={reportCategory === category ? colors.white : colors.textMuted} /><AppText>{ct(abuseCategoryCopyKey(category))}</AppText></Pressable>)}
             </ScrollView>
             <TextInput value={reportDetails} onChangeText={(value) => setReportDetails(value.slice(0, 1000))} placeholder={ct('reportDetails')} placeholderTextColor={colors.textMuted} multiline style={[styles.reportInput, isRTL && styles.rtlText]} />
-            <Pressable accessibilityRole="button" disabled={reportBusy} onPress={() => void submitReport()} style={[styles.reportSubmit, reportBusy && styles.disabled]}>{reportBusy ? <ActivityIndicator color={colors.background} /> : <AppText style={styles.reportSubmitText}>{ct('reportSubmit')}</AppText>}</Pressable>
+            {/* Named rather than composed, because the name is the thing that
+                disappears: while the report is sending, the spinner replaces
+                the only text and the button announced itself as nothing at all.
+                `busy` says what the spinner says, to someone not watching it. */}
+            <Pressable accessibilityRole="button" accessibilityLabel={ct('reportSubmit')} accessibilityState={{ disabled: reportBusy, busy: reportBusy }} disabled={reportBusy} onPress={() => void submitReport()} style={[styles.reportSubmit, reportBusy && styles.disabled]}>{reportBusy ? <ActivityIndicator color={colors.background} /> : <AppText style={styles.reportSubmitText}>{ct('reportSubmit')}</AppText>}</Pressable>
           </View>
         </View>
       </Modal>
@@ -483,7 +488,7 @@ function Bubble({ message, own, isRTL, language, ct, onPreview }: { message: Boo
   const body = message.kind === 'quick_reply' && message.quickReplyKey ? ct(quickReplyCopyKey(message.quickReplyKey)) : message.body;
   return <View style={[styles.bubbleRow, own ? styles.ownRow : styles.otherRow]}><View style={[styles.bubble, own ? styles.ownBubble : styles.otherBubble]}>
     {attachment?.url && message.kind === 'image' ? <Pressable accessibilityRole="imagebutton" accessibilityLabel={ct('image')} onPress={() => onPreview(attachment.url!)}><Image source={{ uri: attachment.url }} contentFit="cover" style={styles.image} /></Pressable> : null}
-    {attachment?.url && message.kind === 'file' ? <Pressable accessibilityRole="link" accessibilityLabel={`${ct('file')}. ${attachment.fileName ?? ''}`} onPress={() => void WebBrowser.openBrowserAsync(attachment.url!)} style={[styles.fileRow, isRTL && styles.reverse]}><MaterialIcons name="picture-as-pdf" size={26} color={own ? colors.background : colors.white} /><View style={styles.fileText}><AppText style={[styles.body, !own && styles.otherBody]} numberOfLines={2}>{attachment.fileName ?? ct('file')}</AppText>{attachment.byteSize ? <AppText style={styles.time}>{Math.ceil(attachment.byteSize / 1024)} KB</AppText> : null}</View></Pressable> : null}
+    {attachment?.url && message.kind === 'file' ? <Pressable accessibilityRole="link" accessibilityLabel={attachment.fileName ? `${ct('file')}. ${attachment.fileName}` : ct('file')} onPress={() => void WebBrowser.openBrowserAsync(attachment.url!)} style={[styles.fileRow, isRTL && styles.reverse]}><MaterialIcons name="picture-as-pdf" size={26} color={own ? colors.background : colors.white} /><View style={styles.fileText}><AppText style={[styles.body, !own && styles.otherBody]} numberOfLines={2}>{attachment.fileName ?? ct('file')}</AppText>{attachment.byteSize ? <AppText style={styles.time}>{Math.ceil(attachment.byteSize / 1024)} KB</AppText> : null}</View></Pressable> : null}
     {body ? <AppText style={[styles.body, !own && styles.otherBody, isRTL && styles.rtlText]}>{body}</AppText> : null}
     <View style={[styles.meta, isRTL && styles.reverse]}><AppText style={styles.time}>{formatTimestamp(message.createdAt, localeFor(language))}</AppText></View>
   </View></View>;

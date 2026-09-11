@@ -117,13 +117,13 @@ export default function ProviderPortfolioScreen() {
                 </View>
               ))}
             </ScrollView>
-            <Pressable accessibilityRole="button" disabled={item.images.length >= 5 || state.saving} onPress={() => void addImages(item)} style={styles.outline}><MaterialIcons name="add-photo-alternate" size={22} color={colors.white} /><AppText>{wt('addWorkPhoto')}</AppText></Pressable>
+            <Pressable accessibilityRole="button" disabled={item.images.length >= 5 || state.saving} onPress={() => void addImages(item)} style={styles.outline}><MaterialIcons accessibilityElementsHidden importantForAccessibility="no" name="add-photo-alternate" size={22} color={colors.white} /><AppText>{wt('addWorkPhoto')}</AppText></Pressable>
             <Pressable accessibilityRole="button" accessibilityState={{ checked: item.status === 'published' }} disabled={!item.images.length || state.saving} onPress={() => void state.savePortfolioItem({ id: item.id, title: item.title, description: item.description, categoryId: item.categoryId, serviceId: item.serviceId, completedPeriod: item.completedPeriod, status: item.status === 'published' ? 'draft' : 'published' }).catch(() => Alert.alert(wt('portfolio'), wt('retry')))} style={[styles.outline, !item.images.length && styles.disabled]}>
-              <MaterialIcons name={item.status === 'published' ? 'visibility-off' : 'visibility'} size={22} color={colors.white} /><AppText>{item.status === 'published' ? wt('unpublishItem') : wt('publishItem')}</AppText>
+              <MaterialIcons accessibilityElementsHidden importantForAccessibility="no" name={item.status === 'published' ? 'visibility-off' : 'visibility'} size={22} color={colors.white} /><AppText>{item.status === 'published' ? wt('unpublishItem') : wt('publishItem')}</AppText>
             </Pressable>
             <View style={[styles.actions, isRTL && styles.reverse]}>
               <IconButton label={wt('moveEarlier')} icon="arrow-upward" disabled={itemIndex === 0} onPress={() => moveItem(itemIndex, -1)} />
-              <Pressable accessibilityRole="button" onPress={() => edit(item)} style={styles.smallButton}><MaterialIcons name="edit" size={20} color={colors.white} /><AppText>{wt('manage')}</AppText></Pressable>
+              <Pressable accessibilityRole="button" onPress={() => edit(item)} style={styles.smallButton}><MaterialIcons accessibilityElementsHidden importantForAccessibility="no" name="edit" size={20} color={colors.white} /><AppText>{wt('manage')}</AppText></Pressable>
               <IconButton label={wt('moveLater')} icon="arrow-downward" disabled={itemIndex === state.portfolio.length - 1} onPress={() => moveItem(itemIndex, 1)} />
               <IconButton label={wt('deleteItem')} icon="delete-outline" onPress={() => Alert.alert(wt('deleteItem'), item.title, [{ text: wt('cancel'), style: 'cancel' }, { text: wt('remove'), style: 'destructive', onPress: () => void state.deletePortfolioItem(item.id).catch(() => Alert.alert(wt('portfolio'), wt('retry'))) }])} />
             </View>

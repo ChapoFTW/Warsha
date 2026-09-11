@@ -216,6 +216,42 @@
           "digest": "b903c3b21a873459"
         }
       ]
+    },
+    {
+      "date": "2026-09-11",
+      "reason": "Accessibility naming pass over the order card, booking detail actions, quote submission, invitation rows, chat report dialog and notification rows. Controls that were composing their own accessible name from their children now carry an explicit one, decorative icons were marked decorative, and two inline actions a screen reader could never reach - rate this job, and mark read or archive a notification - are offered as accessibility actions on the row that already contained them. No visible copy, no on-screen control and no step of any flow changed; the same actions are in the same places doing the same things. Both articles describe what the flows do and what changes a booking, and neither describes control labels, icons or assistive technology, so nothing either article states became untrue. Reviewed the English text in full against the change; the Arabic and French carry the same statements, which test:help-language-parity holds them to.",
+      "articles": [
+        {
+          "id": "customer-requests-quotes-jobs",
+          "locale": "en",
+          "digest": "3c861673c78ee8a0"
+        },
+        {
+          "id": "customer-requests-quotes-jobs",
+          "locale": "ar",
+          "digest": "10ace75b58c4b1b4"
+        },
+        {
+          "id": "customer-requests-quotes-jobs",
+          "locale": "fr",
+          "digest": "5cf8142f2c8e73ba"
+        },
+        {
+          "id": "worker-opportunities-jobs",
+          "locale": "en",
+          "digest": "62729975f5da46ad"
+        },
+        {
+          "id": "worker-opportunities-jobs",
+          "locale": "ar",
+          "digest": "4ea0e808dda94d24"
+        },
+        {
+          "id": "worker-opportunities-jobs",
+          "locale": "fr",
+          "digest": "e05eb9c2505bac05"
+        }
+      ]
     }
   ]
 }

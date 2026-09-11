@@ -348,6 +348,17 @@ export default function NewBookingScreen() {
                 .map((item) => (
                   <Pressable
                     key={item.id}
+                    accessibilityRole="radio"
+                    accessibilityState={{ checked: service?.id === item.id }}
+                    /* The radio mark is the only thing at the end of this row,
+                       so left to compose its own name the card announced the
+                       service and then an empty segment. The role already
+                       carries the state; the name is what is being chosen. */
+                    accessibilityLabel={[
+                      catalogueServiceLabel(item, language),
+                      t(serviceDescriptionKey(item)),
+                      formatMoneyMajor(item.price, { language }),
+                    ].filter(Boolean).join('. ')}
                     onPress={() => setService(item)}
                     style={[
                       styles.card,
@@ -372,6 +383,8 @@ export default function NewBookingScreen() {
                       {formatMoneyMajor(item.price, { language })}
                     </AppText>
                     <MaterialIcons
+                      accessibilityElementsHidden
+                      importantForAccessibility="no"
                       name={
                         service?.id === item.id
                           ? "radio-button-checked"
@@ -459,6 +472,12 @@ export default function NewBookingScreen() {
               {addresses.map((item) => (
                 <Pressable
                   key={item.id}
+                  accessibilityRole="radio"
+                  accessibilityState={{ checked: address?.id === item.id }}
+                  /* The pin is decorative — every one of these rows has one, so
+                     it distinguishes nothing and announcing it would only put a
+                     gap in front of the address. */
+                  accessibilityLabel={`${item.label}. ${item.building} ${item.street}, ${item.district}, ${item.governorate}`}
                   onPress={() => setAddress(item)}
                   style={[
                     styles.card,
@@ -467,6 +486,8 @@ export default function NewBookingScreen() {
                   ]}
                 >
                   <MaterialIcons
+                    accessibilityElementsHidden
+                    importantForAccessibility="no"
                     name="location-on"
                     size={21}
                     color={colors.white}
@@ -481,10 +502,13 @@ export default function NewBookingScreen() {
                 </Pressable>
               ))}
               <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t("addAddress")}
+                accessibilityState={{ expanded: adding }}
                 onPress={() => setAdding(!adding)}
                 style={styles.outline}
               >
-                <MaterialIcons name="add" size={20} color={colors.white} />
+                <MaterialIcons accessibilityElementsHidden importantForAccessibility="no" name="add" size={20} color={colors.white} />
                 <AppText style={styles.cardTitle}>{t("addAddress")}</AppText>
               </Pressable>
               {adding ? (

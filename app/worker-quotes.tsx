@@ -42,7 +42,7 @@ export default function WorkerQuotesScreen(){
       onPress={() => router.push({ pathname: '/worker/requests/[id]', params: { id: invitation.id } })}
       style={styles.card}>
       <View style={styles.icon}>
-        <MaterialIcons name={invitation.flowKind === 'emergency' ? 'emergency' : 'request-quote'} size={25} color={colors.background}/>
+        <MaterialIcons accessibilityElementsHidden importantForAccessibility="no" name={invitation.flowKind === 'emergency' ? 'emergency' : 'request-quote'} size={25} color={colors.background}/>
       </View>
       <View style={styles.grow}>
         <View style={styles.between}>

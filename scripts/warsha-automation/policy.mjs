@@ -74,6 +74,8 @@ export const DETERMINISTIC_TEST_SCRIPTS = [
   'test:discovery-multilingual',
   'test:signup-duplicate-account',
   'test:help-docs',
+  'test:accessible-names',
+  'audit:accessible-names',
   'test:help-language-parity',
   'test:android-build-helper',
   'test:signup-legal-startup',

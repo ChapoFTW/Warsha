@@ -55,16 +55,40 @@ function NotificationCard({ item }: { item: WarshaNotification }) {
   const styles = useThemedStyles(makeStyles);
   const state = useNotifications(); const copy = useEngagementText(); const { isRTL } = useLocalization(); const eventCopy = copy.event(item.eventKey, item.category);
   const stateLabel = item.readAt ? copy.text('read') : copy.text('unread');
-  const accessibility = `${stateLabel}. ${copy.category(item.category)}. ${copy.priority(item.priority)}. ${eventCopy.title}. ${eventCopy.body}${item.groupCount > 1 ? `. ${item.groupCount} ${copy.text('grouped')}` : ''}`;
-  return <Pressable accessibilityRole="button" accessibilityLabel={accessibility} accessibilityHint={eventCopy.action} onPress={() => void state.open(item)} style={[styles.card, !item.readAt && styles.unreadCard, isRTL && styles.reverse]}>
+  /*
+   * `actionRequired` is the lock mark at the end of the row. It used to be the
+   * only labelled thing in a group the reader could not reach, so hiding that
+   * group would have taken the fact with it — it is said here instead, which is
+   * where the rest of the row's meaning already lives.
+   */
+  const accessibility = `${stateLabel}. ${copy.category(item.category)}. ${copy.priority(item.priority)}. ${eventCopy.title}. ${eventCopy.body}${item.groupCount > 1 ? `. ${item.groupCount} ${copy.text('grouped')}` : ''}${item.actionOpen ? `. ${copy.text('actionRequired')}` : ''}`;
+  /*
+   * The two small controls at the end of the row are Pressables inside a
+   * Pressable, which a screen reader merges into the parent: they were visible
+   * to a finger and unreachable to a reader, so a notification could be opened
+   * but never marked read or archived. Offered as actions, they come back —
+   * and only when they are actually on screen, so the reader is never told
+   * about a control that is not there.
+   */
+  const rowActions = [
+    ...(!item.readAt ? [{ name: 'markRead', label: copy.text('markRead') }] : []),
+    ...(!item.actionOpen ? [{ name: 'archive', label: copy.text('archive') }] : []),
+  ];
+  return <Pressable accessibilityRole="button" accessibilityLabel={accessibility} accessibilityHint={eventCopy.action}
+    accessibilityActions={rowActions.length ? rowActions : undefined}
+    onAccessibilityAction={event => {
+      if (event.nativeEvent.actionName === 'markRead') void state.markRead(item.id);
+      if (event.nativeEvent.actionName === 'archive') void state.archive(item.id);
+    }}
+    onPress={() => void state.open(item)} style={[styles.card, !item.readAt && styles.unreadCard, isRTL && styles.reverse]}>
     <View style={[styles.priorityMark, priorityStyle[item.priority]]}/>
     <View style={styles.grow}>
       <View style={[styles.meta, isRTL && styles.reverse]}><AppText style={styles.category}>{copy.category(item.category)}</AppText><AppText style={styles.priority}>{copy.priority(item.priority)}</AppText>{item.groupCount > 1 ? <AppText style={styles.count}>{item.groupCount}</AppText> : null}</View>
       <AppText style={styles.title}>{eventCopy.title}</AppText><AppText style={styles.body}>{eventCopy.body}</AppText>
       <View style={[styles.bottom, isRTL && styles.reverse]}><AppText style={styles.time}>{relativeTime(item.lastEventAt, copy.language, copy.text('justNow'))}</AppText>{eventCopy.action ? <AppText style={styles.action}>{eventCopy.action}</AppText> : null}</View>
     </View>
-    <View style={styles.actions}>{!item.readAt ? <Pressable accessibilityRole="button" accessibilityLabel={copy.text('markRead')} hitSlop={10} style={styles.smallAction} onPress={event => { event.stopPropagation(); void state.markRead(item.id); }}><MaterialIcons name="done" size={19} color={colors.textSecondary}/></Pressable> : null}
-      {!item.actionOpen ? <Pressable accessibilityRole="button" accessibilityLabel={copy.text('archive')} hitSlop={10} style={styles.smallAction} onPress={event => { event.stopPropagation(); void state.archive(item.id); }}><MaterialIcons name="archive" size={19} color={colors.textSecondary}/></Pressable> : <MaterialIcons accessibilityLabel={copy.text('actionRequired')} name="lock-outline" size={18} color={colors.textMuted}/>}</View>
+    <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.actions}>{!item.readAt ? <Pressable hitSlop={10} style={styles.smallAction} onPress={event => { event.stopPropagation(); void state.markRead(item.id); }}><MaterialIcons name="done" size={19} color={colors.textSecondary}/></Pressable> : null}
+      {!item.actionOpen ? <Pressable hitSlop={10} style={styles.smallAction} onPress={event => { event.stopPropagation(); void state.archive(item.id); }}><MaterialIcons name="archive" size={19} color={colors.textSecondary}/></Pressable> : <MaterialIcons name="lock-outline" size={18} color={colors.textMuted}/>}</View>
   </Pressable>;
 }
 

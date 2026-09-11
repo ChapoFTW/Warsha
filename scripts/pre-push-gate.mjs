@@ -11,13 +11,19 @@
  * Discipline was the only thing standing between a red check and `origin/main`,
  * and discipline is not a control. This is.
  *
- * ## Why these three, and not `test:all`
+ * ## Why these four, and not `test:all`
  *
  * `typecheck`, `lint` and `test:help-docs` are nine, four and one seconds. They
  * are also precisely the checks that escaped: the type error was invisible to
  * the regression suite, because `--experimental-strip-types` removes types
  * without checking them, and the documentation gate's authority ends the moment
  * you push.
+ *
+ * `audit:accessible-names` is here for a different reason and costs under a
+ * second. Nothing else catches what it catches: a control that composes its own
+ * name over a decorative icon is invisible in a screenshot, invisible to the
+ * type system, and perfectly legible to a screen reader as a leading comma. It
+ * reached customers twice before there was a rule for it.
  *
  * `test:all` is ten minutes. A hook that costs ten minutes gets bypassed, and a
  * bypassed hook is worse than no hook because it looks like protection. CI runs
@@ -33,7 +39,7 @@
  */
 import { spawnSync } from 'node:child_process';
 
-const CHECKS = ['typecheck', 'lint', 'test:help-docs'];
+const CHECKS = ['typecheck', 'lint', 'test:help-docs', 'audit:accessible-names'];
 
 console.log('Pre-push: validation before publication.\n');
 
@@ -47,7 +53,7 @@ for (const name of CHECKS) {
   });
   const seconds = ((Date.now() - started) / 1000).toFixed(0);
   const ok = result.status === 0;
-  console.log(`  ${ok ? 'ok  ' : 'FAIL'}  ${name.padEnd(18)} ${seconds}s`);
+  console.log(`  ${ok ? 'ok  ' : 'FAIL'}  ${name.padEnd(24)} ${seconds}s`);
   if (!ok) failed.push({ name, output: `${result.stdout ?? ''}\n${result.stderr ?? ''}` });
 }
 

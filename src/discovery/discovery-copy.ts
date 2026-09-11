@@ -122,6 +122,7 @@ const baseDiscoveryCopy = {
     favouriteUnavailable: 'This professional is not accepting work right now.',
     addFavourite: 'Save professional',
     removeFavourite: 'Remove from saved',
+    savedProvider: 'Saved',
 
     // Result card
     verifiedIdentity: 'Identity verified',
@@ -236,6 +237,7 @@ const baseDiscoveryCopy = {
     favouriteUnavailable: 'الصنايعي ده مش بيستقبل شغل دلوقتي.',
     addFavourite: 'حفظ الصنايعي',
     removeFavourite: 'إزالة من المحفوظين',
+    savedProvider: 'محفوظ',
 
     verifiedIdentity: 'هوية موثقة',
     verifiedSkill: 'شهادة مهارة',
@@ -355,6 +357,7 @@ export const discoveryCopy = {
     favouriteUnavailable: "Ce professionnel n'accepte pas de travaux en ce moment.",
     addFavourite: 'Enregistrer le professionnel',
     removeFavourite: 'Retirer des enregistrés',
+    savedProvider: 'Enregistré',
     verifiedIdentity: 'Identité vérifiée',
     verifiedSkill: 'Certificat de compétence',
     verifiedCertificate: 'Certificat professionnel',

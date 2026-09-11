@@ -21,12 +21,45 @@ export function ProviderListItem({ provider }: { provider: Provider }) {
   const { t, isRTL, language } = useLocalization();
   const { user, mode } = useAuth();
   const { isFavourite, toggleFavourite } = useLocalPreferences();
+  const professionText = provider.distance === null
+    ? professionLabel(provider.profession, language, 'customer')
+    : `${professionLabel(provider.profession, language, 'customer')} · ${provider.distance.toFixed(1)} km`;
+
+  const toggleFavouriteAction = () => {
+    void (mode === 'supabase' && !user
+      ? router.push('/(tabs)/profile')
+      : toggleFavourite(provider.id));
+  };
+
+  /*
+   * Said once, in the order a person would ask. Left to compose its own name
+   * the row read the star icon as an empty segment and swallowed the favourite
+   * button's label at the end, so it announced a hole in the middle and an
+   * action it could not offer. Every part here is always present, which is what
+   * makes joining them safe.
+   */
+  const rowName = [
+    provider.name,
+    professionText,
+    `${provider.rating} (${provider.reviewCount} ${t('reviews')})`,
+    provider.available ? t('available') : provider.responseTime,
+    `${t('startsAt')} ${provider.price} EGP`,
+  ].filter(Boolean).join('. ');
+
   return (
     /* The row is the whole target, so it is the thing that answers. The
        favourite control inside it is its own pressable and gets its own,
        smaller response — a heart is a control, not a surface. */
     <PressableSurface
       accessibilityRole="button"
+      accessibilityLabel={rowName}
+      /* A Pressable is an accessibility element, so a Pressable inside one is
+         merged away: the heart was visible to a finger and unreachable to a
+         screen reader. Offering it as an action is how a reader gets it back. */
+      accessibilityActions={[{ name: 'favourite', label: t('toggleFavourite') }]}
+      onAccessibilityAction={(event) => {
+        if (event.nativeEvent.actionName === 'favourite') toggleFavouriteAction();
+      }}
       feedback="surface"
       onPress={() => router.push({ pathname: '/provider/[id]', params: { id: provider.id } })}
       style={({ pressed }) => [styles.card, isRTL && styles.reverse, pressed && styles.cardPressed]}>
@@ -40,13 +73,9 @@ export function ProviderListItem({ provider }: { provider: Provider }) {
           skillCertificateVerified={provider.skillCertificateVerified}
           compact
         />
-        <AppText style={styles.profession}>
-          {provider.distance === null
-            ? professionLabel(provider.profession, language, 'customer')
-            : `${professionLabel(provider.profession, language, 'customer')} · ${provider.distance.toFixed(1)} km`}
-        </AppText>
+        <AppText style={styles.profession}>{professionText}</AppText>
         <View style={[styles.rating, isRTL && styles.reverse]}>
-          <MaterialIcons name="star" size={15} color={colors.white} />
+          <MaterialIcons accessibilityElementsHidden importantForAccessibility="no" name="star" size={15} color={colors.white} />
           <AppText style={styles.ratingText}>{provider.rating}</AppText>
           <AppText style={styles.muted}>({provider.reviewCount} {t('reviews')})</AppText>
         </View>
@@ -58,14 +87,16 @@ export function ProviderListItem({ provider }: { provider: Provider }) {
           <AppText style={styles.price}>{t('startsAt')} {provider.price} EGP</AppText>
         </View>
       </View>
+      {/* Hidden from the reader on purpose: it was never reachable there, and
+          the row now offers the same thing as an action. A finger still gets
+          the smaller, closer target. */}
       <PressableSurface
-        accessibilityLabel={t('toggleFavourite')}
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
         hitSlop={8}
         onPress={(event) => {
           event.stopPropagation();
-          void (mode === 'supabase' && !user
-            ? router.push('/(tabs)/profile')
-            : toggleFavourite(provider.id));
+          toggleFavouriteAction();
         }}
         style={styles.favourite}>
         <MaterialIcons name={isFavourite(provider.id) ? 'favorite' : 'favorite-border'} size={20} color={colors.textPrimary} />
