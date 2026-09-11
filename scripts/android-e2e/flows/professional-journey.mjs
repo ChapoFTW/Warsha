@@ -23,7 +23,9 @@
 import { copyFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { describeScreen, screenshot, scrollDown, setText, shell, sleep, tree } from '../driver.mjs';
+import {
+  describeScreen, hideKeyboard, screenshot, scrollDown, setText, shell, sleep, tree,
+} from '../driver.mjs';
 import { assertBackendTarget } from '../backend-target.mjs';
 import { installPhotoFixture } from '../photo-fixture.mjs';
 import { apply, resetDevice, VIEWPORTS } from '../appearance-matrix.mjs';
@@ -272,7 +274,7 @@ const QA_PLACE = {
   /* A public square in the area already chosen. Deliberately a landmark and
      never a residence: the standing rule is that no real person's address is
      used, and a square is a real place the real geocoder can resolve. */
-  search: { en: 'Abdin Square Cairo', ar: 'ميدان عابدين القاهرة', fr: 'Abdin Square Cairo' },
+  search: { en: 'Abdin', ar: 'عابدين', fr: 'Abdin' },
 };
 const SELECT_GOVERNORATE = ['Choose governorate', 'اختار المحافظة', 'Choisir le gouvernorat'];
 const SELECT_AREA = ['Choose area', 'اختار المنطقة', 'Choisir la zone'];
@@ -485,7 +487,23 @@ async function completeServiceArea() {
       await settleScreen();
       await capture(`${combination.name}-address-search`);
 
+      /*
+       * One word, and the result is not required to match exactly.
+       *
+       * This is a live-search field: it re-renders as suggestions arrive, and
+       * the keyboard's own prediction strip commits words after `setText` has
+       * read the field back. A multi-word query came out as
+       * "Abdin Square Cairog to the to to to" — the typed value, plus three
+       * retries' worth of predicted text, searched as one string. `setText`
+       * was doing exactly what it promises; the field is simply not a field
+       * that holds still.
+       *
+       * So: a single token, the keyboard dismissed before the debounce fires,
+       * and the return value ignored in favour of reading what the field
+       * actually holds.
+       */
       await setText({ cls: 'EditText', index: 0 }, QA_PLACE.search[code]);
+      await hideKeyboard();
       await sleep(5000);
       await settleScreen();
       await capture(`${combination.name}-address-search-results`);
