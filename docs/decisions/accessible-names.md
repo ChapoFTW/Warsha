@@ -84,6 +84,35 @@ the action is reachable. The requirement did not weaken. The place that
 satisfies it changed, and the assertion now describes the property rather than
 the old implementation.
 
+## A group stops composing when something inside it is an element of its own
+
+The mirror image of the same rule. `<View accessible>` around a label, its
+badges and its explanation makes them one announcement instead of four
+fragments — and that only holds while nothing inside is an accessibility
+element in its own right.
+
+`StateBadge` was `<View accessible accessibilityLabel>`, so on the
+criminal-record step the group composed nothing at all:
+
+```
+[ViewGroup] focusable      desc='Required'
+[ViewGroup] focusable      desc='Private'
+[TextView]  not focusable  'Upload the criminal record'
+[TextView]  not focusable  'Warsha uses this only for professional verification.'
+```
+
+Two bare words with nothing to attach them to, and the field's label and its
+privacy disclosure left as text with no named ancestor and no focus of their
+own. **A badge says something about the thing beside it**, so it contributes its
+word to that thing's name rather than standing as a stop of its own.
+
+Catching this needs two passes. `<StateBadge />` at a call site is
+indistinguishable from `<View />` until you know what `StateBadge` returns, so
+`accessibilityElementComponents` answers that first — from the returned root
+only, because something accessible deep inside a component does not make the
+component one, and treating it that way would flag every screen containing a
+button.
+
 ## What the gate deliberately does not judge
 
 Whether a name is a *good* name. No static rule knows whether "Continue" was the

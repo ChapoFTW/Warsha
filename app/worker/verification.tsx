@@ -404,9 +404,18 @@ export default function WorkerVerificationJourney() {
                 copy={{
                   permissionTitle: vt('verification'),
                   permissionBody: ot.text('identityCameraPermission'),
-                  grantPermission: ot.text('identityCapture'),
-                  useUploadInstead: ot.text('identityChoose'),
-                  capture: ot.text('identityCapture'),
+                  /*
+                   * The same two words the selfie step uses, one screen below.
+                   * This said "Take a photo" and "Choose a file" while the
+                   * selfie said "Take photo" and "Choose photo" — and "Choose a
+                   * file" was not only the odd one out, it was wrong:
+                   * `chooseIdentity` opens the photo library with
+                   * `mediaTypes: ['images']`, so a worker whose ID is a scanned
+                   * PDF was promised a file picker and shown a grid of photos.
+                   */
+                  grantPermission: vt('takePhoto'),
+                  useUploadInstead: vt('choosePhoto'),
+                  capture: vt('takePhoto'),
                   retake: ot.text('identityRetake'),
                   usePhoto: wt.text('saveContinue'),
                   frameHint: ot.text('identityFrameGuide'),
