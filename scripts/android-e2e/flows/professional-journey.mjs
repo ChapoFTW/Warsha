@@ -373,6 +373,32 @@ async function completeServiceArea() {
      * accepts.
      */
     if (!resolved && await tap(CHOOSE_ON_MAP, { optional: true, settle: 4000 })) {
+      /*
+       * The map's two waiting states, captured by the clock rather than by luck.
+       *
+       * `GoogleMapRenderer` shows "Loading the map." until `onMapReady`, and
+       * after `MAP_READY_TIMEOUT_MS` (12s) without one it replaces the whole
+       * frame with "The map is unavailable right now." Both are real states a
+       * customer on a bad connection sees, and a single `settleScreen()` capture
+       * lands on whichever happened to be showing.
+       *
+       * So: one capture straight away, and one past the timeout. On this
+       * emulator the tiles never load — the Maps key is not signed for this
+       * build — so the second is the unavailable state, which is exactly the
+       * path that has never been photographed.
+       */
+      await sleep(1200);
+      const early = describeScreen(tree());
+      copyFileSync(screenshot(`${tag}-map-waiting`), join(OUT, `${combination.name}-map-waiting.png`));
+      writeFileSync(join(OUT, `${combination.name}-map-waiting.txt`), early);
+      console.log(`    map at 1.2s: ${/Loading the map|جاري تحميل|Chargement de la carte/.test(early) ? 'LOADING shown' : 'not the loading state'}`);
+
+      await sleep(13_000);
+      const late = describeScreen(tree());
+      copyFileSync(screenshot(`${tag}-map-timeout`), join(OUT, `${combination.name}-map-timeout.png`));
+      writeFileSync(join(OUT, `${combination.name}-map-timeout.txt`), late);
+      console.log(`    map at 14s: ${/unavailable|غير متاحة|indisponible/.test(late) ? 'UNAVAILABLE shown' : 'map became ready or is still loading'}`);
+
       await settleScreen();
       await capture(`${combination.name}-address-map`);
 
