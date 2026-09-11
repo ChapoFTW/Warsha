@@ -103,7 +103,7 @@ check(!/GlobalPreferenceControls/.test(read('app/worker/index.tsx')),
 // The one exception, and the reason it is one: this screen renders when the app
 // cannot configure itself, so Settings is unreachable from it. A person stuck
 // there in the wrong language has no other way to change it.
-check(/<GlobalPreferenceControls\/>/.test(read('components/warsha/ConfigurationError.tsx')),
+check(/<GlobalPreferenceControls\s*\/>/.test(read('components/warsha/ConfigurationError.tsx')),
   'the pre-router configuration error keeps both preferences reachable, having no Settings to offer');
 
 // Settings owns both choices, in one place, with radio semantics.
