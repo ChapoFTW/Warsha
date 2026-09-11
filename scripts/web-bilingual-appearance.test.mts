@@ -245,9 +245,39 @@ const chromeHeaderStyles = chromeStyles.slice(0, chromeStyles.indexOf('--- Foote
 check(chromeHeaderStyles.length > 0, 'the header half of the stylesheet is identifiable');
 check(!/flex-wrap:\s*wrap/.test(chromeHeaderStyles),
   'THE HEADER NEVER WRAPS ONTO A SECOND ROW; IT COLLAPSES INSTEAD');
-check(/@media \(min-width: 720px\)/.test(chromeStyles)
-  && /@media \(min-width: 900px\)/.test(chromeStyles),
-  'the header has explicit breakpoints for the menu and the auth actions');
+check(/@media \(min-width: 900px\)/.test(chromeStyles),
+  'the header collapses its navigation at an explicit breakpoint');
+/*
+ * There used to be a 720px breakpoint here too, and this asserted it by value.
+ * It was the width at which `Sign in` was revealed -- which is to say it was the
+ * width below which the public site offered a returning customer no way to sign
+ * in at all, on every phone. The breakpoint is gone and the rule it stood for is
+ * inverted: the account actions are not revealed at a width, they are present at
+ * every width, and the header buys the room elsewhere.
+ *
+ * So this asserts the rule rather than the number. A value is the wrong thing to
+ * pin: the arrangement is allowed to change, and did.
+ */
+const signInRule = /\.signIn\s*\{[^}]*\}/.exec(chromeHeaderStyles)?.[0] ?? '';
+check(signInRule.length > 0, 'the header sign-in has a style rule');
+check(!/display:\s*none/.test(signInRule),
+  'THE HEADER SIGN-IN IS NOT HIDDEN AT ANY WIDTH — it was, below 720px, and that '
+  + 'left every phone visitor with no visible way to sign in');
+/*
+ * The wordmark is allowed to stand down where the row genuinely cannot hold it
+ * and both account actions -- but only there. Asserted as a BOUNDED band rather
+ * than as two numbers: what matters is that the rule has a floor as well as a
+ * ceiling, so it can never become `the brand has no word on it`.
+ */
+const wordmarkBand = chromeHeaderStyles
+  .split('@media ')
+  .find((chunk) => chunk.includes('data-warsha-wordmark'));
+check(wordmarkBand !== undefined,
+  'the wordmark rule lives inside a media query, not at every width');
+check(/min-width/.test(wordmarkBand ?? '') && /max-width/.test(wordmarkBand ?? ''),
+  'the width band that stands the wordmark down is bounded at both ends');
+check(/@media \(max-width: 359px\)/.test(chromeHeaderStyles),
+  'the header reorganises at an explicit narrow breakpoint rather than reflowing');
 // There is nothing left in the header to overflow. The controls used to be
 // there and moved into the navigation panel below 720px; they are in the
 // footer at every width now, so the panel carries none and needs no rule.

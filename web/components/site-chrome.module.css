@@ -37,7 +37,11 @@
   min-height: 60px;
 }
 
-@media (min-width: 380px) {
+/* 380px was enough when the row carried one account action. With two, French
+   clears 400px by thirty pixels and 380px by nine, and nine is inside the
+   difference between one system font stack and the next -- the page has no
+   webfont for Latin, so a label is as wide as the reader's device says it is. */
+@media (min-width: 400px) {
   .headerInner {
     gap: 16px;
   }
@@ -165,8 +169,34 @@
 }
 
 /* --- Actions --------------------------------------------------------------
+   Two account actions, and both of them are visible at every width.
+
+   Sign in used to carry `display: none` with a reveal at 720px, so every phone
+   visitor met a header offering one thing: make an account. A returning
+   customer had to guess that the hamburger held sign-in, and it did not -- that
+   menu carries Services and Work with Warsha and nothing else. There was no
+   path to sign in from the public site on a phone at all.
+
+   Width is the reason it was dropped and the width is real. At 360px the row
+   has 328px to spend, and in French `Se connecter` and `Créer un compte` are
+   184px of that before either one has any padding, on top of a 40px menu
+   button and the brand. Measured, in the browser, in all three languages:
+
+     labels at --control-font-sm   sign in   create account
+       English                      42px       95px
+       Arabic                       79px       67px
+       French                       79px      106px
+
+   So the fit is bought from spacing rather than from anything a reader needs.
+   Nothing is shrunk below the control scale, no label is truncated, and no
+   action is hidden. What gives way, in order, is: the gap, then the padding,
+   then the wordmark beside the mark, and at the very bottom the row itself
+   splits in two. The three that follow are those concessions.
+
    No wrapping. A header that reflows onto a second line is the same defect
-   this file exists to fix, one element further along. */
+   this file exists to fix, one element further along -- which is why the split
+   below 360px is a declared grid rather than flex being allowed to break
+   wherever it runs out. */
 .actions {
   display: flex;
   align-items: center;
@@ -174,21 +204,30 @@
   flex-shrink: 0;
 }
 
+/* Quieter than the call to action beside it, and still plainly an action:
+   primary ink at the quiet weight, with no fill. Secondary ink was the previous
+   colour and it is the wrong one here -- the header holds exactly two things a
+   visitor can do, and painting one of them the colour of helper text is not
+   restraint, it is the defect this file just fixed in a subtler form. */
 .signIn {
-  display: none;
+  display: inline-flex;
+  align-items: center;
   font-size: var(--control-font-sm);
   font-weight: var(--control-weight-quiet);
-  color: var(--text-secondary);
+  color: var(--text-primary);
   padding: var(--control-pad-sm);
   min-height: var(--control-h-sm);
   border-radius: var(--radius-sm);
   white-space: nowrap;
-  align-items: center;
 }
 
 .signIn:hover {
-  color: var(--text-primary);
   background: var(--surface);
+}
+
+.signIn:active {
+  transform: translateY(var(--press-control)) scale(var(--press-scale));
+  transition-duration: var(--motion-press);
 }
 
 .cta {
@@ -222,6 +261,74 @@
 /* 900px is where the two priority links and both account actions fit
    comfortably inside the page width. Below it the
    navigation collapses; it never wraps. */
+/* Concession one: padding. Below 520px both actions keep the control height
+   and the control type size and give up horizontal padding only -- the quiet
+   link down to a square 8px, the call to action to 8px/12px. Measured, that is
+   the difference between French fitting on one row at 360px and overflowing it
+   by nineteen pixels. Above 520px there is room for the full control padding
+   and both actions take it. */
+@media (max-width: 519px) {
+  .signIn {
+    padding: var(--space-sm);
+  }
+  .cta {
+    padding: var(--space-sm) var(--space-md);
+  }
+}
+
+/* Concession two: the wordmark. Between 360 and 480px the row cannot hold the
+   word Warsha AND the mark AND the menu AND both account actions in French, and
+   of those five the word is the only one a visitor loses nothing by: the mark
+   is the same drawing the app icon uses, the link still carries `homeAria`, and
+   it still goes home. Below 360px the word comes back, because there the
+   actions have a row of their own and the brand row has all the space it wants.
+
+   Not a class from `brand-mark.module.css`: a CSS Module would rename it, and
+   this is a decision about THIS row rather than about the lockup. */
+@media (min-width: 360px) and (max-width: 479px) {
+  .brand [data-warsha-wordmark] {
+    display: none;
+  }
+}
+
+/* Concession three, and the floor: at 359px and below the account actions take
+   a row of their own.
+
+   Four things -- brand, menu, sign in, create account -- do not fit across
+   320px in French at the control type size, and there is no honest arrangement
+   of padding that makes them. The alternatives were all worse: shrinking the
+   type below the scale, truncating a label, or dropping sign in again, which is
+   the defect this change exists to fix. So the row splits, deliberately and in
+   one declared place, and every element keeps its full size and its full label.
+
+   `grid`, not `flex-wrap`. Wrapping is what flex does when it has run out of
+   room and nobody decided anything; this says exactly which element moves and
+   where it lands. */
+@media (max-width: 359px) {
+  .headerInner {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    row-gap: var(--space-sm);
+    padding-block: var(--space-sm);
+  }
+
+  /* It kept the row's leftover width when the row was flex. There is no
+     leftover width to keep in a grid cell, and the column already ends where
+     the menu should sit. */
+  .menuButton {
+    justify-self: end;
+    margin-inline-end: 0;
+  }
+
+  /* Under both, aligned to the reading end -- so the pair sits where it sits at
+     every other width, and mirrors into Arabic on its own. */
+  .actions {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+  }
+}
+
 @media (min-width: 900px) {
   .nav {
     display: flex;
@@ -236,12 +343,6 @@
    gear — and both spent width in the row that already had the least to give in
    Arabic and French. They live in the footer now, and the navigation panel does
    not carry them either: one place, at the bottom. */
-@media (min-width: 720px) {
-  .signIn {
-    display: inline-flex;
-  }
-}
-
 /* --- Footer --------------------------------------------------------------- */
 .footer {
   border-top: 1px solid var(--border);

@@ -84,7 +84,14 @@ export function BrandLockup({ locale, size = 26 }: { locale: Locale; size?: numb
   return (
     <span className={styles.lockup}>
       <BrandMark size={size} />
-      <span className={styles.wordmark}>{locale === 'ar' ? 'ورشة' : 'Warsha'}</span>
+      {/* `data-warsha-wordmark` so a layout can stand the word down without
+          reaching for a hashed class name from another module. Where a row is
+          too narrow to hold the word AND everything else it has to carry, the
+          mark alone still says Warsha and still links home -- the public
+          header does exactly that between 360 and 480px. */}
+      <span className={styles.wordmark} data-warsha-wordmark>
+        {locale === 'ar' ? 'ورشة' : 'Warsha'}
+      </span>
     </span>
   );
 }
