@@ -49,6 +49,12 @@ export class RangeUnavailable extends Error {}
 /**
  * Resolve the comparison range, or refuse.
  *
+ * `env` is a plain string map rather than `process.env`, so a caller — the
+ * regression suite, chiefly — can hand it the four variables a mode needs
+ * without also satisfying every field Node declares on the real environment.
+ *
+ * @param {string} root
+ * @param {Record<string, string | undefined>} env
  * @returns {{mode: string, base: string|null, head: string, describe: string,
  *   diffArgs: string[][], includeWorkingTree: boolean}}
  */
