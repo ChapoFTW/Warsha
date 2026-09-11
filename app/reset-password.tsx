@@ -165,8 +165,22 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   inputShell: { minHeight: 54, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: colors.border, borderRadius: radii.lg, backgroundColor: colors.background, paddingHorizontal: spacing.md },
   input: { flex: 1, minHeight: 52, color: colors.white, fontSize: typography.h3.fontSize, paddingHorizontal: spacing.sm }, eye: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center' },
   requirements: { gap: spacing.sm }, requirementRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm }, requirement: { ...typography.bodySmall, color: colors.textMuted }, met: { color: colors.success },
-  // The disclosure that reveals the authenticator field. A link rather than a
-  // second button, because it opens a field instead of doing anything.
+  /*
+   * The disclosure that reveals the authenticator field.
+   *
+   * Classified during the underlined-action audit as a SECONDARY ACTION, which
+   * under the current rule should be a control rather than underlined text. It
+   * is still underlined, deliberately and temporarily, because the fix here is
+   * bigger than the label: this whole screen hand-rolls its own `primary` and
+   * `secondary` on an inverted dark canvas — `colors.white` for input text,
+   * `colors.background` for button ink — and uses no part of the shared control
+   * system. Giving one element a compact button while the two beside it stay
+   * hand-rolled would be another one-screen implementation, which is the thing
+   * the audit exists to stop.
+   *
+   * Queued: bring this screen onto `BrandButton`, then this becomes
+   * `variant="secondary" size="compact"` like every other one.
+   */
   link: { ...typography.body, color: colors.textSecondary, fontWeight: typography.medium, textDecorationLine: 'underline' },
   error: { ...typography.bodySmall, color: colors.error }, primary: { minHeight: 54, minWidth: 220, borderRadius: radii.lg, backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.xl }, primaryText: { color: colors.background, fontWeight: typography.bold, textAlign: 'center' },
   secondary: { minHeight: 48, minWidth: 220, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.xl }, secondaryText: { color: colors.textPrimary, fontWeight: typography.semibold, textAlign: 'center' },

@@ -2,6 +2,7 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { BrandButton } from '@/components/warsha/BrandUI';
 import { AppText } from '@/components/warsha/Typography';
 import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
 import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
@@ -19,18 +20,35 @@ type Props = {
   onWorkerVerificationAcceptedChange: (accepted: boolean) => void;
 };
 
+/**
+ * A document you may read before agreeing to it, as a control rather than an
+ * underlined word.
+ *
+ * These sit in a row under the checkbox that names them — they are not
+ * citations inside a sentence, they are the two or three things a person can
+ * open at this moment. Underlined text is the right treatment for prose and the
+ * wrong one for a list of available actions, and a signup screen made of
+ * underlined words reads as a form to sign rather than a choice to make.
+ *
+ * `accessibilityRole="link"` survives, deliberately: this navigates to a
+ * document. The presentation changed, the semantics did not, and a screen
+ * reader should still announce it as a link. `BrandButton` sets `button` before
+ * spreading props, so passing the role through overrides it.
+ *
+ * Nothing else moves. Each document keeps its own control, its own published
+ * title and its own version line; the consents remain two separate decisions.
+ */
 function LegalLink({ documentKey, label }: { documentKey: LegalDocumentKey; label: string }) {
-  const styles = useThemedStyles(makeStyles);
   return (
-    <Pressable
+    <BrandButton
+      label={label}
+      variant="secondary"
+      size="compact"
       accessibilityRole="link"
       accessibilityLabel={label}
       hitSlop={8}
       onPress={() => router.push({ pathname: '/legal/document/[key]', params: { key: documentKey } })}
-      style={({ pressed }) => [styles.link, pressed && styles.pressed]}
-    >
-      <AppText style={styles.linkText}>{label}</AppText>
-    </Pressable>
+    />
   );
 }
 
@@ -165,15 +183,9 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingVertical: spacing.xs,
   },
   checkLabel: { flex: 1, fontSize: 13, lineHeight: 20, color: colors.textPrimary },
-  links: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md, paddingHorizontal: spacing.xs },
-  link: { minHeight: 44, justifyContent: 'center' },
-  linkText: {
-    fontSize: 13,
-    lineHeight: 19,
-    fontWeight: typography.semibold,
-    color: colors.textPrimary,
-    textDecorationLine: 'underline',
-  },
+  /* A row of compact controls, wrapping. The same 8px the web's compact row
+     uses, so the two surfaces space a group of them identically. */
+  links: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, paddingHorizontal: spacing.xs },
   optionalPolicy: {
     gap: spacing.xs,
     paddingTop: spacing.sm,

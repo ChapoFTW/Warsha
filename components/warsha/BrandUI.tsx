@@ -22,6 +22,7 @@ type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 export function BrandButton({
   label,
   variant = 'primary',
+  size = 'default',
   loading = false,
   icon,
   disabled,
@@ -30,6 +31,21 @@ export function BrandButton({
 }: Omit<PressableProps, 'children'> & {
   label: string;
   variant?: ButtonVariant;
+  /**
+   * `compact` is visual, not physical.
+   *
+   * Warsha had primary, secondary, ghost and destructive, all one size, and
+   * then a cliff: anything lighter than a secondary had nowhere to go and
+   * became underlined text. That is how the signup legal block ended up as a
+   * row of underlined words under a checkbox, and the web had the same gap for
+   * the same reason.
+   *
+   * A compact button keeps `minHeight: 48` — the touch contract is not part of
+   * the emphasis scale, and `test:touch-target-contract` reads this file — and
+   * gives up label size and horizontal padding instead. Smaller to look at,
+   * identical to hit.
+   */
+  size?: 'default' | 'compact';
   loading?: boolean;
   icon?: ComponentProps<typeof MaterialIcons>['name'];
 }) {
@@ -67,6 +83,7 @@ export function BrandButton({
       style={({ pressed }) => [
         styles.button,
         styles[`button_${variant}`],
+        size === 'compact' && styles.buttonCompact,
         pressed && !isDisabled && variant !== 'primary' && styles.pressed,
         isInert && styles.inert,
         loading && styles.loading,
@@ -77,7 +94,14 @@ export function BrandButton({
       ) : (
         <View style={[styles.buttonContent, isRTL && styles.reverse]}>
           {icon ? <MaterialIcons name={icon} size={19} color={foreground} /> : null}
-          <AppText style={[styles.buttonLabel, { color: foreground }]}>{label}</AppText>
+          <AppText
+            style={[
+              styles.buttonLabel,
+              size === 'compact' && styles.buttonLabelCompact,
+              { color: foreground },
+            ]}>
+            {label}
+          </AppText>
         </View>
       )}
     </PressableSurface>
@@ -254,6 +278,10 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   button_danger: { backgroundColor: colors.errorSoft, borderColor: colors.error },
   buttonContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm },
   buttonLabel: { ...typography.body, fontWeight: typography.semibold, textAlign: 'center' },
+  /* Height is untouched on purpose: a compact button is the same target as
+     every other one, and only reads lighter. */
+  buttonCompact: { paddingHorizontal: spacing.md },
+  buttonLabelCompact: { ...typography.bodySmall, fontWeight: typography.semibold },
   /* The ground moves as well as the surface, but only where there is room for
      it to. A quiet or ghost button has no fill of its own, so gaining one is
      the clearest thing it can say; a filled button already reads as solid and

@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { DiscoveryResultCard } from '@/components/warsha/DiscoveryResultCard';
 import { ScreenHeader } from '@/components/warsha/ScreenHeader';
+import { BrandButton } from '@/components/warsha/BrandUI';
 import { AppText } from '@/components/warsha/Typography';
 import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
 import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
@@ -183,10 +184,10 @@ export default function SearchScreen() {
                     <MaterialIcons name="close" size={13} color={colors.textSecondary} />
                   </Pressable>
                 ))}
-                <Pressable accessibilityRole="button" accessibilityLabel={dt.text('resetFilters')}
-                  onPress={() => setFilters(emptyDiscoveryFilters)}>
-                  <AppText style={styles.reset}>{dt.text('resetFilters')}</AppText>
-                </Pressable>
+                {/* The action that undoes the chips beside it, and now shaped
+                    like one of them rather than like a footnote. */}
+                <BrandButton label={dt.text('resetFilters')} variant="secondary" size="compact"
+                  onPress={() => setFilters(emptyDiscoveryFilters)} />
               </View>
             ) : null}
 
@@ -287,9 +288,8 @@ function SearchLanding({ suggestions, onPick, onPickService, onClear }: {
         <View style={styles.block}>
           <View style={[styles.blockHead, isRTL && styles.reverse]}>
             <AppText style={styles.sectionLabel}>{dt.text('recentSearches')}</AppText>
-            <Pressable accessibilityRole="button" accessibilityLabel={dt.text('clearRecentSearches')} onPress={onClear}>
-              <AppText style={styles.reset}>{dt.text('clearRecentSearches')}</AppText>
-            </Pressable>
+            <BrandButton label={dt.text('clearRecentSearches')} variant="secondary" size="compact"
+              onPress={onClear} />
           </View>
           <View style={[styles.chips, isRTL && styles.reverse]}>
             {suggestions.recentSearches.map(item => (
@@ -465,7 +465,6 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   chipText: { ...typography.bodySmall, color: colors.textSecondary },
   chipTextSelected: { color: colors.actionPrimaryText, fontWeight: typography.semibold },
   chipCount: { ...typography.caption, letterSpacing: 0, color: colors.textMuted },
-  reset: { ...typography.bodySmall, color: colors.textSecondary, textDecorationLine: 'underline' },
   panel: { gap: spacing.lg, padding: spacing.lg, borderWidth: 1, borderColor: colors.borderSubtle, borderRadius: radii.lg, backgroundColor: colors.surface },
   row: { gap: spacing.sm },
   toggles: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: spacing.sm },

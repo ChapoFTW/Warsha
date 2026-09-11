@@ -83,7 +83,23 @@ ok(!profileSource.includes('[auth.mode, auth.user, t]'), 'the profile effect key
 ok(profileSource.includes("at('phoneVerifyTitle')"), 'enrollment panel has the Verify your phone heading');
 ok(profileSource.includes("at('sendCodePreview')"), 'normalized number is previewed before sending');
 ok(profileSource.includes("at('sendingCode')"), 'sending state is shown while the request is in flight');
-ok(profileSource.split("at('resendOtp')").length >= 3, 'both OTP surfaces offer a resend action');
+/*
+ * This asked for `at('resendOtp')` to appear at least twice and called that
+ * "both OTP surfaces". There is one. The two occurrences were an
+ * `accessibilityLabel` and the visible text of the SAME control, so the check
+ * was counting how a single button was written rather than how many surfaces
+ * offer the action — and it went red the moment that button became a
+ * `BrandButton`, which derives its accessible name from its label instead of
+ * repeating it.
+ *
+ * What the screen actually has to do is offer the resend once a code has been
+ * sent, and refuse it while a request is in flight. That is asserted instead,
+ * and `grep resendOtp` across app/, components/ and src/ confirms one control.
+ */
+ok(/otpSent \?[\s\S]{0,240}at\('resendOtp'\)/.test(profileSource),
+  'a resend action appears once a code has been sent');
+ok(/at\('resendOtp'\)[\s\S]{0,160}disabled=\{busy\}/.test(profileSource),
+  'and it refuses a second press while the first is still in flight');
 ok(profileSource.includes("setNotice(at('codeSent'))"), 'a sent code is confirmed visibly');
 equal(translations.en.authPhoneInUse, 'This phone number is already linked to another account.', 'English phone-in-use message');
 equal(translations.ar.authPhoneInUse, 'رقم الموبايل ده مسجل بحساب تاني.', 'Arabic phone-in-use message');
