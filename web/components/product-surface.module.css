@@ -392,6 +392,60 @@ a.chip:hover { border-color: var(--border-strong); color: var(--text-primary); }
 
 .secondary:disabled { opacity: 0.45; cursor: not-allowed; }
 
+/* --- Compact: the fourth tier, and the one that was missing ----------------
+ *
+ * Warsha had primary, secondary, destructive — all `md`, all 44px — and then a
+ * cliff. Anything smaller than a secondary had nowhere to go, so it became an
+ * underlined anchor, and screens started turning into documents: the public
+ * create-account card stacked five underlined lines where a person was meant to
+ * see two choices. A legal document a user may open before accepting it is one
+ * of their available ACTIONS. It is not a citation in a paragraph.
+ *
+ * So: `sm` control tokens, an outline rather than a fill, and the same lift and
+ * press the other three share. Unmistakably interactive, visibly lighter than
+ * the call to action it sits under, and nowhere near the weight of a primary.
+ *
+ * Compact is VISUAL, not physical. It keeps the full `--control-h-sm` box, so a
+ * thumb gets the same target it would on any other control in this file. The
+ * one thing it does differently from its siblings is wrap: `nowrap` is right for
+ * a one-word action and wrong for `Conditions générales du professionnel` on a
+ * 320px screen, where the honest outcome is two lines rather than a label
+ * running out of the card.
+ *
+ * `.compactRow` is how they are grouped. Flex with a wrap, so Arabic reverses it
+ * without a second rule and French takes as many lines as French needs.
+ */
+.compactRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  align-items: stretch;
+}
+
+.compact {
+  appearance: none; font: inherit;
+  font-size: var(--control-font-sm); font-weight: var(--control-weight-quiet);
+  color: var(--text-primary); background: transparent;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: var(--control-pad-sm); min-height: var(--control-h-sm); cursor: pointer;
+  text-decoration: none; display: inline-flex; align-items: center;
+  justify-content: center; text-align: center;
+  white-space: normal; overflow-wrap: anywhere;
+}
+
+.compact:hover:not(:disabled) {
+  border-color: var(--border-strong);
+  background: var(--surface-raised);
+  transform: translateY(var(--lift-control));
+}
+
+.compact:active:not(:disabled) {
+  transform: translateY(var(--press-control)) scale(var(--press-scale));
+  transition-duration: var(--motion-press);
+}
+
+.compact:disabled { opacity: 0.45; cursor: not-allowed; }
+
 .danger {
   appearance: none; font: inherit;
   font-size: var(--control-font-md); font-weight: var(--control-weight-quiet);

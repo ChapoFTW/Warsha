@@ -16,7 +16,7 @@ export async function generateMetadata(
   if (!isLocale(locale)) return {};
   return {
     title: copy[locale].signInTitle,
-    description: copy[locale].signInOneAccountBody,
+    description: copy[locale].signInIdentityHint,
     alternates: {
       canonical: localeHref(locale, '/sign-in'),
       languages: { en: '/en/sign-in', ar: '/ar/sign-in', fr: '/fr/sign-in' },
@@ -60,31 +60,27 @@ export default async function SignInPage({
           <p className={styles.lead}>{words.signInIdentityHint}</p>
         </header>
 
-        <div className={styles.panel}>
-          <h2 className={styles.panelTitle}>{words.signInOneAccount}</h2>
-          <p className={styles.panelBody}>{words.signInOneAccountBody}</p>
-          {/* No orphan field label above the action. `signInIdentity` labelled an
-              identifier box this page has never had and must never have -- there
-              is one sign-in and it is on the application origin. As a caption
-              over a link it read as though the button were a field. What it used
-              to say, the lead above already says in a sentence. */}
-          {/* The page said "Customer sign-in — coming to the web" long after it
-              had arrived: app.usewarsha.com/sign-in takes an address or a phone
-              number and serves customers and professionals alike. Somebody who
-              searched for Warsha sign-in, landed here and believed it went away
-              without an account. A page about signing in ends in the thing it is
-              about. */}
-          <a href={APP_SIGN_IN} className={styles.action}>
-            {words.signIn}
-          </a>
-        </div>
+        {/* The task, then the action, and nothing between them.
+
+            This page used to answer a question nobody asked. It carried a card
+            headed "One sign-in for everyone" explaining that Warsha works out
+            what an account can do after authentication and that nobody declares
+            a role first -- a true and accurate description of how the product is
+            built, in front of somebody who came here to sign in. A reader who
+            did not know there were two kinds of account learnt that there were,
+            and was then reassured about a problem they had not had.
+
+            Before that it ended in "Customer sign-in -- coming to the web",
+            which had stopped being true. It ends in the sign-in now. */}
+        <a href={APP_SIGN_IN} className={styles.action}>
+          {words.signIn}
+        </a>
 
         <p className={styles.footNote}>
           {words.signInFootNote}{' '}
           <Link href={localeHref(typed, '/create-account')} className={styles.link}>
             {words.signInFootLink}
-          </Link>
-          . {words.signInFootTail}
+          </Link>.
         </p>
       </main>
       <SiteFooter locale={typed} />

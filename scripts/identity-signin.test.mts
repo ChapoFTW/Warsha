@@ -38,8 +38,26 @@ check(/signInIdentity'\)/.test(signIn) && /signInIdentityHint/.test(signIn),
 
 check(!/signInCustomerBody|signInWorkerBody/.test(webSignIn),
   'WEB SIGN-IN NO LONGER SPLITS INTO TWO AUDIENCE CARDS');
-check(/signInOneAccount/.test(webSignIn) && /signInIdentity/.test(webSignIn),
-  'web sign-in states that one sign-in serves everyone');
+check(/signInIdentityHint/.test(webSignIn),
+  'web sign-in asks for an identifier, in neutral wording');
+/*
+ * And says nothing about what happens to the identifier afterwards.
+ *
+ * This used to require `signInOneAccount` — a card headed "One sign-in for
+ * everyone", explaining that Warsha resolves what an account can do after
+ * authentication and that nobody declares a role first. The explanation was
+ * accurate and the assertion was faithful to it, and both were the same
+ * mistake: a description of the mechanism, on the screen of somebody trying to
+ * use it. A reader who did not know there were two kinds of account learnt
+ * there were, and was reassured about a problem they did not have.
+ *
+ * The rule the file is really about is one line up and unchanged: the form
+ * never asks a person to classify their own account. How Warsha then resolves
+ * it is true, is tested elsewhere in this file against the classifier itself,
+ * and is not the reader's problem.
+ */
+check(!/signInOneAccount/.test(webSignIn),
+  'and does not explain how Warsha resolves an account');
 
 // --- The identifier alone selects the credential path ----------------------
 equal(classifySignInIdentity('person@example.com'),

@@ -26,40 +26,49 @@
   color: var(--text-secondary);
 }
 
-.requiredHeading {
-  margin-top: 6px;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-
-.required {
-  margin: 0;
-  padding: 0;
-  list-style: none;
+/* The required reading, grouped so it reads as one thing the card contains
+   rather than as four more lines in the card's list. */
+.requiredBlock {
+  margin-top: 4px;
   display: grid;
   gap: 8px;
 }
 
-.requiredLink {
-  font-size: 14.5px;
-  color: var(--text-primary);
-  text-decoration: underline;
-  text-underline-offset: 3px;
+/* It said VOUS DEVREZ ACCEPTER in uppercase with letters spaced apart, above
+   the longest content in the card, on a page whose actual question is which of
+   two things you are. Legal importance does not need visual volume: what this
+   line has to do is mark the controls under it as required before continuing,
+   and it does that at the size of a caption in sentence case. The documents
+   themselves, their versions and what accepting them means are unchanged. */
+.requiredHeading {
+  font-size: var(--type-caption);
+  line-height: var(--type-caption-leading);
+  font-weight: 650;
+  color: var(--text-muted);
 }
 
-.requiredLink:hover {
-  color: var(--brand);
+/* A list still, because it is one — semantics do not change because the items
+   stopped being underlined. The row layout and the controls come from the
+   shared compact tier. */
+.required {
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-.pending {
+.requiredItem {
+  display: flex;
+  min-width: 0;
+}
+
+/* The professional card's action slot. Same position as the other card's
+   button, deliberately quieter, because it is a statement and not a control. */
+.inApp {
   margin-top: auto;
   padding-top: 14px;
-  font-size: 13.5px;
-  color: var(--text-muted);
-  font-weight: 600;
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--text-secondary);
 }
 
 /* The page ends in the thing it is about. `md` control tokens: a standard
@@ -94,17 +103,25 @@
 }
 
 .footNote {
-  margin-top: 32px;
+  margin-top: 28px;
   font-size: 14.5px;
+  line-height: 1.7;
   color: var(--text-secondary);
   max-width: 72ch;
 }
 
-.link {
-  color: var(--text-primary);
-  font-weight: 650;
-  text-decoration: underline;
-  text-underline-offset: 3px;
+/* A question and the answer to it, on one line where there is room and two
+   where there is not. `flex-start` rather than a centred row, so Arabic starts
+   at the reading edge without a mirrored rule. */
+.haveAccount {
+  margin-top: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--space-md);
+  font-size: 14.5px;
+  color: var(--text-secondary);
 }
 
 @media (min-width: 800px) {

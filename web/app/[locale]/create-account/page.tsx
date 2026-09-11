@@ -8,6 +8,8 @@ import { isLocale, type Locale } from '@/lib/preferences';
 import { APP_CREATE_ACCOUNT, localeHref } from '@/lib/routes';
 import { catalogueFor, signupLegalDocuments } from '@/lib/warsha';
 
+import surface from '@/components/product-surface.module.css';
+
 import styles from './page.module.css';
 
 export async function generateMetadata(
@@ -44,13 +46,32 @@ export default async function CreateAccountPage({
   const typed: Locale = locale;
   const words = copy[typed];
 
+  /*
+   * The documents this audience accepts, as controls rather than as a reading
+   * list.
+   *
+   * They were five underlined lines stacked down two cards, and the page read
+   * as a legal notice with a button at the bottom instead of a choice between
+   * two things a person can do. Opening a document before accepting it is one of
+   * the reader's available actions, so it looks like one — the shared compact
+   * tier from `product-surface.module.css`, not a fifth private button.
+   *
+   * Still `<Link>` underneath. These are navigations: they must open in a new
+   * tab when somebody asks for that, be copyable, be crawlable and prefetch like
+   * any other route. Presentation changed; the element did not.
+   *
+   * Each document keeps its own control and its own canonical title from the
+   * legal corpus. Nothing is merged and nothing is abbreviated — a person has to
+   * be able to tell which agreement they are opening, and the titles ARE the
+   * identity.
+   */
   const required = (documents: ReturnType<typeof signupLegalDocuments>) => (
-    <ul className={styles.required}>
+    <ul className={`${styles.required} ${surface.compactRow}`}>
       {documents.map((document) => (
-        <li key={document.key}>
+        <li key={document.key} className={styles.requiredItem}>
           <Link
             href={localeHref(typed, `/legal/${document.key.replace(/_/g, '-')}`)}
-            className={styles.requiredLink}
+            className={surface.compact}
           >
             {catalogueFor(document, typed).title}
           </Link>
@@ -78,8 +99,10 @@ export default async function CreateAccountPage({
           <div className={styles.choice}>
             <h2 className={styles.choiceTitle}>{words.signInCustomer}</h2>
             <p className={styles.choiceBody}>{words.createCustomerBody}</p>
-            <h3 className={styles.requiredHeading}>{words.createRequiredHeading}</h3>
-            {required(signupLegalDocuments('customer'))}
+            <div className={styles.requiredBlock}>
+              <h3 className={styles.requiredHeading}>{words.createRequiredHeading}</h3>
+              {required(signupLegalDocuments('customer'))}
+            </div>
             {/* Customer signup is on the web and has been for some time; this
                 card said it was coming. */}
             <a href={APP_CREATE_ACCOUNT} className={styles.action}>
@@ -90,20 +113,39 @@ export default async function CreateAccountPage({
           <div className={styles.choice}>
             <h2 className={styles.choiceTitle}>{words.signInWorker}</h2>
             <p className={styles.choiceBody}>{words.createWorkerBody}</p>
-            <h3 className={styles.requiredHeading}>{words.createRequiredHeading}</h3>
-            {required(signupLegalDocuments('worker'))}
-            {/* Not "coming to the web". A professional registers through the
-                broker, which mints a session against a synthetic identity — a
-                server-side trust boundary that is not moving into a browser
-                bundle. Saying so is honest; promising it is not. */}
-            <span className={styles.pending}>{words.createWorkerInApp}</span>
+            <div className={styles.requiredBlock}>
+              <h3 className={styles.requiredHeading}>{words.createRequiredHeading}</h3>
+              {required(signupLegalDocuments('worker'))}
+            </div>
+            {/* Where the other card has its button, this one says where the
+                button is.
+
+                Not a control: there is nothing on this origin or any other for
+                it to open. A professional registers through the broker, which
+                mints a session against a synthetic identity — a server-side
+                trust boundary that is not moving into a browser bundle — and
+                Warsha is in closed testing, so there is no public store listing
+                to point at either. A button that goes nowhere would be worse
+                than a sentence. It sits in the action slot so it answers the
+                question the slot asks, and it says where, not why. */}
+            <p className={styles.inApp}>{words.createWorkerInApp}</p>
           </div>
         </div>
 
-        <p className={styles.footNote}>
-          {words.createFootNote}{' '}
-          <Link href={localeHref(typed, '/sign-in')} className={styles.link}>{words.signIn}</Link>.
-        </p>
+        {/* Applying starts a verification process and does not end in one. That
+            is a consequence somebody needs before they apply, so it stays —
+            this audit removes implementation, not expectations. */}
+        <p className={styles.footNote}>{words.createFootNote}</p>
+
+        {/* Signing in was the sixth underlined line on the page, at the end of
+            a sentence, indistinguishable from the five legal documents above it.
+            It is the one thing here a returning person came to do. */}
+        <div className={styles.haveAccount}>
+          <span>{words.createHaveAccount}</span>
+          <Link href={localeHref(typed, '/sign-in')} className={surface.compact}>
+            {words.signIn}
+          </Link>
+        </div>
       </main>
       <SiteFooter locale={typed} />
     </>

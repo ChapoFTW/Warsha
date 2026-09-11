@@ -224,18 +224,31 @@ const signIn = readWeb('app', '[locale]', 'sign-in', 'page.tsx');
 check(!/signInCustomerBody|signInWorkerBody/.test(signIn),
   'WEB SIGN-IN DOES NOT ASK SOMEBODY TO CLASSIFY THEIR OWN ACCOUNT');
 /*
- * The rule is unchanged and the evidence moved. It used to be `signInIdentity`,
- * a standalone caption reading "Email or phone number" -- which described a
- * field this page has never had and must never have, and which, once the page
- * ended in a link to the real form, read as a label for the button. The same
- * product rule is now carried by `signInIdentityHint`, a sentence, in all three
- * languages: an identifier is what is asked for, and Warsha resolves the rest.
- *
- * Three languages, not two. French has been a Warsha language since long before
- * this check was written and it was still only asking about two of them.
+ * An identifier is asked for. That half is unchanged; only its evidence moved,
+ * from `signInIdentity` -- a caption over a field this page has never had -- to
+ * `signInIdentityHint`, the sentence that says the same thing in all three
+ * languages. Three, not two: French has been a Warsha language since long
+ * before this check was written and it was still asking about two of them.
  */
-check(/signInIdentityHint/.test(signIn) && /signInOneAccount/.test(signIn),
-  'web sign-in asks for an identifier and says one sign-in serves everyone');
+check(/signInIdentityHint/.test(signIn),
+  'web sign-in says what to have ready');
+/*
+ * And it explains nothing else.
+ *
+ * It used to carry a card headed "One sign-in for everyone", explaining that
+ * Warsha resolves what an account can do after authentication and that nobody
+ * declares a role first. This file ASSERTED that card was there. Both were
+ * wrong in the same way: true, accurate, about how the product is built, and in
+ * front of somebody who came to sign in. A reader who did not know there were
+ * two kinds of account learnt there were, then got reassured about a problem
+ * they did not have.
+ *
+ * The rule now is the one the product follows: a task screen carries the task.
+ * Role resolution is real and belongs in code, in Help and in the legal pages —
+ * not in the way of the button.
+ */
+check(!/signInOneAccount/.test(signIn),
+  'web sign-in does not explain how Warsha resolves an account');
 const publicDictionary = readWeb('lib', 'copy.ts');
 check(/the email address or the phone number you registered with/.test(publicDictionary)
   && /البريد الإلكتروني أو رقم التليفون اللي سجّلت بيه/.test(publicDictionary)

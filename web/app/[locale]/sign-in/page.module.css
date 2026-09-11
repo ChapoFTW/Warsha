@@ -1,81 +1,17 @@
-.choices {
-  display: grid;
-  gap: 18px;
-  grid-template-columns: 1fr;
-  max-width: 860px;
-}
-
-.choice {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 26px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.choiceTitle {
-  font-size: 19px;
-  font-weight: 750;
-}
-
-.choiceBody {
-  font-size: 15px;
-  line-height: 1.7;
-  color: var(--text-secondary);
-}
-
-/* The page ends in the thing it is about. `md` control tokens: a standard
-   action, not the single submit that completes a form -- that one is on the
-   application origin, which is where this link goes. */
-.action {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  align-self: flex-start;
-  margin-top: auto;
-  padding: var(--control-pad-md);
-  min-height: var(--control-h-md);
-  font-size: var(--control-font-md);
-  font-weight: var(--control-weight-strong);
-  color: var(--brand-ink);
-  background: var(--brand);
-  border-radius: var(--radius-sm);
-  border: 1px solid transparent;
-}
-
-.action:hover {
-  filter: brightness(1.08);
-  transform: translateY(var(--lift-control));
-  box-shadow: var(--lift-shadow);
-}
-
-.action:active {
-  transform: translateY(var(--press-control)) scale(var(--press-scale));
-  box-shadow: none;
-  transition-duration: var(--motion-press);
-}
-
-.footNote {
-  margin-top: 32px;
-  font-size: 14.5px;
-  color: var(--text-secondary);
-  max-width: 68ch;
-}
-
-.link {
-  color: var(--text-primary);
-  font-weight: 650;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
-@media (min-width: 760px) {
-  .choices {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
+/*
+ * A page about signing in, with nothing on it but signing in.
+ *
+ * It used to carry a card headed "One sign-in for everyone" explaining that
+ * Warsha resolves what an account can do after authentication and that nobody
+ * has to declare a role first. That is true, and it is a description of how the
+ * product is built. Somebody who came here to sign in had to read past it, and
+ * a reader who did not already know there were two kinds of account was being
+ * told there were, and then reassured about a problem they did not have.
+ *
+ * So: the task, the one thing they need to have ready, the action. The card
+ * went with the explanation it existed to hold — a panel containing a single
+ * button is furniture, not structure.
+ */
 
 .page {
   max-width: var(--page-max);
@@ -85,7 +21,10 @@
 
 .header {
   max-width: 68ch;
-  margin-bottom: clamp(32px, 4vw, 52px);
+  /* Was a clamp up to 52px, sized to push a card of explanation clear of the
+     heading. What follows now is the action itself, and an action belongs
+     nearer the sentence that leads into it than a panel did. */
+  margin-bottom: clamp(24px, 3vw, 34px);
 }
 
 .eyebrow {
@@ -109,25 +48,45 @@
   color: var(--text-secondary);
 }
 
-.panel {
-  max-width: 640px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 26px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+/* `md` control tokens: a standard action. The single submit that completes the
+   form is on the application origin, which is where this goes — the public site
+   explains Warsha and never implements authentication. */
+.action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--control-pad-md);
+  min-height: var(--control-h-md);
+  font-size: var(--control-font-md);
+  font-weight: var(--control-weight-strong);
+  color: var(--brand-ink);
+  background: var(--brand);
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
 }
 
-.panelTitle {
-  font-size: 19px;
-  font-weight: 750;
+.action:hover {
+  filter: brightness(1.08);
+  transform: translateY(var(--lift-control));
+  box-shadow: var(--lift-shadow);
 }
 
-.panelBody {
-  font-size: 15px;
-  line-height: 1.7;
+.action:active {
+  transform: translateY(var(--press-control)) scale(var(--press-scale));
+  box-shadow: none;
+  transition-duration: var(--motion-press);
+}
+
+.footNote {
+  margin-top: 28px;
+  font-size: 14.5px;
   color: var(--text-secondary);
+  max-width: 68ch;
 }
 
+.link {
+  color: var(--text-primary);
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
