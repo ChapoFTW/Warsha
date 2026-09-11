@@ -9,6 +9,8 @@ import { customerNavigation } from '@/lib/nav';
 import { supabase } from '@/lib/supabase';
 import { useAppLocale } from '@/lib/use-app-locale';
 
+import surface from '@/components/product-surface.module.css';
+
 import styles from './dashboard.module.css';
 
 /**
@@ -74,7 +76,7 @@ export default function CustomerHome() {
 
         <section className={styles.card} aria-labelledby="legal">
           <h2 id="legal" className={styles.cardTitle}>{words.legalCentre}</h2>
-          <a className={styles.link} href="https://usewarsha.com/legal">{words.viewAll}</a>
+          <a className={surface.compact} href="https://usewarsha.com/legal">{words.viewAll}</a>
         </section>
       </div>
     </AppShell>
