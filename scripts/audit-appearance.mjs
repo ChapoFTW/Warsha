@@ -98,10 +98,23 @@ for (const file of files) {
   // 2. Colour literals outside the palette definition.
   if (!PALETTE_FILES.has(file)) {
     const governed = GOVERNED_BRAND_FILES.has(file);
-    for (const [index, line] of text.split(/\r?\n/).entries()) {
+    /*
+     * A literal inside a comment is documentation, not a rendered colour — and
+     * a comment explaining WHY a token replaced a hex has to be able to name
+     * the hex. That was already the rule; it only ever worked for a comment
+     * that opened and closed on one line. A line in the MIDDLE of a block
+     * comment carries neither marker, so `#FFFFFF` in a paragraph explaining
+     * that `surfaceElevated` resolves to it in the light theme was read as a
+     * colour literal in shipped code.
+     *
+     * Blanked rather than deleted, so a finding's line number still points at
+     * the line it is talking about.
+     */
+    const outsideComments = text.replace(/\/\*[\s\S]*?\*\//g,
+      (comment) => comment.replace(/[^\n]/g, ' '));
+    for (const [index, line] of outsideComments.split(/\r?\n/).entries()) {
       if (!COLOUR_LITERAL.test(line)) continue;
-      // A literal inside a comment is documentation, not a rendered colour.
-      const code = line.replace(/\/\/.*$/, '').replace(/\/\*[\s\S]*?\*\//g, '');
+      const code = line.replace(/\/\/.*$/, '');
       if (!COLOUR_LITERAL.test(code)) continue;
       if (governed) {
         // Every literal must already exist in the canonical palette.

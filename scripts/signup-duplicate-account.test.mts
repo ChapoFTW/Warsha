@@ -27,18 +27,32 @@ import { signUpWasMasked } from '../src/auth/auth-errors.ts';
 let checks = 0;
 const ok = (value: unknown, message: string) => { checks += 1; assert.ok(value, message); };
 
+/*
+ * A user object as the provider sends it, of which `signUpWasMasked` reads one
+ * field.
+ *
+ * The `id` matters to what these fixtures are SAYING — the decoy's whole
+ * disguise is that it carries a fresh-looking id — but it is not part of the
+ * narrow shape the function accepts, and TypeScript checks an object literal
+ * for excess properties at the call site. A real caller passes a whole `User`
+ * from the client, which is a variable rather than a literal and is therefore
+ * never checked that way, so widening the function to silence this would widen
+ * it for nobody.
+ */
+const asUser = (fields: Record<string, unknown>) => fields as { identities?: unknown };
+
 // --- The shapes the provider returns ----------------------------------------
 {
   // An address that already belongs to a confirmed account.
-  ok(signUpWasMasked({ id: 'decoy', identities: [] }),
+  ok(signUpWasMasked(asUser({ id: 'decoy', identities: [] })),
     'an empty identities array is the provider saying "this address is taken", '
     + 'and must never be read as a new account');
 
   // A genuine new signup.
-  ok(!signUpWasMasked({ id: 'real', identities: [{ id: 'i1', provider: 'email' }] }),
+  ok(!signUpWasMasked(asUser({ id: 'real', identities: [{ id: 'i1', provider: 'email' }] })),
     'one identity is a real new account');
 
-  ok(!signUpWasMasked({ id: 'several', identities: [{ id: 'i1' }, { id: 'i2' }] }),
+  ok(!signUpWasMasked(asUser({ id: 'several', identities: [{ id: 'i1' }, { id: 'i2' }] })),
     'and so is more than one — a linked identity is not a duplicate');
 
   /*
@@ -46,9 +60,9 @@ const ok = (value: unknown, message: string) => { checks += 1; assert.ok(value, 
    * and mocked clients omit the field, and refusing those would break signup
    * for everybody in order to catch a duplicate.
    */
-  ok(!signUpWasMasked({ id: 'no-field' }),
+  ok(!signUpWasMasked(asUser({ id: 'no-field' })),
     'a missing identities field is not evidence of anything, so signup proceeds');
-  ok(!signUpWasMasked({ id: 'null-field', identities: null }),
+  ok(!signUpWasMasked(asUser({ id: 'null-field', identities: null })),
     'nor is a null one');
   ok(!signUpWasMasked(null), 'and no user at all is not a masked signup');
   ok(!signUpWasMasked(undefined), 'nor is undefined');
