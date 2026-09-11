@@ -51,7 +51,7 @@ const baseAppCopy = {
     signOut: 'Sign out',
 
     signInTitle: 'Sign in to Warsha',
-    signInLead: 'Use the email address or the phone number you registered with. Warsha works out the rest.',
+    signInLead: 'Use the email address or the phone number you registered with.',
     identityLabel: 'Email or phone number',
     passwordLabel: 'Password',
     signInAction: 'Sign in',
@@ -1277,7 +1277,7 @@ const baseAppCopy = {
     signOut: 'تسجيل الخروج',
 
     signInTitle: 'ادخل على ورشة',
-    signInLead: 'استخدم البريد الإلكتروني أو رقم التليفون اللي سجّلت بيه. ورشة هتعرف الباقي.',
+    signInLead: 'استخدم البريد الإلكتروني أو رقم التليفون اللي سجّلت بيه.',
     identityLabel: 'البريد الإلكتروني أو رقم التليفون',
     passwordLabel: 'كلمة السر',
     signInAction: 'تسجيل الدخول',

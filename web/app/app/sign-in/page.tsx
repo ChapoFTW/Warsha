@@ -9,6 +9,8 @@ import { signIn, type SignInFailure } from '@/lib/auth-actions';
 import { useAppLocale } from '@/lib/use-app-locale';
 import { classifySignInIdentity } from '@/src/auth/auth-identifier';
 
+import surface from '@/components/product-surface.module.css';
+
 import styles from './page.module.css';
 
 /**
@@ -112,12 +114,12 @@ export default function SignInPage() {
             exist; sending somebody to another origin to read about creating an
             account, when they can create one here, is a detour. */}
         <p className={styles.foot}>
-          <a className={styles.link} href="/forgot-password">{words.forgotPassword}</a>
+          <a className={surface.compact} href="/forgot-password">{words.forgotPassword}</a>
         </p>
 
         <p className={styles.foot}>
           {words.noAccount}{' '}
-          <a className={styles.link} href="/create-account">
+          <a className={surface.compact} href="/create-account">
             {words.createOne}
           </a>
         </p>

@@ -108,6 +108,42 @@
           "digest": "6ffae3eb8b08a751"
         }
       ]
+    },
+    {
+      "date": "2026-09-11",
+      "reason": "Presentation pass on the application sign-in and signup screens: Forgot password, Resend confirmation, Create one and Sign in stopped being underlined anchors and became compact controls, at the same size, in the same positions, going to the same routes. The legal links inside the consent sentence were deliberately left as inline links. The sign-in lead also dropped the sentence \"Warsha works out the rest\". Both articles refer to these controls by name and by position — \"Use Forgot password to request a recovery link\", \"Sign in sits below the two cards\" — and never by widget type, so every statement they make is still true.",
+      "articles": [
+        {
+          "id": "customer-account-security",
+          "locale": "ar",
+          "digest": "b7ee0e4badc392f6"
+        },
+        {
+          "id": "customer-account-security",
+          "locale": "en",
+          "digest": "272ceada8b686e4a"
+        },
+        {
+          "id": "customer-account-security",
+          "locale": "fr",
+          "digest": "473411b5de472a9c"
+        },
+        {
+          "id": "worker-getting-started",
+          "locale": "ar",
+          "digest": "7c2138ea0d3ea878"
+        },
+        {
+          "id": "worker-getting-started",
+          "locale": "en",
+          "digest": "8d1a7c96643dd45b"
+        },
+        {
+          "id": "worker-getting-started",
+          "locale": "fr",
+          "digest": "d0e8785b0bdff895"
+        }
+      ]
     }
   ]
 }

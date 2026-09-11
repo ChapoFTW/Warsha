@@ -14,6 +14,8 @@ import { useAppLocale } from '@/lib/use-app-locale';
 import { bodyLanguageFor, catalogueFor } from '@/lib/warsha';
 import { authOutcomeCopy } from '@/src/auth/auth-outcome-copy';
 
+import surface from '@/components/product-surface.module.css';
+
 import styles from './create-account.module.css';
 
 /**
@@ -135,8 +137,8 @@ export default function CreateAccountPage() {
           {done === 'confirm' ? (
             <>
               <a className={styles.submit} href="/sign-in">{authWords.signInAction}</a>
-              <a className={styles.link} href="/forgot-password">{authWords.forgotPasswordAction}</a>
-              <a className={styles.link} href="/resend-confirmation">{authWords.resendConfirmationAction}</a>
+              <a className={surface.compact} href="/forgot-password">{authWords.forgotPasswordAction}</a>
+              <a className={surface.compact} href="/resend-confirmation">{authWords.resendConfirmationAction}</a>
             </>
           ) : (
             <a className={styles.submit} href="/">{words.signUpContinue}</a>
@@ -259,7 +261,7 @@ export default function CreateAccountPage() {
 
         <p className={styles.foot}>
           {words.signUpHaveAccount}{' '}
-          <a className={styles.link} href="/sign-in">{words.signInAction}</a>
+          <a className={surface.compact} href="/sign-in">{words.signInAction}</a>
         </p>
         <p className={styles.workerNote}>{words.signUpWorkerNote}</p>
       </main>

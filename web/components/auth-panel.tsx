@@ -4,6 +4,8 @@ import { BrandLockup } from '@/components/brand-mark';
 import { PreferenceFooter } from '@/components/preference-controls';
 import type { Locale } from '@/lib/preferences';
 
+import surface from '@/components/product-surface.module.css';
+
 import styles from './auth-panel.module.css';
 
 /**
@@ -83,7 +85,7 @@ export function AuthStateCard({
           composed under the previous identity is carried across. Everywhere
           *inside* the product uses `Link`, because there a reload is a reset. */}
       {!busy ? (actions ?? (action && href ? [{ label: action, href }] : [])).map((item, index) => (
-        <a key={`${item.href}:${item.label}`} className={index === 0 ? styles.submit : styles.link} href={item.href}>
+        <a key={`${item.href}:${item.label}`} className={index === 0 ? styles.submit : surface.compact} href={item.href}>
           {item.label}
         </a>
       )) : null}

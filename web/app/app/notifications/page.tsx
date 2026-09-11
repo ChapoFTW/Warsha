@@ -22,6 +22,8 @@ import {
 import { supabase } from '@/lib/supabase';
 import { useAppLocale } from '@/lib/use-app-locale';
 
+import surface from '@/components/product-surface.module.css';
+
 import styles from './notifications.module.css';
 
 /**
@@ -123,7 +125,7 @@ export default function NotificationsPage() {
       <div className={styles.head}>
         <h1 className={styles.title}>{chrome.title}</h1>
         {unread > 0 ? (
-          <button type="button" className={styles.textAction} onClick={() => void markAllRead()}>
+          <button type="button" className={surface.compact} onClick={() => void markAllRead()}>
             {chrome.markAllRead}
           </button>
         ) : null}
@@ -188,7 +190,7 @@ export default function NotificationsPage() {
                     {row.readAt ? null : (
                       <button
                         type="button"
-                        className={styles.textAction}
+                        className={surface.compact}
                         onClick={() => void markRead(row.id)}
                       >
                         {chrome.markRead}
@@ -196,7 +198,7 @@ export default function NotificationsPage() {
                     )}
                     <button
                       type="button"
-                      className={styles.textAction}
+                      className={surface.compact}
                       onClick={() => void archive(row.id)}
                     >
                       {chrome.dismiss}

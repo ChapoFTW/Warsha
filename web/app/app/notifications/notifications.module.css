@@ -51,12 +51,11 @@
 
 .itemActions { display: flex; gap: 12px; align-items: flex-start; flex-wrap: wrap; }
 
-.textAction {
-  appearance: none; border: 0; background: transparent; font: inherit;
-  font-size: var(--control-font-md); font-weight: 600; color: var(--text-secondary);
-  cursor: pointer; padding: 6px 0; min-height: var(--control-h-md);
-  text-decoration: underline; text-underline-offset: 3px;
-}
+/* `.textAction` was three underlined text buttons: Mark all read in the header,
+   and Mark read and Dismiss on EVERY row. A list whose every item ends in two
+   underlined words reads as a document with footnotes rather than a list of
+   things you can act on. They use the shared compact tier now, which is the
+   same control at the same height with a border instead of an underline. */
 
 
 /* The primary action, with the product's shared feedback. Same tokens as the
