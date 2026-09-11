@@ -318,8 +318,24 @@ async function completeServiceArea() {
    * for it, not bypassed.
    */
   grantLocationPermission();
-  const placed = await setDeviceLocation(PLACES.abdinSquare, { verify: true });
-  console.log(`    device placed at Abdin Square: ${placed ? 'yes' : 'NO'}`);
+  /*
+   * No `verify` here, and `location.mjs` says why in its own doc comment: the
+   * read-back needs something on the device actively listening for updates,
+   * because with no client requesting a position the provider sits on its boot
+   * default however many fixes it has been sent. Nothing is listening yet —
+   * the address screen has not been opened.
+   *
+   * This passed for weeks on an emulator that had been running for hours and
+   * had a cached last-known fix from an earlier session. On a cold boot there
+   * is none, `deviceLocation()` returns null, and the run died at the service
+   * area with "the device reports no GPS location at all" — a true sentence
+   * about a precondition the caller had broken, not about the product.
+   *
+   * The verified call is the one inside the retry below, after the screen is
+   * open and the product is asking.
+   */
+  const placed = await setDeviceLocation(PLACES.abdinSquare);
+  console.log(`    device sent to Abdin Square: ${placed ? 'yes' : 'NO'}`);
 
   if (await tap(ADD_ADDRESS, { optional: true, settle: 3000 })) {
     await settleScreen();
@@ -342,11 +358,25 @@ async function completeServiceArea() {
      */
     let resolved = false;
     for (let attempt = 0; attempt < 3 && !resolved; attempt += 1) {
-      const placed = await setDeviceLocation(PLACES.abdinSquare, { verify: true });
-      if (!placed) {
-        console.log('    the emulator would not take the coordinate');
-        break;
+      /*
+       * Verified this time — the screen is open and the product is listening,
+       * which is the precondition `location.mjs` documents.
+       *
+       * Caught rather than allowed to propagate: it THROWS on a device that
+       * will not report a fix, while this caller was written expecting a falsy
+       * return, so a refusal killed the whole run instead of taking the branch
+       * written for it. The emulator not producing a fix is a known limit of
+       * this environment and the product offers the map picker for exactly
+       * that case — which is three lines further down and is the path the owner
+       * asked to be exercised.
+       */
+      let placed = null;
+      try {
+        placed = await setDeviceLocation(PLACES.abdinSquare, { verify: true });
+      } catch (error) {
+        console.log(`    the emulator would not take the coordinate: ${error.message}`);
       }
+      if (!placed) break;
       if (!await tap(USE_LOCATION, { optional: true, settle: 4000 })) {
         console.log('    "use my current location" not offered — capturing what is');
         break;
