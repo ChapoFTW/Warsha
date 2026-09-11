@@ -369,6 +369,36 @@ for (const page of ['sign-in', 'create-account']) {
 check(existsSync(join(APP_DIR, 'app', 'sign-in', 'page.tsx')),
   'app.usewarsha.com/sign-in is a real route');
 
+/*
+ * Not implementing authentication is half the rule. The other half is arriving
+ * somewhere.
+ *
+ * Both public pages spent months telling visitors that web sign-in and web
+ * signup were "coming to the web" while both had been live on the application
+ * origin the whole time -- so a returning customer who searched for Warsha,
+ * landed on /sign-in and read it, left believing the thing they came for did
+ * not exist yet. A page whose title is Sign in to Warsha has to end in a way in.
+ *
+ * Worker signup is the one case that is genuinely not on the web, and it is not
+ * "coming" either: registration goes through the broker, which mints a session
+ * against a synthetic identity and is a server-side trust boundary. Saying so
+ * is honest. Promising a date is not.
+ */
+for (const [page, destination] of [
+  ['sign-in', 'APP_SIGN_IN'],
+  ['create-account', 'APP_CREATE_ACCOUNT'],
+] as const) {
+  const source = readFileSync(join(APP_DIR, '[locale]', page, 'page.tsx'), 'utf8');
+  check(source.includes(destination),
+    `the public /${page} page ENDS IN A WAY THROUGH — it links to ${destination}`);
+}
+check(existsSync(join(APP_DIR, 'app', 'create-account', 'page.tsx')),
+  'app.usewarsha.com/create-account is a real route');
+
+const publicCopy = readFileSync(join(WEB, 'lib', 'copy.ts'), 'utf8');
+check(!/coming to the web|جاي قريب على الويب|bientôt disponible sur le Web/i.test(publicCopy),
+  'NO PUBLIC PAGE ANNOUNCES A SURFACE THAT ALREADY SHIPPED as still to come');
+
 // --- Shared authorities are read, not restated ------------------------------
 const notifications = readFileSync(join(WEB, 'lib', 'notifications.ts'), 'utf8');
 check(/from '\.\.\/\.\.\/src\/notifications\/notification-copy/.test(notifications),

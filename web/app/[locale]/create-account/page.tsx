@@ -5,7 +5,7 @@ import { notFound } from 'next/navigation';
 import { SiteFooter, SiteHeader } from '@/components/site-chrome';
 import { copy } from '@/lib/copy';
 import { isLocale, type Locale } from '@/lib/preferences';
-import { localeHref } from '@/lib/routes';
+import { APP_CREATE_ACCOUNT, localeHref } from '@/lib/routes';
 import { catalogueFor, signupLegalDocuments } from '@/lib/warsha';
 
 import styles from './page.module.css';
@@ -80,7 +80,11 @@ export default async function CreateAccountPage({
             <p className={styles.choiceBody}>{words.createCustomerBody}</p>
             <h3 className={styles.requiredHeading}>{words.createRequiredHeading}</h3>
             {required(signupLegalDocuments('customer'))}
-            <span className={styles.pending}>{words.createCustomerPending}</span>
+            {/* Customer signup is on the web and has been for some time; this
+                card said it was coming. */}
+            <a href={APP_CREATE_ACCOUNT} className={styles.action}>
+              {words.createAccount}
+            </a>
           </div>
 
           <div className={styles.choice}>
@@ -88,7 +92,11 @@ export default async function CreateAccountPage({
             <p className={styles.choiceBody}>{words.createWorkerBody}</p>
             <h3 className={styles.requiredHeading}>{words.createRequiredHeading}</h3>
             {required(signupLegalDocuments('worker'))}
-            <span className={styles.pending}>{words.createWorkerPending}</span>
+            {/* Not "coming to the web". A professional registers through the
+                broker, which mints a session against a synthetic identity — a
+                server-side trust boundary that is not moving into a browser
+                bundle. Saying so is honest; promising it is not. */}
+            <span className={styles.pending}>{words.createWorkerInApp}</span>
           </div>
         </div>
 

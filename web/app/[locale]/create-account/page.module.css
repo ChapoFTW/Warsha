@@ -62,6 +62,37 @@
   font-weight: 600;
 }
 
+/* The page ends in the thing it is about. `md` control tokens: a standard
+   action, not the single submit that completes a form -- that one is on the
+   application origin, which is where this link goes. */
+.action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-start;
+  margin-top: auto;
+  padding: var(--control-pad-md);
+  min-height: var(--control-h-md);
+  font-size: var(--control-font-md);
+  font-weight: var(--control-weight-strong);
+  color: var(--brand-ink);
+  background: var(--brand);
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+}
+
+.action:hover {
+  filter: brightness(1.08);
+  transform: translateY(var(--lift-control));
+  box-shadow: var(--lift-shadow);
+}
+
+.action:active {
+  transform: translateY(var(--press-control)) scale(var(--press-scale));
+  box-shadow: none;
+  transition-duration: var(--motion-press);
+}
+
 .footNote {
   margin-top: 32px;
   font-size: 14.5px;

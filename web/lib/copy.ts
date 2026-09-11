@@ -133,7 +133,6 @@ const baseCopy = {
     signInEyebrow: 'Welcome back',
     signInLead:
       'Choose how you use Warsha. Your account works the same on the web and in the app.',
-    signInIdentity: 'Email or phone number',
     signInIdentityHint: 'Use the email address or the phone number you registered with. Warsha works out the rest.',
     signInOneAccount: 'One sign-in for everyone',
     signInOneAccountBody: 'Whether you hire professionals, do the work, or both, you sign in the same way. Warsha resolves what your account can do after you are signed in — you never have to declare it first.',
@@ -143,8 +142,6 @@ const baseCopy = {
     signInWorker: 'I do the work',
     signInWorkerBody:
       'Sign in with the phone number and password you registered with. No email is involved.',
-    signInCustomerPending: 'Customer sign-in — coming to the web',
-    signInWorkerPending: 'Professional sign-in — coming to the web',
     signInFootNote: 'Do not have an account yet?',
     signInFootLink: 'Create one',
     signInFootTail:
@@ -162,8 +159,7 @@ const baseCopy = {
       'Register your trades, complete verification, and quote the jobs you want. You '
       + 'register with a phone number and password — no email is needed.',
     createRequiredHeading: 'You will be asked to accept',
-    createCustomerPending: 'Customer signup — coming to the web',
-    createWorkerPending: 'Professional application — coming to the web',
+    createWorkerInApp: 'Professionals register in the Warsha app.',
     createFootNote:
       'Applying as a professional starts a verification process. It does not make you a '
       + 'professional on Warsha, and approval is not automatic. Already have an account?',
@@ -285,7 +281,6 @@ const baseCopy = {
     signInTitle: 'ادخل على ورشة',
     signInEyebrow: 'أهلًا بعودتك',
     signInLead: 'اختار إنت بتستخدم ورشة إزاي. حسابك بيشتغل نفس الشيء على الويب والتطبيق.',
-    signInIdentity: 'البريد الإلكتروني أو رقم التليفون',
     signInIdentityHint: 'استخدم البريد الإلكتروني أو رقم التليفون اللي سجّلت بيه. ورشة هتعرف الباقي.',
     signInOneAccount: 'تسجيل دخول واحد للكل',
     signInOneAccountBody: 'سواء بتطلب صنايعية، أو بتشتغل، أو الاتنين، بتسجّل الدخول بنفس الطريقة. ورشة بتحدد حسابك بيعمل إيه بعد ما تدخل — مش لازم تقول ده بنفسك الأول.',
@@ -293,8 +288,6 @@ const baseCopy = {
     signInCustomerBody: 'ادخل بالإيميل والباسورد اللي سجّلت بيهم.',
     signInWorker: 'أنا اللي بشتغل',
     signInWorkerBody: 'ادخل برقم التليفون والباسورد اللي سجّلت بيهم. من غير إيميل خالص.',
-    signInCustomerPending: 'دخول العملاء — جاي قريب على الويب',
-    signInWorkerPending: 'دخول الصنايعية — جاي قريب على الويب',
     signInFootNote: 'لسه ما عندكش حساب؟',
     signInFootLink: 'اعمل واحد',
     signInFootTail:
@@ -311,8 +304,7 @@ const baseCopy = {
       'سجّل مهنتك، كمّل التوثيق، وقدّم سعرك على الشغل اللي يناسبك. بتسجّل برقم '
       + 'تليفون وباسورد — من غير إيميل.',
     createRequiredHeading: 'هيتطلب منك توافق على',
-    createCustomerPending: 'تسجيل العملاء — جاي قريب على الويب',
-    createWorkerPending: 'طلب الصنايعية — جاي قريب على الويب',
+    createWorkerInApp: 'الصنايعية بيسجلوا من تطبيق ورشة.',
     createFootNote:
       'التقديم كصنايعي بيبدأ عملية توثيق. ده ما بيخليكش صنايعي في ورشة، والقبول مش '
       + 'تلقائي. عندك حساب بالفعل؟',
@@ -340,8 +332,8 @@ export const copy = {
     legalHomeTitle: 'À lire avant de vous inscrire', legalHomeLead: 'Chaque accord demandé par Warsha est consultable en entier avant la création du compte.', legalVersion: 'Version',
     footerBlurb: 'Réparations et entretien à domicile en Égypte, avec un prix convenu avant le début.', footerWarsha: 'Warsha', footerServices: 'Services', footerLegal: 'Mentions légales', footerPreferences: 'Préférences', footerAbout: 'À propos', footerHowItWorks: 'Comment ça marche', footerContact: 'Contact', footerAllServices: 'Tous les services', footerCategories: 'Catégories', footerBecomeWorker: 'Devenir professionnel', footerLegalCentre: 'Centre juridique', footerPrivacy: 'Politique de confidentialité', footerTerms: "Conditions d'utilisation", footerLocation: 'Politique relative aux données de localisation',
     legalCentreTitle: 'Centre juridique', legalCentreLead: 'Tous les accords et politiques sont consultables en entier, sans connexion.', legalMandatoryHeading: 'Accords à accepter', legalMandatoryNote: 'Warsha enregistre la version exacte et l’empreinte du texte affiché lors de votre acceptation. Les preuves d’acceptation sont immuables.', legalReferenceHeading: 'Politiques et registres', legalReferenceNote: 'Ces documents expliquent le fonctionnement de Warsha. Ils ne nécessitent pas votre acceptation.', legalAudienceEveryone: 'tout le monde', legalEffective: 'en vigueur', legalAcceptanceRequired: 'acceptation requise', fingerprintHeading: 'Empreinte du document', fingerprintNote: 'Warsha enregistre la version exacte et l’empreinte du texte affiché lors de l’acceptation. Empreintes de la version',
-    signInTitle: 'Se connecter à Warsha', signInEyebrow: 'Heureux de vous revoir', signInLead: 'Utilisez le même compte sur le Web et dans l’application.', signInIdentity: 'Adresse e-mail ou numéro de téléphone', signInIdentityHint: 'Utilisez l’adresse e-mail ou le numéro de téléphone enregistré. Warsha détermine le type de compte.', signInOneAccount: 'Une connexion pour tous', signInOneAccountBody: 'Que vous demandiez un service, réalisiez le travail ou les deux, la connexion reste la même. Warsha détermine ensuite les possibilités de votre compte.', signInCustomer: "J'ai besoin d'un service", signInCustomerBody: 'Connectez-vous avec votre adresse e-mail et votre mot de passe.', signInWorker: 'Je réalise les travaux', signInWorkerBody: 'Connectez-vous avec votre numéro de téléphone et votre mot de passe. Aucun e-mail n’est utilisé.', signInCustomerPending: 'Connexion client — bientôt disponible sur le Web', signInWorkerPending: 'Connexion professionnel — bientôt disponible sur le Web', signInFootNote: "Vous n'avez pas encore de compte ?", signInFootLink: 'Créez-en un', signInFootTail: 'Les comptes créés dans l’application fonctionnent sur le Web, et inversement.',
-    createTitle: 'Comment souhaitez-vous utiliser Warsha ?', createEyebrow: 'Créer un compte', createLead: 'Choisissez ce qui vous correspond. Vous pouvez lire chaque accord requis avant de l’accepter.', createCustomerBody: 'Décrivez un travail, recevez des devis et acceptez le prix avant le début. Vous vous inscrivez avec une adresse e-mail que vous devez confirmer.', createWorkerBody: 'Enregistrez vos métiers, terminez la vérification et répondez aux demandes qui vous intéressent. Vous vous inscrivez avec un numéro de téléphone et un mot de passe, sans e-mail.', createRequiredHeading: 'Vous devrez accepter', createCustomerPending: 'Inscription client — bientôt disponible sur le Web', createWorkerPending: 'Candidature professionnel — bientôt disponible sur le Web', createFootNote: 'La candidature comme professionnel déclenche une vérification. Elle ne vaut pas approbation automatique. Vous avez déjà un compte ?',
+    signInTitle: 'Se connecter à Warsha', signInEyebrow: 'Heureux de vous revoir', signInLead: 'Utilisez le même compte sur le Web et dans l’application.', signInIdentityHint: 'Utilisez l’adresse e-mail ou le numéro de téléphone enregistré. Warsha détermine le type de compte.', signInOneAccount: 'Une connexion pour tous', signInOneAccountBody: 'Que vous demandiez un service, réalisiez le travail ou les deux, la connexion reste la même. Warsha détermine ensuite les possibilités de votre compte.', signInCustomer: "J'ai besoin d'un service", signInCustomerBody: 'Connectez-vous avec votre adresse e-mail et votre mot de passe.', signInWorker: 'Je réalise les travaux', signInWorkerBody: 'Connectez-vous avec votre numéro de téléphone et votre mot de passe. Aucun e-mail n’est utilisé.', signInFootNote: "Vous n'avez pas encore de compte ?", signInFootLink: 'Créez-en un', signInFootTail: 'Les comptes créés dans l’application fonctionnent sur le Web, et inversement.',
+    createTitle: 'Comment souhaitez-vous utiliser Warsha ?', createEyebrow: 'Créer un compte', createLead: 'Choisissez ce qui vous correspond. Vous pouvez lire chaque accord requis avant de l’accepter.', createCustomerBody: 'Décrivez un travail, recevez des devis et acceptez le prix avant le début. Vous vous inscrivez avec une adresse e-mail que vous devez confirmer.', createWorkerBody: 'Enregistrez vos métiers, terminez la vérification et répondez aux demandes qui vous intéressent. Vous vous inscrivez avec un numéro de téléphone et un mot de passe, sans e-mail.', createRequiredHeading: 'Vous devrez accepter', createWorkerInApp: 'Les professionnels s’inscrivent dans l’application Warsha.', createFootNote: 'La candidature comme professionnel déclenche une vérification. Elle ne vaut pas approbation automatique. Vous avez déjà un compte ?',
     notFoundTitle: "Cette page n'existe pas", notFoundBody: 'L’adresse a peut-être changé, ou le lien qui vous a amené ici n’est plus à jour. Tout le reste de Warsha est toujours à sa place.', notFoundHome: "Aller à la page d'accueil", notFoundServices: 'Voir les services',
   },
 } as const;

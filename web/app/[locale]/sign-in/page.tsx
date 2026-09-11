@@ -5,7 +5,7 @@ import { notFound } from 'next/navigation';
 import { SiteFooter, SiteHeader } from '@/components/site-chrome';
 import { copy } from '@/lib/copy';
 import { isLocale, type Locale } from '@/lib/preferences';
-import { localeHref } from '@/lib/routes';
+import { APP_SIGN_IN, localeHref } from '@/lib/routes';
 
 import styles from './page.module.css';
 
@@ -63,8 +63,20 @@ export default async function SignInPage({
         <div className={styles.panel}>
           <h2 className={styles.panelTitle}>{words.signInOneAccount}</h2>
           <p className={styles.panelBody}>{words.signInOneAccountBody}</p>
-          <p className={styles.fieldLabel}>{words.signInIdentity}</p>
-          <span className={styles.pending}>{words.signInCustomerPending}</span>
+          {/* No orphan field label above the action. `signInIdentity` labelled an
+              identifier box this page has never had and must never have -- there
+              is one sign-in and it is on the application origin. As a caption
+              over a link it read as though the button were a field. What it used
+              to say, the lead above already says in a sentence. */}
+          {/* The page said "Customer sign-in — coming to the web" long after it
+              had arrived: app.usewarsha.com/sign-in takes an address or a phone
+              number and serves customers and professionals alike. Somebody who
+              searched for Warsha sign-in, landed here and believed it went away
+              without an account. A page about signing in ends in the thing it is
+              about. */}
+          <a href={APP_SIGN_IN} className={styles.action}>
+            {words.signIn}
+          </a>
         </div>
 
         <p className={styles.footNote}>
