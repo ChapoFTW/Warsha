@@ -191,17 +191,56 @@ check(!/guaranteed response|within \d+ (minutes|hours)|\d\.\d+ stars|average rat
 check(/closed testing/i.test(publicCopy),
   'the public site says Warsha is in closed testing rather than implying scale');
 
+// --- The public pages stay prerendered --------------------------------------
+/*
+ * One dynamic API in this tree costs all 114 of them.
+ *
+ * `[locale]/not-found.tsx` read `headers()` for two days to find out which
+ * language to apologise in. It worked, and it opted every public page out of
+ * static generation: a dynamic API anywhere in a route's render tree makes that
+ * route dynamic, and a not-found boundary sits in the tree of every page under
+ * it. The build dropped from 120 prerendered routes to 6, the route table still
+ * showed the pages as static, and nothing failed. `test:web-build-output`
+ * catches the consequence after a build; this catches the cause on a checkout,
+ * which is where it is cheap to fix.
+ *
+ * The application and admin origins are deliberately not covered: they are
+ * authenticated, per-request by nature, and reading a cookie there is correct.
+ * This is about the marketing pages, which are the same for everybody.
+ */
+const publicPages = webCode.filter((file) => file.includes(join('app', '[locale]')));
+check(publicPages.length > 10,
+  `the public page scan found ${publicPages.length} files, so it is looking in the right place`);
+for (const file of publicPages) {
+  const source = withoutComments(readFileSync(file, 'utf8'));
+  check(!/from 'next\/headers'|cookies\(\)|headers\(\)|connection\(\)/.test(source),
+    `${file} USES A DYNAMIC API AND WOULD TAKE EVERY PUBLIC PAGE OFF STATIC RENDERING`);
+}
+
 // --- Worker identity privacy ------------------------------------------------
 check(!/auth\.warsha\.invalid|synthetic/i.test(withoutComments(allWebText)),
   'THE WEB NEVER REVEALS THE SYNTHETIC WORKER EMAIL IDENTITY');
 const signIn = readWeb('app', '[locale]', 'sign-in', 'page.tsx');
 check(!/signInCustomerBody|signInWorkerBody/.test(signIn),
   'WEB SIGN-IN DOES NOT ASK SOMEBODY TO CLASSIFY THEIR OWN ACCOUNT');
-check(/signInIdentity/.test(signIn) && /signInOneAccount/.test(signIn),
+/*
+ * The rule is unchanged and the evidence moved. It used to be `signInIdentity`,
+ * a standalone caption reading "Email or phone number" -- which described a
+ * field this page has never had and must never have, and which, once the page
+ * ended in a link to the real form, read as a label for the button. The same
+ * product rule is now carried by `signInIdentityHint`, a sentence, in all three
+ * languages: an identifier is what is asked for, and Warsha resolves the rest.
+ *
+ * Three languages, not two. French has been a Warsha language since long before
+ * this check was written and it was still only asking about two of them.
+ */
+check(/signInIdentityHint/.test(signIn) && /signInOneAccount/.test(signIn),
   'web sign-in asks for an identifier and says one sign-in serves everyone');
-check(/Email or phone number/.test(readWeb('lib', 'copy.ts'))
-  && /البريد الإلكتروني أو رقم التليفون/.test(readWeb('lib', 'copy.ts')),
-  'the identifier is asked for in both languages');
+const publicDictionary = readWeb('lib', 'copy.ts');
+check(/the email address or the phone number you registered with/.test(publicDictionary)
+  && /البريد الإلكتروني أو رقم التليفون اللي سجّلت بيه/.test(publicDictionary)
+  && /l’adresse e-mail ou le numéro de téléphone enregistré/.test(publicDictionary),
+  'the identifier is what is asked for, in English, Arabic and French');
 
 
 // ---------------------------------------------------------------------------

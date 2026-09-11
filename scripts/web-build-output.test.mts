@@ -50,6 +50,35 @@ function check(condition: unknown, message: string) {
   checks += 1;
 }
 
+/*
+ * Prerendered at all, before anything about what is in it.
+ *
+ * On 2026-09-08 a localisation fix put `headers()` in `[locale]/not-found.tsx`.
+ * A dynamic API anywhere in a route's render tree opts that route out of static
+ * generation, and a not-found boundary is in the tree of every page beneath it,
+ * so all 114 public pages quietly became per-request server renders: the build
+ * went from 120 prerendered routes to 6. Nothing failed. The route table still
+ * printed a filled circle beside `/[locale]`, the pages still served, and the
+ * only visible symptom was this file throwing ENOENT on `en.html` — which reads
+ * like a missing build, which is what the message above says to fix.
+ *
+ * So the absence of the HTML is checked first and named for what it is.
+ */
+if (!existsSync(join(BUILT, 'en.html'))) {
+  console.error(
+    'The build ran, and the public locale pages were NOT PRERENDERED.\n\n'
+    + `${join(BUILT, 'en.html')} does not exist, so /en, /ar and /fr are being\n`
+    + 'server-rendered on every request instead of served as static HTML.\n\n'
+    + 'The usual cause is a dynamic API (headers, cookies, connection) somewhere\n'
+    + 'in the render tree of `web/app/[locale]` -- INCLUDING its layout, its\n'
+    + 'error boundaries and `not-found.tsx`. One call anywhere in that tree opts\n'
+    + 'every page beneath it out, and the build reports nothing.\n\n'
+    + 'See web/lib/request-locale.ts for how the not-found boundary gets the\n'
+    + 'locale without one.',
+  );
+  process.exit(1);
+}
+
 const built = (path: string) => readFileSync(join(BUILT, path), 'utf8');
 
 // --- Each language is a real, separately rendered document ------------------

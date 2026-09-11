@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { copy } from '@/lib/copy';
 import { directionOf, isLocale, LOCALES, type Locale } from '@/lib/preferences';
 import { WarshaPreferencesProvider } from '@/lib/preferences-context';
+import { rememberRequestLocale } from '@/lib/request-locale';
 
 import '../globals.css';
 
@@ -115,6 +116,14 @@ export default async function LocaleLayout({
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
   const typed: Locale = locale;
+
+  /*
+   * For `not-found.tsx`, which renders inside this layout and is handed no
+   * params of its own. It used to read a request header instead, and that one
+   * dynamic API took every public page off static rendering — see
+   * `lib/request-locale.ts`. This is not a dynamic API and costs nothing.
+   */
+  rememberRequestLocale(typed);
 
   return (
     <html lang={typed} dir={directionOf(typed)} suppressHydrationWarning>

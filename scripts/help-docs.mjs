@@ -162,7 +162,11 @@ const impactRules = [
   { pattern: /^(?:src\/providers\/(?:profession-taxonomy|worker-trade-selection)|app\/onboarding\/worker|web\/components\/worker-profile-editor)/, ids: ['worker-getting-started'] },
   { pattern: /(?:address|location|map-provider|location-proxy)/i, ids: ['customer-addresses-location', 'worker-onboarding-verification'] },
   { pattern: /(?:verification|vetting)/i, ids: ['worker-onboarding-verification', 'admin-verification-enforcement'] },
-  { pattern: /(?:marketplace|quote|request)/i, ids: ['customer-requests-quotes-jobs', 'worker-opportunities-jobs'] },
+  // `request` must not match `request-locale`, for the same reason `auth` must
+  // not match `authority` above: that module decides which language a 404 is
+  // written in and has nothing to say about quotes or jobs. A gate that asks
+  // for a review of the wrong article gets answered with filler.
+  { pattern: /(?:marketplace|quote|request(?!-locale))/i, ids: ['customer-requests-quotes-jobs', 'worker-opportunities-jobs'] },
   { pattern: /(?:staff|capabilit|fresh-auth|dual-control)/i, ids: ['admin-staff-security'] },
   { pattern: /(?:analytics|report|export)/i, ids: ['admin-audit-analytics'] },
 ];

@@ -1,8 +1,8 @@
 import Link from 'next/link';
-import { headers } from 'next/headers';
 
 import { copy } from '@/lib/copy';
-import { directionOf, isLocale, LOCALE_HEADER, type Locale } from '@/lib/preferences';
+import { directionOf, isLocale, type Locale } from '@/lib/preferences';
+import { requestLocale } from '@/lib/request-locale';
 import { localeHref } from '@/lib/routes';
 
 import styles from '@/components/product-surface.module.css';
@@ -31,9 +31,15 @@ import styles from '@/components/product-surface.module.css';
  *    warning, just the bug still present. That is worth knowing before
  *    somebody reaches for a hook here.
  *
- * 2. The language comes from a request header, not from route params, because
- *    a not-found boundary is given none. The middleware sets it from the
- *    address on every locale-prefixed request.
+ * 2. The language does not come from route params, because a not-found
+ *    boundary is given none. It came from a request header for two days, and
+ *    that was expensive in a way nothing surfaced: reading a header is a
+ *    dynamic API, a dynamic API anywhere in a route's render tree opts that
+ *    route out of static generation, and this boundary is in the tree of every
+ *    public page. The build went from 120 prerendered routes to 6 and every
+ *    marketing page became a server render. So the locale is handed over inside
+ *    the request instead, by the layout that has it — see
+ *    `lib/request-locale.ts`.
  *
  * 3. `lang` and `dir` are applied by the script below rather than written on
  *    `<html>`, because on this path Next supplies its own root `<html>` and
@@ -54,7 +60,7 @@ import styles from '@/components/product-surface.module.css';
  * came for" are different problems and the homepage only solves the first.
  */
 export default async function LocaleNotFound() {
-  const requested = (await headers()).get(LOCALE_HEADER);
+  const requested = requestLocale();
   // Falls back to English rather than throwing: a 404 is already a failure,
   // and failing to render one is a worse failure than rendering it in the
   // wrong language.
