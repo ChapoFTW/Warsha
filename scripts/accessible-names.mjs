@@ -128,6 +128,62 @@ const isJsx = (node) => ts.isJsxElement(node) || ts.isJsxSelfClosingElement(node
 const childrenOf = (node) => (ts.isJsxElement(node) ? node.children : []);
 const lineOf = (source, node) => source.getLineAndCharacterOfPosition(node.getStart()).line + 1;
 
+/**
+ * Which of Warsha's own components are accessibility elements in their own right.
+ *
+ * `<StateBadge />` says nothing at its call site; the `accessible` lives inside
+ * the component, and a walker that only reads the call site cannot tell it from
+ * a plain `<View>`. That is the difference between seeing the criminal-record
+ * step's fragmented group and walking straight past it.
+ *
+ * A component qualifies when the element it returns carries `accessible` or a
+ * name of its own. Only the returned root is examined — something accessible
+ * deep inside a component does not make the component one, and treating it as
+ * such would flag every screen that contains a button.
+ */
+function accessibilityElementComponents(sources) {
+  const names = new Set();
+  for (const [file, source] of sources) {
+    const consider = (name, body) => {
+      if (!name || !body) return;
+      const roots = [];
+      const findReturns = (n) => {
+        if (ts.isReturnStatement(n) && n.expression) roots.push(n.expression);
+        // A nested component defines its own root; do not borrow it.
+        if (!ts.isFunctionDeclaration(n) && !ts.isFunctionExpression(n)
+          && !ts.isArrowFunction(n)) n.forEachChild(findReturns);
+      };
+      if (ts.isArrowFunction(body) && !ts.isBlock(body)) roots.push(body);
+      else body.forEachChild(findReturns);
+
+      for (const root of roots) {
+        const unwrapped = ts.isParenthesizedExpression(root) ? root.expression : root;
+        if (!isJsx(unwrapped)) continue;
+        if (attr(unwrapped, 'accessible') || hasExplicitName(unwrapped)) {
+          names.add(name);
+          return;
+        }
+      }
+    };
+
+    const visit = (node) => {
+      if (ts.isFunctionDeclaration(node) && node.name) consider(node.name.getText(), node.body);
+      if (ts.isVariableDeclaration(node) && node.initializer) {
+        const init = node.initializer;
+        // forwardRef(function X(){}) and memo(() => …) both wrap the real body.
+        const inner = ts.isCallExpression(init) ? init.arguments[0] : init;
+        if (inner && (ts.isArrowFunction(inner) || ts.isFunctionExpression(inner))) {
+          consider(node.name.getText(), inner.body ?? inner);
+        }
+      }
+      node.forEachChild(visit);
+    };
+    visit(source);
+    void file;
+  }
+  return names;
+}
+
 /** Every JSX element beneath this one, in order, without leaving the file. */
 function descendants(node) {
   const out = [];
@@ -140,6 +196,25 @@ function descendants(node) {
   visit(node);
   return out;
 }
+
+/**
+ * A group that gathers several things into one announcement.
+ *
+ * `<View accessible>` around a label, its badges and its explanation is a
+ * deliberate pattern here — `OnboardingFieldMeta` uses it so a field arrives as
+ * one announcement rather than four fragments. It only works if nothing inside
+ * it is an accessibility element of its own, and when something is, the group
+ * does not merely read badly: it stops composing at all.
+ *
+ * Read off `emulator-5554`, the criminal-record step showed exactly that. The
+ * two `StateBadge` chips are `<View accessible accessibilityLabel>`, so they
+ * became focusable nodes and the group around them composed nothing — leaving
+ * the field's label and the sentence "Warsha uses this only for professional
+ * verification." as non-focusable text with no named ancestor, and two bare
+ * words, "Required" and "Private", with nothing to attach them to.
+ */
+const isGroup = (node) => Boolean(attr(node, 'accessible'))
+  && !attr(node, 'onPress') && !attr(node, 'onClick');
 
 function controlKind(node) {
   const tag = tagOf(node);
@@ -229,9 +304,12 @@ const TEXT_TAGS = ['Text', 'AppText', 'span', 'p', 'h1', 'h2', 'h3', 'h4', 'stro
  *
  * @param {string} file  a name for the report; it is not read from disk
  * @param {string} text  the component source
+ * @param {Set<string>} elementComponents  Warsha components that are themselves
+ *   accessibility elements, from `accessibilityElementComponents`. Empty is a
+ *   valid answer and simply means groups are judged on their call sites alone.
  * @returns {{file: string, line: number, rule: string, detail: string, why: string}[]}
  */
-export function inspectSource(file, text) {
+export function inspectSource(file, text, elementComponents = new Set()) {
   const findings = [];
   const record = (where, line, rule, detail, why) =>
     findings.push({ file: where, line, rule, detail, why });
@@ -239,6 +317,19 @@ export function inspectSource(file, text) {
 
   const visit = (node) => {
     if (isJsx(node)) {
+      if (isJsx(node) && isGroup(node) && !isHidden(node) && !isHiddenAnywhereAbove(node)) {
+        const fragments = descendants(node).filter((child) =>
+          !isHidden(child) && !isHiddenAnywhereAbove(child)
+          && (attr(child, 'accessible') || hasExplicitName(child) || controlKind(child)
+            || elementComponents.has(tagOf(child))));
+        if (fragments.length > 0 && !hasExplicitName(node)) {
+          record(file, lineOf(source, node), 'fragmented-group',
+            `${tagOf(node)} groups an announcement around ${[...new Set(fragments.map(tagOf))].join(', ')}`,
+            'A group stops composing when something inside it is an accessibility '
+            + 'element of its own, and its own text is then announced by nobody.');
+        }
+      }
+
       const kind = controlKind(node);
       if (kind && !isHidden(node) && !isHiddenAnywhereAbove(node)) {
         const named = hasExplicitName(node) ?? nameFromAncestor(node);
@@ -324,8 +415,18 @@ function runCli() {
 const files = execFileSync('git', ['ls-files', ...ROOTS], { cwd: root, encoding: 'utf8' })
   .split(/\r?\n/).filter((f) => f.endsWith('.tsx'));
 
+/*
+ * Two passes: which of Warsha's own components are accessibility elements, and
+ * only then what that means for the groups they sit inside. The second question
+ * cannot be answered without the first — a `<StateBadge />` call site looks
+ * exactly like a `<View />` one.
+ */
+const parsed = files.map((file) => [file, ts.createSourceFile(
+  file, readFileSync(file, 'utf8'), ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX)]);
+const elementComponents = accessibilityElementComponents(parsed);
+
 const findings = files.flatMap((file) =>
-  inspectSource(file.replaceAll('\\', '/'), readFileSync(file, 'utf8')));
+  inspectSource(file.replaceAll('\\', '/'), readFileSync(file, 'utf8'), elementComponents));
 
 const byRule = new Map();
 for (const finding of findings) {

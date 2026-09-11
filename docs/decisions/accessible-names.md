@@ -36,13 +36,35 @@ a rule nobody has watched fail is a rule nobody knows works.
 (`Libraries/Components/Pressable/Pressable.js`). Every Pressable is therefore an
 accessibility element, and a Pressable inside one is merged into it.
 
-This is worse than a malformed name. The inner control is visible to a finger
-and absent to a screen reader. In Warsha that meant:
+### What that actually costs, measured rather than assumed
 
-- a provider could not be favourited from a list or a discovery result,
-- a notification could not be marked read or archived,
-- a notification banner could not be dismissed at all, so it sat over the
-  screen until it expired.
+The first version of this note said the inner control was "visible to a finger
+and absent to a screen reader". That is true on iOS and **not** true on Android,
+and the difference was found by reading a real accessibility tree rather than
+reasoning about one.
+
+A `uiautomator` dump of the notification banner on `emulator-5554` returns both
+nodes as separately clickable:
+
+```
+[Button] clickable=true desc='Informational. Verification sent. …'
+[Button] clickable=true desc='Close notification banner'
+```
+
+So on Android the nested control is reachable. On iOS, VoiceOver merges the
+children of an accessibility element and it is not. The claim to make is the
+narrow one: **a nested control is reachable on Android and unreachable under
+VoiceOver, so a product that ships both cannot rely on it being there.**
+
+An `accessibilityActions` entry is reachable on both — through TalkBack's
+actions menu and through VoiceOver's rotor — which is why it is the form Warsha
+uses. It trades a little Android discoverability for an affordance that exists
+on every surface instead of most of them.
+
+The iOS half of this is not yet certified on a device. It is the documented
+behaviour of `accessible={true}` and it matches the Android measurement above,
+but it has not been read off a real VoiceOver tree here, and this note should
+not be read as saying it has.
 
 **A card with inline actions exposes them with `accessibilityActions` and
 `onAccessibilityAction`, and hides the inner control from the tree.** The finger

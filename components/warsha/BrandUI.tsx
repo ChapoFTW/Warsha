@@ -214,11 +214,25 @@ export function StateBadge({
         ? colors.error
         : colors.textSecondary;
   return (
+    /*
+     * Not an accessibility element of its own.
+     *
+     * It was `<View accessible accessibilityLabel={label}>`, and read off
+     * emulator-5554 that turned every badge into a separate focus stop AND
+     * broke the group it was sitting in: `OnboardingFieldMeta` wraps a field's
+     * label, its badges and its explanation in one `<View accessible>` so they
+     * arrive as a single announcement, and a group stops composing the moment
+     * something inside it is an element of its own. On the criminal-record step
+     * that left "Required" and "Private" as two bare words with nothing to
+     * attach them to, and the field's label and the sentence "Warsha uses this
+     * only for professional verification." as text no reader was offered.
+     *
+     * A badge says something ABOUT the thing beside it. Contributing its word to
+     * that thing's name is what it was always for.
+     */
     <View
-      accessible
-      accessibilityLabel={label}
       style={[styles.badge, styles[`badge_${tone}`], compact && styles.badgeCompact, isRTL && styles.reverse]}>
-      <MaterialIcons name={icon} size={compact ? 13 : 15} color={ink} />
+      <MaterialIcons accessibilityElementsHidden importantForAccessibility="no" name={icon} size={compact ? 13 : 15} color={ink} />
       <AppText style={[styles.badgeLabel, compact && styles.badgeLabelCompact, { color: ink }]}>{label}</AppText>
     </View>
   );

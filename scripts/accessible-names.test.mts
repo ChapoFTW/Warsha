@@ -97,6 +97,43 @@ silent('unnamed-control',
   + '<Pressable onPress={close}><MaterialIcons name="close" /></Pressable></View>',
   'a control under a hidden subtree has no name to get wrong');
 
+// --- fragmented-group: a group that stops composing --------------------------
+/*
+ * Found by reading emulator-5554 rather than the source. `OnboardingFieldMeta`
+ * wraps a field's label, its badges and its explanation in one `<View
+ * accessible>` so they arrive as a single announcement. A group stops composing
+ * the moment something inside it is an accessibility element of its own, and
+ * the group's own text is then announced by nobody — which on the
+ * criminal-record step meant two bare words, "Required" and "Private", and a
+ * privacy disclosure no reader was offered.
+ */
+fires('fragmented-group',
+  '<View accessible><AppText>Issue date</AppText>'
+  + '<View accessible accessibilityLabel="Required" /><AppText>Why we ask</AppText></View>',
+  'a group holding an accessibility element of its own');
+
+silent('fragmented-group',
+  '<View accessible><AppText>Issue date</AppText>'
+  + '<View><AppText>Required</AppText></View><AppText>Why we ask</AppText></View>',
+  'a group whose parts are only text composes exactly as intended');
+
+/*
+ * The cross-component half, and the reason the rule saw nothing on the first
+ * run: `<StateBadge />` at a call site is indistinguishable from `<View />`
+ * until you know what StateBadge returns.
+ */
+checks += 1;
+assert.ok(
+  inspectSource('probe.tsx', '<View accessible><AppText>Issue date</AppText><StateBadge label="Required" /></View>',
+    new Set(['StateBadge'])).some((finding) => finding.rule === 'fragmented-group'),
+  'a component known to be an accessibility element fragments the group it sits in');
+
+checks += 1;
+assert.ok(
+  inspectSource('probe.tsx', '<View accessible><AppText>Issue date</AppText><StateBadge label="Required" /></View>',
+    new Set()).length === 0,
+  'and the same call site is innocent once StateBadge stops being one');
+
 // --- chip-pollution: a status absorbed into a name ---------------------------
 fires('chip-pollution',
   '<Pressable onPress={go}><AppText>National ID</AppText><AppText>Required</AppText></Pressable>',
