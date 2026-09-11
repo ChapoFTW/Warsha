@@ -189,6 +189,21 @@
      of the same transition as the lift, so the compositor pays for it once. */
   --lift-shadow: 0 6px 18px rgb(0 0 0 / 22%);
 
+  /* --- Resting elevation --------------------------------------------------
+
+     A card that can be pressed should look like a surface, not like a box
+     somebody drew a line around. Mobile has had `elevation.card` from the
+     beginning — offset 0/10, radius 16, a themed shadow colour — and the web
+     had a hover lift and nothing at rest, so the same card was a raised
+     surface on a phone and a hairline rectangle in a browser.
+
+     Same geometry as `elevationFor` in `constants/appearance.ts`, and the same
+     reason for two colours: light's shadow is the warm brown `#4A453C` at 7%,
+     because a shadow on warm paper is not grey; dark's is black at 18%,
+     because on near-black only a darker dark reads as depth. A single
+     `rgb(0 0 0 / …)` would be invisible in one theme and dirty in the other. */
+  --card-shadow: 0 10px 16px rgb(0 0 0 / 18%);
+
   /* --- Ink that sits on a photograph --------------------------------------
 
      Not a theme colour. These resolve to the same two values in light, dark
@@ -207,6 +222,7 @@
 }
 
 :root[data-theme='light'] {
+  --card-shadow: 0 10px 16px rgb(74 69 60 / 7%);
   --warsha-mark-ink: #111111;
   --canvas: #F4F2EE;
   --surface: #FFFFFF;
@@ -238,6 +254,7 @@
 
 @media (prefers-color-scheme: light) {
   :root:not([data-theme='dark']) {
+    --card-shadow: 0 10px 16px rgb(74 69 60 / 7%);
     --warsha-mark-ink: #111111;
     --canvas: #F4F2EE;
     --surface: #FFFFFF;

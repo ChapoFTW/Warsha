@@ -1,11 +1,11 @@
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ChoiceCard } from '@/components/warsha/ChoiceCard';
 import { ScreenHeader } from '@/components/warsha/ScreenHeader';
 import { AppText } from '@/components/warsha/Typography';
 import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
-import { useAppearance, useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
+import { useAppearance, useThemedStyles } from '@/src/appearance/appearance-context';
 import { appearancePreferences, type AppearancePreference } from '@/src/appearance/appearance-types';
 import { useAuth } from '@/src/auth/auth-context';
 import { useDiscoveryText } from '@/src/discovery/discovery-translations';
@@ -59,9 +59,8 @@ const icons = {
  * the way they write it, not translated into a language they cannot read.
  */
 export default function AppearanceScreen() {
-  const colors = useThemeColors();
   const styles = useThemedStyles(makeStyles);
-  const { isRTL, language, setLanguage } = useLocalization();
+  const { language, setLanguage } = useLocalization();
   const dt = useDiscoveryText();
   const { user, mode } = useAuth();
   const { preference, scheme, setPreference } = useAppearance();
@@ -79,31 +78,16 @@ export default function AppearanceScreen() {
             {supportedLanguages.map((option: SupportedLanguage) => {
               const selected = language === option;
               return (
-                <Pressable
+                /* Each language names itself, in its own script — the label is
+                   the recognition, so there is no second line to add. */
+                <ChoiceCard
                   key={option}
-                  accessibilityRole="radio"
-                  accessibilityState={{ selected, checked: selected }}
-                  accessibilityLabel={languageMetadata[option].label}
+                  mode="radio"
+                  selected={selected}
+                  icon="language"
+                  title={languageMetadata[option].label}
                   onPress={() => setLanguage(option)}
-                  style={({ pressed }) => [
-                    styles.option,
-                    isRTL && styles.reverse,
-                    selected && styles.optionSelected,
-                    pressed && styles.optionPressed,
-                  ]}>
-                  <View style={styles.optionIcon}>
-                    <MaterialIcons name="language" size={22} color={colors.textPrimary} />
-                  </View>
-                  <View style={styles.optionCopy}>
-                    {/* Each language names itself, in its own script. */}
-                    <AppText style={styles.optionLabel}>{languageMetadata[option].label}</AppText>
-                  </View>
-                  {/* The tick is a second, non-colour signal for the selected state. */}
-                  <MaterialIcons
-                    name={selected ? 'radio-button-checked' : 'radio-button-unchecked'}
-                    size={22}
-                    color={selected ? colors.textPrimary : colors.textMuted} />
-                </Pressable>
+                />
               );
             })}
           </View>
@@ -117,32 +101,16 @@ export default function AppearanceScreen() {
           {appearancePreferences.map((option: AppearancePreference) => {
             const selected = preference === option;
             return (
-              <Pressable
+              <ChoiceCard
                 key={option}
-                accessibilityRole="radio"
-                accessibilityState={{ selected, checked: selected }}
-                accessibilityLabel={dt.text(labelKeys[option])}
+                mode="radio"
+                selected={selected}
+                icon={icons[option]}
+                title={dt.text(labelKeys[option])}
+                hint={dt.text(hintKeys[option])}
                 accessibilityHint={dt.text(hintKeys[option])}
                 onPress={() => setPreference(option)}
-                style={({ pressed }) => [
-                  styles.option,
-                  isRTL && styles.reverse,
-                  selected && styles.optionSelected,
-                  pressed && styles.optionPressed,
-                ]}>
-                <View style={styles.optionIcon}>
-                  <MaterialIcons name={icons[option]} size={22} color={colors.textPrimary} />
-                </View>
-                <View style={styles.optionCopy}>
-                  <AppText style={styles.optionLabel}>{dt.text(labelKeys[option])}</AppText>
-                  <AppText style={styles.optionHint}>{dt.text(hintKeys[option])}</AppText>
-                </View>
-                {/* The tick is a second, non-colour signal for the selected state. */}
-                <MaterialIcons
-                  name={selected ? 'radio-button-checked' : 'radio-button-unchecked'}
-                  size={22}
-                  color={selected ? colors.textPrimary : colors.textMuted} />
-              </Pressable>
+              />
             );
           })}
           </View>
@@ -168,14 +136,7 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   sectionTitle: { ...typography.h3, fontWeight: typography.bold },
   hint: { ...typography.bodySmall, color: colors.textSecondary },
   group: { gap: spacing.sm },
-  option: { minHeight: 68, flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.lg, borderRadius: radii.lg, borderWidth: 1, borderColor: colors.cardBorder, backgroundColor: colors.cardBackground },
-  optionSelected: { borderColor: colors.borderFocus, backgroundColor: colors.surfaceSelected },
-  optionPressed: { backgroundColor: colors.cardPressed },
   reverse: { flexDirection: 'row-reverse' },
-  optionIcon: { width: 40, height: 40, borderRadius: radii.md, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surfaceElevated },
-  optionCopy: { flex: 1, gap: 2 },
-  optionLabel: { ...typography.body, fontWeight: typography.semibold },
-  optionHint: { ...typography.caption, letterSpacing: 0, color: colors.textMuted },
   note: { gap: spacing.sm, padding: spacing.lg, borderRadius: radii.lg, borderWidth: 1, borderColor: colors.borderSubtle, backgroundColor: colors.surface },
   noteText: { ...typography.bodySmall, color: colors.textSecondary },
 });

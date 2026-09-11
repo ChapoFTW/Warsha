@@ -5,14 +5,47 @@
   max-width: 920px;
 }
 
+/* The same card the application draws for its two role choices, in a browser.
+   `--card-shadow` is the web half of mobile's `elevation.card`: a card somebody
+   is about to choose between should read as a surface, not as a box with a line
+   around it, and that was true on a phone and not true here. */
 .choice {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
+  box-shadow: var(--card-shadow);
   padding: 26px;
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+/* The mark and the title, on one line.
+
+   A recognition mark is read faster than a word, and for a reader who is not
+   confident with text it may be the only thing they use — which is why the
+   application puts a house on "I need work done" and a person on "I do the
+   work". The web showed neither. */
+.choiceHead {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+/* A recess, not a raised tile: the page showing through the card. `--canvas`
+   rather than a lighter surface, because in the light theme `--surface-raised`
+   and `--surface` are both white — the well the application used to draw that
+   way did not exist at all in Warsha's default appearance. */
+.choiceMark {
+  flex: none;
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  background: var(--canvas);
+  color: var(--text-primary);
 }
 
 .choiceTitle {

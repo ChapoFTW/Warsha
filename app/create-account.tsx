@@ -1,15 +1,15 @@
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BrandLockup } from '@/components/warsha/BrandMark';
+import { ChoiceCard } from '@/components/warsha/ChoiceCard';
 import { BrandButton, BrandTextField } from '@/components/warsha/BrandUI';
 import { PasswordRequirementList } from '@/components/warsha/PasswordRequirementList';
 import { SignupLegalAcceptance, SignupLegalFootnotes } from '@/components/warsha/SignupLegalAcceptance';
 import { AppText } from '@/components/warsha/Typography';
-import { radii, rhythm, spacing, typography, type ThemeColors } from '@/constants/theme';
+import { rhythm, spacing, typography, type ThemeColors } from '@/constants/theme';
 import { useThemeColors, useThemedElevation, useThemedStyles } from '@/src/appearance/appearance-context';
 import { useAuth } from '@/src/auth/auth-context';
 import { authMessageKey } from '@/src/auth/auth-errors';
@@ -48,11 +48,6 @@ import type { AccountRoleChoice } from '@/src/onboarding/onboarding-types';
  */
 export default function CreateAccount() {
   const styles = useThemedStyles(makeStyles);
-  const colors = useThemeColors();
-  // Resolved per theme: light's card shadow is a warm brown that belongs on
-  // paper, dark's is black. The static export is dark-resolved and would be
-  // wrong here in exactly the appearance Warsha opens in.
-  const shadow = useThemedElevation();
   const { t, isRTL, language } = useLocalization();
   const at = useAuthText();
   const ot = useOnboardingText();
@@ -193,7 +188,7 @@ export default function CreateAccount() {
           </AppText>
           {recoveryChoice ? (
             <>
-              <AppText style={styles.optionTitle}>
+              <AppText style={styles.roleTitle}>
                 {ot.text(recoveryChoice === 'worker' ? 'roleWorker' : 'roleCustomer')}
               </AppText>
               <BrandButton
@@ -236,56 +231,29 @@ export default function CreateAccount() {
 
           <View style={styles.options} accessibilityRole="radiogroup">
             {(['customer', 'worker'] as AccountRoleChoice[]).map((option) => (
-              <Pressable
+              /* The marks carry the two meanings: a house for "I need help at
+                 my home", a person for "I do the work". They are different
+                 SHAPES before they are different pictures, which is what lets
+                 them be told apart at 26px without reading — and for a reader
+                 who is not confident with text it may be the only discriminator
+                 they use. It never carries meaning alone: `ChoiceCard` builds
+                 the accessible name from the title and hint and hides the mark
+                 from assistive technology, so it is never announced twice.
+
+                 `home` rather than a service mark, because the Warsha icon
+                 family is for trades and categories and a customer is neither.
+                 `engineering` rather than a tool, because it is a person with a
+                 work cue — it reads as a role across plumbing, cleaning and
+                 painting instead of naming one of them. */
+              <ChoiceCard
                 key={option}
-                accessibilityRole="radio"
-                accessibilityState={{ selected: false, checked: false }}
-                accessibilityLabel={`${ot.text(option === 'customer' ? 'roleCustomer' : 'roleWorker')}. ${
-                  ot.text(option === 'customer' ? 'roleCustomerHint' : 'roleWorkerHint')}`}
+                mode="radio"
+                icon={option === 'customer' ? 'home' : 'engineering'}
+                title={ot.text(option === 'customer' ? 'roleCustomer' : 'roleWorker')}
+                hint={ot.text(option === 'customer' ? 'roleCustomerHint' : 'roleWorkerHint')}
                 accessibilityHint={ot.text('a11yRoleNotSelected')}
                 onPress={() => chooseRole(option)}
-                style={({ pressed }) => [styles.option, shadow.card, isRTL && styles.optionReverse, pressed && styles.optionPressed]}>
-                {/* The mark is the fastest discriminator on this screen, and
-                    for a reader who is not confident with text it may be the
-                    only one they use. It never carries the meaning alone: the
-                    label and the accessible name still say which is which, and
-                    the icon is hidden from screen readers so it is not
-                    announced twice.
-
-                    These were `home-repair-service` (a toolbox) and
-                    `handyman` (hammer and wrench). Both were tools, so the two
-                    cards read as two KINDS OF TRADESPERSON rather than as the
-                    choice they actually are. For the reader who needs the mark
-                    most, that is the one distinction it failed to draw.
-
-                    Now the marks carry the two meanings: a house for "I need
-                    help at my home", a person for "I do the work". They are
-                    different shapes before they are different pictures, which
-                    is what lets them be told apart at 24px without reading.
-
-                    `home` rather than a service mark: the Warsha icon family
-                    is for trades and categories, and a customer is neither.
-                    `engineering` rather than a tool: it is a person with a
-                    work cue, so it reads as a role across plumbing, cleaning,
-                    painting and the rest, instead of naming one of them. */}
-                <View style={styles.optionMark}>
-                  <MaterialIcons
-                    accessibilityElementsHidden
-                    importantForAccessibility="no"
-                    name={option === 'customer' ? 'home' : 'engineering'}
-                    size={26}
-                    color={colors.textPrimary}
-                  />
-                </View>
-                <View style={styles.optionCopy}>
-                  <AppText style={styles.optionTitle}>
-                    {ot.text(option === 'customer' ? 'roleCustomer' : 'roleWorker')}
-                  </AppText>
-                  <AppText style={styles.optionHint}>
-                    {ot.text(option === 'customer' ? 'roleCustomerHint' : 'roleWorkerHint')}
-                  </AppText>
-                </View>
-              </Pressable>
+              />
             ))}
           </View>
 
@@ -475,47 +443,9 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   title: { ...typography.h1, fontWeight: typography.bold, textAlign: 'center', color: colors.textPrimary },
   options: { width: '100%', maxWidth: 420, gap: spacing.md },
-  /*
-   * A hand-rolled card, and it looked like one: a one-pixel border on a white
-   * fill against a warm-white ground, with none of the elevation every other
-   * Warsha card gets. `elevation.card` is the authority for that and this
-   * screen simply was not using it -- the same pattern as the option rows,
-   * where four screens each drew their own version of a shared thing.
-   */
-  option: {
-    minHeight: 96,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.lg,
-    padding: spacing.lg,
-    borderRadius: radii.md,
-    backgroundColor: colors.surface,
-  },
-  optionReverse: { flexDirection: 'row-reverse' },
-  /*
-   * The well was `surfaceElevated`, which in the LIGHT theme is #FFFFFF -- the
-   * same value as `surface`. So the container around the role mark did not
-   * exist at all in Warsha's default appearance, and the icon floated in a
-   * wide empty column looking lost. It was correct in dark and invisible in
-   * light, which is exactly the failure a themed token is meant to prevent and
-   * the reason nobody had noticed.
-   *
-   * `canvas` instead: a recess in a card is the page showing through, which is
-   * true in both themes and visible in both -- warm paper inside white here,
-   * near-black inside charcoal there.
-   */
-  optionMark: {
-    width: 52,
-    height: 52,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: radii.sm,
-    backgroundColor: colors.canvas,
-  },
-  optionCopy: { flex: 1, gap: spacing.xs },
-  optionPressed: { backgroundColor: colors.surfacePressed },
-  optionTitle: { ...typography.h3, fontWeight: typography.semibold, color: colors.textPrimary },
-  optionHint: { color: colors.textSecondary },
+  /* The recovery branch names the role it found as a heading, not as a
+     card — there is nothing to choose there, only something to read. */
+  roleTitle: { ...typography.h3, fontWeight: typography.semibold, color: colors.textPrimary },
   note: { ...typography.bodySmall, color: colors.textMuted, textAlign: 'center', maxWidth: 420 },
   // Separated from the note by more than the gap between the cards, so it
   // reads as a different intention rather than as a third role.

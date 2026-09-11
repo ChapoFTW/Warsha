@@ -12,6 +12,44 @@ import surface from '@/components/product-surface.module.css';
 
 import styles from './page.module.css';
 
+/**
+ * The two marks, and why they are not Warsha trade icons.
+ *
+ * The application draws a house on "I need work done" and a person with a work
+ * cue on "I do the work", deliberately: the Warsha icon family names trades and
+ * categories, and a customer is neither, while a tool would name one trade
+ * rather than the role. They are different SHAPES before they are different
+ * pictures, which is what lets them be told apart at a glance and without
+ * reading — the thing a reader who is not confident with text relies on.
+ *
+ * Drawn here in the mark's own stroke language rather than imported from an
+ * icon set, so the two surfaces agree. `aria-hidden`, always: the choice is
+ * named by the heading beside it, and a mark that is announced as well is read
+ * to somebody twice.
+ */
+function ChoiceMark({ kind }: { kind: 'customer' | 'professional' }) {
+  return (
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+      {kind === 'customer' ? (
+        <>
+          <path d="M3.5 10.5 12 4l8.5 6.5" stroke="currentColor" strokeWidth="2.5"
+            strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M5.5 10.5V19a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-8.5" stroke="currentColor"
+            strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        </>
+      ) : (
+        <>
+          <circle cx="12" cy="7" r="3.25" stroke="currentColor" strokeWidth="2.5" />
+          <path d="M4.75 20a7.25 7.25 0 0 1 14.5 0" stroke="currentColor" strokeWidth="2.5"
+            strokeLinecap="round" />
+          <path d="M15.5 13.5l3.75 3.75" stroke="currentColor" strokeWidth="2.5"
+            strokeLinecap="round" />
+        </>
+      )}
+    </svg>
+  );
+}
+
 export async function generateMetadata(
   { params }: { params: Promise<{ locale: string }> },
 ): Promise<Metadata> {
@@ -97,7 +135,10 @@ export default async function CreateAccountPage({
 
         <div className={styles.choices}>
           <div className={styles.choice}>
-            <h2 className={styles.choiceTitle}>{words.signInCustomer}</h2>
+            <div className={styles.choiceHead}>
+              <span className={styles.choiceMark}><ChoiceMark kind="customer" /></span>
+              <h2 className={styles.choiceTitle}>{words.signInCustomer}</h2>
+            </div>
             <p className={styles.choiceBody}>{words.createCustomerBody}</p>
             <div className={styles.requiredBlock}>
               <h3 className={styles.requiredHeading}>{words.createRequiredHeading}</h3>
@@ -111,7 +152,10 @@ export default async function CreateAccountPage({
           </div>
 
           <div className={styles.choice}>
-            <h2 className={styles.choiceTitle}>{words.signInWorker}</h2>
+            <div className={styles.choiceHead}>
+              <span className={styles.choiceMark}><ChoiceMark kind="professional" /></span>
+              <h2 className={styles.choiceTitle}>{words.signInWorker}</h2>
+            </div>
             <p className={styles.choiceBody}>{words.createWorkerBody}</p>
             <div className={styles.requiredBlock}>
               <h3 className={styles.requiredHeading}>{words.createRequiredHeading}</h3>

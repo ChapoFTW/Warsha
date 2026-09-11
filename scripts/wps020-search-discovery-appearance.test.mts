@@ -339,13 +339,32 @@ has(contextSource, /setLocal\(\{ preference: next, explicit: true \}\);\s*\n\s*w
 // Appearance settings screen
 // ---------------------------------------------------------------------------
 has(appearanceScreen, /accessibilityRole="radiogroup"/, 'the control is a radio group');
-has(appearanceScreen, /accessibilityRole="radio"/, 'each option is a radio');
-has(appearanceScreen, /accessibilityState=\{\{ selected, checked: selected \}\}/,
-  'the selected state is exposed to a screen reader');
+/*
+ * The role moved into the control rather than out of the product.
+ *
+ * Each option used to be a hand-rolled `Pressable` carrying its own
+ * `accessibilityRole="radio"`, on a screen that also hand-rolled its own card,
+ * its own icon well and its own selected state — one of two screens drawing the
+ * same thing, and the one that had neither elevation nor a visible well.
+ * `ChoiceCard` owns all of it now, so this asserts the two halves that together
+ * make the rule true: the screen asks for radios, and the component gives them
+ * one.
+ */
+has(appearanceScreen, /mode="radio"/, 'each option asks to be a radio');
+const choiceCard = read('components/warsha/ChoiceCard.tsx');
+has(choiceCard, /accessibilityRole=\{mode === 'button' \? 'button' : mode\}/,
+  'and ChoiceCard turns that into a real radio role');
+has(appearanceScreen, /selected=\{selected\}/, 'the screen tells the control what is chosen');
+has(choiceCard, /accessibilityState=\{mode === 'button'/,
+  'and ChoiceCard exposes that to a screen reader as checked state');
 has(appearanceScreen, /accessibilityHint=/, 'each option explains itself');
 has(appearanceScreen, /accessibilityLiveRegion="polite"/,
   'the resolved appearance is announced when it changes');
-has(appearanceScreen, /radio-button-checked/, 'selection carries a shape, not only a colour');
+/*
+ * The filled mark lives in `ChoiceCard` now, which is why every screen using it
+ * gets the non-colour signal without remembering to.
+ */
+has(choiceCard, /radio-button-checked/, 'selection carries a shape, not only a colour');
 lacks(codeOf(appearanceScreen), /Save|save\(/, 'there is no Save button; the choice is the preview');
 lacks(codeOf(appearanceScreen), /reload|restart/i, 'no restart is required');
 has(profileScreen, /router\.push\('\/appearance'\)/, 'appearance is reachable from the profile');
@@ -615,12 +634,24 @@ for (const key of englishKeys) {
   check(value.trim().length > 0, `the English value for ${key} is not empty`);
   check(!/[؀-ۿ]/.test(value), `the English value for ${key} contains no Arabic script`);
 }
+/*
+ * Handling RTL means the mirroring happens, not that the screen spells it. The
+ * appearance screen stopped naming `isRTL` when its options became `ChoiceCard`,
+ * which reverses its own row — one implementation instead of one per screen,
+ * which is the direction this should travel. So a surface passes by doing it
+ * itself or by delegating to a control that does, and the control is checked
+ * too, immediately below.
+ */
+has(choiceCard, /isRTL && styles\.reverse/, 'ChoiceCard mirrors its own row in Arabic');
+const handlesRtl = (source: string) => /isRTL/.test(source) || /<ChoiceCard/.test(source);
 for (const source of [searchScreen, appearanceScreen, recentlyViewedScreen, resultCard]) {
-  has(source, /isRTL/, 'every WPS-020 surface handles RTL');
+  check(handlesRtl(source), 'every WPS-020 surface handles RTL, itself or through its controls');
 }
 has(searchScreen, /textAlign: isRTL \? 'right' : 'left'/, 'the search field aligns for RTL');
 has(searchScreen, /isRTL && styles\.reverse/, 'filter chips reverse for RTL');
-has(appearanceScreen, /isRTL && styles\.reverse/, 'the appearance selector reverses for RTL');
+/* Asserted on `ChoiceCard` a few lines up: the selector's rows are that
+   control now, so the mirroring is checked where it happens. */
+has(appearanceScreen, /<ChoiceCard/, 'the appearance selector is built from ChoiceCard');
 
 // ---------------------------------------------------------------------------
 // Documents

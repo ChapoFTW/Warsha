@@ -532,7 +532,18 @@ check(/certificateHowIntro/.test(certificateScreen),
 
 const createAccount = read('app', 'create-account.tsx');
 check(/accessibilityRole="radiogroup"/.test(createAccount), 'the role choice is a radio group');
-check(/accessibilityRole="radio"/.test(createAccount), 'each role is an accessible radio');
+/*
+ * The role moved into the control, not off the screen. Both cards are
+ * `ChoiceCard mode="radio"` now — the same control the appearance selector
+ * uses — so the role, the checked state, the RTL mirroring and the filled
+ * selection mark are one implementation instead of one per screen. Checked
+ * in both halves: the screen asks, the component delivers.
+ */
+check(/<ChoiceCard/.test(createAccount) && /mode="radio"/.test(createAccount),
+  'each role asks to be a radio');
+const choiceCardSource = read('components', 'warsha', 'ChoiceCard.tsx');
+check(/accessibilityRole=\{mode === 'button' \? 'button' : mode\}/.test(choiceCardSource),
+  'and ChoiceCard turns that into a real radio role');
 check(/roleQuestion/.test(createAccount), 'the role question is asked explicitly');
 check(/roleWorkerHint/.test(createAccount),
   'the worker option says an application starts before the choice is made');

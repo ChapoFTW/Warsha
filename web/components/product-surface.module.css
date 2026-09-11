@@ -83,6 +83,15 @@
 
 .card:hover { border-color: var(--border-strong); }
 
+/* A card you can act on rests as a SURFACE, not as a box with a line round it.
+   That is mobile's `elevation.card`, and the web had only the hover lift — so
+   the same card was raised on a phone and flat in a browser until a pointer
+   touched it, which is no help at all to a phone browser. Static cards keep the
+   border alone, deliberately: elevation is a promise that something happens
+   when you press, and a `div` cannot keep it. */
+a.card,
+button.card { box-shadow: var(--card-shadow); }
+
 a.card:hover,
 button.card:hover {
   transform: translateY(var(--lift-surface));
