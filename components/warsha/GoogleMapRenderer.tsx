@@ -57,9 +57,30 @@ export function GoogleMapRenderer({ value, onChange, copy }: MapRendererProps) {
    * and what a customer on a bad connection sees too. Nothing said it was
    * loading and nothing said it had failed.
    *
-   * `onMapReady` answers the first half. The timeout answers the second: after
-   * it, the space says the map is unavailable, which is true and points at the
-   * other two ways of setting the location sitting right above it.
+   * `onMapLoaded`, NOT `onMapReady`, and the difference is the whole point.
+   *
+   * `onMapReady` fires when the SDK has initialised. `onMapLoaded` fires when
+   * the map has finished RENDERING. They are usually a moment apart and
+   * occasionally forever apart, and the second case is the one that matters:
+   * with a Maps key the build is not authorised for, or tiles that never
+   * arrive, the SDK comes up perfectly and paints nothing.
+   *
+   * This was written against `onMapReady` and photographed on 2026-09-11 doing
+   * exactly the thing it exists to prevent. The professional's address step
+   * showed a blank grey rectangle with a Google watermark, no "Loading the
+   * map.", and no "The map is unavailable right now." — because `ready` had
+   * gone true the instant the SDK initialised, which cancels the timeout that
+   * would have said so. The one state the component could not report was the
+   * one it was built for.
+   *
+   * So readiness now means rendered. The timeout answers the rest: after it,
+   * the space says the map is unavailable, which is true, and points at the
+   * other two ways of setting a location sitting right above it.
+   *
+   * `onMapLoaded` is supported on Android and on iOS under Google Maps, and
+   * this renderer passes `PROVIDER_GOOGLE` on both. If it ever did not fire on
+   * a working map the result is a visible, honest fallback rather than a silent
+   * blank — which is the right way round for the two failures to be.
    */
   const [ready, setReady] = useState(false);
   const [gaveUp, setGaveUp] = useState(false);
@@ -100,7 +121,7 @@ export function GoogleMapRenderer({ value, onChange, copy }: MapRendererProps) {
         </View>
       )}
       <MapView
-        onMapReady={() => setReady(true)}
+        onMapLoaded={() => setReady(true)}
         ref={mapRef}
         style={styles.map}
         provider={PROVIDER_GOOGLE}
