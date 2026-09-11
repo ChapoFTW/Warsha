@@ -89,6 +89,8 @@ const withoutComments = (source) => source
  * They are JSON rather than a module, so the values come out of the parsed
  * document instead of a regex, keyed by article id and field.
  */
+const READER_FIELDS = new Set(['title', 'summary', 'body', 'keywords']);
+
 function stringsInArticles(file) {
   const document = JSON.parse(readFileSync(file, 'utf8'));
   const articles = Array.isArray(document) ? document : (document.articles ?? []);
@@ -104,7 +106,13 @@ function stringsInArticles(file) {
     }
     if (node && typeof node === 'object') {
       for (const [name, value] of Object.entries(node)) {
-        if (name === 'id' || name === 'locale' || name === 'slug') continue;
+        /*
+         * Prose only. An article also carries `audience`, `routes`,
+         * `capabilities`, `features` and `version` — routing and indexing
+         * metadata that no reader sees, and where `worker` is the correct
+         * internal word. `/worker/onboarding` is a URL, not a sentence.
+         */
+        if (!READER_FIELDS.has(name)) continue;
         visit(value, id, path ? `${path}.${name}` : name);
       }
     }
@@ -174,7 +182,48 @@ const CATEGORIES = [
     why: 'the synthetic identity behind a professional account is not a user concept',
     pattern: /\b(internal auth identity|synthetic identity|privacy[- ]preserving response|decoy)\b/i,
   },
+  {
+    name: 'the role noun',
+    why: 'Warsha says Professional to a user; worker is the internal word',
+    pattern: /\bworkers?\b/i,
+    exempt: legalArtifact,
+  },
 ];
+
+/*
+ * The one place `Worker` is correct in English user-facing copy, and why.
+ *
+ * These three agreements are published at version 1.0 with those exact titles.
+ * A title is inside `hashableParts()`, so renaming one changes the canonical
+ * document hash — and acceptance records are tied to `document_hash` in a column
+ * a trigger makes immutable. Renaming in place would invalidate the consent
+ * every professional has already given, to tidy up a noun.
+ *
+ * So the titles stand until those documents are next legitimately versioned, at
+ * which point they become Professional Terms and Conditions, Professional
+ * Verification Policy and Professional Code of Conduct, with new versions, new
+ * hashes and real re-acceptance. `docs/legal/worker-title-exception.md` carries
+ * the decision and the queued work.
+ *
+ * Deliberately NOT a blanket pass for the word. The exemption removes the exact
+ * published titles from the string and then asks whether `worker` still appears.
+ * "I agree to the Worker Verification Policy" is a reference to an artifact and
+ * passes; "choose Worker", "worker role" and "workers near you" do not, because
+ * nothing about them is the title of a versioned document.
+ */
+const PUBLISHED_WORKER_TITLES = [
+  'Worker Terms and Conditions',
+  'Worker Verification Policy',
+  'Worker Code of Conduct',
+];
+
+function legalArtifact(text) {
+  let remaining = text;
+  for (const title of PUBLISHED_WORKER_TITLES) {
+    remaining = remaining.split(title).join(' ');
+  }
+  return !/\bworkers?\b/i.test(remaining);
+}
 
 /*
  * Where a string is actually rendered.
@@ -264,6 +313,7 @@ for (const file of FILES) {
     for (const category of CATEGORIES) {
       const hit = category.pattern.exec(text);
       if (!hit) continue;
+      if (category.exempt && category.exempt(text)) continue;
       if (cleared.has(`${file}::${key}`)) continue;
       const readers = readersOf(key);
       const finding = { file, key, term: hit[0], category, text, readers };

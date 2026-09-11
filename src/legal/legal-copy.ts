@@ -61,7 +61,7 @@ const copy = {
     keepReading: 'Keep reading',
     restrictCreateBooking: 'Making a new booking',
     restrictTakeWork: 'Taking new work',
-    restrictWorkerDashboard: 'Your worker dashboard',
+    restrictWorkerDashboard: 'Your professional dashboard',
     keepReadRecords: 'Seeing your records',
     keepExport: 'Exporting your data',
     keepSupport: 'Contacting support',
