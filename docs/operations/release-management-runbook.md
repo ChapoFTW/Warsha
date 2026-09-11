@@ -59,8 +59,9 @@ and always needs a human decision.
 the staged deployment must be shown to contain the exact commit being released.
 
 ```
-npm run deploy:web                                    # refuses a dirty tree, stamps the build
-npm run test:release-artifact -- --url <deployment>   # fails closed on any doubt
+npm run deploy:web                                             # refuses a dirty tree, stamps the build
+npm run test:release-artifact -- --url <deployment>            # before promoting: commit AND clean tree
+npm run test:release-artifact -- --url https://usewarsha.com --promoted   # after: the commit
 ```
 
 `test:release-artifact` asks the running deployment what it contains, over the
@@ -84,6 +85,16 @@ passed a 510-check browser gate. Two commits then landed. Every signal said the
 release was verified, and promoting at that point would have published an
 artifact predating both. It was caught by comparing against `git log` by hand —
 which is a person remembering, not a control.
+
+Each claim is checked where it can be checked. The stamp is an `--env`
+override on one deployment, and promotion creates a new deployment record that
+resolves its environment from the project, so the stamp does not survive
+promotion — Production reports the right commit and a null source. The clean
+tree is therefore required on the staged artifact, which is the moment it
+decides anything, and `--promoted` verifies the commit on the live domain
+afterwards. Setting the stamp as a project-level Production variable would make
+it read `clean` forever regardless of what it was built from, which is a worse
+answer than no answer.
 
 A clean tree is part of the claim, not a separate courtesy.
 `VERCEL_GIT_COMMIT_SHA` is the SHA of `HEAD` whether or not the uploaded files

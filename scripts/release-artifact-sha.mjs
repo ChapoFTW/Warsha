@@ -56,6 +56,12 @@ const intended = arg('sha')
   ?? execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
 
 /*
+ * `--promoted` verifies a live domain AFTER promotion, where the only durable
+ * claim is the commit. See the source-state check below for why.
+ */
+const promoted = argv.includes('--promoted');
+
+/*
  * Refusal is a thrown sentinel rather than `process.exit`.
  *
  * Calling `process.exit` with a socket still open trips a libuv assertion on
@@ -73,6 +79,7 @@ const fail = (message, detail) => {
 console.log(`Release artifact check`);
 console.log(`  deployment : ${url}`);
 console.log(`  intended   : ${intended}`);
+console.log(`  stage      : ${promoted ? 'after promotion (commit only)' : 'staged (commit and clean tree)'}`);
 
 try {
   let payload;
@@ -112,16 +119,38 @@ try {
       + 'already gated, and built from a different source than the one being released.');
   }
 
-  if (source !== 'clean') {
+  /*
+   * The clean-tree claim is checkable on the STAGED artifact, and only there.
+   *
+   * `deploy:web` stamps `WARSHA_SOURCE_STATE` with `--env`, which is an
+   * override on that one deployment. Promotion creates a new deployment record,
+   * which resolves its runtime environment from the project rather than from
+   * the preview's overrides, so the stamp does not survive — Production reports
+   * the right commit and a null source.
+   *
+   * The honest response is to check each claim where it can be checked, not to
+   * pretend. Before promoting, the clean tree is required; that is the moment it
+   * decides anything. After promoting, the commit is what remains provable, and
+   * it is the claim that matters live: this domain serves that commit.
+   *
+   * The alternative — setting the stamp as a project-level Production variable —
+   * would make it read `clean` forever regardless of the tree it was built from,
+   * which is a worse answer than no answer.
+   */
+  if (!promoted && source !== 'clean') {
     fail(`The deployment's source state is ${source ?? 'unknown'}, not clean.`,
       'A build from a dirty tree carries files that are in no commit, while '
       + 'truthfully reporting the SHA of the last one. Deploy with `npm run '
       + 'deploy:web`, which refuses a dirty tree and stamps this field.');
   }
 
-  console.log(`\nThe staged artifact contains ${served}, which is the commit being released, `
-    + 'built from a clean tree.');
-  console.log('Safe to promote THIS deployment.');
+  if (promoted) {
+    console.log(`\nThis domain serves ${served}, which is the commit that was released.`);
+  } else {
+    console.log(`\nThe staged artifact contains ${served}, which is the commit being `
+      + 'released, built from a clean tree.');
+    console.log('Safe to promote THIS deployment.');
+  }
 } catch (error) {
   if (!(error instanceof Refused)) throw error;
   console.error('');
