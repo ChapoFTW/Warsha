@@ -10,6 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BrandButton, BrandCard, BrandLoadingState, BrandTextField, StateBadge } from '@/components/warsha/BrandUI';
 import { DocumentCamera, type CapturedDocument } from '@/components/warsha/DocumentCamera';
 import { OnboardingFieldMeta } from '@/components/warsha/OnboardingFieldMeta';
+import { JourneyStepCard } from '@/components/warsha/JourneyStepCard';
 import { ScreenHeader } from '@/components/warsha/ScreenHeader';
 import { AppText } from '@/components/warsha/Typography';
 import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
@@ -385,9 +386,7 @@ export default function WorkerVerificationJourney() {
         <StateBadge label={vt(statusCopy[verification.status])} tone={verification.status === 'approved' ? 'success' : 'neutral'} />
 
         {identityType ? (
-          <BrandCard style={styles.card}>
-            <AppText style={styles.title}>{ot.text(identityType === 'national_id_front' ? 'identityFront' : 'identityBack')}</AppText>
-            <AppText style={styles.body}>{ot.text('identityFrameGuide')}</AppText>
+          <JourneyStepCard title={ot.text(identityType === 'national_id_front' ? 'identityFront' : 'identityBack')} body={ot.text('identityFrameGuide')}>
             <OnboardingFieldMeta
               label={ot.text(identityType === 'national_id_front' ? 'identityFront' : 'identityBack')}
               labelShownElsewhere
@@ -424,25 +423,21 @@ export default function WorkerVerificationJourney() {
                 }}
               />
             ) : null}
-          </BrandCard>
+          </JourneyStepCard>
         ) : null}
 
         {step === 2 ? (
-          <BrandCard style={styles.card}>
-            <AppText style={styles.title}>{vt('selfieTitle')}</AppText>
-            <AppText style={styles.body}>{vt('selfieHelp')}</AppText>
+          <JourneyStepCard title={vt('selfieTitle')} body={vt('selfieHelp')}>
             <OnboardingFieldMeta label={vt('selfieTitle')} labelShownElsewhere required privateField purpose={wt.text('identityPurpose')} />
             {documents.get('selfie')?.previewUrl ? <Image source={{ uri: documents.get('selfie')!.previewUrl }} contentFit="cover" style={styles.selfie} /> : null}
             <BrandButton label={vt(documents.has('selfie') ? 'replacePhoto' : 'takePhoto')} icon="photo-camera" loading={busy} onPress={() => void pickSelfie(true)} />
             <BrandButton label={vt('choosePhoto')} icon="photo-library" variant="secondary" onPress={() => void pickSelfie(false)} />
             {documents.has('selfie') ? <BrandButton label={wt.text('continueJourney')} variant="secondary" onPress={() => setStep(3)} /> : null}
-          </BrandCard>
+          </JourneyStepCard>
         ) : null}
 
         {step === 3 ? (
-          <BrandCard style={styles.card}>
-            <AppText style={styles.title}>{ot.text('identityFieldsTitle')}</AppText>
-            <AppText style={styles.body}>{ot.text('identityFieldsIntro')}</AppText>
+          <JourneyStepCard title={ot.text('identityFieldsTitle')} body={ot.text('identityFieldsIntro')}>
 
             {/* What automatic reading did, said plainly and never as a verdict.
                 `unavailable` and `unreadable` are both ordinary: the fields
@@ -496,13 +491,11 @@ export default function WorkerVerificationJourney() {
             </Pressable>
             {hasSkillCertificate ? <BrandButton label={documents.has('skill_certificate') ? vt('replacePhoto') : vt('addCertificate')} variant="secondary" onPress={() => void chooseSkillCertificate()} /> : null}
             <BrandButton label={vt('sendForReview')} loading={busy || verificationState.action === 'submit'} onPress={() => void submitIdentity()} />
-          </BrandCard>
+          </JourneyStepCard>
         ) : null}
 
         {step === 4 ? (
-          <BrandCard style={styles.card}>
-            <AppText style={styles.title}>{ot.text('certificateTitle')}</AppText>
-            <AppText style={styles.body}>{ot.text('certificateHowIntro')}</AppText>
+          <JourneyStepCard title={ot.text('certificateTitle')} body={ot.text('certificateHowIntro')}>
             <AppText style={styles.note}>{ot.text('certificatePrivacy')}</AppText>
             <OnboardingFieldMeta label={ot.text('certificateUpload')} required privateField purpose={wt.text('certificatePurpose')} />
             <BrandButton label={ot.text('certificateUpload')} variant="secondary" onPress={() => void pickCriminalRecord()} />
@@ -527,7 +520,7 @@ export default function WorkerVerificationJourney() {
               <AppText style={styles.grow}>{ot.text('certificateAcknowledge')}</AppText>
             </Pressable>
             <BrandButton label={ot.text('identitySubmit')} loading={busy} onPress={() => void submitCriminalRecord()} />
-          </BrandCard>
+          </JourneyStepCard>
         ) : null}
 
         {step === 5 ? (

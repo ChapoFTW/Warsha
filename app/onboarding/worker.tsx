@@ -1,18 +1,18 @@
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { BrandButton, BrandCard, BrandLoadingState, BrandTextField, StateBadge } from '@/components/warsha/BrandUI';
+import { BrandButton, BrandLoadingState, BrandTextField, StateBadge } from '@/components/warsha/BrandUI';
 import { EgyptLocationSelector } from '@/components/warsha/EgyptLocationSelector';
 import { OfferedServicesSection } from '@/components/warsha/OfferedServicesSection';
 import { OnboardingFieldMeta } from '@/components/warsha/OnboardingFieldMeta';
+import { JourneyStepCard } from '@/components/warsha/JourneyStepCard';
 import { ProfessionSelector } from '@/components/warsha/ProfessionSelector';
 import { AppText } from '@/components/warsha/Typography';
 import { WorkerPhotoPicker } from '@/components/warsha/WorkerPhotoPicker';
 import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
-import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
+import { useThemedStyles } from '@/src/appearance/appearance-context';
 import { useOnboarding } from '@/src/onboarding/onboarding-context';
 import { useOnboardingText } from '@/src/onboarding/onboarding-translations';
 import { canAppeal, isAwaitingReview } from '@/src/onboarding/onboarding-types';
@@ -323,7 +323,7 @@ export default function WorkerOnboarding() {
         {onboarding.refreshing ? <BrandLoadingState label={wt.text('loadingNextStep')} /> : null}
 
         {!onboarding.refreshing && progress.step === 'welcome' ? (
-          <JourneyCard icon="waving-hand" title={wt.text('welcomeTitle')} body={wt.text('welcomeBody')}>
+          <JourneyStepCard icon="waving-hand" title={wt.text('welcomeTitle')} body={wt.text('welcomeBody')}>
             <AppText style={styles.note}>{ot.text('workerAgreementBody')}</AppText>
             <AppText style={styles.note}>{ot.text('workerDocumentConsent')}</AppText>
             <BrandButton
@@ -331,11 +331,11 @@ export default function WorkerOnboarding() {
               loading={busy}
               onPress={() => void run(() => onboarding.acceptAgreements(true, true))}
             />
-          </JourneyCard>
+          </JourneyStepCard>
         ) : null}
 
         {!onboarding.refreshing && progress.step === 'basic_information' ? (
-          <JourneyCard icon="person" title={wt.text('basicTitle')} body={wt.text('basicBody')}>
+          <JourneyStepCard icon="person" title={wt.text('basicTitle')} body={wt.text('basicBody')}>
             <OnboardingFieldMeta label={wt.text('addPhoto')} required purpose={wt.text('photoPurpose')}>
               <WorkerPhotoPicker currentUri={draft.avatarUrl} uploading={busy} onUse={savePhoto} />
             </OnboardingFieldMeta>
@@ -349,7 +349,7 @@ export default function WorkerOnboarding() {
               <BrandTextField accessibilityLabel={wt.text('experience')} value={experienceInput} placeholder={wt.text('experienceExample')} keyboardType="number-pad" maxLength={2} onChangeText={value => /^\d{0,2}$/.test(value) && setExperienceInput(value)} />
             </OnboardingFieldMeta>
             <BrandButton label={wt.text('saveContinue')} loading={busy} onPress={saveBasic} />
-          </JourneyCard>
+          </JourneyStepCard>
         ) : null}
 
         {/*
@@ -368,7 +368,7 @@ export default function WorkerOnboarding() {
           * where it is the only explanation on screen.
           */}
         {!onboarding.refreshing && progress.step === 'trade' ? (
-          <JourneyCard icon="handyman" title={wt.text('tradeTitle')}>
+          <JourneyStepCard icon="handyman" title={wt.text('tradeTitle')}>
             {/* One question at a time: the trade names the work, so the work
                 cannot be offered before the trade has been chosen. */}
             <OnboardingFieldMeta label={wt.text('professionPlural')} required purpose={wt.text('professionPurpose')}>
@@ -401,11 +401,11 @@ export default function WorkerOnboarding() {
             ) : null}
             {!optionsLoading && options.length === 0 ? <BrandButton label={wt.text('retry')} variant="secondary" onPress={() => void loadOptions()} /> : null}
             <BrandButton label={wt.text('saveContinue')} loading={busy} onPress={saveTrade} />
-          </JourneyCard>
+          </JourneyStepCard>
         ) : null}
 
         {!onboarding.refreshing && progress.step === 'service_area' ? (
-          <JourneyCard icon="location-on" title={wt.text('areaTitle')} body={wt.text('areaBody')}>
+          <JourneyStepCard icon="location-on" title={wt.text('areaTitle')} body={wt.text('areaBody')}>
             {/* No meta block here. This control draws a labelled field for the
                 governorate and another for the area, so a manifest above it
                 stated both names a second time and pushed the first thing you
@@ -427,58 +427,43 @@ export default function WorkerOnboarding() {
               ? <OnboardingFieldMeta label={wt.text('addAddress')} required privateField purpose={wt.text('currentAddressPurpose')} />
               : null}
             <BrandButton label={state.gates.current_address_provided ? wt.text('saveContinue') : wt.text('addAddress')} loading={busy} onPress={() => void saveArea()} />
-          </JourneyCard>
+          </JourneyStepCard>
         ) : null}
 
         {!onboarding.refreshing && progress.step === 'identity' ? (
-          <JourneyCard icon="badge" title={wt.text('identityTitle')} body={wt.text('identityBody')}>
+          <JourneyStepCard icon="badge" title={wt.text('identityTitle')} body={wt.text('identityBody')}>
             <OnboardingFieldMeta label={wt.text('identityTitle')} labelShownElsewhere required privateField purpose={wt.text('identityPurpose')} />
             <BrandButton label={wt.text('continueJourney')} onPress={() => router.push('/worker/verification')} />
-          </JourneyCard>
+          </JourneyStepCard>
         ) : null}
 
         {!onboarding.refreshing && progress.step === 'criminal_record' ? (
-          <JourneyCard icon="description" title={wt.text('certificateTitle')} body={wt.text('certificateBody')}>
+          <JourneyStepCard icon="description" title={wt.text('certificateTitle')} body={wt.text('certificateBody')}>
             <OnboardingFieldMeta label={wt.text('certificateTitle')} labelShownElsewhere required privateField purpose={wt.text('certificatePurpose')} />
             <AppText style={styles.note}>{ot.text('certificatePrivacy')}</AppText>
             <BrandButton label={wt.text('continueJourney')} onPress={() => router.push('/worker/verification?step=certificate')} />
-          </JourneyCard>
+          </JourneyStepCard>
         ) : null}
 
         {!onboarding.refreshing && progress.step === 'review' ? (
-          <JourneyCard icon="task-alt" title={wt.text('reviewJourneyTitle')} body={wt.text('reviewJourneyBody')}>
+          <JourneyStepCard icon="task-alt" title={wt.text('reviewJourneyTitle')} body={wt.text('reviewJourneyBody')}>
             {state.latestSafeReason ? <AppText style={styles.note}>{state.latestSafeReason}</AppText> : null}
             {state.workerState && isAwaitingReview(state.workerState) ? <AppText style={styles.note}>{ot.text('stateNoTimePromise')}</AppText> : null}
             <BrandButton label={wt.text('retry')} variant="secondary" onPress={onboarding.reload} />
-          </JourneyCard>
+          </JourneyStepCard>
         ) : null}
 
         {canAppeal(state.workerState) ? (
-          <JourneyCard icon="gavel" title={ot.text('appealTitle')} body={ot.text('appealIntro')}>
+          <JourneyStepCard icon="gavel" title={ot.text('appealTitle')} body={ot.text('appealIntro')}>
             <BrandTextField label={ot.text('appealStatement')} value={appeal} onChangeText={setAppeal} multiline />
             <BrandButton label={ot.text('appealSubmit')} loading={busy} disabled={appeal.trim().length < 10} onPress={() => void run(() => onboarding.submitAppeal(appeal.trim()))} />
-          </JourneyCard>
+          </JourneyStepCard>
         ) : null}
 
         {message ? <AppText accessibilityRole="alert" style={styles.error}>{message}</AppText> : null}
         <BrandButton label={wt.text('support')} variant="ghost" onPress={() => router.push('/support')} />
       </ScrollView>
     </SafeAreaView>
-  );
-}
-
-function JourneyCard({ icon, title, body, children }: { icon: React.ComponentProps<typeof MaterialIcons>['name']; title: string; body?: string; children: React.ReactNode }) {
-  const colors = useThemeColors();
-  const styles = useThemedStyles(makeStyles);
-  return (
-    <BrandCard style={styles.card}>
-      <View style={styles.stepIcon}><MaterialIcons name={icon} size={32} color={colors.textPrimary} /></View>
-      <AppText style={styles.sectionTitle}>{title}</AppText>
-      {/* Optional, because a card whose fields already explain themselves does
-          not need a third sentence saying the same thing. */}
-      {body ? <AppText style={styles.body}>{body}</AppText> : null}
-      {children}
-    </BrandCard>
   );
 }
 
@@ -494,10 +479,6 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   progressText: { ...typography.bodySmall, color: colors.textSecondary },
   progressTrack: { height: 8, overflow: 'hidden', borderRadius: radii.full, backgroundColor: colors.surfaceElevated },
   progressFill: { height: '100%', borderRadius: radii.full, backgroundColor: colors.textPrimary },
-  card: { gap: spacing.md },
-  stepIcon: { width: 58, height: 58, alignItems: 'center', justifyContent: 'center', borderRadius: radii.lg, backgroundColor: colors.surfaceElevated },
-  sectionTitle: { ...typography.h2, fontWeight: typography.bold, color: colors.textPrimary },
-  body: { ...typography.body, color: colors.textSecondary },
   note: { ...typography.bodySmall, color: colors.textMuted },
   error: { color: colors.errorText },
 });
