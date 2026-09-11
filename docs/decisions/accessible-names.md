@@ -113,6 +113,47 @@ only, because something accessible deep inside a component does not make the
 component one, and treating it that way would flag every screen containing a
 button.
 
+## Certified on a device, and what was not
+
+Read off `emulator-5554`, comparing two release APKs — one built 11:19, one
+built 17:42 — on the criminal-record step.
+
+Before:
+
+```
+[CheckBox] desc=', I confirm this is my own criminal record and the details on it are mine.'
+[ViewGroup] focusable desc='Required'
+[ViewGroup] focusable desc='Private'
+```
+
+After:
+
+```
+[CheckBox] focusable checked=false desc='I confirm this is my own criminal record and the details on it are mine.'
+[TextView] not focusable text='Required'
+[TextView] not focusable text='Private'
+```
+
+Across that whole screen: no accessible name begins with a comma, and none
+contains a private-use glyph. `checked=false` — the tree was read, and the
+attestation was not ticked.
+
+Note what the before-state actually was. `` is not an "empty segment"; it
+is the MaterialIcons codepoint for `check-box-outline-blank`, read out as the
+first thing in the name. The glyph is what a screen reader was being handed.
+
+The artifact was checked rather than assumed, per the release invariant: the
+bundle inside the 17:42 APK contains `savedProvider` and does not contain
+"Choose a file", which places both `563eaad` and `4612c54` in it by content and
+not by build time.
+
+**Not certified on a device:** the tab bar, the order card, the provider and
+discovery rows, and the notification row and banner actions. All sit behind a
+signed-in customer, and this emulator holds a worker part-way through
+onboarding. They are covered by `audit:accessible-names` and by the rendered
+web audit, which is not the same thing as having been read off a tree, and this
+note should not be read as claiming otherwise.
+
 ## What the gate deliberately does not judge
 
 Whether a name is a *good* name. No static rule knows whether "Continue" was the
