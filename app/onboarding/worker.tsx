@@ -432,14 +432,14 @@ export default function WorkerOnboarding() {
 
         {!onboarding.refreshing && progress.step === 'identity' ? (
           <JourneyCard icon="badge" title={wt.text('identityTitle')} body={wt.text('identityBody')}>
-            <OnboardingFieldMeta label={wt.text('identityTitle')} required privateField purpose={wt.text('identityPurpose')} />
+            <OnboardingFieldMeta label={wt.text('identityTitle')} labelShownElsewhere required privateField purpose={wt.text('identityPurpose')} />
             <BrandButton label={wt.text('continueJourney')} onPress={() => router.push('/worker/verification')} />
           </JourneyCard>
         ) : null}
 
         {!onboarding.refreshing && progress.step === 'criminal_record' ? (
           <JourneyCard icon="description" title={wt.text('certificateTitle')} body={wt.text('certificateBody')}>
-            <OnboardingFieldMeta label={wt.text('certificateTitle')} required privateField purpose={wt.text('certificatePurpose')} />
+            <OnboardingFieldMeta label={wt.text('certificateTitle')} labelShownElsewhere required privateField purpose={wt.text('certificatePurpose')} />
             <AppText style={styles.note}>{ot.text('certificatePrivacy')}</AppText>
             <BrandButton label={wt.text('continueJourney')} onPress={() => router.push('/worker/verification?step=certificate')} />
           </JourneyCard>

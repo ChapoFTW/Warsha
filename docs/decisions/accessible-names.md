@@ -154,6 +154,49 @@ onboarding. They are covered by `audit:accessible-names` and by the rendered
 web audit, which is not the same thing as having been read off a tree, and this
 note should not be read as claiming otherwise.
 
+### iOS: UNVERIFIED
+
+Every measurement in this note is Android, read from `uiautomator` on
+`emulator-5554`. **No VoiceOver behaviour here has been observed on an Apple
+device**, because that is behind the Apple enrolment boundary this machine does
+not cross.
+
+Shared implementation lowers the risk and does not replace the reading. Where
+this note says a nested control is unreachable under VoiceOver, that is the
+documented behaviour of `accessible={true}` and it is consistent with the
+Android measurement — it is not runtime proof, and it stays marked UNVERIFIED
+until somebody reads an iOS tree.
+
+### The duplicate label, certified in three languages
+
+The fix was read off the device in each locale, on the same card, switching
+through Warsha's own language control rather than the platform's — a manual
+choice wins over the device, so the per-app locale override did nothing and had
+to be abandoned.
+
+| | title drawn | announcement | Required/Private focusable |
+| --- | --- | --- | --- |
+| EN | once | `Upload the criminal-record certificate. Required. Private. Warsha uses this only for professional verification.` | 0 |
+| AR | once | `ارفع الفيش والتشبيه. مطلوب. خاص. ورشة بتستخدمها بس للتحقق من الصنايعي.` | 0 |
+| FR | once | `Téléversez l'extrait de casier judiciaire. Obligatoire. Privé. Warsha s'en sert uniquement pour la vérification des professionnels.` | 0 |
+
+Each phrase appears once in each announcement — no "Required, Private, Required,
+Private" — and the badges are ordinary text rather than focus stops of their
+own.
+
+The RTL order is right, and it is right because it is mirrored rather than
+reordered. In Arabic the badges sit at `مطلوب` x≈834-924 and `خاص` x≈660-720, so
+reading right to left gives Required then Private, which is the order the
+announcement uses. `row-reverse` produces that; the announcement is built in a
+fixed logical order and is not mirrored, because a sentence is read in its own
+direction. The back control moves with it, `[923,170]` in Arabic against
+`[42,170]` in English.
+
+Worth noting what the announcement now contains that it could not before: the
+sentence "Warsha uses this only for professional verification." Before the
+grouping fix the group composed nothing, and that line was text with no named
+ancestor.
+
 ## What the gate deliberately does not judge
 
 Whether a name is a *good* name. No static rule knows whether "Continue" was the

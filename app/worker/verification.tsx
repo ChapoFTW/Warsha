@@ -390,6 +390,7 @@ export default function WorkerVerificationJourney() {
             <AppText style={styles.body}>{ot.text('identityFrameGuide')}</AppText>
             <OnboardingFieldMeta
               label={ot.text(identityType === 'national_id_front' ? 'identityFront' : 'identityBack')}
+              labelShownElsewhere
               required
               privateField
               purpose={wt.text('identityPurpose')}
@@ -430,7 +431,7 @@ export default function WorkerVerificationJourney() {
           <BrandCard style={styles.card}>
             <AppText style={styles.title}>{vt('selfieTitle')}</AppText>
             <AppText style={styles.body}>{vt('selfieHelp')}</AppText>
-            <OnboardingFieldMeta label={vt('selfieTitle')} required privateField purpose={wt.text('identityPurpose')} />
+            <OnboardingFieldMeta label={vt('selfieTitle')} labelShownElsewhere required privateField purpose={wt.text('identityPurpose')} />
             {documents.get('selfie')?.previewUrl ? <Image source={{ uri: documents.get('selfie')!.previewUrl }} contentFit="cover" style={styles.selfie} /> : null}
             <BrandButton label={vt(documents.has('selfie') ? 'replacePhoto' : 'takePhoto')} icon="photo-camera" loading={busy} onPress={() => void pickSelfie(true)} />
             <BrandButton label={vt('choosePhoto')} icon="photo-library" variant="secondary" onPress={() => void pickSelfie(false)} />
@@ -481,7 +482,7 @@ export default function WorkerVerificationJourney() {
             <BrandTextField label={ot.text('identityDateOfBirth')} value={dateOfBirth} onChangeText={setDateOfBirth} placeholder="YYYY-MM-DD" />
             <OnboardingFieldMeta label={ot.text('identityExpiry')} required={false} privateField purpose={wt.text('identityPurpose')} />
             <BrandTextField label={ot.text('identityExpiry')} value={expiryDate} onChangeText={setExpiryDate} placeholder="YYYY-MM-DD" />
-            <OnboardingFieldMeta label={vt('certificateQuestion')} required={false} privateField purpose={wt.text('certificatePurpose')} />
+            <OnboardingFieldMeta label={vt('certificateQuestion')} labelShownElsewhere required={false} privateField purpose={wt.text('certificatePurpose')} />
             {/* The name is given, never composed. With no `accessibilityLabel`
                 Android builds one out of the children, and the decorative icon
                 contributes an empty segment — which is how this announced itself
@@ -517,7 +518,7 @@ export default function WorkerVerificationJourney() {
               autoCapitalize="none"
               autoCorrect={false}
             />
-            <OnboardingFieldMeta label={ot.text('certificateAcknowledge')} required privateField purpose={wt.text('certificatePurpose')} />
+            <OnboardingFieldMeta label={ot.text('certificateAcknowledge')} labelShownElsewhere required privateField purpose={wt.text('certificatePurpose')} />
             {/* Same defect, same fix, and it matters more here: this one is a
                 declaration somebody is making about their own criminal record,
                 and a screen reader was announcing it with a missing first word. */}

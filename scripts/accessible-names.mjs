@@ -22,12 +22,25 @@
  *
  * ## What it judges
  *
- *   silent-contributor    composed name + an icon that never hid itself
- *   unnamed-control       composed name with no text at all — a silent button
- *   nested-interactive    a control inside a control, corrupting both names
- *   chip-pollution        status text absorbed into the name of the thing it labels
- *   state-said-twice      the label says what accessibilityState already says
- *   joined-name           a name assembled from parts, one of which can be empty
+ *   silent-contributor      composed name + an icon that never hid itself
+ *   unnamed-control         composed name with no text at all — a silent button
+ *   nested-interactive      a control inside a control, corrupting both names
+ *   fragmented-group        a group holding an accessibility element of its own
+ *   chip-pollution          status text absorbed into the name of what it labels
+ *   state-said-twice        the label says what accessibilityState already says
+ *   joined-name             a name assembled from parts, one of which can be empty
+ *   duplicate-visible-label a phrase drawn twice because one copy holds a label
+ *
+ * ## The glyph
+ *
+ * Warsha draws every native icon through one component, `MaterialIcons`, whose
+ * marks live in the Unicode private-use area. So the "empty segment" above is
+ * not empty: read off emulator-5554, the criminal-record checkbox announced
+ * `, I confirm this is my own criminal record…` — U+E835, the codepoint for
+ * `check-box-outline-blank`, handed to a screen reader as the first thing in
+ * the name. One icon family is the whole blast radius, and `silent-contributor`
+ * covers every place one of them sits inside something that composes a name,
+ * control or group alike.
  *
  * Native and web are read by the same walker, because the failure is the same
  * failure: `aria-hidden` and `accessibilityElementsHidden` are the same promise
@@ -184,6 +197,43 @@ function accessibilityElementComponents(sources) {
   return names;
 }
 
+/**
+ * The same heading, drawn twice, because one copy is holding a label.
+ *
+ * Four cards passed the same expression to their own title and to a field's
+ * `label`, so "Upload the criminal-record certificate" appeared twice inside one
+ * card, 190px apart, with a single line of body text between them. It reads as a
+ * mistake because it is one: the visible hierarchy and the accessibility
+ * labelling authority are two different jobs, and only the second one needed the
+ * phrase repeated.
+ *
+ * A flag at the call site fixes a site. This is what stops the fifth one, by
+ * noticing that a label a card already shows has not said it knows that.
+ *
+ * It reads expression SOURCE, not values — `wt.text('certificateTitle')` matching
+ * `wt.text('certificateTitle')`. Two different expressions resolving to the same
+ * string at runtime are invisible here, and a title built inline from a variable
+ * will not match one built another way. It catches the copy-paste, which is how
+ * all four of these arrived.
+ */
+function visibleTitlesAbove(node, stop) {
+  const titles = new Set();
+  for (let parent = node.parent; parent && parent !== stop; parent = parent.parent) {
+    if (!isJsx(parent)) continue;
+    const title = attrText(parent, 'title');
+    if (title) titles.add(title);
+    for (const other of descendants(parent)) {
+      // Anything inside the element being judged is its own business.
+      if (other === node || descendants(node).includes(other)) continue;
+      if (!TEXT_TAGS.includes(tagOf(other))) continue;
+      for (const child of childrenOf(other)) {
+        if (ts.isJsxExpression(child) && child.expression) titles.add(child.expression.getText());
+      }
+    }
+  }
+  return titles;
+}
+
 /** Every JSX element beneath this one, in order, without leaving the file. */
 function descendants(node) {
   const out = [];
@@ -327,6 +377,54 @@ export function inspectSource(file, text, elementComponents = new Set()) {
             `${tagOf(node)} groups an announcement around ${[...new Set(fragments.map(tagOf))].join(', ')}`,
             'A group stops composing when something inside it is an accessibility '
             + 'element of its own, and its own text is then announced by nobody.');
+        }
+
+        /*
+         * A group composes its name exactly the way a control does, so an icon
+         * inside an unnamed one leaks the same way. Warsha draws every native
+         * icon through one component, `MaterialIcons`, whose glyphs live in the
+         * Unicode private-use area — which is why the criminal-record checkbox
+         * announced `` and then a comma. A reader is handed the codepoint.
+         */
+        if (!hasExplicitName(node)) {
+          const leaking = descendants(node).filter((child) => DECORATIVE.has(tagOf(child))
+            && !isHidden(child) && !isHiddenAnywhereAbove(child)
+            && !hasExplicitName(child) && !SELF_HIDING.has(tagOf(child)));
+          if (leaking.length > 0) {
+            record(file, lineOf(source, node), 'silent-contributor',
+              `${tagOf(node)} groups an announcement over ${[...new Set(leaking.map(tagOf))].join(', ')}`,
+              'The icon contributes an empty segment and the separator survives — '
+              + 'this is the leading comma, before it is a comma.');
+          }
+        }
+      }
+
+      /*
+       * A field label the card above already shows. The phrase is needed once
+       * for the eye and once for the reader, not twice for the eye.
+       */
+      /*
+       * Only things that DESCRIBE a field, not things that are one.
+       *
+       * The first version of this rule asked whether any `label` repeated an
+       * ancestor's text, and reported fourteen — a Sign in button under a Sign
+       * in heading, a toggle inside the section it is named for, a badge whose
+       * label is its entire content. All correct as written: a control has to
+       * carry its own name, and repeating a nearby heading is how a person knows
+       * which button does the thing.
+       *
+       * A `label` beside a `purpose` is the shape of something explaining a
+       * field rather than being it, and that is the only place the repetition is
+       * a defect. Two real findings instead of fourteen mostly-wrong ones, and a
+       * gate that survives being read.
+       */
+      if (attr(node, 'label') && attr(node, 'purpose') && !attr(node, 'labelShownElsewhere')) {
+        const label = attrText(node, 'label');
+        if (label && visibleTitlesAbove(node, source).has(label)) {
+          record(file, lineOf(source, node), 'duplicate-visible-label',
+            `${tagOf(node)} draws ${label} that an ancestor already shows`,
+            'The visible hierarchy and the accessible name are different jobs, and '
+            + 'only one of them needed the phrase twice.');
         }
       }
 

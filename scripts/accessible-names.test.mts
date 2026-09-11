@@ -97,6 +97,21 @@ silent('unnamed-control',
   + '<Pressable onPress={close}><MaterialIcons name="close" /></Pressable></View>',
   'a control under a hidden subtree has no name to get wrong');
 
+/*
+ * A group composes its name exactly as a control does, so the glyph leaks the
+ * same way. Warsha draws every native icon through one component, and
+ * MaterialIcons glyphs live in the Unicode private-use area — the
+ * criminal-record checkbox announced `` before its sentence, which is the
+ * codepoint for `check-box-outline-blank` and not an empty string.
+ */
+fires('silent-contributor',
+  '<View accessible><MaterialIcons name="lock" /><AppText>Private</AppText></View>',
+  'an unnamed group composing over an icon leaks it as surely as a control does');
+
+silent('silent-contributor',
+  '<View accessible accessibilityLabel="Private"><MaterialIcons name="lock" /><AppText>Private</AppText></View>',
+  'a group that names itself never composes one');
+
 // --- fragmented-group: a group that stops composing --------------------------
 /*
  * Found by reading emulator-5554 rather than the source. `OnboardingFieldMeta`
@@ -133,6 +148,35 @@ assert.ok(
   inspectSource('probe.tsx', '<View accessible><AppText>Issue date</AppText><StateBadge label="Required" /></View>',
     new Set()).length === 0,
   'and the same call site is innocent once StateBadge stops being one');
+
+// --- duplicate-visible-label: the same phrase, drawn twice -------------------
+/*
+ * Photographed on emulator-5554: "Upload the criminal-record certificate" as
+ * the card's title and again as the field's label, 190px below it, with one
+ * line of body text between. Six call sites passed the same expression to both.
+ */
+fires('duplicate-visible-label',
+  '<View><AppText>{wt.text("certificateTitle")}</AppText>'
+  + '<OnboardingFieldMeta label={wt.text("certificateTitle")} required purpose={wt.text("p")} /></View>',
+  'a field label repeating a phrase the card already draws');
+
+silent('duplicate-visible-label',
+  '<View><AppText>{wt.text("certificateTitle")}</AppText>'
+  + '<OnboardingFieldMeta label={wt.text("certificateTitle")} labelShownElsewhere required purpose={wt.text("p")} /></View>',
+  'and the same site once it says it knows');
+
+/*
+ * The narrowing, which matters more than the rule. Asking whether ANY label
+ * repeated an ancestor reported fourteen, nearly all of them correct as
+ * written: a Sign in button beneath a Sign in heading, a toggle inside the
+ * section it is named for, a badge whose label is its whole content. A control
+ * MUST carry its own name — repeating a nearby heading is how a person knows
+ * which button does the thing.
+ */
+silent('duplicate-visible-label',
+  '<View><AppText>{ot.text("signIn")}</AppText>'
+  + '<BrandButton label={ot.text("signIn")} onPress={go} /></View>',
+  'a button is allowed — required, even — to repeat the heading above it');
 
 // --- chip-pollution: a status absorbed into a name ---------------------------
 fires('chip-pollution',
