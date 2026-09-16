@@ -252,6 +252,42 @@
           "digest": "e05eb9c2505bac05"
         }
       ]
+    },
+    {
+      "date": "2026-09-17",
+      "reason": "Marketplace matching and distance change (202609160001): requests are now matched by the Professional's declared service area, the work-location step records a private matching anchor and is no longer saved as a default address, discovery returns no distance, and the customer quote sort Closest was removed. Read both articles in English, Arabic and French against that change. The addresses article describes naming an address, confirming its pin, the official governorate and area lists, and draft persistence; it makes no statement about defaults for professionals, matching, or distance, so nothing in it became untrue. The requests article describes posting a request, comparing quotes by amount, timing, message, materials, payment methods, rating and verification, cancellation, and jobs; it never lists Closest or any distance among the comparisons, and says matching professionals may quote, which remains true. The Professional-facing articles that did describe location and matching were edited in the same change.",
+      "articles": [
+        {
+          "id": "customer-addresses-location",
+          "locale": "en",
+          "digest": "02c5b3ca4238b773"
+        },
+        {
+          "id": "customer-addresses-location",
+          "locale": "ar",
+          "digest": "cd3c1fea41342229"
+        },
+        {
+          "id": "customer-addresses-location",
+          "locale": "fr",
+          "digest": "421778f165983ffc"
+        },
+        {
+          "id": "customer-requests-quotes-jobs",
+          "locale": "en",
+          "digest": "3c861673c78ee8a0"
+        },
+        {
+          "id": "customer-requests-quotes-jobs",
+          "locale": "ar",
+          "digest": "10ace75b58c4b1b4"
+        },
+        {
+          "id": "customer-requests-quotes-jobs",
+          "locale": "fr",
+          "digest": "5cf8142f2c8e73ba"
+        }
+      ]
     }
   ]
 }
