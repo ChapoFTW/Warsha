@@ -256,12 +256,21 @@ for (const file of ['app/onboarding/worker.tsx', 'app/worker/profile.tsx'] as co
       `${file} lets long French profession labels wrap`);
   }
   const categoryCard = readFileSync('components/warsha/CategoryCard.tsx', 'utf8');
-  // Whitespace-tolerant: the rule is that the card is 112 tall AT MINIMUM and
-  // clips nothing, not how the style object happens to be formatted. Pinning
-  // the spelling `minHeight:112` failed the moment the file was reformatted,
-  // which tests the author's editor rather than the layout.
-  check(!/numberOfLines=\{1\}/.test(categoryCard) && /minHeight:\s*112\b/.test(categoryCard),
-    'narrow category cards wrap long localized labels and grow vertically');
+  /*
+   * The rule is that a long localized label wraps and the card grows, and it
+   * has never been about a particular number. This asked for `minHeight: 112`,
+   * which was the height of the 104px tile the catalogue used while it scrolled
+   * sideways; the catalogue is a full-width column now and the rows are 64.
+   *
+   * So the geometry moved and the requirement did not. It is expressed here
+   * without a number instead: nothing in this component limits lines, and the
+   * row's height is a floor it can exceed rather than a fixed size. The first
+   * half is stricter than what it replaces — that asked only that the label was
+   * not capped at ONE line, and a cap at two would have passed it while still
+   * clipping the third.
+   */
+  check(!/numberOfLines/.test(categoryCard) && /minHeight:\s*\d+/.test(categoryCard),
+    'category rows wrap long localized labels and grow vertically');
   const webStyles = readFileSync('web/components/product-surface.module.css', 'utf8');
   check(/\.workLabel\s*\{[^}]*white-space:\s*normal;[^}]*overflow-wrap:\s*anywhere;/.test(webStyles),
     'web category/service pills opt into wrapping instead of overflow');

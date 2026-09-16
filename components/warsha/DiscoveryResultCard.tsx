@@ -156,7 +156,13 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   badges: { flexDirection: 'row', flexWrap: 'wrap', gap: 5 },
   badge: { flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 7, paddingVertical: 3, borderRadius: radii.pill, borderWidth: 1, borderColor: colors.borderSubtle, backgroundColor: colors.surfaceElevated },
   badgeText: { ...typography.caption, letterSpacing: 0, color: colors.textSecondary },
-  metrics: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
+  // Wraps rather than collides. With `space-between` and no wrapping, a wide
+  // rating group pushes the job count until the gap collapses and the two
+  // run together — rendered on a 411dp screen as "(124 reviews)387 jobs
+  // done". French and Arabic are longer than English here, so the row has to
+  // be allowed to take a second line instead of preserving a composition that
+  // only fits one language.
+  metrics: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm, flexWrap: 'wrap' },
   inline: { flexDirection: 'row', alignItems: 'center', gap: 4, flexShrink: 1 },
   rating: { ...typography.bodySmall, fontWeight: typography.semibold },
   muted: { ...typography.caption, letterSpacing: 0, color: colors.textMuted },

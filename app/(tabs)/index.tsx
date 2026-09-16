@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { FlatList, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CategoryCard } from '@/components/warsha/CategoryCard';
@@ -58,7 +58,7 @@ function DiscoveryShelf({ title, hint, action, onAction, providers }: {
 
 export default function HomeScreen() {
   const styles = useThemedStyles(makeStyles);
-  const { t, isRTL } = useLocalization();
+  const { t } = useLocalization();
   const mt = useMarketplaceText();
   const dt = useDiscoveryText();
   const { categories, providers } = useMarketplaceData();
@@ -80,9 +80,27 @@ export default function HomeScreen() {
 
         {/* "What do you need help with?" */}
         <SectionHeader title={dt.text('discoverTitle')} />
-        <FlatList horizontal inverted={isRTL} showsHorizontalScrollIndicator={false} data={categories}
-          keyExtractor={item => item.id} renderItem={({ item }) => <CategoryCard item={item} />}
-          ItemSeparatorComponent={() => <View style={{ width: 9 }} />} contentContainerStyle={styles.horizontalContent} />
+        {/*
+          * Down, with the rest of the page.
+          *
+          * This was a horizontal FlatList, so the catalogue scrolled at right
+          * angles to the screen it lives on: four of nineteen categories were
+          * visible at 411dp and nothing indicated the other fifteen existed.
+          *
+          * Mapped rather than virtualized on purpose. Nineteen rows is not a
+          * long list, and a vertical FlatList inside this ScrollView would be a
+          * nested scroll container fighting the page — the arrangement React
+          * Native warns about, and the one that makes a page feel like it is
+          * catching on something.
+          *
+          * `inverted={isRTL}` went with the horizontal list and must not come
+          * back in any form: the order is a researched demand prior, not a
+          * reading direction, and Arabic reverses the layout without reversing
+          * the catalogue.
+          */}
+        <View style={styles.categories}>
+          {categories.map(item => <CategoryCard key={item.id} item={item} />)}
+        </View>
 
         {/* "Continue where you left off." */}
         <DiscoveryShelf
@@ -129,7 +147,9 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   controls: { gap: spacing.md },
   getQuotes: { minHeight: 52, borderRadius: 16, backgroundColor: colors.actionPrimaryBackground, alignItems: 'center', justifyContent: 'center' },
   getQuotesText: { color: colors.actionPrimaryText, fontWeight: typography.bold },
-  horizontalContent: { paddingVertical: 1 },
+  // Tighter than the gap between sections, so nineteen rows read as one
+  // catalogue rather than nineteen separate things.
+  categories: { gap: spacing.sm },
   section: { gap: 3, marginTop: spacing.sm },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   reverse: { flexDirection: 'row-reverse' },
