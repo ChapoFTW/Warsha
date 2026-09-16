@@ -102,8 +102,60 @@ function googleServicesFile() {
   );
 }
 
+/**
+ * Which commit this binary was built from.
+ *
+ * On 2026-09-11 a header that had been removed from the chrome on 2026-09-08
+ * was photographed on a real phone. Answering "is that build stale?" took a
+ * trace through source, git history, four migrations of the component and the
+ * contents of an APK bundle, because nothing in the product says which commit
+ * it is running. The web has answered this since it shipped — `/api/health`
+ * returns `commit` — and native answered it nowhere.
+ *
+ * `runtimeVersion` is `{ policy: "appVersion" }` and the app version has been
+ * 1.0.0 throughout, so every build Warsha has ever produced shares one runtime
+ * version and one `versionCode`. Nothing distinguishes them on a device, and an
+ * over-the-air update published against 1.0.0 is considered compatible with all
+ * of them. This does not change that — it makes it visible, which is the part
+ * that was missing when somebody needed to know.
+ *
+ * `dirty` is here for the same reason the health endpoint carries it: a SHA
+ * names the commit, and says nothing about whether the tree had uncommitted
+ * work when the artifact was produced.
+ *
+ * It never throws. A source tarball has no git, CI checkouts vary, and a build
+ * that fails because it could not label itself would be a worse outcome than an
+ * unlabelled build.
+ */
+function buildStamp() {
+  const { execFileSync } = require('node:child_process');
+  const git = (args) => {
+    try {
+      return execFileSync('git', args, {
+        cwd: __dirname, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'],
+      }).trim();
+    } catch {
+      return null;
+    }
+  };
+  const fromEas = process.env.EAS_BUILD_GIT_COMMIT_HASH;
+  const commit = (typeof fromEas === 'string' && fromEas.trim() !== '')
+    ? fromEas.trim().slice(0, 7)
+    : git(['rev-parse', '--short', 'HEAD']);
+  const status = git(['status', '--porcelain']);
+  return {
+    commit: commit || null,
+    dirty: status === null ? null : status !== '',
+    builtAt: new Date().toISOString(),
+  };
+}
+
 module.exports = ({ config }) => ({
   ...config,
+  extra: {
+    ...config.extra,
+    build: buildStamp(),
+  },
   ios: {
     ...config.ios,
     config: {

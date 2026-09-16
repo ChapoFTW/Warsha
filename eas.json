@@ -30,7 +30,8 @@
       },
       "env": {
         "EXPO_PUBLIC_ADMIN_SURFACE": "enabled"
-      }
+      },
+      "autoIncrement": true
     },
     "production": {
       "extends": "base",

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { join } from 'node:path';
 
 const eas = JSON.parse(readFileSync('eas.json', 'utf8'));
@@ -46,7 +47,54 @@ equal(app.extra.eas.projectId, '6c8fbcda-6bb2-40b2-b8db-3b0ce127525f',
   'the app is bound to the Warsha EAS project');
 equal(app.updates.url, 'https://u.expo.dev/6c8fbcda-6bb2-40b2-b8db-3b0ce127525f',
   'EAS Update URL is project-specific');
-equal(app.runtimeVersion.policy, 'appVersion', 'runtime compatibility follows the native app version');
+/*
+ * This asked for `appVersion`, and said it was there so that "runtime
+ * compatibility follows the native app version". It did not do that.
+ *
+ * `appVersion` follows the DECLARED version, which has been 1.0.0 since the
+ * first build. So every binary Warsha has ever produced shares one runtime
+ * version, and an update published against 1.0.0 is considered compatible with
+ * all of them — including binaries built before a native dependency changed.
+ * The policy's own caveat is exactly this: forget to bump the version when the
+ * native runtime changes and you have a mismatch. Nothing here ever bumped it.
+ *
+ * `fingerprint` is a hash of what actually affects the native project
+ * (@expo/fingerprint, SDK 54), so it changes when the native layer changes and
+ * holds still for JS-only work — which is both halves of what this line was
+ * always claiming. The requirement did not move; the mechanism that satisfies
+ * it did. See docs/operations/release-management-runbook.md.
+ */
+equal(app.runtimeVersion.policy, 'fingerprint',
+  'runtime compatibility follows the native layer itself, not a version string nobody bumps');
+check(app.version !== undefined, 'a human-facing app version is still declared');
+
+/*
+ * The fingerprint must hold still for anything that is not the native layer.
+ *
+ * `app.config.js` stamps `extra.build = { commit, dirty, builtAt }` into the
+ * evaluated config, and the fingerprint hashes the evaluated config. Without
+ * skipping `extra`, two fingerprints generated seconds apart differed
+ * (49237f0d… and 19cfbaac…): every build its own runtime version, and no update
+ * ever applicable to any binary. Versions are skipped for the same reason — an
+ * `autoIncrement` build number is identity, not native compatibility.
+ *
+ * This is checked against the config file rather than by running the
+ * fingerprint, because the regression is someone deleting a line here, and a
+ * deterministic suite should not depend on evaluating the whole native project.
+ */
+{
+  const fingerprintConfig = createRequire(join(process.cwd(), 'package.json'))('./fingerprint.config.js') as
+    { sourceSkips?: string[] };
+  const skips = fingerprintConfig?.sourceSkips ?? [];
+  check(skips.includes('ExpoConfigExtraSection'),
+    'the build stamp in extra cannot move the runtime version, so updates stay applicable');
+  check(skips.includes('ExpoConfigVersions'),
+    'a build number or version bump cannot move the runtime version either');
+  check(!skips.includes('ExpoConfigAll'),
+    'but the native config itself is still fingerprinted — skipping all of it would let an incompatible update through');
+  check(/builtAt/.test(appConfig) ? skips.includes('ExpoConfigExtraSection') : true,
+    'a time-varying value in the app config is only safe while extra is skipped');
+}
 check(/^\d+\.\d+\.\d+$/.test(app.version), 'the app version is explicit and releasable');
 check(Boolean(pkg.dependencies['expo-updates']), 'expo-updates is installed in the native runtime');
 

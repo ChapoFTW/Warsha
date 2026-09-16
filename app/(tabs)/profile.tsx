@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BrandLoadingMark, BrandLockup } from '@/components/warsha/BrandMark';
 import { BrandButton, BrandTextField } from '@/components/warsha/BrandUI';
+import { BuildStamp } from '@/components/warsha/BuildStamp';
 import { AppText } from '@/components/warsha/Typography';
 import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
 import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
@@ -232,6 +233,8 @@ export default function Profile() {
     {auth.mode === 'supabase' ? <Pressable onPress={() => void auth.signOut()} style={styles.button}><AppText>{t('signOut')}</AppText></Pressable> : null}
     {notice ? <AppText accessibilityRole="alert" style={styles.notice}>{notice}</AppText> : null}
     {message ? <AppText accessibilityRole="alert" style={styles.error}>{message}</AppText> : null}
+    {/* So "which build is this?" is a glance rather than an investigation. */}
+    <BuildStamp />
   </Page>;
 
   // Account creation has one canonical surface. Keeping a second compact

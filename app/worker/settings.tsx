@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BrandButton } from '@/components/warsha/BrandUI';
+import { BuildStamp } from '@/components/warsha/BuildStamp';
 import { ScreenHeader } from '@/components/warsha/ScreenHeader';
 import { spacing, type ThemeColors } from '@/constants/theme';
 import { useThemedStyles } from '@/src/appearance/appearance-context';
@@ -19,6 +20,8 @@ export default function WorkerSettingsScreen() {
         <BrandButton label={wt.text('notificationSettings')} icon="notifications-none" variant="secondary" onPress={() => router.push('/notification-preferences')} />
         <BrandButton label={wt.text('privacy')} icon="privacy-tip" variant="secondary" onPress={() => router.push('/privacy')} />
         <BrandButton label={wt.text('support')} icon="support-agent" variant="secondary" onPress={() => router.push('/support')} />
+        {/* So "which build is this?" is a glance rather than an investigation. */}
+        <BuildStamp />
       </ScrollView>
     </SafeAreaView>
   );

@@ -181,8 +181,43 @@ Read-only permissions, concurrency cancellation, lockfile-exact `npm ci`, and
   automatically.
 - Build numbers come from EAS (`appVersionSource: remote`), so two machines can
   never mint the same one.
-- `runtimeVersion` follows the app version: a native change forces a new binary
-  rather than silently mismatching.
+- `runtimeVersion` uses the **fingerprint** policy: a hash, via
+  `@expo/fingerprint`, of everything that affects the native project. It changes
+  when the native layer changes and holds still for JS-only work, which is what
+  makes a JS-only OTA safe and a native-incompatible one impossible.
+
+  It used to be the `appVersion` policy, described here as "a native change
+  forces a new binary rather than silently mismatching". It did not do that.
+  `appVersion` follows the DECLARED version, and `expo.version` has been 1.0.0
+  since the first build — so every binary ever produced shared one runtime
+  version, and an update published against 1.0.0 was considered compatible with
+  all of them. The policy's documented caveat is precisely this failure: forget
+  to bump the version when the native runtime changes and you get a mismatch.
+  Nothing bumped it, so nothing was ever protected.
+
+  What the fingerprint hashes is wider than "native code". Generated on
+  2026-09-16 it had 176 sources: config plugins and their dependencies (121),
+  Expo and React Native autolinking (47), the evaluated app config, the app icon
+  images, `google-services.json`, `eas.json` (reason `easBuild`), `.gitignore`,
+  and the repository's own `plugins/warsha-android-*.js`. So an edit to
+  `eas.json` — an env var, a build profile — changes the runtime version exactly
+  as a native dependency would, and every binary built before it stops accepting
+  new updates. Treat those files as native configuration when deciding whether a
+  change can ship as an update.
+
+  `fingerprint.config.js` skips two parts of the app config, and both were found
+  the hard way. The build stamp puts `builtAt` into `extra`, so without skipping
+  `extra` two fingerprints generated seconds apart differed (`49237f0d…`,
+  `19cfbaac…`) — every build its own runtime version and no update ever
+  applicable. Versions are skipped because an `autoIncrement` build number is
+  identity, not compatibility. With both skipped, three consecutive runs gave
+  one hash, and adding a single Android permission still moved it.
+  `test:qa-preview` fails if either skip is removed.
+
+  Consequence worth knowing: binaries already installed under runtime version
+  `1.0.0` will not receive updates published under a fingerprint runtime. That
+  is correct — they are a different native runtime — and they need a new binary,
+  not an update.
 - Preview over-the-air updates are enabled only on the `preview` channel. A
   JS/TS/style/compatible-asset change may use that channel after the explicit
   OTA compatibility review in `qa-preview-runbook.md`.
@@ -191,6 +226,115 @@ Read-only permissions, concurrency cancellation, lockfile-exact `npm ci`, and
   a new Preview binary. Never publish it as an OTA update.
 - Production remains on the separate `production` channel. This runbook does
   not authorize publishing a Preview update to Production.
+
+### Telling one build from another
+
+Six things identify a build, and each answers a different question:
+
+| | what it answers | where it comes from |
+| --- | --- | --- |
+| `expo.version` | which release a person is on | set deliberately, never automatically |
+| Android `versionCode` | which binary is newer | EAS remote versions, `autoIncrement` |
+| iOS `buildNumber` | the same, on iOS | EAS remote versions, `autoIncrement` |
+| `runtimeVersion` | which updates may apply to it | the fingerprint policy |
+| commit SHA | which source it was built from | `app.config.js`, `extra.build.commit` |
+| dirty marker | whether that source was the whole story | `extra.build.dirty` |
+
+`autoIncrement` is on for **preview** and **production**, because both are
+installed on real devices and both need to be distinguishable from their
+predecessor. It is deliberately off for `development`.
+
+A locally built gradle APK bypasses EAS entirely and therefore always carries
+`versionCode=1`. That is fine for a QA artifact and it is exactly why the commit
+stamp exists: for local builds, the SHA is the only thing that identifies them.
+
+Settings shows `1.0.0 · 94351f2`, with a trailing `+` when the tree was dirty.
+`builtAt` is carried in `extra.build` for support and QA but is deliberately not
+drawn, because a timestamp is noise to the person reading a settings screen.
+
+### A local build carries whatever the last prebuild baked in
+
+`android/` and `ios/` are generated (continuous native generation — neither is
+tracked). The runtime version is written into the native project **at prebuild**,
+not at gradle time:
+
+| policy | what prebuild writes into `expo_runtime_version` | where the real value comes from |
+| --- | --- | --- |
+| `appVersion` | the version string, e.g. `1.0.0` | that string |
+| `fingerprint` | the sentinel `file:fingerprint` | a `fingerprint` asset hashed at build time |
+
+On 2026-09-16 a release APK built after switching to `fingerprint` still resolved
+its runtime version to `1.0.0`. The config inside the APK said
+`{"policy":"fingerprint"}`; the value expo-updates actually compares did not. Two
+stale layers produced that, and neither is visible from `app.json`:
+
+1. `android/` had last been prebuilt on 2026-09-10, under `appVersion`, so
+   `strings.xml` still held `1.0.0`.
+2. gradle judged `createReleaseUpdatesResources` up to date and skipped it, so no
+   `fingerprint` asset was written at all.
+
+EAS builds prebuild from scratch on the worker, so an EAS artifact does not have
+this problem. **Any local build after a change to the runtime policy, a config
+plugin, or any other native configuration must re-run
+`npx expo prebuild --platform android` first** — and if the updates resources
+output predates the change, delete
+`android/app/build/generated/assets/createReleaseUpdatesResources` so it is
+regenerated. Then prove the result from the artifact, never from the config:
+
+```
+aapt2 dump resources app-release.apk | grep -A1 expo_runtime_version   # file:fingerprint
+unzip -p app-release.apk assets/fingerprint                            # the hash
+```
+
+### What a binary does at launch, and what an update can and cannot fix
+
+Only `updates.url` is configured and nothing in the app calls the updates API,
+so behaviour is the SDK 54 default: `checkAutomatically: ALWAYS`,
+`fallbackToCacheTimeout: 0`. The app launches immediately on the newest
+*compatible* bundle it already holds — embedded, or previously downloaded —
+checks the channel in the background, and applies anything it downloads on the
+**next cold start**, not this one.
+
+| situation | what happens |
+| --- | --- |
+| current binary, no update published | runs what it has; the check reports `NO_UPDATE_AVAILABLE_ON_SERVER` |
+| current binary, compatible update published | downloads in the background; the person sees the old JS for one more session, the new JS on the next cold start |
+| update published for a different runtime | refused by the selection policy (`UPDATE_REJECTED_BY_SELECTION_POLICY`); the binary keeps its own bundle |
+| binary installed before a native dependency or config change | its fingerprint differs from the new one, so the new updates are refused. It keeps running its old JS. **An update cannot repair it; only a new binary can.** |
+| a downloaded update crashes on launch | anti-bricking falls back to the embedded bundle (`isEmergencyLaunch`) |
+| the switch from `appVersion` to `fingerprint` itself | every install that exists today reports runtime `1.0.0` and will refuse all future updates. Each one needs a new binary, once |
+
+Under the old `appVersion` policy the fourth row was the dangerous one: JS
+written for a new native layer would have been delivered to an old one, and the
+best case was an emergency launch. Fingerprint closes that completely.
+
+**What it does not close.** A stranded binary is now safe from incompatible
+updates, and it is still running old JS against a backend that keeps moving.
+Warsha's RPCs are redefined across migrations — `save_provider_foundation` alone
+has five definitions — so an old binary calling an old signature gets a generic
+error and no explanation. Nothing on the client or the server compares the
+binary to a minimum, and nothing tells a person their app is too old. The phone
+that surfaced the header island was exactly this: a real, stranded binary.
+
+That needs a minimum-supported-version gate, and it is recorded here as open
+rather than built in the same change, because it is a feature across three
+layers, not a setting:
+
+- the minimum has to live somewhere the server owns and a migration can raise,
+  compared against the binary's fingerprint runtime or its build number;
+- the client needs a screen that says what is wrong and where the new binary is
+  — and Warsha does not yet have a store listing for that to point to;
+- it must never trap anyone. If the check itself fails, the app proceeds. Even
+  when a binary is too old, privacy, account deletion, legal documents and
+  support stay reachable, because a person must always be able to leave and to
+  ask for help.
+
+On 2026-09-11 a header removed from the chrome three days earlier was
+photographed on a real phone. Deciding whether that was a regression or a stale
+binary took a trace through git history, four versions of a component and the
+contents of an APK bundle. The web has answered this since it shipped —
+`/api/health` returns `commit` — and native answered it nowhere. That is the
+whole reason this section exists.
 
 ## Release types
 
