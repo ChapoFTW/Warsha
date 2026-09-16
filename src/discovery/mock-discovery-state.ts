@@ -58,7 +58,7 @@ export function resetMockDiscovery() {
   accounts.clear();
 }
 
-function toCard(provider: (typeof mockProviders)[number], distanceKm: number | null): DiscoveryProviderCard {
+function toCard(provider: (typeof mockProviders)[number]): DiscoveryProviderCard {
   return {
     id: provider.id,
     displayName: provider.name,
@@ -79,23 +79,21 @@ function toCard(provider: (typeof mockProviders)[number], distanceKm: number | n
     areaLabel: provider.location,
     languages: [...provider.languages],
     specialties: [...provider.skills],
-    distanceKm,
   };
 }
 
 /**
- * The same recommendation shape the server applies: rating weight, logarithmic
- * experience confidence, and a distance term only when distance is known. Mock
- * cannot read `private.marketplace_configuration`, so it uses the policy's
- * published defaults and says so here rather than pretending to consult it.
+ * The same recommendation shape the server applies to discovery: rating weight,
+ * logarithmic experience confidence, and no distance term, because discovery
+ * knows no distance. Mock cannot read `private.marketplace_configuration`, so it
+ * uses the policy's published defaults and says so here rather than pretending
+ * to consult it.
  */
-function recommendedScore(provider: (typeof mockProviders)[number], distanceKm: number | null): number {
+function recommendedScore(provider: (typeof mockProviders)[number]): number {
   const rating = Math.min(1, provider.rating / 5) * 0.45;
   const experience = Math.min(1, Math.log(provider.completedJobs + 1) / Math.log(101)) * 0.2;
-  const radius = provider.serviceRadius || 50;
-  const distance = distanceKm === null ? 0 : Math.max(0, 1 - distanceKm / radius) * 0.27;
   const newWorker = provider.completedJobs === 0 ? 0.04 : 0;
-  return rating + experience + distance + newWorker;
+  return rating + experience + newWorker;
 }
 
 /**
@@ -176,10 +174,6 @@ function passesFilters(provider: (typeof mockProviders)[number], filters: Discov
   if (filters.emergencyAvailable && !provider.emergencyAvailable) return false;
   if (filters.pricingType && !provider.services.some(service => service.pricingType === filters.pricingType)) return false;
   if (filters.language && !provider.languages.includes(filters.language)) return false;
-  // An unknown distance is not a distance of zero, and it is not grounds for
-  // hiding a provider from a customer who asked for a radius.
-  if (filters.maximumDistanceKm !== undefined && provider.distance !== null
-    && provider.distance > filters.maximumDistanceKm) return false;
   return true;
 }
 
@@ -209,30 +203,23 @@ export function mockSearch(
     }
   }
 
-  const located = filters.latitude !== undefined && filters.longitude !== undefined;
-  const withDistance = matched.map(provider => ({
-    provider,
-    distanceKm: located ? provider.distance : null,
-  }));
-
-  withDistance.sort((a, b) => {
-    if (sort === 'distance') return (a.distanceKm ?? Infinity) - (b.distanceKm ?? Infinity);
-    if (sort === 'rating') return b.provider.rating - a.provider.rating;
-    if (sort === 'most_reviewed') return b.provider.reviewCount - a.provider.reviewCount;
-    if (sort === 'availability') return Number(b.provider.available) - Number(a.provider.available);
-    return recommendedScore(b.provider, b.distanceKm) - recommendedScore(a.provider, a.distanceKm);
+  const ordered = [...matched].sort((a, b) => {
+    if (sort === 'rating') return b.rating - a.rating;
+    if (sort === 'most_reviewed') return b.reviewCount - a.reviewCount;
+    if (sort === 'availability') return Number(b.available) - Number(a.available);
+    return recommendedScore(b) - recommendedScore(a);
   });
 
-  const page = withDistance.slice(offset, offset + limit);
+  const page = ordered.slice(offset, offset + limit);
   return {
     mode,
     sort,
-    totalCount: withDistance.length,
+    totalCount: ordered.length,
     limit,
     offset,
-    hasMore: offset + limit < withDistance.length,
+    hasMore: offset + limit < ordered.length,
     rankingPolicyVersion: 'best-value-v1',
-    results: page.map(entry => toCard(entry.provider, entry.distanceKm)),
+    results: page.map(provider => toCard(provider)),
   };
 }
 
@@ -247,8 +234,7 @@ export function mockFilterMetadata(): DiscoveryFilterMetadata {
     governorates: governorates.sort(),
     languages,
     pricingTypes,
-    sorts: ['recommended', 'distance', 'rating', 'most_reviewed', 'availability'],
-    distanceRequiresLocation: true,
+    sorts: ['recommended', 'rating', 'most_reviewed', 'availability'],
     emergencyAvailable: mockProviders.some(p => p.emergencyAvailable),
   };
 }
@@ -308,7 +294,7 @@ export function mockRecentlyViewed(accountKey: string | null): DiscoveryProvider
   return account(accountKey).recentlyViewed
     .map(id => mockProviders.find(provider => provider.id === id))
     .filter((provider): provider is (typeof mockProviders)[number] => Boolean(provider))
-    .map(provider => toCard(provider, null));
+    .map(provider => toCard(provider));
 }
 
 export function mockClearRecentlyViewed(accountKey: string) {
@@ -324,14 +310,14 @@ export function mockHome(accountKey: string | null, favouriteIds: string[], gove
       .filter(provider => provider.available && inArea(provider))
       .sort((a, b) => b.rating - a.rating)
       .slice(0, 8)
-      .map(provider => toCard(provider, null)),
+      .map(provider => toCard(provider)),
     trustedWorkers: mockProviders
       .filter(provider => provider.skillCertificateVerified && provider.completedJobs > 0)
       .sort((a, b) => b.completedJobs - a.completedJobs || b.rating - a.rating)
       .slice(0, 8)
-      .map(provider => toCard(provider, null)),
+      .map(provider => toCard(provider)),
     favourites: accountKey
-      ? mockProviders.filter(provider => favouriteIds.includes(provider.id)).map(provider => toCard(provider, null))
+      ? mockProviders.filter(provider => favouriteIds.includes(provider.id)).map(provider => toCard(provider))
       : [],
     recentlyViewed: mockRecentlyViewed(accountKey).slice(0, 8),
   };

@@ -101,9 +101,12 @@ function WorkerCurrentLocationFlow({ area }: { area: ProviderAreaInput | null })
         apartment: '',
         landmark: '',
         instructions: '',
-        isDefault: true,
+        // Never the default. Where somebody works says nothing about where they
+        // want work done, and a Customer who already had a default Home could
+        // not save this step at all while it claimed to be a second default.
+        isDefault: false,
       });
-      const confirmed = await onboarding.confirmAddress({
+      const confirmed = await onboarding.confirmWorkLocation({
         addressId: created.id,
         latitude: pin.latitude,
         longitude: pin.longitude,

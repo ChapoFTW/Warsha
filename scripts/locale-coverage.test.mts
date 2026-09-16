@@ -48,7 +48,8 @@ const SHARED_WITH_FRENCH: Record<string, string[]> = {
   ],
   'notification-copy.copy': ['notifications'],
   'onboarding-copy.onboardingCopy': ['addressLatitude', 'addressLongitude'],
-  'discovery-copy.discoveryCopy': ['sortDistance'],
+  // 'sortDistance' was the one identical word; the sort was retired in 202609160001.
+  'discovery-copy.discoveryCopy': [],
   'legal-copy.legalCopy': [],
   'growth-copy.growthCopy': [],
   'auth-outcome-copy.authOutcomeCopy': [],

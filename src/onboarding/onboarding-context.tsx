@@ -89,6 +89,17 @@ type OnboardingValue = {
     landmark?: string | null;
     serviceNotes?: string | null;
   }) => Promise<boolean>;
+  /**
+   * The Professional's work-location step. Confirms the pin exactly as
+   * `confirmAddress` does and also makes it where matching treats them as
+   * based. The address book never calls this: adding an address is not moving.
+   */
+  confirmWorkLocation: (input: {
+    addressId: string;
+    latitude: number;
+    longitude: number;
+    pinSource: PinSource;
+  }) => Promise<boolean>;
   acceptAgreements: (workerAgreement: boolean, documentProcessing: boolean) => Promise<boolean>;
   confirmIdentityFields: (input: {
     legalName: string;
@@ -279,6 +290,8 @@ export function OnboardingProvider({ children }: PropsWithChildren) {
         )) !== null,
       confirmAddress: async (input) =>
         (await run('confirmAddress', (key) => onboardingRepository.confirmAddress(key, input))) !== null,
+      confirmWorkLocation: async (input) =>
+        (await run('confirmWorkLocation', (key) => onboardingRepository.confirmWorkLocation(key, input))) !== null,
       acceptAgreements: async (workerAgreement, documentProcessing) =>
         (await run('acceptAgreements', (key) =>
           onboardingRepository.acceptAgreements(key, workerAgreement, documentProcessing))) !== null,

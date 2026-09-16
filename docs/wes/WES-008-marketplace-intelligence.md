@@ -239,6 +239,12 @@ private.worker_matching_locations:
 - updated_at; and
 - no normal client grants.
 
+> **Amended by `202609160001_marketplace_reaches_professionals`.** The anchor now
+> names the confirmed `address_id` it mirrors and is written by
+> `confirm_my_work_location`. It orders candidates and bounds Emergency travel;
+> it does not decide planned eligibility, which is the declared service area.
+> See `docs/decisions/provider-distance-is-never-known.md`.
+
 private.marketplace_request_locations:
 
 - request_id primary key;
@@ -611,6 +617,14 @@ PostGIS/GiST remains an operational scaling option after target-environment pref
 4. Require distance to be within both the current wave radius and the worker’s maximum radius.
 5. Apply the marketplace maximum.
 6. Record distance only in restricted candidate results.
+
+> **Superseded for planned work by owner decision, 2026-09-16
+> (`202609160001_marketplace_reaches_professionals`).** Steps 2–5 now apply to
+> Emergency only. Planned requests are eligible by the declared service area
+> (governorate, and district when declared) with no radius cap; a missing
+> anchor leaves a Professional eligible at neutral proximity rather than
+> excluded. Proximity never widens eligibility. See
+> `docs/decisions/provider-distance-is-never-known.md`.
 
 ### 8.4 Privacy
 

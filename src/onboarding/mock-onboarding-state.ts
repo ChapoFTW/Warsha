@@ -175,6 +175,22 @@ export function mockConfirmAddress(
   }
   account.state.addressConfirmed = true;
   account.state.customerState = 'complete';
+  recompute(account);
+  return mockOnboardingState(accountKey);
+}
+
+/**
+ * The work-location step. As on the server, only this passes the worker's
+ * address step: a confirmed home address is not where somebody works.
+ */
+export function mockConfirmWorkLocation(
+  accountKey: string,
+  latitude: number,
+  longitude: number,
+  source: PinSource,
+): OnboardingState {
+  mockConfirmAddress(accountKey, latitude, longitude, source);
+  const account = ensure(accountKey);
   if (account.state.intendedRole === 'worker') {
     account.state.gates.current_address_provided = true;
   }

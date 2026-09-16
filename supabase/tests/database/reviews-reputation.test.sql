@@ -53,7 +53,7 @@ insert into public.provider_profiles(id,user_id,display_name,profession_key,prim
 values('b1200000-0000-4000-8000-000000000001','b1100000-0000-4000-8000-000000000003','Review Worker','plumbing','plumbing',array['plumbing'],'I complete careful plumbing repairs and explain the agreed work.',4,'b1100000-0000-4000-8000-000000000003/avatar/profile.jpg',15,true,true,true,'approved',now()-interval '4 years');
 insert into public.provider_verifications(provider_id,status,revision,reviewed_at) values('b1200000-0000-4000-8000-000000000001','approved',1,now());
 insert into public.provider_services(provider_id,service_id,is_active) select 'b1200000-0000-4000-8000-000000000001',id,true from public.services where category_id='plumbing' order by id limit 1;
-insert into public.provider_service_areas(provider_id,governorate,district,latitude,longitude,radius_km) values('b1200000-0000-4000-8000-000000000001','Cairo','Maadi',30.01,31.20,15);
+insert into public.provider_service_areas(provider_id,governorate,district,radius_km) values('b1200000-0000-4000-8000-000000000001','Cairo','Maadi',15);
 insert into storage.objects(bucket_id,name,metadata) values('profile-images','b1100000-0000-4000-8000-000000000003/avatar/profile.jpg','{"mimetype":"image/jpeg","size":1024}'::jsonb);
 
 select set_config('request.jwt.claim.sub','b1100000-0000-4000-8000-000000000001',true);

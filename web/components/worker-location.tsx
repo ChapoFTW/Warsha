@@ -115,7 +115,8 @@ export function WorkerLocation({ area, onSaved }: { area: WorkerArea; onSaved: (
       landmark: null,
       service_notes: null,
       instructions: null,
-      is_default: true,
+      // Never the default: see the native step in app/onboarding/address.tsx.
+      is_default: false,
     }).select('id').single();
     if (error || !data?.id) {
       setFailure(words.workLocationFailed);
@@ -124,16 +125,13 @@ export function WorkerLocation({ area, onSaved }: { area: WorkerArea; onSaved: (
       return;
     }
     const addressId = String(data.id);
-    const { error: confirmError } = await client.rpc('confirm_my_service_address', {
+    // Confirms the pin and records it as where matching treats this
+    // Professional as based, in one transaction.
+    const { error: confirmError } = await client.rpc('confirm_my_work_location', {
       p_address_id: addressId,
       p_latitude: pin.latitude,
       p_longitude: pin.longitude,
       p_pin_source: pin.source,
-      p_building: null,
-      p_floor: null,
-      p_apartment: null,
-      p_landmark: null,
-      p_service_notes: null,
     });
     if (confirmError) {
       await client.from('addresses').update({ deleted_at: new Date().toISOString(), is_default: false }).eq('id', addressId);

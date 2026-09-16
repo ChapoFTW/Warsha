@@ -19,9 +19,11 @@ already owns most of the pieces.
 ## What does not exist
 
 1. **A live position record.** Nothing stores a professional's current position
-   during a journey. `worker_matching_locations` is a matching input — a coarse
-   service-area coordinate — not a live feed, and must not be repurposed: it has
-   different lifetime, different precision and different access rules.
+   during a journey. `worker_matching_locations` is a matching input — the pin a
+   Professional confirmed as where they work — not a live feed, and must not be
+   repurposed: it has different lifetime, different precision and different
+   access rules. It never leaves the database as a coordinate or a distance
+   (`docs/decisions/provider-distance-is-never-known.md`).
 2. **Routing.** `location-proxy` has no Routes API operation, so there is no
    polyline, distance, or traffic-aware ETA anywhere in Warsha.
 3. **Background location on the professional side.** No foreground service, no

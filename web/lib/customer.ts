@@ -60,9 +60,13 @@ export function newRequestKey(): string {
   return key.length >= REQUEST_KEY_MIN ? key : key.padEnd(REQUEST_KEY_MIN, '0');
 }
 
-/** The sorts `get_customer_quotes` implements. Anything else falls back to submission order. */
+/**
+ * The sorts `get_customer_quotes` implements. Anything else falls back to submission order.
+ * There is no 'closest': ordering quotes by each Professional's distance from a
+ * request the Customer placed would tell the Customer where they are based.
+ */
 export const QUOTE_SORTS = [
-  'best_value', 'lowest_price', 'highest_rated', 'closest',
+  'best_value', 'lowest_price', 'highest_rated',
   'fastest_arrival', 'most_experienced',
 ] as const;
 export type QuoteSort = typeof QUOTE_SORTS[number];

@@ -2,7 +2,7 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { WarshaIcon } from '@/components/warsha/WarshaIcon';
 import { categoryIconName } from '@/src/brand/warsha-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -19,8 +19,8 @@ import type { DiscoveryTextKey } from '@/src/discovery/discovery-copy';
 import {
   activeFilterCount,
   activeFilterKeys,
-  availableSorts,
   discoveryPageSize,
+  discoverySorts,
   emptyDiscoveryFilters,
   normalizeDiscoveryQuery,
   removeFilter,
@@ -39,15 +39,12 @@ const filterLabels: Record<keyof DiscoveryFilters, DiscoveryTextKey> = {
   governorate: 'filterArea',
   minimumRating: 'filterRating',
   minimumCompletedJobs: 'filterCompletedJobs',
-  maximumDistanceKm: 'filterDistance',
   availableNow: 'filterAvailableNow',
   skillCertificateVerified: 'filterSkillVerified',
   professionalCertificateVerified: 'filterCertificateVerified',
   emergencyAvailable: 'filterEmergency',
   pricingType: 'filterPricing',
   language: 'filterLanguage',
-  latitude: 'filterArea',
-  longitude: 'filterArea',
 };
 
 /**
@@ -83,14 +80,7 @@ export default function SearchScreen() {
 
   const { isRTL, language } = useLocalization();
   const generation = useRef(0);
-  const offerableSorts = useMemo(() => availableSorts(filters), [filters]);
   const filterCount = activeFilterCount(filters);
-
-  // A sort that stops being offerable (a location that is withdrawn) must not
-  // stay selected, or the next request would be refused by the server.
-  useEffect(() => {
-    if (!offerableSorts.includes(sort)) setSort('recommended');
-  }, [offerableSorts, sort]);
 
   const run = useCallback((offset: number) => {
     generation.current += 1;
@@ -194,7 +184,7 @@ export default function SearchScreen() {
             <View style={styles.sortRow}>
               <AppText style={styles.sectionLabel}>{dt.text('sortBy')}</AppText>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
-                {offerableSorts.map(option => (
+                {discoverySorts.map(option => (
                   <Pressable key={option} accessibilityRole="radio"
                     accessibilityState={{ selected: sort === option, checked: sort === option }}
                     accessibilityLabel={dt.sort(option)}

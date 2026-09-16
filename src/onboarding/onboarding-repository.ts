@@ -16,6 +16,7 @@ import {
   mockAcceptAgreements,
   mockConfirmAddress,
   mockConfirmIdentityFields,
+  mockConfirmWorkLocation,
   mockIdentityCandidates,
   mockOnboardingState,
   mockRecordCapture,
@@ -128,6 +129,26 @@ export const onboardingRepository = {
       p_apartment: input.apartment ?? null,
       p_landmark: input.landmark ?? null,
       p_service_notes: input.serviceNotes ?? null,
+    });
+    if (error) throw error;
+    return this.state(accountKey);
+  },
+
+  async confirmWorkLocation(
+    accountKey: string | null,
+    input: { addressId: string; latitude: number; longitude: number; pinSource: PinSource },
+  ): Promise<OnboardingState> {
+    if (environment.dataMode === 'mock') {
+      return mockConfirmWorkLocation(
+        requireAccount(accountKey), input.latitude, input.longitude, input.pinSource,
+      );
+    }
+    const client = getSupabaseClient();
+    const { error } = await client.rpc('confirm_my_work_location', {
+      p_address_id: input.addressId,
+      p_latitude: input.latitude,
+      p_longitude: input.longitude,
+      p_pin_source: input.pinSource,
     });
     if (error) throw error;
     return this.state(accountKey);

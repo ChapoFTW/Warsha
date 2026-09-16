@@ -129,7 +129,12 @@ select is((select collection_not_before-created_at from public.marketplace_reque
 select is((select edit_deadline_at-created_at from public.marketplace_requests where id=current_setting('warsha_test.request_id')::uuid),interval '5 minutes','edit window is authoritative from creation');
 select is((select count(*)::integer from public.quote_invitations where request_id=current_setting('warsha_test.request_id')::uuid),2,'only two eligible available workers are invited');
 select is((select count(*)::integer from public.quote_invitations where request_id=current_setting('warsha_test.request_id')::uuid and provider_id='92000000-0000-0000-0001-000000000004'),0,'Unavailable worker is hard-filtered');
-select ok((select every(distance_km<=5) from private.marketplace_candidate_scores s join private.marketplace_matching_runs r on r.id=s.matching_run_id where r.request_id=current_setting('warsha_test.request_id')::uuid),'first wave respects controlled radius');
+-- This once asserted every(distance_km<=5): "first wave respects controlled
+-- radius". The owner has since decided planned work has no radius cap — the
+-- declared service area is eligibility and distance only ranks — so the radius
+-- is asserted for Emergency alone. The end-to-end proof of both rules, through
+-- the real work-location writer, is marketplace-matching-anchor.test.sql.
+select ok((select every(exists(select 1 from public.provider_service_areas a where a.provider_id=s.provider_id and a.governorate='Cairo' and (a.district is null or a.district='Zamalek'))) from private.marketplace_candidate_scores s join private.marketplace_matching_runs r on r.id=s.matching_run_id where r.request_id=current_setting('warsha_test.request_id')::uuid),'every first-wave candidate declared an area covering the request');
 select is((select count(*)::integer from private.marketplace_jobs where request_id=current_setting('warsha_test.request_id')::uuid and job_kind='expire_request'),1,'request expiry job is durable');
 select ok((select exact_address_snapshot like '%Test Street%' from private.marketplace_request_locations where request_id=current_setting('warsha_test.request_id')::uuid),'exact address is stored privately');
 select is((select count(*)::integer from information_schema.columns where table_schema='public' and table_name='marketplace_requests' and column_name like '%address_snapshot%'),0,'public request has no exact address snapshot');
@@ -248,6 +253,7 @@ reset role;
 select set_config('request.jwt.claim.sub','',true);
 select is((select approved_emergency_surcharge_minor::integer from public.marketplace_requests where id=current_setting('warsha_test.emergency_request')::uuid),7500,'customer approved the displayed maximum surcharge');
 select is((select count(*)::integer from private.emergency_dispatch_attempts where request_id=current_setting('warsha_test.emergency_request')::uuid),2,'Emergency dispatch invites eligible opted-in workers only');
+select ok((select every(s.distance_km is not null and s.distance_km<=5) from private.marketplace_candidate_scores s join private.marketplace_matching_runs r on r.id=s.matching_run_id where r.request_id=current_setting('warsha_test.emergency_request')::uuid),'first Emergency wave respects the controlled radius');
 select is((select count(*)::integer from public.worker_quotes where request_id=current_setting('warsha_test.emergency_request')::uuid),0,'Emergency has no quote competition');
 
 select set_config('warsha_test.emergency_invitation',(select id::text from public.quote_invitations where request_id=current_setting('warsha_test.emergency_request')::uuid and provider_id='92000000-0000-0000-0001-000000000002'),true);

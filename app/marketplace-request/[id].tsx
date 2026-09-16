@@ -22,7 +22,7 @@ import {
   requestLifecycleSemantic,
 } from '@/src/lifecycle/lifecycle-presentation';
 
-const sorts:QuoteSort[]=['best_value','lowest_price','highest_rated','closest','fastest_arrival','most_experienced'];
+const sorts:QuoteSort[]=['best_value','lowest_price','highest_rated','fastest_arrival','most_experienced'];
 export default function MarketplaceRequestDetail(){
   const colors = useThemeColors();
   const styles = useThemedStyles(makeStyles);const{id}=useLocalSearchParams<{id:string}>();const mt=useMarketplaceText();const{isRTL,language}=useLocalization();const market=useMarketplaceIntelligence();const{services:catalogue}=useMarketplaceData();const[request,setRequest]=useState<MarketplaceRequest>();const[quotes,setQuotes]=useState<WorkerQuote[]>([]);const[sort,setSort]=useState<QuoteSort>('best_value');const[loading,setLoading]=useState(true);const[clarifying,setClarifying]=useState(false);const[clarification,setClarification]=useState('');const[now,setNow]=useState(Date.now());

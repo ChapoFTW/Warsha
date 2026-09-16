@@ -81,7 +81,6 @@ export function DiscoveryResultCard({ provider }: { provider: DiscoveryProviderC
         <AppText style={styles.profession}>
           {professionLabel(provider.professionKey, language, 'customer')}
           {provider.areaLabel ? ` · ${provider.areaLabel}` : ''}
-          {provider.distanceKm !== null ? ` · ${provider.distanceKm} ${dt.text('kilometresAway')}` : ''}
         </AppText>
 
         <View style={[styles.badges, isRTL && styles.reverse]}>

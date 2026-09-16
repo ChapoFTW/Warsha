@@ -555,6 +555,22 @@ check(/WorkerCurrentLocationFlow/.test(addressScreen) && /workLocationTitle/.tes
   'worker onboarding has a separate private work-location presentation');
 check(/AddressLocationPicker/.test(addressScreen),
   'both presentations reuse the provider-aware location infrastructure');
+{
+  // The worker flow alone. It confirmed the pin with the address-book writer and
+  // saved it as a second default, so matching never learned where anyone worked
+  // and a Customer with a default Home could not complete the step.
+  const workerFlow = addressScreen.slice(
+    addressScreen.indexOf('function WorkerCurrentLocationFlow'),
+    addressScreen.indexOf('function CustomerDestinationAddressFlow'));
+  check(workerFlow.length > 0 && /onboarding\.confirmWorkLocation\(/.test(workerFlow)
+      && !/onboarding\.confirmAddress\(/.test(workerFlow),
+    'THE NATIVE WORK-LOCATION STEP WRITES THE MATCHING ANCHOR, NOT JUST A PIN');
+  check(/isDefault: false/.test(workerFlow) && !/isDefault: true/.test(workerFlow),
+    'THE NATIVE WORK LOCATION IS NEVER A SECOND DEFAULT ADDRESS');
+}
+const onboardingRepositorySource = read('src', 'onboarding', 'onboarding-repository.ts');
+check(/rpc\('confirm_my_work_location'/.test(onboardingRepositorySource),
+  'the work-location repository call reaches the anchor writer');
 
 const workerScreen = read('app', 'onboarding', 'worker.tsx');
 check(/workerJourneyProgress/.test(workerScreen), 'the worker screen shows one guided worker-owned step');

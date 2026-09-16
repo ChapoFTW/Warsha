@@ -17,6 +17,7 @@ the person does not · `preserve` — untouched by a deletion request ·
 | `public.profiles` | account_private | Identifies the account and carries the contact phone | WPS-002 | anonymize | Yes |
 | `public.provider_profiles` | public_listing | The worker listing customers choose from | WPS-010 | anonymize | Yes |
 | `public.addresses` | account_private | Where the work happens | WPS-001 | anonymize | Yes |
+| `private.worker_matching_locations` | account_private | Where a Professional is based for work, copied from one confirmed address; ranks matching and bounds Emergency travel, never returned to a client | WES-008 §5.2, 202609160001 | delete | Yes |
 | `public.user_display_preferences` | account_private | Remembers appearance across devices | WPS-020 | delete | Yes |
 
 ## Bookings and commerce

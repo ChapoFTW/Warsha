@@ -75,9 +75,9 @@ select provider_id,s.id,true from (values
   where category_id='plumbing' and translation_key is not null
   order by translation_key limit 1
 ) s;
-insert into public.provider_service_areas(provider_id,governorate,district,latitude,longitude,radius_km) values
-('a5200000-0000-4000-8000-000000000001','Cairo','Maadi',30.01,31.20,15),
-('a5200000-0000-4000-8000-000000000002','Giza','Dokki',30.04,31.19,10);
+insert into public.provider_service_areas(provider_id,governorate,district,radius_km) values
+('a5200000-0000-4000-8000-000000000001','Cairo','Maadi',15),
+('a5200000-0000-4000-8000-000000000002','Giza','Dokki',10);
 insert into storage.objects(bucket_id,name,metadata) values
 ('profile-images','a5100000-0000-4000-8000-000000000001/avatar/profile.jpg','{"mimetype":"image/jpeg","size":1024}'::jsonb);
 

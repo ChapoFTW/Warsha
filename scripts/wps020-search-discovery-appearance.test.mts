@@ -25,14 +25,12 @@ import { discoveryCopy } from '../src/discovery/discovery-copy.ts';
 import {
   activeFilterCount,
   activeFilterKeys,
-  availableSorts,
   discoveryMaxPageSize,
   discoveryPageSize,
   discoveryQueryMaxLength,
   discoverySearchModes,
   discoverySorts,
   emptyDiscoveryFilters,
-  hasLocation,
   normalizeDiscoveryQuery,
   recentSearchLimit,
   recentlyViewedLimit,
@@ -413,7 +411,7 @@ lacks(JSON.stringify(discoveryCopy), /OUR MISSION|شغلك مهمتنا/,
 // ---------------------------------------------------------------------------
 // Discovery contracts
 // ---------------------------------------------------------------------------
-is(discoverySorts.length, 5, 'five sorts are offered');
+is(discoverySorts.length, 4, 'four sorts are offered; neither distance nor response time is');
 check(!(discoverySorts as readonly string[]).includes('response_time'),
   'response time is not offered: there is no numeric response time to sort by');
 has(discoveryTypes, /`response_time` is deliberately\s*\n \* absent/,
@@ -435,21 +433,15 @@ is(activeFilterCount(emptyDiscoveryFilters), 0, 'no filters means no badge');
 is(activeFilterCount({ availableNow: true, minimumRating: 4 }), 2, 'two filters count as two');
 is(activeFilterCount({ availableNow: false }), 0, 'an unset toggle is not an active filter');
 is(activeFilterCount({ minimumRating: 0 }), 0, 'a zero threshold is not an active filter');
-is(activeFilterCount({ latitude: 30, longitude: 31 }), 0,
-  'a granted location is context, not a filter the user set');
 is(activeFilterKeys({ categoryId: 'plumbing', governorate: 'Cairo' }).length, 2,
   'each active filter is individually removable');
 is(activeFilterCount(removeFilter({ categoryId: 'plumbing', availableNow: true }, 'categoryId')), 1,
   'removing one filter leaves the rest');
 
-check(!hasLocation(emptyDiscoveryFilters), 'no location by default');
-check(hasLocation({ latitude: 30, longitude: 31 }), 'a full coordinate pair counts as a location');
-check(!hasLocation({ latitude: 30 }), 'half a coordinate is not a location');
-check(!availableSorts(emptyDiscoveryFilters).includes('distance'),
-  'distance sorting is not offered without a location');
-check(availableSorts({ latitude: 30, longitude: 31 }).includes('distance'),
-  'distance sorting appears once a location exists');
-is(availableSorts(emptyDiscoveryFilters).length, 4, 'four sorts are offerable without a location');
+// Distance is not a discovery sort from anywhere: the caller would choose the
+// point it is measured from. See docs/decisions/provider-distance-is-never-known.md.
+check(!(discoverySorts as readonly string[]).includes('distance'),
+  'DISTANCE IS NOT A DISCOVERY SORT, WITH OR WITHOUT A LOCATION');
 
 // ---------------------------------------------------------------------------
 // Mock parity
@@ -484,10 +476,8 @@ is(mockSearch('', {}, 'rating').results[0].ratingAverage >= mockSearch('', {}, '
   true, 'Mock sorts by rating');
 is(mockSearch('', {}, 'recommended').rankingPolicyVersion, 'best-value-v1',
   'Mock reports the same ranking policy version as the server');
-is(mockSearch('', {}, 'recommended').results.every(r => r.distanceKm === null), true,
-  'Mock returns no distance when no location was given');
-is(mockSearch('', { latitude: 30, longitude: 31 }, 'recommended').results.every(r => r.distanceKm !== null), true,
-  'Mock returns a distance once a location is given');
+is(mockSearch('', {}, 'recommended').results.every(r => !('distanceKm' in r)), true,
+  'Mock returns no distance, exactly as the server does');
 
 // Mock account isolation.
 mockRecordSearch('account-a', 'leaking tap');
@@ -516,8 +506,8 @@ is(mockHome('account-a', [mockProviders[0].id]).favourites.length, 1,
   'the signed-in Mock home reads the existing favourites store');
 check(mockFilterMetadata().sorts.length === discoverySorts.length,
   'Mock offers exactly the sorts the contract defines');
-is(mockFilterMetadata().distanceRequiresLocation, true,
-  'Mock tells the client that distance needs a location, exactly as the server does');
+check(!('distanceRequiresLocation' in mockFilterMetadata()),
+  'Mock describes no distance precondition, because it offers no distance');
 check(mockSuggestions(null).commonServices.length > 0, 'Mock derives common services from the catalog');
 resetMockDiscovery();
 
@@ -544,7 +534,7 @@ has(searchScreen, /endOfResults/, 'the end of results is stated');
 has(searchScreen, /resetFilters/, 'filters can be reset');
 has(searchScreen, /removeFilter\(current, key\)/, 'a single filter can be removed');
 has(searchScreen, /router\.setParams/, 'the query is reflected in the URL for web');
-has(searchScreen, /offerableSorts/, 'only offerable sorts are rendered');
+has(searchScreen, /discoverySorts\.map\(/, 'the screen renders exactly the contract sorts');
 has(searchScreen, /metadata\.emergencyAvailable \?/,
   'the emergency filter appears only when the server says a worker offers it');
 has(searchScreen, /Labelled "common", never "popular"/,
@@ -609,12 +599,19 @@ has(migration, /It writes no `private\.marketplace_candidate_scores` row/,
   'browsing is stated not to consume marketplace opportunity');
 has(migration, /0\.45/, 'the published rating weight is applied verbatim');
 has(migration, /0\.20/, 'the published experience weight is applied verbatim');
-has(migration, /0\.27/, 'the published distance weight is applied verbatim');
 
 // Location privacy.
 has(migration, /Area LABEL only/, 'the projection returns an area label, never geometry');
-has(migration, /'distanceKm', case when p_distance_km is null then null else pg_catalog\.round/,
-  'distance is rounded before it leaves the database');
+// WPS-020 rounded the distance "so it cannot be trilaterated". Rounding does
+// not stop that when the caller picks the centre, so 202609160001 removed
+// discovery distance altogether.
+const anchorMigration = read('supabase/migrations/202609160001_marketplace_reaches_professionals.sql');
+lacks(sqlCodeOf(anchorMigration), /'distanceKm'/,
+  'NO DISCOVERY PROJECTION CARRIES A DISTANCE');
+has(anchorMigration, /raise exception 'Distance sorting is not available'/,
+  'a distance sort is refused by name');
+has(anchorMigration, /raise exception 'Distance filtering is not available'/,
+  'a distance filter is refused by name');
 lacks(sqlCodeOf(migration), /'latitude', |'longitude', /,
   'no coordinate is ever placed in a public projection');
 lacks(read('src/discovery/discovery-repository.ts'), /watchPosition|getCurrentPosition|background/i,
@@ -714,48 +711,38 @@ has(pgTap, /page two does not repeat page one/, 'stable pagination is asserted')
 // ---------------------------------------------------------------------------
 // The legacy marketplace surface obeys the same rule as discovery
 // ---------------------------------------------------------------------------
-// Discovery has always been careful: `distanceKm` is null without a location,
-// and `availableSorts` withholds distance sorting until there is one — both
-// asserted above. The older marketplace path that feeds the category and
-// favourites screens declared `distance: number` and the adapter filled it
-// with 0. So every provider read "0.0 km" away, every radius filter passed
-// every provider, and "nearest" sorted nothing. The zero was not a distance;
-// it was the absence of one, wearing a number.
+// The older marketplace path that feeds the category and favourites screens
+// once declared `distance: number` and the adapter filled it with 0, so every
+// provider read "0.0 km" away. That was corrected to null; 202609160001 then
+// retired client-visible distance entirely, and Mock's invented distances
+// ("1.2 km") went with it. Nothing on this path may carry one again.
 
 const marketplaceAdapter = readFileSync(
   join(process.cwd(), 'src/data/adapters/supabase-adapter.ts'), 'utf8');
-check(!/\bdistance: 0\b/.test(marketplaceAdapter),
-  'THE ADAPTER DOES NOT FABRICATE A ZERO DISTANCE');
-check(/\bdistance: null\b/.test(marketplaceAdapter),
-  'it reports the distance it does not have as unknown');
+check(!/\bdistance:/.test(marketplaceAdapter),
+  'THE ADAPTER CARRIES NO DISTANCE');
 
 const marketplaceTypes = readFileSync(
   join(process.cwd(), 'src/data/marketplace-types.ts'), 'utf8');
-check(/distance:number\|null/.test(marketplaceTypes),
-  'and the type admits that a distance can be unknown, so the compiler finds the readers');
+check(!/\bdistance\b|maximumDistance|'nearest'/.test(marketplaceTypes),
+  'the provider type, its filters and its sorts have no distance, so the compiler finds any reader');
 
 const filterSource = readFileSync(
   join(process.cwd(), 'components/warsha/ProviderFilters.tsx'), 'utf8');
-check(/item\.distance===null\|\|item\.distance<=filters\.maximumDistance/.test(filterSource),
-  'AN UNKNOWN DISTANCE IS NOT TREATED AS BEING WITHIN EVERY RADIUS');
-check(/value!=='nearest'\|\|distanceAvailable/.test(filterSource),
-  'NEAREST IS NOT OFFERED AS A SORT WHEN NO DISTANCE IS KNOWN');
-check(/distanceAvailable&&<Row title=\{t\('maximumDistance'\)\}/.test(filterSource),
-  'and the radius filter is withheld rather than shown doing nothing');
+check(!/distance|nearest| km/.test(filterSource),
+  'THE LEGACY FILTERS OFFER NO RADIUS AND NO NEAREST SORT');
 
 const listItem = readFileSync(
   join(process.cwd(), 'components/warsha/ProviderListItem.tsx'), 'utf8');
-check(/provider\.distance === null/.test(listItem),
-  'THE LIST ITEM STATES NO DISTANCE WHEN THERE IS NONE TO STATE');
-check(!/\}\s*·\s*\{provider\.distance/.test(listItem),
-  'so the separator and the number are no longer rendered unconditionally');
+check(!/provider\.distance|\bkm\b/.test(listItem),
+  'THE LIST ITEM STATES NO DISTANCE');
 
-// The same zero-means-unknown confusion lived in the Mock filter.
 const mockSource = readFileSync(
   join(process.cwd(), 'src/discovery/mock-discovery-state.ts'), 'utf8');
-check(/provider\.distance !== null\s*\n?\s*&& provider\.distance > filters\.maximumDistanceKm/
-  .test(mockSource),
-  'and Mock does not hide a provider whose distance it never knew');
+check(!/distance/i.test(mockSource.replace(/\/\*[\s\S]*?\*\//g, '')),
+  'and Mock discovery computes no distance either');
+const mockData = readFileSync(join(process.cwd(), 'src/data/mock-data.ts'), 'utf8');
+check(!/\bdistance:/.test(mockData), 'Mock providers carry no invented distance');
 
 
 /*

@@ -34,7 +34,6 @@ const quotes=[quote('high-value',30000,5,20,100),quote('cheap',20000,4,45,20),qu
 assert.equal(sortMarketplaceQuotes(quotes,'lowest_price')[0].id,'cheap');
 assert.equal(sortMarketplaceQuotes(quotes,'highest_rated')[0].id,'high-value');
 assert.equal(sortMarketplaceQuotes(quotes,'fastest_arrival')[0].id,'fast');
-assert.equal(sortMarketplaceQuotes(quotes,'closest')[0].id,'fast');
 assert.equal(sortMarketplaceQuotes(quotes,'most_experienced')[0].id,'high-value');
 assert.equal(sortMarketplaceQuotes(quotes,'best_value')[0].id,'high-value');
 assert.deepEqual(quotes.map(item=>item.id),['high-value','cheap','fast'],'sorting does not mutate authoritative input');

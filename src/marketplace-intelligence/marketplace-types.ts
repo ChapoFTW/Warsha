@@ -4,7 +4,9 @@ export type MarketplaceFlowKind='browse_worker'|'get_quotes'|'emergency'|'rescue
 export type MarketplaceRequestStatus='draft'|'matching'|'collecting_quotes'|'customer_reviewing'|'selection_pending_confirmation'|'worker_confirmed'|'converted_to_booking'|'rescue_matching'|'cancelled'|'expired'|'closed';
 export type MarketplaceScheduleKind='asap'|'today'|'scheduled'|'flexible';
 export type MarketplacePaymentCompatibility='cash'|'online'|'either';
-export type QuoteSort='best_value'|'lowest_price'|'highest_rated'|'closest'|'fastest_arrival'|'most_experienced';
+// No 'closest': ordering quotes by a Professional's distance from a request the
+// Customer placed tells the Customer where Professionals are based.
+export type QuoteSort='best_value'|'lowest_price'|'highest_rated'|'fastest_arrival'|'most_experienced';
 export type QuoteStatus='submitted'|'revised'|'selected'|'rejected'|'withdrawn'|'expired'|'invalidated_by_request_change';
 
 export type MarketplaceCapabilities={
@@ -158,7 +160,7 @@ export function sortMarketplaceQuotes(quotes:WorkerQuote[],sort:QuoteSort){
   return [...quotes].sort((a,b)=>{
     if(sort==='lowest_price')return a.priceMinor-b.priceMinor||a.id.localeCompare(b.id);
     if(sort==='highest_rated')return b.workerRating-a.workerRating||b.workerReviewCount-a.workerReviewCount||a.id.localeCompare(b.id);
-    if(sort==='fastest_arrival'||sort==='closest')return(a.etaMinutes??9999)-(b.etaMinutes??9999)||a.id.localeCompare(b.id);
+    if(sort==='fastest_arrival')return(a.etaMinutes??9999)-(b.etaMinutes??9999)||a.id.localeCompare(b.id);
     if(sort==='most_experienced')return b.completedJobs-a.completedJobs||a.id.localeCompare(b.id);
     const value=(quote:WorkerQuote)=>quote.workerRating*20+Math.min(100,quote.completedJobs)*.08-(quote.priceMinor/10000)-(quote.etaMinutes??120)*.04;
     return value(b)-value(a)||a.id.localeCompare(b.id);

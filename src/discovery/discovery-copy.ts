@@ -73,7 +73,6 @@ const baseDiscoveryCopy = {
     filterArea: 'Area',
     filterRating: 'Minimum rating',
     filterCompletedJobs: 'Completed jobs',
-    filterDistance: 'Within',
     filterAvailableNow: 'Available now',
     filterSkillVerified: 'Verified skill certificate',
     filterCertificateVerified: 'Approved professional certificate',
@@ -85,12 +84,10 @@ const baseDiscoveryCopy = {
     // Sorting
     sortBy: 'Sort by',
     sortRecommended: 'Recommended',
-    sortDistance: 'Distance',
     sortRating: 'Rating',
     sortMostReviewed: 'Most reviewed',
     sortAvailability: 'Availability',
     sortRecommendedHint: 'Uses Warsha’s marketplace ranking policy. No professional pays for placement.',
-    sortDistanceHint: 'Needs a location. Not offered while Warsha only knows your area.',
     sortRatingHint: 'Average rating, with review count shown so a single review is visible as one review.',
 
     // Location
@@ -135,7 +132,6 @@ const baseDiscoveryCopy = {
     oneReviewLabel: 'review',
     noReviewsYet: 'No reviews yet',
     jobsLabel: 'jobs done',
-    kilometresAway: 'km away',
     startingFrom: 'From',
   },
   ar: {
@@ -193,7 +189,6 @@ const baseDiscoveryCopy = {
     filterArea: 'المنطقة',
     filterRating: 'أقل تقييم',
     filterCompletedJobs: 'شغل مكتمل',
-    filterDistance: 'في حدود',
     filterAvailableNow: 'متاح دلوقتي',
     filterSkillVerified: 'شهادة مهارة موثقة',
     filterCertificateVerified: 'شهادة مهنية معتمدة',
@@ -204,12 +199,10 @@ const baseDiscoveryCopy = {
 
     sortBy: 'الترتيب',
     sortRecommended: 'المقترح',
-    sortDistance: 'المسافة',
     sortRating: 'التقييم',
     sortMostReviewed: 'الأكثر تقييمًا',
     sortAvailability: 'المتاح دلوقتي',
     sortRecommendedHint: 'بيستخدم سياسة ترتيب السوق في ورشة. مفيش صنايعي بيدفع علشان يظهر قدام.',
-    sortDistanceHint: 'محتاج موقع. مش متاح طالما ورشة عارفة منطقتك بس.',
     sortRatingHint: 'متوسط التقييم، وعدد التقييمات ظاهر علشان تقييم واحد يبان إنه تقييم واحد.',
 
     locationChooseArea: 'اختار منطقتك',
@@ -249,7 +242,6 @@ const baseDiscoveryCopy = {
     oneReviewLabel: 'تقييم',
     noReviewsYet: 'لسه مفيش تقييمات',
     jobsLabel: 'شغلانة مكتملة',
-    kilometresAway: 'كم',
     startingFrom: 'من',
   },
 } as const;
@@ -318,7 +310,6 @@ export const discoveryCopy = {
     filterArea: 'Quartier',
     filterRating: 'Note minimale',
     filterCompletedJobs: 'Travaux terminés',
-    filterDistance: 'À moins de',
     filterAvailableNow: 'Disponible maintenant',
     filterSkillVerified: 'Certificat de compétence vérifié',
     filterCertificateVerified: 'Certificat professionnel approuvé',
@@ -328,12 +319,10 @@ export const discoveryCopy = {
     filterAny: 'Peu importe',
     sortBy: 'Trier par',
     sortRecommended: 'Recommandés',
-    sortDistance: 'Distance',
     sortRating: 'Note',
     sortMostReviewed: 'Les plus évalués',
     sortAvailability: 'Disponibilité',
     sortRecommendedHint: 'Utilise la politique de classement de Warsha. Aucun professionnel ne paie pour être mieux placé.',
-    sortDistanceHint: 'Nécessite une position. Indisponible tant que Warsha ne connaît que votre quartier.',
     sortRatingHint: "Note moyenne, avec le nombre d'avis affiché pour qu'un avis unique se voie comme tel.",
     locationChooseArea: 'Choisissez votre quartier',
     areaHint: "Warsha trie par quartier, sans vous suivre. Aucune autorisation de localisation n'est demandée pour parcourir.",
@@ -368,7 +357,6 @@ export const discoveryCopy = {
     oneReviewLabel: 'avis',
     noReviewsYet: 'Aucun avis pour le moment',
     jobsLabel: 'travaux réalisés',
-    kilometresAway: 'km',
     startingFrom: 'À partir de',
   },
 } as const;

@@ -4,8 +4,7 @@
 -- Every one of the twenty seeded providers failed
 -- `private.is_provider_publicly_discoverable`, and failed it at the first join:
 -- `user_id` was null, so `join auth.users` matched nothing. They also had no
--- contact phone, no `avatar_url`, no approved `provider_verifications` row, and
--- no coordinates on their service areas.
+-- contact phone, no `avatar_url`, and no approved `provider_verifications` row.
 --
 -- The result was that local discovery returned an empty list no matter what was
 -- asked of it, and an empty list is indistinguishable from a broken one. That
@@ -135,12 +134,15 @@ join lateral (
 ) s on true
 on conflict do nothing;
 
--- Service areas WITH coordinates, so distance filtering and "nearest" sorting
--- have something to compute. Central Cairo is roughly 30.0444, 31.2357.
-insert into public.provider_service_areas (provider_id, governorate, district, latitude, longitude, radius_km)
+-- Service areas are a governorate and a district, as the product writes them.
+-- This fixture once gave them coordinates "so distance filtering and nearest
+-- sorting have something to compute"; that made a column nothing else writes
+-- look like an authority, and 202609160001 retired both it and discovery
+-- distance.
+insert into public.provider_service_areas (provider_id, governorate, district, radius_km)
 values
-  ('d2000000-0000-4000-8000-000000000001', 'Cairo',      'Nasr City',    30.0566, 31.3300, 15),
-  ('d2000000-0000-4000-8000-000000000004', 'Giza',       'Dokki',        30.0380, 31.2120, 12),
-  ('d2000000-0000-4000-8000-000000000002', 'Cairo',      'Maadi',        29.9600, 31.2570, 10),
-  ('d2000000-0000-4000-8000-000000000003', 'Alexandria', 'Smouha',       31.2156, 29.9553, 20)
+  ('d2000000-0000-4000-8000-000000000001', 'Cairo',      'Nasr City', 15),
+  ('d2000000-0000-4000-8000-000000000004', 'Giza',       'Dokki',     12),
+  ('d2000000-0000-4000-8000-000000000002', 'Cairo',      'Maadi',     10),
+  ('d2000000-0000-4000-8000-000000000003', 'Alexandria', 'Smouha',    20)
 on conflict do nothing;

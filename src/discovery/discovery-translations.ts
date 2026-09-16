@@ -5,7 +5,6 @@ import type { DiscoverySort } from './discovery-types';
 
 const sortKeys: Record<DiscoverySort, DiscoveryTextKey> = {
   recommended: 'sortRecommended',
-  distance: 'sortDistance',
   rating: 'sortRating',
   most_reviewed: 'sortMostReviewed',
   availability: 'sortAvailability',

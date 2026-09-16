@@ -21,9 +21,8 @@ export function ProviderListItem({ provider }: { provider: Provider }) {
   const { t, isRTL, language } = useLocalization();
   const { user, mode } = useAuth();
   const { isFavourite, toggleFavourite } = useLocalPreferences();
-  const professionText = provider.distance === null
-    ? professionLabel(provider.profession, language, 'customer')
-    : `${professionLabel(provider.profession, language, 'customer')} · ${provider.distance.toFixed(1)} km`;
+  // No distance, from anywhere: see docs/decisions/provider-distance-is-never-known.md.
+  const professionText = professionLabel(provider.profession, language, 'customer');
 
   const toggleFavouriteAction = () => {
     void (mode === 'supabase' && !user

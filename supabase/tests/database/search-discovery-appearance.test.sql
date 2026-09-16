@@ -48,8 +48,10 @@ select has_function('public','get_discovery_home',array['text'],'the discovery h
 select has_function('private','discovery_recommended_score',
   array['numeric','integer','numeric','numeric','numeric','numeric','numeric'],
   'the browse-time score helper is private');
-select has_function('private','discovery_provider_card',array['provider_profiles','numeric'],
+select has_function('private','discovery_provider_card',array['provider_profiles'],
   'the safe public projection is private');
+select hasnt_function('private','discovery_provider_card',array['provider_profiles','numeric'],
+  'and it no longer accepts a distance to project');
 
 -- ---------------------------------------------------------------------------
 -- Preservation: WPS-020 extends, it does not replace
@@ -127,7 +129,7 @@ select is(has_table_privilege('anon','public.user_recently_viewed_providers','SE
   false,'anonymous has no table grant on recently viewed');
 select is(has_table_privilege('anon','public.user_display_preferences','SELECT'),
   false,'anonymous has no table grant on appearance preferences');
-select is(has_function_privilege('authenticated','private.discovery_provider_card(public.provider_profiles,numeric)','EXECUTE'),
+select is(has_function_privilege('authenticated','private.discovery_provider_card(public.provider_profiles)','EXECUTE'),
   false,'clients cannot invoke the projection directly');
 select is(has_function_privilege('authenticated','private.discovery_recommended_score(numeric,integer,numeric,numeric,numeric,numeric,numeric)','EXECUTE'),
   false,'clients cannot invoke the score helper directly');
@@ -197,11 +199,11 @@ insert into storage.objects(bucket_id,name) values
 ('profile-images','a0000000-0000-0000-0000-000000000013/avatar/profile.jpg'),
 ('profile-images','a0000000-0000-0000-0000-000000000014/avatar/profile.jpg');
 
-insert into public.provider_service_areas(provider_id,governorate,district,latitude,longitude,radius_km) values
-('a0000000-0000-0000-0001-000000000011','Cairo','Zamalek',30.0600,31.2200,50),
-('a0000000-0000-0000-0001-000000000012','Cairo','Zamalek',30.0600,31.2200,50),
-('a0000000-0000-0000-0001-000000000013','Cairo','Zamalek',30.0600,31.2200,50),
-('a0000000-0000-0000-0001-000000000014','Giza','Dokki',30.0380,31.2100,40);
+insert into public.provider_service_areas(provider_id,governorate,district,radius_km) values
+('a0000000-0000-0000-0001-000000000011','Cairo','Zamalek',50),
+('a0000000-0000-0000-0001-000000000012','Cairo','Zamalek',50),
+('a0000000-0000-0000-0001-000000000013','Cairo','Zamalek',50),
+('a0000000-0000-0000-0001-000000000014','Giza','Dokki',40);
 
 insert into public.provider_services(provider_id,service_id,custom_price_egp,pricing_type,is_active)
 select p, s.id, 200, 'fixed', true
@@ -333,12 +335,22 @@ select is((public.search_providers(null,'{}'::jsonb,'availability',20,0)->>'sort
 select throws_ok(
   $$select public.search_providers(null,'{}'::jsonb,'sponsored',20,0)$$,
   '22023','Unsupported sort','an unknown sort is refused rather than silently ignored');
+-- Distance is not a discovery question, from anywhere. A caller chooses the
+-- point it asks from, so a distance sort is a comparison oracle and a radius
+-- filter is a membership oracle; repeated from new points, either recovers where
+-- a Professional is based. Refused by name, with or without a location.
 select throws_ok(
   $$select public.search_providers(null,'{}'::jsonb,'distance',20,0)$$,
-  '22023','Distance sorting requires a location',
-  'distance sorting without a location is refused rather than answered badly');
-select is((public.search_providers(null,'{"latitude":30.05,"longitude":31.23}'::jsonb,'distance',20,0)->>'sort'),
-  'distance','distance sorting works once a location is supplied');
+  '22023','Distance sorting is not available',
+  'distance sorting is refused');
+select throws_ok(
+  $$select public.search_providers(null,'{"latitude":30.05,"longitude":31.23}'::jsonb,'distance',20,0)$$,
+  '22023','Distance sorting is not available',
+  'distance sorting is refused even when the caller supplies a location');
+select throws_ok(
+  $$select public.search_providers(null,'{"latitude":30.05,"longitude":31.23,"maximumDistanceKm":5}'::jsonb,'recommended',20,0)$$,
+  '22023','Distance filtering is not available',
+  'a maximum-distance filter is refused rather than answered as a yes/no for a circle');
 
 -- Recommendation comes from the WPS-008 policy, and browsing consumes no
 -- marketplace opportunity.
@@ -357,12 +369,21 @@ select is(
    where k in ('latitude','longitude','phone','email','userId','user_id',
                'nationalId','documentPath','verificationStatus','storagePath')),
   0,'no result carries a coordinate, a contact, a document, or an auth identifier');
+-- The earlier contract here was "distance is rounded to the kilometre, so it
+-- cannot be trilaterated". It can: a rounded value flips at a known radius, and
+-- the caller picks the centre. So no distance-shaped key exists at all.
 select is(
   (select count(*)::integer from jsonb_array_elements(
-     public.search_providers(null,'{"latitude":30.05,"longitude":31.23}'::jsonb,'recommended',50,0)->'results') r
-   where (r->>'distanceKm') is not null
-     and (r->>'distanceKm')::numeric <> pg_catalog.round((r->>'distanceKm')::numeric)),
-  0,'distance is rounded to the kilometre, so it cannot be trilaterated');
+     public.search_providers(null,'{"latitude":30.05,"longitude":31.23}'::jsonb,'recommended',50,0)->'results') r,
+   jsonb_object_keys(r) k
+   where k in ('distanceKm','distance','distanceBand','etaMinutes','nearest')),
+  0,'no result carries a distance, rounded, banded or otherwise');
+-- A supplied point changes nothing about the answer, so moving it teaches the
+-- caller nothing either.
+select is(
+  public.search_providers(null,'{"latitude":30.05,"longitude":31.23}'::jsonb,'recommended',50,0)->'results',
+  public.search_providers(null,'{"latitude":31.20,"longitude":29.95}'::jsonb,'recommended',50,0)->'results',
+  'results are identical from two different caller points');
 select ok(
   (select count(*) from jsonb_array_elements(
      public.search_providers(null,'{}'::jsonb,'recommended',50,0)->'results') r
@@ -492,10 +513,14 @@ select throws_ok($$select public.record_provider_view('a0000000-0000-0000-0001-0
 select is(
   (select count(*)::integer from jsonb_array_elements_text(public.get_discovery_filters()->'governorates') g
    where g = 'Cairo'), 1, 'an area with a discoverable worker is offered');
-select is((public.get_discovery_filters()->>'distanceRequiresLocation'),'true',
-  'the client is told that distance needs a location rather than deciding for itself');
-select is(jsonb_array_length(public.get_discovery_filters()->'sorts'),5,
-  'exactly five sorts are offered; response time has no numeric source and is not offered');
+select ok(not (public.get_discovery_filters() ? 'distanceRequiresLocation'),
+  'no distance precondition is described, because no distance is offered');
+select is(
+  (select count(*)::integer from jsonb_array_elements_text(public.get_discovery_filters()->'sorts') s
+   where s = 'distance'), 0,
+  'distance is not offered as a sort');
+select is(jsonb_array_length(public.get_discovery_filters()->'sorts'),4,
+  'exactly four sorts are offered; neither distance nor response time is');
 select is(
   (select count(*)::integer from jsonb_array_elements_text(public.get_discovery_filters()->'sorts') s
    where s = 'response_time'), 0,
@@ -560,16 +585,20 @@ select cmp_ok(
   'and providers that must be excluded are present to prove exclusion'
 );
 
--- Distance work needs coordinates, and none of the original service areas had
--- any, so radius filtering and nearest sorting could not be exercised at all.
-select cmp_ok(
-  (select count(*) from public.provider_service_areas a
-   join public.provider_profiles p on p.id = a.provider_id
-   where a.latitude is not null and a.longitude is not null
-     and private.is_provider_publicly_discoverable(p.id)),
-  '>=', 2::bigint,
-  'AND A DISCOVERABLE PROVIDER CARRIES COORDINATES, SO DISTANCE IS TESTABLE'
+-- The fixture used to give its service areas coordinates "so distance is
+-- testable". That made a column no product path writes look like an authority.
+-- A service area is a governorate and a district, and nothing may say otherwise.
+select is(
+  (select count(*)::integer from public.provider_service_areas a
+   where a.latitude is not null or a.longitude is not null),
+  0,
+  'NO SERVICE AREA CARRIES A COORDINATE'
 );
+select throws_ok(
+  $$insert into public.provider_service_areas(provider_id,governorate,district,latitude,longitude,radius_km)
+    values ('d2000000-0000-4000-8000-000000000001','Cairo','Maadi',29.96,31.25,10)$$,
+  '23514', null,
+  'and none can be written');
 
 -- ---------------------------------------------------------------------------
 -- The search speaks the languages the customers do

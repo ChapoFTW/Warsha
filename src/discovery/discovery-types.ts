@@ -7,8 +7,14 @@
 
 /** Every sort the server can honestly answer. `response_time` is deliberately
  * absent: `provider_profiles` stores a free-text response label and no numeric
- * value, so the option would sort by nothing. Recorded in WPS-020 §Sorting. */
-export const discoverySorts = ['recommended', 'distance', 'rating', 'most_reviewed', 'availability'] as const;
+ * value, so the option would sort by nothing. Recorded in WPS-020 §Sorting.
+ *
+ * `distance` is absent too, and not for want of data. The caller chooses the
+ * point a discovery query is asked from, so a distance sort says which of two
+ * Professionals is nearer a point of the caller's choosing — repeated, where
+ * each of them is based. Proximity ranks privately inside matching and never
+ * reaches a client. See docs/decisions/provider-distance-is-never-known.md. */
+export const discoverySorts = ['recommended', 'rating', 'most_reviewed', 'availability'] as const;
 export type DiscoverySort = (typeof discoverySorts)[number];
 
 /** The four outcomes a search can have. The UI must distinguish all four. */
@@ -21,29 +27,18 @@ export type DiscoveryFilters = {
   governorate?: string;
   minimumRating?: number;
   minimumCompletedJobs?: number;
-  maximumDistanceKm?: number;
   availableNow?: boolean;
   skillCertificateVerified?: boolean;
   professionalCertificateVerified?: boolean;
   emergencyAvailable?: boolean;
   pricingType?: string;
   language?: string;
-  latitude?: number;
-  longitude?: number;
 };
 
 export const emptyDiscoveryFilters: DiscoveryFilters = {};
 
-/**
- * Location is not a filter the user sets; it is context the user granted.
- * Counting it as an active filter would show "1 filter" to someone who only
- * allowed location access, which is misleading.
- */
-const locationKeys = new Set(['latitude', 'longitude']);
-
 export function activeFilterKeys(filters: DiscoveryFilters): (keyof DiscoveryFilters)[] {
   return (Object.keys(filters) as (keyof DiscoveryFilters)[]).filter((key) => {
-    if (locationKeys.has(key)) return false;
     const value = filters[key];
     if (value === undefined || value === null || value === '') return false;
     if (typeof value === 'boolean') return value;
@@ -60,15 +55,6 @@ export function removeFilter(filters: DiscoveryFilters, key: keyof DiscoveryFilt
   const next = { ...filters };
   delete next[key];
   return next;
-}
-
-export function hasLocation(filters: DiscoveryFilters): boolean {
-  return typeof filters.latitude === 'number' && typeof filters.longitude === 'number';
-}
-
-/** Distance sorting is offered only when the server can answer it. */
-export function availableSorts(filters: DiscoveryFilters): DiscoverySort[] {
-  return discoverySorts.filter(sort => sort !== 'distance' || hasLocation(filters));
 }
 
 export type DiscoveryProviderCard = {
@@ -91,7 +77,6 @@ export type DiscoveryProviderCard = {
   areaLabel: string | null;
   languages: string[];
   specialties: string[];
-  distanceKm: number | null;
 };
 
 export type DiscoverySearchResult = {
@@ -111,7 +96,6 @@ export type DiscoveryFilterMetadata = {
   languages: string[];
   pricingTypes: string[];
   sorts: DiscoverySort[];
-  distanceRequiresLocation: boolean;
   emergencyAvailable: boolean;
 };
 

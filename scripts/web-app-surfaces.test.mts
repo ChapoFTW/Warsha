@@ -201,13 +201,17 @@ check(/WorkerProfileEditor/.test(workerOnboarding)
   'worker onboarding has browser continuations for profile, trade, area and private location');
 const workerLocation = readWeb('components', 'worker-location.tsx');
 const workerLocationCode = strip(workerLocation);
-check(/confirm_my_service_address/.test(workerLocationCode)
-    && /p_floor: null/.test(workerLocationCode)
-    && /p_apartment: null/.test(workerLocationCode)
-    && /p_landmark: null/.test(workerLocationCode)
-    && /p_service_notes: null/.test(workerLocationCode)
+check(/rpc\('confirm_my_work_location'/.test(workerLocationCode)
+    && !/p_floor|p_apartment|p_landmark|p_service_notes/.test(workerLocationCode)
     && !/addressFloor|addressApartment|addressLandmark|addressServiceNotes/.test(workerLocationCode),
   'WORKER LOCATION STORES INTERNAL COORDINATES WITHOUT CUSTOMER DESTINATION FIELDS');
+// The address-book writer confirms a pin; only the work-location writer also
+// makes it the matching anchor. Using the first here was why matching never
+// learned where anybody worked.
+check(!/confirm_my_service_address/.test(workerLocationCode),
+  'THE WEB WORK-LOCATION STEP WRITES THE MATCHING ANCHOR, NOT JUST A PIN');
+check(/is_default: false/.test(workerLocationCode) && !/is_default: true/.test(workerLocationCode),
+  'THE WEB WORK LOCATION IS NEVER A SECOND DEFAULT ADDRESS');
 for (const rpc of ['get_worker_quote_invitations', 'submit_worker_quote',
   'revise_worker_quote', 'withdraw_worker_quote', 'confirm_selected_quote']) {
   check(new RegExp(`rpc\\('${rpc}'`).test(workerOpportunities),
