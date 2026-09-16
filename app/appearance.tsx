@@ -24,8 +24,16 @@ const hintKeys = {
   dark: 'appearanceDarkHint',
 } as const;
 
+/*
+ * `system` was `brightness-auto`, whose glyph is a brightness disc with a
+ * letter A in it. Beside the word "System" and its explanation that is merely
+ * redundant rather than misleading — but it is the same mark that made the
+ * preference dock read as a translation control, and one mark should not mean
+ * two things in one product. `contrast` is a disc split light and dark, which
+ * is what "follows your device" resolves to either way.
+ */
 const icons = {
-  system: 'brightness-auto',
+  system: 'contrast',
   light: 'light-mode',
   dark: 'dark-mode',
 } as const;

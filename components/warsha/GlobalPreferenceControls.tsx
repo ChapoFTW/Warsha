@@ -59,8 +59,36 @@ const copy = {
   },
 } as const;
 
-const appearanceIcons = {
-  system: 'brightness-auto',
+/**
+ * One mark for the control, not three for its state.
+ *
+ * This used to be `brightness-auto` / `light-mode` / `dark-mode`, so the icon
+ * showed the current setting rather than what the control does. On a fresh
+ * install the preference is System, which meant the rendered glyph was
+ * `brightness-auto` — a brightness disc with a literal letter A inside it —
+ * sitting immediately beside a globe and the text "EN".
+ *
+ * Read at a glance, that is a language row: globe, EN, a letterform. It was
+ * reported as a translation control by someone looking at their own product,
+ * and they were reading it correctly. The icon was documented correctly and
+ * communicated the wrong thing, which is a defect in the icon and not in the
+ * reader.
+ *
+ * `contrast` is a disc split light and dark. It carries no letter, no phone and
+ * no glyph that can be mistaken for type, and it means the one thing this
+ * control is for. The current setting is said in words beside it instead, where
+ * a word cannot be misread as a different word.
+ */
+const APPEARANCE_ICON = 'contrast';
+
+/*
+ * Inside the menu each option sits beside its own name and a sentence
+ * explaining it, so a mark per option helps rather than misleads. Sun and moon
+ * are unmistakable; `system` uses the same split disc as the control, because
+ * "follow this device" resolves to one of the two either way.
+ */
+const appearanceOptionIcons = {
+  system: APPEARANCE_ICON,
   light: 'light-mode',
   dark: 'dark-mode',
 } as const;
@@ -104,7 +132,7 @@ export function GlobalPreferenceControls({ embedded = false }: { embedded?: bool
           onBlur={() => setFocused(null)}
           onPress={() => setLanguageOpen(true)}
           style={({ pressed }) => [styles.control, focusStyle('language'), pressed && styles.pressed]}>
-          <MaterialIcons name="language" size={18} color={colors.textPrimary} />
+          <MaterialIcons accessibilityElementsHidden importantForAccessibility="no" name="language" size={18} color={colors.textPrimary} />
           <AppText style={styles.controlText}>
             {expanded ? languageMetadata[language].label : language.toUpperCase()}
           </AppText>
@@ -118,8 +146,13 @@ export function GlobalPreferenceControls({ embedded = false }: { embedded?: bool
           onBlur={() => setFocused(null)}
           onPress={() => setAppearanceOpen(true)}
           style={({ pressed }) => [styles.control, focusStyle('appearance'), pressed && styles.pressed]}>
-          <MaterialIcons name={appearanceIcons[preference]} size={18} color={colors.textPrimary} />
-          {expanded ? <AppText style={styles.controlText}>{appearanceLabel}</AppText> : null}
+          <MaterialIcons accessibilityElementsHidden importantForAccessibility="no" name={APPEARANCE_ICON} size={18} color={colors.textPrimary} />
+          {/* Always, not only on a wide screen. Icon-only was the other half of
+              the confusion: the language control beside it carries "EN", so the
+              pair read as one language row with two language marks. A word says
+              which of light, dark and system is on, and cannot be mistaken for
+              a different control. */}
+          <AppText style={styles.controlText}>{appearanceLabel}</AppText>
         </Pressable>
       </View>
 
@@ -203,7 +236,7 @@ export function GlobalPreferenceControls({ embedded = false }: { embedded?: bool
                     focusStyle(`option-${option}`),
                     pressed && styles.pressed,
                   ]}>
-                  <MaterialIcons name={appearanceIcons[option]} size={20} color={colors.textPrimary} />
+                  <MaterialIcons accessibilityElementsHidden importantForAccessibility="no" name={appearanceOptionIcons[option]} size={20} color={colors.textPrimary} />
                   <View style={styles.optionCopy}>
                     <AppText style={styles.optionTitle}>{text[option]}</AppText>
                     <AppText style={styles.optionHint}>{text[`${option}Hint`]}</AppText>
