@@ -362,6 +362,12 @@ export type Address = {
   isDefault: boolean;
   latitude: number | null;
   longitude: number | null;
+  /**
+   * The server confirmed this pin (`pin_confirmed_at`). Coordinates without it
+   * are not a location anybody confirmed, and a request from them is refused
+   * (202609170007).
+   */
+  pinConfirmed: boolean;
 };
 
 export function parseAddresses(value: unknown): Address[] {
@@ -383,6 +389,7 @@ export function parseAddresses(value: unknown): Address[] {
       isDefault: bool(row.is_default),
       latitude: num(row.latitude),
       longitude: num(row.longitude),
+      pinConfirmed: typeof row.pin_confirmed_at === 'string',
     }];
   });
 }
@@ -478,11 +485,13 @@ export type CustomerFailure =
   | 'stale'
   | 'expired'
   | 'not_found'
+  | 'unconfirmed_location'
   | 'failed';
 
 /** Named from the `raise exception` lines in the marketplace functions. */
 export function classifyCustomerError(message: string | undefined): CustomerFailure {
   const text = message ?? '';
+  if (/verified request location required/i.test(text)) return 'unconfirmed_location';
   if (/too many marketplace requests|rate limit/i.test(text)) return 'rate_limited';
   if (/service unavailable|marketplace is not|not ready/i.test(text)) return 'unavailable';
   if (/choose a future time|valid flexible window/i.test(text)) return 'future_time';

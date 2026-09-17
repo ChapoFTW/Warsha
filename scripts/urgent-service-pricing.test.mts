@@ -86,8 +86,12 @@ for (const [, name, value] of fallbacks) {
 
 // Mock money stays in mocks.
 const mockRepo = read('src', 'marketplace-intelligence', 'mock-marketplace-repository.ts');
-check(/surchargeMinor:\s*25000/.test(mockRepo),
-  'the 250 EGP figure still exists only in the mock repository');
+// Since 202609170008 the mock figure is a per-district fixture rather than one
+// amount for everywhere; it still lives only in the mock repository.
+check(/const MOCK_URGENT_SURCHARGE_BY_DISTRICT:Record<string,number>=\{Zamalek:15000\};/.test(mockRepo),
+  'the mock urgent surcharge exists only in the mock repository');
+check(!/15000|MOCK_URGENT_SURCHARGE/.test(screen),
+  'and never in a screen');
 check(!/25000/.test(screen), 'and has not leaked into the booking screen');
 
 // ===========================================================================
@@ -206,5 +210,30 @@ for (const locale of ['en', 'ar', 'fr'] as const) {
   check(!/\d/.test(transport) && !/[٠-٩]/.test(transport),
     `${locale}.transportationFee is a label and names no amount`);
 }
+
+// ===========================================================================
+// 4. THE MARKETPLACE PREVIEW PRICES THE CUSTOMER'S AREA (202609170008)
+// ===========================================================================
+// The request flow approved the highest surcharge in the country. The amount
+// approved is a ceiling on what the accepting Professional may charge, so a
+// national maximum is a price set by somebody who would never be sent.
+
+const areaMigration = read('supabase', 'migrations', '202609170008_emergency_surcharge_follows_the_area.sql');
+const previewBody = areaMigration.slice(areaMigration.indexOf('CREATE OR REPLACE FUNCTION public.preview_emergency_request'));
+check(/private\.emergency_provider_surcharges\(category_id, service_id, provider_id,\s*address_row\.governorate, address_row\.district, address_row\.latitude, address_row\.longitude, payment\)/
+  .test(previewBody),
+  'THE PREVIEW PRICES ONLY THE PROFESSIONALS WHO COULD BE SENT TO THIS CONFIRMED ADDRESS');
+check(/address_row\.pin_confirmed_at is null/.test(previewBody),
+  'and requires the address to be confirmed');
+check(/or approval\.address_id is distinct from address_id/.test(areaMigration),
+  'AN APPROVAL MADE FOR ONE ADDRESS CANNOT CREATE A REQUEST FOR ANOTHER');
+
+const requestScreen = read('app', 'marketplace-request', 'new.tsx');
+check(/mt\('emergencySurchargeCeiling'\)/.test(requestScreen) && /mt\('emergencyUnavailableHere'\)/.test(requestScreen),
+  'the request form says the amount is a ceiling, and says when nobody urgent covers the address');
+const mockMarketplace = read('src', 'marketplace-intelligence', 'mock-marketplace-repository.ts');
+check(!/surchargeMinor:25000/.test(mockMarketplace)
+  && /MOCK_URGENT_SURCHARGE_BY_DISTRICT\[address\.district\]/.test(mockMarketplace),
+  'MOCK NO LONGER QUOTES ONE INVENTED SURCHARGE FOR EVERYWHERE');
 
 console.log(`Urgent-service pricing and copy: ${checks} checks passed.`);

@@ -5,9 +5,10 @@ import { useAuth } from '@/src/auth/auth-context';
 import { dataErrorKey,logDataError } from '@/src/data/data-errors';
 import type { TranslationKey } from '@/src/i18n/translations';
 import { supabaseAddressRepository } from '@/src/repositories/supabase-user-repositories';
+import type { AddressPin } from '@/src/repositories/types';
 import { localAddressRepository } from './address-repository';
 
-type Value={addresses:Address[];loading:boolean;error:TranslationKey|null;reload:()=>Promise<void>;add:(input:Omit<Address,'id'>)=>Promise<Address>;update:(id:string,input:Omit<Address,'id'>)=>Promise<Address>;remove:(id:string)=>Promise<void>;setDefault:(id:string)=>Promise<void>};
+type Value={addresses:Address[];loading:boolean;error:TranslationKey|null;reload:()=>Promise<void>;add:(input:Omit<Address,'id'>)=>Promise<Address>;update:(id:string,input:Omit<Address,'id'>)=>Promise<Address>;remove:(id:string)=>Promise<void>;setDefault:(id:string)=>Promise<void>;confirmPin:(id:string,pin:AddressPin)=>Promise<Address>};
 const Context=createContext<Value|null>(null);
 
 export function AddressProvider({children}:PropsWithChildren){
@@ -41,6 +42,7 @@ export function AddressProvider({children}:PropsWithChildren){
     update:async(id,input)=>{const target=accountKey;if(!target)throw new Error('Authentication required');const item=await repository.update(id,input);ensureCurrent(target);await reload();return item},
     remove:async id=>{const target=accountKey;if(!target)throw new Error('Authentication required');await repository.remove(id);ensureCurrent(target);await reload()},
     setDefault:async id=>{const target=accountKey;if(!target)throw new Error('Authentication required');await repository.setDefault(id);ensureCurrent(target);await reload()},
+    confirmPin:async(id,pin)=>{const target=accountKey;if(!target)throw new Error('Authentication required');const item=await repository.confirmPin(id,pin);ensureCurrent(target);await reload();return item},
   }),[accountKey,error,loading,reload,repository,visibleAddresses]);
   return <Context.Provider value={value}>{children}</Context.Provider>;
 }

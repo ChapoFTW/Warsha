@@ -35,6 +35,7 @@ import {
   requestLifecycleSemantic,
 } from '@/src/lifecycle/lifecycle-presentation';
 import { requestWorkLabel } from '@/src/marketplace-intelligence/request-work-label';
+import { quoteWindowOpensInMs, quoteWindowStillClosed } from '@/src/marketplace-intelligence/quote-window';
 
 import type { Route } from 'next';
 import styles from '@/components/product-surface.module.css';
@@ -72,6 +73,7 @@ const FAILURE_COPY: Record<CustomerFailure, string> = {
   stale: 'requestStale',
   expired: 'requestExpired',
   not_found: 'requestNotFound',
+  unconfirmed_location: 'requestLocationUnconfirmed',
   failed: 'requestFailed',
 };
 
@@ -219,6 +221,17 @@ function RequestDetail({
     detailUserId ? realtimeChannels.customerMarketplaceRequests(detailUserId) : null,
     () => { void load(); },
   );
+
+  /* The wait before choosing ends on its own after about two minutes; nothing
+     on the server announces that moment, so the page wakes itself for it. An
+     early close does change the request, and arrives through realtime above. */
+  const [, setWindowTick] = useState(0);
+  const opensInMs = request ? quoteWindowOpensInMs(request) : null;
+  useEffect(() => {
+    if (opensInMs === null) return;
+    const timer = setTimeout(() => setWindowTick((tick) => tick + 1), opensInMs + 250);
+    return () => clearTimeout(timer);
+  }, [opensInMs]);
 
   /**
    * Choose and wait for the worker to confirm.
@@ -380,6 +393,13 @@ function RequestDetail({
         </label>
       </div> : quotes?.length ? (
         <h3 className={styles.sectionTitle} style={{ marginTop: 18 }}>{words.requestQuoteHistory}</h3>
+      ) : null}
+
+      {/* Native shows the same sentence under the same rule
+          (src/marketplace-intelligence/quote-window.ts). Without it the choose
+          buttons were simply absent, with nothing to say why. */}
+      {quoteWindowStillClosed(request) ? (
+        <p className={styles.note} role="status">{words.quoteSelectionWindow}</p>
       ) : null}
 
       {quotes === null ? (

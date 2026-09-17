@@ -111,7 +111,7 @@ export default function AddressesPage() {
     const { data, error } = await supabase()
       .from('addresses')
       .select('id,label,address_line,governorate,district,building,floor,apartment,landmark,'
-        + 'service_notes,instructions,is_default,latitude,longitude')
+        + 'service_notes,instructions,is_default,latitude,longitude,pin_confirmed_at')
       .is('deleted_at', null)
       .order('is_default', { ascending: false })
       .order('created_at', { ascending: true });
@@ -186,11 +186,14 @@ export default function AddressesPage() {
       landmark: address.landmark,
       serviceNotes: address.serviceNotes,
     });
-    setCoordinate(address.latitude !== null && address.longitude !== null
-      ? { latitude: address.latitude, longitude: address.longitude, source: 'device_location' }
+    // Coordinates nobody confirmed are not a starting point: the address opens
+    // without a location, so saving it means confirming one (202609170007).
+    const confirmedPin = address.pinConfirmed && address.latitude !== null && address.longitude !== null;
+    setCoordinate(confirmedPin
+      ? { latitude: address.latitude as number, longitude: address.longitude as number, source: 'device_location' }
       : null);
     setCoordinateChanged(false);
-    setLocationStatus(address.latitude !== null && address.longitude !== null ? 'resolved' : 'idle');
+    setLocationStatus(confirmedPin ? 'resolved' : 'idle');
     setEditorFailure(null);
   };
 
@@ -443,6 +446,9 @@ export default function AddressesPage() {
                 <div className={styles.rowMeta}>
                   <span className={styles.badge}>{address.governorate}</span>
                   {address.district ? <span className={styles.badge}>{address.district}</span> : null}
+                  {!address.pinConfirmed ? (
+                    <span className={styles.badge}>{words.addressLocationNotConfirmed}</span>
+                  ) : null}
                   {address.isDefault ? (
                     <span className={`${styles.badge} ${styles.badgeStrong}`}>{words.addressDefault}</span>
                   ) : (

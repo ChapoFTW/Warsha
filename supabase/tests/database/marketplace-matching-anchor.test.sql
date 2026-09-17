@@ -231,7 +231,7 @@ select is(
 -- ===========================================================================
 set local role authenticated;
 select pg_temp.act_as('c7000000-0000-4000-8000-000000000001');
-select set_config('warsha_test.emergency_token',(public.preview_emergency_request(jsonb_build_object('categoryId','plumbing','serviceId',current_setting('warsha_test.service_id')))->>'approvalToken'),true);
+select set_config('warsha_test.emergency_token',(public.preview_emergency_request(jsonb_build_object('categoryId','plumbing','serviceId',current_setting('warsha_test.service_id'),'addressId','c7000000-0000-4000-8002-000000000001'))->>'approvalToken'),true);
 select lives_ok(
   $$select public.create_marketplace_request(jsonb_build_object('flowKind','emergency','categoryId','plumbing','serviceId',current_setting('warsha_test.service_id'),'addressId','c7000000-0000-4000-8002-000000000001','issueDescription','Burst pipe flooding the kitchen','scheduleKind','asap','paymentCompatibility','either','emergencyApprovalToken',current_setting('warsha_test.emergency_token')),'anchor-emergency-request-01')$$,
   'an emergency request is created and matched');

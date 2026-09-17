@@ -166,9 +166,17 @@ for (const rpc of ['get_marketplace_catalog_v2', 'get_discovery_home', 'search_p
 }
 check(/create_marketplace_request/.test(requestForm) && /paymentCompatibility: 'either'/.test(requestForm),
   'request creation uses the marketplace authority and sends the required payment compatibility');
+// Coordinates are not a confirmed pin: until 202609170007 this read "has a
+// latitude", which a client could write into the row itself.
 check(/Boolean\(addressId\)/.test(requestForm)
-  && /filter\(\(entry\) => entry\.latitude !== null && entry\.longitude !== null\)/.test(requestForm),
+  && /filter\(\(entry\) => entry\.pinConfirmed && entry\.latitude !== null && entry\.longitude !== null\)/.test(requestForm)
+  && /pin_confirmed_at/.test(requestForm),
   'A REQUEST CANNOT BE SUBMITTED WITHOUT AN ADDRESS THAT HAS A CONFIRMED PIN');
+check(/kind === 'unconfirmed_location'\) void load\(\)/.test(requestForm),
+  'a request refused for its location reloads the addresses instead of failing silently');
+check(/pin_confirmed_at/.test(addresses) && /const confirmedPin = address\.pinConfirmed/.test(addresses)
+  && /addressLocationNotConfirmed/.test(addresses),
+  'AN ADDRESS WITH UNCONFIRMED COORDINATES OPENS WITHOUT A LOCATION AND IS MARKED, SO SAVING IT CONFIRMS ONE');
 check(/select_worker_quote/.test(requests),
   'the customer may choose a quote through the optimistic-concurrency authority');
 check(!/confirm_selected_quote/.test(strip(requests)),

@@ -197,4 +197,15 @@ const money = readFileSync('src/payments/money.ts', 'utf8');
 ok(!/isolateLtr/.test(money),
   'money is not isolated — Arabic prices use Arabic-Indic digits by design');
 
+// A screen-level `direction: 'rtl'` is a second mirror under the explicit one.
+// Rendered in Arabic on 2026-09-17, the request form's labels and new cards sat
+// on the left: inside the rtl container AppText's right alignment swapped. The
+// form now reverses its rows itself. `app/worker/verification.tsx` and
+// `app/provider-earnings.tsx` still carry the container (UX-09).
+const requestForm = readFileSync('app/marketplace-request/new.tsx', 'utf8');
+ok(!/direction:\s*'rtl'/.test(requestForm.replace(/\/\/[^\n]*/g, '')),
+  'THE REQUEST FORM ADDS NO SECOND MIRROR');
+ok((requestForm.match(/isRTL&&styles\.rowReverse/g) ?? []).length >= 8,
+  'and mirrors its rows, chips and send button explicitly instead');
+
 console.log(`RTL layout baseline: ${checks} checks passed.`);

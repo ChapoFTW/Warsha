@@ -154,4 +154,36 @@ const localConfig = readFileSync('supabase/config.toml', 'utf8');
 check(/site_url = "http:\/\/localhost:8081"/.test(localConfig),
   'the LOCAL stack config still points at localhost, as it should');
 
+// --- A request needs a pin its owner confirmed (202609170007) ---------------
+const pinMigration = readFileSync('supabase/migrations/202609170007_requests_need_a_confirmed_pin.sql', 'utf8');
+check(/create trigger addresses_guard_pin/.test(pinMigration)
+  && /set_config\('warsha\.confirming_pin', 'on', true\)/.test(pinMigration)
+  && /address_row\.pin_confirmed_at is null/.test(pinMigration),
+  'ONLY confirm_my_service_address CONFIRMS A PIN, AND A REQUEST REQUIRES THE CONFIRMATION');
+const addressPin = readFileSync('src/addresses/address-pin.ts', 'utf8');
+check(/address\.pinConfirmed === true/.test(addressPin),
+  'native reads confirmation, not the presence of coordinates');
+const nativeUserRepositories = readFileSync('src/repositories/supabase-user-repositories.ts', 'utf8');
+check(/pinConfirmed:typeof x\.pin_confirmed_at==='string'/.test(nativeUserRepositories)
+  && /async confirmPin\(id,pin\)\{const client=getSupabaseClient\(\);const\{error\}=await client\.rpc\('confirm_my_service_address'/.test(nativeUserRepositories),
+  'native maps the server confirmation and confirms a pin only through the governed RPC');
+const nativeRequestForm = readFileSync('app/marketplace-request/new.tsx', 'utf8');
+check(/Boolean\(categoryId&&addressId\)&&locationConfirmed/.test(nativeRequestForm)
+  && /<RequestLocationConfirmation address=\{selectedAddress\}\/>/.test(nativeRequestForm)
+  && /isUnconfirmedLocationError\(reason\)/.test(nativeRequestForm),
+  'THE NATIVE REQUEST FORM CANNOT SEND FROM AN UNCONFIRMED ADDRESS, AND OFFERS TO CONFIRM IT IN PLACE');
+const mockMarketplace = readFileSync('src/marketplace-intelligence/mock-marketplace-repository.ts', 'utf8');
+check(/if\(!address\|\|!addressHasConfirmedPin\(address\)\)throw new Error\(UNCONFIRMED_LOCATION_MESSAGE\)/.test(mockMarketplace),
+  'Mock refuses the same request the server refuses');
+
+// Found by rendering: a Customer who had just confirmed their address during
+// onboarding saw it offered as unconfirmed, because the list was read before the
+// pin was confirmed and Mock never marked the address at all.
+const onboardingAddressScreen = readFileSync('app/onboarding/address.tsx', 'utf8');
+check(/if \(!confirmed\) setMessage\(ot\.text\('genericError'\)\);\s*else \{[\s\S]{0,400}await addresses\.reload\(\);/.test(onboardingAddressScreen),
+  'THE ADDRESS LIST IS READ AGAIN AFTER ONBOARDING CONFIRMS THE PIN');
+const onboardingRepositorySource = readFileSync('src/onboarding/onboarding-repository.ts', 'utf8');
+check(/mockConfirmAddress\([\s\S]{0,400}await localAddressRepository\.confirmPin\(input\.addressId/.test(onboardingRepositorySource),
+  'and Mock confirms the stored address as the server does');
+
 console.log(`Address contract: ${checks} checks passed.`);

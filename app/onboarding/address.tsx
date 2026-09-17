@@ -270,6 +270,10 @@ function CustomerDestinationAddressFlow() {
       });
       if (!confirmed) setMessage(ot.text('genericError'));
       else {
+        // The list was read when the address was added, before its pin was
+        // confirmed. Read it again, or the request form offers this address as
+        // unconfirmed and asks for a confirmation that already happened.
+        await addresses.reload();
         // Saved and confirmed: the address is the server's now.
         resetForm('submitted');
         router.replace('/');

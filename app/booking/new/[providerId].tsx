@@ -15,7 +15,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { BrandLoadingMark as ActivityIndicator } from "@/components/warsha/BrandMark";
-import { AddressLocationPicker, type AddressLocationPickerCopy } from "@/components/warsha/AddressLocationPicker";
+import { AddressLocationPicker } from "@/components/warsha/AddressLocationPicker";
 import { ScreenHeader } from "@/components/warsha/ScreenHeader";
 import { AppText } from "@/components/warsha/Typography";
 import { colors, radii, spacing, typography } from "@/constants/theme";
@@ -33,7 +33,7 @@ import {
 import type { Service } from "@/src/data/marketplace-types";
 import { useMarketplaceData } from "@/src/data/marketplace-context";
 import { useLocalization } from "@/src/i18n/localization";
-import { useAddressFormText } from "@/src/i18n/address-form-copy";
+import { useAddressFormText, useAddressLocationPickerCopy } from "@/src/i18n/address-form-copy";
 import type { TranslationKey } from "@/src/i18n/translations";
 import { catalogueServiceLabel } from "@/src/services/specific-services";
 import { resolvedAddressFields } from "@/src/providers/location-address";
@@ -123,17 +123,7 @@ export default function NewBookingScreen() {
   const [time, setTime] = useState("");
   const [type, setType] = useState<"scheduled" | "emergency">("scheduled");
   const [error, setError] = useState("");
-  const locationPickerCopy: AddressLocationPickerCopy = {
-    useCurrentLocation: addressText('useCurrentLocation'), chooseOnMap: addressText('chooseOnMap'),
-    searchAddress: addressText('searchAddress'), searchPlaceholder: addressText('searchPlaceholder'),
-    locationSaved: addressText('locationSaved'), locationPartial: addressText('locationPartial'),
-    addressLookupFailed: addressText('lookupFailed'), locating: addressText('locating'),
-    resolvingAddress: addressText('resolving'), locationFailed: addressText('locationFailed'),
-    locationPermissionDenied: addressText('permissionDenied'), locationServicesDisabled: addressText('servicesDisabled'),
-    locationDeviceUnavailable: addressText('deviceUnavailable'), noSearchResults: addressText('noResults'),
-    providerUnavailable: addressText('providerUnavailable'), permissionOptional: addressText('permissionOptional'),
-    mapUnavailable: addressText('mapUnavailable'), changeAddress: addressText('changeAddress'), mapLoading: addressText('mapLoading'), mapDragHint: addressText('mapHint'), loading: addressText('loading'),
-  };
+  const locationPickerCopy = useAddressLocationPickerCopy();
   useEffect(
     () => () => {
       if (!bookingCreated.current)

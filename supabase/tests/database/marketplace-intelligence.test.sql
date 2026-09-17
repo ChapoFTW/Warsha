@@ -87,8 +87,16 @@ insert into public.provider_emergency_categories(provider_id,category_id,enabled
 ('92000000-0000-0000-0001-000000000002','plumbing',true),
 ('92000000-0000-0000-0001-000000000003','plumbing',true),
 ('92000000-0000-0000-0001-000000000004','plumbing',true);
-insert into public.addresses(id,customer_id,label,address_line,street,building,governorate,district,latitude,longitude,is_default)
-values('92000000-0000-0000-0002-000000000001','92000000-0000-0000-0000-000000000001','Home','10 Test Street','Test Street','10','Cairo','Zamalek',30.0510,31.2310,true);
+-- The Customer's home, pinned the way the app pins it. A request needs a
+-- confirmed pin (202609170007), and coordinates written straight into the row
+-- are not one.
+insert into public.addresses(id,customer_id,label,address_line,street,building,governorate,district,is_default)
+values('92000000-0000-0000-0002-000000000001','92000000-0000-0000-0000-000000000001','Home','10 Test Street','Test Street','10','Cairo','Zamalek',true);
+set local role authenticated;
+select set_config('request.jwt.claim.sub','92000000-0000-0000-0000-000000000001',true);
+select public.confirm_my_service_address('92000000-0000-0000-0002-000000000001',30.0510,31.2310,'manual_pin');
+reset role;
+select set_config('request.jwt.claim.sub','',true);
 insert into private.marketplace_category_duration_defaults(category_id,estimated_duration_minutes,policy_version)
 values('plumbing',90,1) on conflict(category_id) do update set estimated_duration_minutes=90,policy_version=1;
 update private.marketplace_capacity_configuration set road_factor=1.3,average_urban_speed_kmh=30 where singleton;
@@ -253,10 +261,10 @@ select is((select count(*)::integer from public.financial_booking_payments where
 set local role authenticated;
 select set_config('request.jwt.claim.sub','92000000-0000-0000-0000-000000000001',true);
 select lives_ok(
-  $$select public.preview_emergency_request(jsonb_build_object('categoryId','plumbing','serviceId',current_setting('warsha_test.service_id')))$$,
+  $$select public.preview_emergency_request(jsonb_build_object('categoryId','plumbing','serviceId',current_setting('warsha_test.service_id'),'addressId','92000000-0000-0000-0002-000000000001'))$$,
   'customer can preview authoritative Emergency surcharge before creation'
 );
-select set_config('warsha_test.emergency_token',(public.preview_emergency_request(jsonb_build_object('categoryId','plumbing','serviceId',current_setting('warsha_test.service_id')))->>'approvalToken'),true);
+select set_config('warsha_test.emergency_token',(public.preview_emergency_request(jsonb_build_object('categoryId','plumbing','serviceId',current_setting('warsha_test.service_id'),'addressId','92000000-0000-0000-0002-000000000001'))->>'approvalToken'),true);
 select lives_ok(
   $$select public.create_marketplace_request(jsonb_build_object('flowKind','emergency','categoryId','plumbing','serviceId',current_setting('warsha_test.service_id'),'addressId','92000000-0000-0000-0002-000000000001','issueDescription','Emergency pipe burst in kitchen','scheduleKind','asap','paymentCompatibility','either','emergencyApprovalToken',current_setting('warsha_test.emergency_token')),'market-emergency-create-01')$$,
   'approved Emergency request is created'

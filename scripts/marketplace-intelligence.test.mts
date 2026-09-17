@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { classifyMarketplaceEdit,quoteSelectionOpen,sortMarketplaceQuotes,type MarketplaceRequest,type WorkerQuote } from '../src/marketplace-intelligence/marketplace-types.ts';
+import { quoteWindowOpensInMs,quoteWindowStillClosed } from '../src/marketplace-intelligence/quote-window.ts';
 import {
   MARKETPLACE_REQUEST_STATUSES,
   bookingLifecycleSemantic,
@@ -25,6 +26,22 @@ assert.equal(quoteSelectionOpen({...request,status:'selection_pending_confirmati
 // The server moves collectionNotBefore, so the client rule above needs no
 // change; Mock has to make the same move or it shows a wait the server would not.
 assert.equal(quoteSelectionOpen({...request,collectionNotBefore:'2026-07-31T12:00:30Z'},now+30000),true,'selection opens when the window was closed early');
+// The waiting explanation follows one rule on both platforms (quote-window.ts):
+// shown while choosing has not opened, with or without quotes, never after a
+// choice or once the request is over.
+assert.equal(quoteWindowStillClosed(request,now),true,'THE WAIT IS EXPLAINED FROM THE MOMENT THE REQUEST IS SENT');
+assert.equal(quoteWindowStillClosed({...request,status:'matching'},now+1000),true,'and before any quote has arrived');
+assert.equal(quoteWindowStillClosed(request,now+120000),false,'not once choosing has opened');
+assert.equal(quoteWindowStillClosed({...request,collectionNotBefore:'2026-07-31T12:00:30Z'},now+30000),false,'not once the window closed early');
+assert.equal(quoteWindowStillClosed({...request,selectedQuoteId:'quote'},now),false,'NOT AFTER THE CUSTOMER HAS CHOSEN');
+assert.equal(quoteWindowStillClosed({...request,status:'expired'},now),false,'not on a request that is over');
+assert.equal(quoteWindowOpensInMs(request,now),120000,'the page knows when to look again');
+const requestDetailNative=readFileSync('app/marketplace-request/[id].tsx','utf8');
+const requestsWeb=readFileSync('web/app/app/requests/page.tsx','utf8');
+assert.match(requestDetailNative,/\{quoteWindowStillClosed\(request,now\)\?<View accessibilityLiveRegion="polite" style=\{styles\.notice\}>/,'native explains the wait under the shared rule');
+assert.match(requestsWeb,/\{quoteWindowStillClosed\(request\) \? \(\s*<p className=\{styles\.note\} role="status">\{words\.quoteSelectionWindow\}<\/p>/,'WEB EXPLAINS THE WAIT TOO, AS A POLITE STATUS');
+const webCopy=readFileSync('web/lib/app-copy.ts','utf8')+readFileSync('web/lib/app-copy.fr.ts','utf8');
+assert.equal((webCopy.match(/quoteSelectionWindow: '[^']*(about two minutes|حوالي دقيقتين|environ deux minutes)[^']*'/g)??[]).length,3,'in English, Arabic and French, as about two minutes rather than a promise');
 const mockMarketplace=readFileSync('src/marketplace-intelligence/mock-marketplace-repository.ts','utf8');
 assert.equal((mockMarketplace.match(/closeWindowIfAnswered\(state,/g)??[]).length,3,'Mock closes the window early at creation, quote and decline, as the server does');
 assert.equal(classifyMarketplaceEdit({descriptionClarification:'More detail'}),'minor');
@@ -210,4 +227,4 @@ assert.match(server,/update private\.marketplace_jobs set state='cancelled'/,'ca
     'the web badge always carries its localized label, not colour alone');
 }
 
-console.log(`Marketplace Intelligence unit and lifecycle tests passed (${22+10+MARKETPLACE_REQUEST_STATUSES.length*3+16+45} assertions).`);
+console.log(`Marketplace Intelligence unit and lifecycle tests passed (${22+10+10+MARKETPLACE_REQUEST_STATUSES.length*3+16+45} assertions).`);

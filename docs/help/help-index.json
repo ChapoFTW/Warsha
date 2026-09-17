@@ -236,8 +236,8 @@
       "locale": "en",
       "title": "Addresses and location",
       "summary": "Save a clear service address without losing the exact map pin.",
-      "version": 4,
-      "lastReviewedDate": "2026-09-10",
+      "version": 5,
+      "lastReviewedDate": "2026-09-17",
       "features": [
         "addresses",
         "location"
@@ -263,8 +263,8 @@
       "locale": "ar",
       "title": "العناوين والموقع",
       "summary": "احفظ عنوان خدمة واضح من غير ما تفقد مكان الدبوس الدقيق.",
-      "version": 3,
-      "lastReviewedDate": "2026-09-10",
+      "version": 4,
+      "lastReviewedDate": "2026-09-17",
       "features": [
         "addresses",
         "location"
@@ -290,7 +290,7 @@
       "locale": "en",
       "title": "Requests, quotes, and jobs",
       "summary": "Understand what happens from posting a request to completing or cancelling a job.",
-      "version": 8,
+      "version": 9,
       "lastReviewedDate": "2026-09-17",
       "features": [
         "marketplace",
@@ -320,7 +320,7 @@
       "locale": "ar",
       "title": "الطلبات والعروض والشغل",
       "summary": "افهم اللي بيحصل من نشر الطلب لحد اكتمال الشغل أو إلغائه.",
-      "version": 7,
+      "version": 8,
       "lastReviewedDate": "2026-09-17",
       "features": [
         "marketplace",
@@ -1171,8 +1171,8 @@
       "locale": "fr",
       "title": "Adresses et localisation",
       "summary": "Enregistrez une adresse claire tout en conservant la position exacte.",
-      "version": 3,
-      "lastReviewedDate": "2026-09-10",
+      "version": 4,
+      "lastReviewedDate": "2026-09-17",
       "features": [
         "addresses",
         "location"
@@ -1198,7 +1198,7 @@
       "locale": "fr",
       "title": "Demandes, devis et interventions",
       "summary": "Comprenez le parcours d’une demande jusqu’à la fin ou l’annulation de l’intervention.",
-      "version": 7,
+      "version": 8,
       "lastReviewedDate": "2026-09-17",
       "features": [
         "marketplace",

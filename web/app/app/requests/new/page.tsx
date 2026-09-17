@@ -78,6 +78,7 @@ const FAILURE_COPY: Record<CustomerFailure, string> = {
   stale: 'requestStale',
   expired: 'requestExpired',
   not_found: 'requestNotFound',
+  unconfirmed_location: 'requestLocationUnconfirmed',
   failed: 'requestFailed',
 };
 
@@ -186,7 +187,7 @@ export default function NewRequestPage() {
     const client = supabase();
     const [catalog, addressRows] = await Promise.all([
       client.rpc('get_marketplace_catalog_v2'),
-      client.from('addresses').select('id,label,address_line,governorate,district,is_default,latitude,longitude')
+      client.from('addresses').select('id,label,address_line,governorate,district,is_default,latitude,longitude,pin_confirmed_at')
         .is('deleted_at', null)
         .order('is_default', { ascending: false }),
     ]);
@@ -196,7 +197,9 @@ export default function NewRequestPage() {
     }
     if (!addressRows.error) {
       const parsed = parseAddresses(addressRows.data)
-        .filter((entry) => entry.latitude !== null && entry.longitude !== null);
+        // Only a location its owner confirmed can carry a request
+        // (202609170007); coordinates alone are not one.
+        .filter((entry) => entry.pinConfirmed && entry.latitude !== null && entry.longitude !== null);
       setAddresses(parsed);
       const preferred = parsed.find((entry) => entry.isDefault) ?? parsed[0];
       // The default address is *not* written into the draft. A draft holds what
@@ -249,7 +252,11 @@ export default function NewRequestPage() {
       p_idempotency_key: draft.idempotencyKey || newRequestKey(),
     });
     if (error) {
-      setFailure(classifyCustomerError(error.message));
+      const kind = classifyCustomerError(error.message);
+      setFailure(kind);
+      // The address changed since this form read it: read the list again, so
+      // the refused address is no longer offered.
+      if (kind === 'unconfirmed_location') void load();
       setBusy(false);
       return;
     }

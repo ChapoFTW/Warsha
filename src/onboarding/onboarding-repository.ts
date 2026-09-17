@@ -1,5 +1,6 @@
 import { File } from 'expo-file-system';
 
+import { localAddressRepository } from '@/src/addresses/address-repository';
 import { environment } from '@/src/config/environment';
 import { customerSetupRecoveryEligible } from '@/src/auth/signup-machine';
 import { getSupabaseClient } from '@/src/lib/supabase';
@@ -129,9 +130,16 @@ export const onboardingRepository = {
     },
   ): Promise<OnboardingState> {
     if (environment.dataMode === 'mock') {
-      return mockConfirmAddress(
+      const state = mockConfirmAddress(
         requireAccount(accountKey), input.latitude, input.longitude, input.pinSource,
       );
+      // The server confirms the address row itself; Mock has to as well, or the
+      // address a Customer has just confirmed reads as unconfirmed and their
+      // first request is refused (202609170007).
+      await localAddressRepository.confirmPin(input.addressId, {
+        latitude: input.latitude, longitude: input.longitude, pinSource: input.pinSource,
+      });
+      return state;
     }
     const client = getSupabaseClient();
     const { error } = await client.rpc('confirm_my_service_address', {
