@@ -288,6 +288,42 @@
           "digest": "5cf8142f2c8e73ba"
         }
       ]
+    },
+    {
+      "date": "2026-09-18",
+      "articles": [
+        {
+          "id": "customer-requests-quotes-jobs",
+          "locale": "en",
+          "digest": "0758a4ffb10f0cc6"
+        },
+        {
+          "id": "customer-requests-quotes-jobs",
+          "locale": "ar",
+          "digest": "b690340fab792b66"
+        },
+        {
+          "id": "customer-requests-quotes-jobs",
+          "locale": "fr",
+          "digest": "087c796444cc54f3"
+        },
+        {
+          "id": "worker-opportunities-jobs",
+          "locale": "en",
+          "digest": "a3240edc01484ae3"
+        },
+        {
+          "id": "worker-opportunities-jobs",
+          "locale": "ar",
+          "digest": "70353e1472749f88"
+        },
+        {
+          "id": "worker-opportunities-jobs",
+          "locale": "fr",
+          "digest": "bd5fa6bc7477c590"
+        }
+      ],
+      "reason": "Account deletion requests are now carried out (202609170009): an elapsed waiting period is judged against the blockers and an approved request is anonymized, erasure empties an address of the precise place, and sign-in is revoked. Both articles were read against that change. Neither describes deletion: what a request and a quote are, and the Professional opportunity and job lifecycle, are unchanged by it. The deletion behaviour is documented in customer-account-security and worker-getting-started, updated the same day. The impact rule matched because the migration filename carries the word request."
     }
   ]
 }

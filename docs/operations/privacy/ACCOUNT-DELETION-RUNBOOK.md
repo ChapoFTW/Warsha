@@ -2,19 +2,35 @@
 
 **Owner:** Security administrator
 **Capability:** `review_privacy_requests` (state only)
-**Status:** Request and cancellation work. Execution is **not scheduled**.
+**Status:** Request, cancellation and execution work. Execution runs from
+cron every ten minutes (`202609170009`).
 
 ---
 
-## 1. The honest limitation
+## 1. How a request is carried out
 
-`private.privacy_anonymize_account` is built, tested, and **unwired**. Nothing
-advances a request from `cooling_off` to `approved` to `processing`. A scheduler
-is required and does not exist.
+`private.process_account_deletions(limit)` runs every ten minutes under the
+cron job `warsha-account-deletions`. Each run does two things:
 
-Until it does, a request that completes its cooling-off window sits in
-`cooling_off`. It is not lost, and it is not silently ignored — but no personal
-data has been removed. Do not tell anyone their account has been deleted.
+1. **Judges** every request whose cooling-off window has elapsed, against
+   `private.privacy_deletion_blockers`: no blockers → `approved`; a legal hold →
+   `legal_hold`; anything else → `blocked`, with the codes recorded so the
+   account is told which commitment stands in the way. A blocked request is
+   judged again on the next run, because blockers clear on their own when the
+   job ends or the dispute closes.
+2. **Executes** every approved request: `private.privacy_anonymize_account`,
+   then `completed`. Each request runs in its own exception block, so one
+   failure is recorded against that request (`failed`, with the SQLSTATE and
+   message in `failure_reason`) and the rest still run.
+
+It obeys `privacy_configuration.deletion_enabled`. A Warsha that does not offer
+deletion does not quietly perform it, and the processor says `enabled: false`
+and changes nothing.
+
+**Until 2026-09-17 none of this existed.** Requests sat in `cooling_off`
+forever while the app said "your account will be deleted after the waiting
+period". If you are reading a request older than that, it was waiting on this,
+not on a blocker.
 
 ## 2. States
 
@@ -88,7 +104,7 @@ break the other party's record too.
 They cancel it themselves from the deletion screen. Do not do it for them —
 there is no staff RPC that cancels somebody's request, deliberately.
 
-## 6. What execution will do, when it is wired
+## 6. What execution does
 
 `private.privacy_anonymize_account(user_id, request_id)`:
 
@@ -96,11 +112,23 @@ there is no staff RPC that cancels somebody's request, deliberately.
 2. Profile: name → neutral label, photo and phone cleared, `deleted_at` set.
 3. Worker profile: name → label; biography, cover, specialties, skills, location
    cleared; unpublished; unavailable; `deleted_at` set.
-4. Portfolio and addresses: soft-deleted.
+4. Portfolio: soft-deleted. Addresses: soft-deleted **and emptied** — street,
+   building, floor, flat, landmark, access notes, the local id and the
+   coordinates all go; the governorate and district, which the marketplace
+   already showed, stay, and the label becomes the neutral one.
+4b. The exact location of past requests (`marketplace_request_locations`):
+   **deleted**, like the matching anchor. The request keeps its coarse area.
 5. Searches, views, favourites, display preferences: **deleted**.
 6. Device tokens: revoked, labels cleared, hashes retained.
 7. Notifications: **preserved** — payloads already hold only resource UUIDs.
-8. Every step logged with a row count to `private.privacy_anonymization_log`.
+8. Sign-in: revoked. `private.privacy_revoke_sign_in` deletes the sessions,
+   refresh tokens and sign-in identities, then bans the account at the auth
+   layer and clears its email, phone and password. The account row itself stays,
+   because every immutable record points at it. A second factor, if the account
+   has one, is **not** removed here: `staff-authority-boundary` holds that no
+   Warsha function may name that table, and a banned account with no credential
+   cannot use it. Staff off-boarding removes factors.
+9. Every step logged with a row count to `private.privacy_anonymization_log`.
 
 **It must run without an end-user session.** The WPS-010 guard on `is_published`
 refuses an unpublish from a signed-in non-staff session, which is correct: this
@@ -124,12 +152,13 @@ than the retry.
 
 Check first: is a hold active that was not active at approval?
 
-## 9. Sign-in is not disabled
+## 9. Sign-in
 
-Disabling authentication is an `auth` schema operation WPS-022 does not own. The
-anonymization log records `auth_disabled: 0` so the log and this runbook agree
-about what remains outstanding. Until it is wired, an anonymized account can
-still sign in — to a profile with no name, no photo, and no history.
+Revoked with the rest, since `202609170009`. The log records `auth_sessions`,
+`auth_identities`, `auth_factors` and `auth_sign_in_disabled` with their row
+counts, in place of the `auth_disabled: 0` that used to stand for the gap.
 
-That is a real gap, and it is listed in the acceptance evidence rather than
-hidden here.
+What is *not* done, and deliberately: the `auth.users` row is not deleted. It is
+what `legal_acceptances`, consent history, trust records, bookings and the
+ledger point at, and removing it would take that evidence with it. Hard deletion
+remains unsupported (ACC-03).

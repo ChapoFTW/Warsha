@@ -213,16 +213,29 @@ type file itself.
 
 ## 9. Known limitations
 
+> **Amended 2026-09-17 (`202609170009`).** Limitations 2 and 4 are closed.
+> `private.process_account_deletions` runs from cron every ten minutes: it
+> judges a request whose waiting period has elapsed against the blockers and
+> carries out an approved one, obeying `privacy_configuration.deletion_enabled`.
+> Anonymization now also empties an address of the precise place, deletes the
+> exact location of past requests, and revokes sign-in — sessions, refresh
+> tokens, identities, factors, and the credential and contact identifiers on
+> `auth.users`, which is banned rather than deleted so the immutable evidence
+> keyed on it survives. Proof:
+> `supabase/tests/database/account-deletion-execution.test.sql` (28), of which
+> seven fail against the previous anonymization.
+
 1. **No export file is produced.** The manifest is generated; the archive needs
    a worker or Edge Function that is not deployed. The request stops at
    `manifest_ready` and the copy says "being prepared".
-2. **No scheduled execution.** Deletion requests do not advance past
-   `cooling_off` automatically; a scheduler is required and does not exist.
-   `privacy_anonymize_account` is built, tested, and unwired.
+2. **No scheduled execution** (closed 2026-09-17). Deletion requests did not
+   advance past `cooling_off` automatically; `privacy_anonymize_account` was
+   built, tested and unwired.
 3. **Storage objects are not swept.** Anonymization clears rows; deleting the
    corresponding objects requires the storage runbook to be run by hand.
-4. **Sign-in is not disabled on anonymization.** That is an auth-layer
-   operation WPS-022 does not own. Recorded as a step in the log so the runbook
-   and the log agree on what remains.
+4. **Sign-in was not disabled on anonymization** (closed 2026-09-17). It was
+   treated as an auth-layer operation WPS-022 did not own, and recorded as a
+   step reading zero in the log so the runbook and the log agreed on what
+   remained outstanding.
 5. **Every retention duration is unreviewed.** Ten of eleven rules carry
    `legal_review_status = 'pending'`.

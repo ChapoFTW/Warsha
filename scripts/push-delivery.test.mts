@@ -490,9 +490,14 @@ const allMigrations = readdirSync(join(root, 'supabase', 'migrations'))
 // must be that drain, so a new one fails here until someone decides what it
 // is, and none may touch push dispatch.
 const schedules = [...allMigrations.matchAll(/cron\.schedule\(([\s\S]*?)\);/g)].map((m) => m[1]);
-match(String(schedules.length), /^1$/, 'exactly one cron schedule exists');
-match(schedules[0] ?? '', /'warsha-marketplace-jobs'[\s\S]*private\.drain_marketplace_jobs\(/,
-  'and it is the marketplace job drain');
+// Two, and each one is named here. A third fails this until somebody decides
+// what it is, which is the point: the guarantee is that nothing runs on a timer
+// in Warsha without being written down.
+match(String(schedules.length), /^2$/, 'exactly two cron schedules exist');
+match(schedules.join('\n'), /'warsha-marketplace-jobs'[\s\S]*private\.drain_marketplace_jobs\(/,
+  'one is the marketplace job drain');
+match(schedules.join('\n'), /'warsha-account-deletions'[\s\S]*private\.process_account_deletions\(/,
+  'and one carries out account deletions whose waiting period has ended');
 notMatch(schedules.join('\n'), /push|notification|dispatch/i,
   'NO CRON SCHEDULE DISPATCHES PUSH, so the dispatcher runs only when invoked');
 
