@@ -601,9 +601,12 @@ check(!/insert|update|delete/i.test(strip(auditPage)),
 for (const key of ['accountStatus_active', 'accountStatus_deleted',
   'trust_good_standing', 'trust_restricted', 'trust_suspended', 'trust_banned',
   'restriction_marketplaceRemoved', 'restriction_communicationRestricted',
-  'restriction_reviewRestricted', 'restriction_paymentHold']) {
+  'restriction_reviewRestricted']) {
   check(inBoth(key), `the console names "${key}" in both languages`);
 }
+// Warsha is cash-only (202609170006): no money is held, so no hold is named.
+check(!/paymentHold/.test(accounts + detail + consoleCopy + readWeb('lib', 'app-copy.fr.ts')),
+  'THE CONSOLE DOES NOT SAY A CUSTOMER\'S PAYMENTS ARE HELD');
 
 // --- Vetting decisions and enforcement ------------------------------------
 //
@@ -683,12 +686,21 @@ const enforcementTypes = migrations.slice(
   migrations.indexOf('trust_enforcement_actions_type_check'),
   migrations.indexOf('trust_enforcement_actions_reason_check'));
 for (const action of ['warning', 'temporary_restriction', 'investigation', 'suspension',
-  'permanent_ban', 'marketplace_removal', 'profile_hidden', 'payment_hold',
-  'withdrawal_hold', 'communication_restriction', 'review_restriction', 'restoration']) {
+  'permanent_ban', 'marketplace_removal', 'profile_hidden',
+  'communication_restriction', 'review_restriction', 'restoration']) {
   check(enforcementTypes.includes(`'${action}'`), `the table permits ${action}`);
   check(decisions.includes(`'${action}'`), `and the console offers ${action}`);
   check(inBoth(`enforcement_${action}`), `naming it in both languages`);
 }
+// The table still permits the two holds, for the history that has them. The
+// server refuses new ones, so the console neither offers nor names them.
+for (const action of ['payment_hold', 'withdrawal_hold']) {
+  check(enforcementTypes.includes(`'${action}'`), `the table still permits historical ${action}`);
+  check(!decisions.includes(`'${action}'`), `THE CONSOLE DOES NOT OFFER ${action.toUpperCase()}: WARSHA HOLDS NO MONEY`);
+  check(!`${consoleCopy}${readWeb('lib', 'app-copy.fr.ts')}`.includes(`enforcement_${action}:`), `and has no words for it`);
+}
+check(/Warsha does not process payments, so there is nothing to hold/.test(migrations),
+  'the server refuses a new hold');
 check(/'restoration'/.test(decisions),
   'RESTORATION IS THE BACKEND\'S OWN REVERSAL, AND THE ONLY UNDO OFFERED');
 check(!/unban|un_ban|reverse_ban/i.test(strip(enforcementPanel) + strip(decisions)),

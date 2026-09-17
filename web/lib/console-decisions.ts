@@ -187,16 +187,20 @@ export const VETTING_REASON_CODES: readonly string[] = [
 // ---------------------------------------------------------------------------
 
 /**
- * `trust_enforcement_actions_type_check`, exactly.
+ * `trust_enforcement_actions_type_check`, less the two holds.
  *
  * `restoration` is in the list because the table allows it, and it is the
  * backend's own inverse action. Nothing here invents an "unban" that the
  * schema does not model.
+ *
+ * `payment_hold` and `withdrawal_hold` are still in the table, for the history
+ * that has them, and are refused by the server since 202609170006: Warsha is
+ * cash-only and holds nobody's money, so a hold would describe nothing.
  */
 export const ENFORCEMENT_ACTIONS: readonly string[] = [
   'warning', 'temporary_restriction', 'investigation', 'suspension',
-  'permanent_ban', 'marketplace_removal', 'profile_hidden', 'payment_hold',
-  'withdrawal_hold', 'communication_restriction', 'review_restriction',
+  'permanent_ban', 'marketplace_removal', 'profile_hidden',
+  'communication_restriction', 'review_restriction',
   'restoration',
 ];
 

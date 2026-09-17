@@ -180,14 +180,13 @@ function Restrictions({
   words,
 }: {
   restrictions: { marketplaceRemoved: boolean; communicationRestricted: boolean;
-    reviewRestricted: boolean; paymentHold: boolean };
+    reviewRestricted: boolean };
   words: Record<string, string>;
 }) {
   const active = ([
     ['marketplaceRemoved', restrictions.marketplaceRemoved],
     ['communicationRestricted', restrictions.communicationRestricted],
     ['reviewRestricted', restrictions.reviewRestricted],
-    ['paymentHold', restrictions.paymentHold],
   ] as const).filter(([, on]) => on);
 
   if (active.length === 0) return <p className={table.muted}>{words.detailNoRestrictions}</p>;

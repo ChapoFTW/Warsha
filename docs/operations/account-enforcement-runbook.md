@@ -15,13 +15,34 @@
 | Investigation | Yes | Yes | No — not punitive |
 | Marketplace removal | Yes | Yes | Yes |
 | Hidden profile | Yes | Yes | Yes |
-| Payment hold | Yes | Yes | Yes |
-| Withdrawal hold | Yes | Yes | Yes |
 | Communication restriction | Yes | Yes | Yes |
 | Review restriction | Yes | Yes | Yes |
 | Suspension | Yes | Yes | Yes |
 | Permanent ban | Only by appeal | **No** | Yes |
 | Restoration | — | — | No |
+
+Payment and withdrawal holds are no longer measures. Warsha is cash-only and
+holds nobody's money, so the server refuses them (`202609170006`). Holds
+recorded earlier stay in the history.
+
+What each measure stops, as the server enforces it (WES-016, amended
+2026-09-17):
+
+- **Hidden profile** — not found, not invited, no new work. Existing jobs,
+  their conversations and pre-booking conversations continue.
+- **Suspension** — no new requests, bookings, quotes, pre-booking
+  conversations or reviews. A job already under way can still be moved forward
+  and talked about.
+- **Marketplace removal / permanent ban** — no new marketplace action, no
+  contact, no reviews. The person keeps their status, appeal, support, privacy
+  requests and history.
+- **Communication restriction** — no pre-booking conversation; a live job's
+  conversation stays open.
+- **Review restriction** — no reviews, replies or votes.
+
+Whatever the measure, a person can always leave a job: cancel it, decline it,
+dispute it, or, as a Customer, confirm it is done. The other person is never
+left waiting on someone who cannot act.
 
 ## 2. Choosing a measure
 
@@ -106,8 +127,8 @@ select public.staff_record_enforcement_action(
 
 - Trust restrictions are an **additional** gate. They never replace WPS-008
   marketplace eligibility or WPS-006 verification.
-- A payment or withdrawal hold is a trust restriction, not a ledger posting. Use
-  WPS-007 for money.
+- There is no payment or withdrawal hold: Warsha is cash-only and holds no
+  money.
 - Enforcement never alters ranking or reputation directly.
 
 ## 8. Prohibited

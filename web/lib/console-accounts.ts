@@ -28,11 +28,14 @@
  * the way to `formatMinor`.
  */
 
+/**
+ * The restrictions that restrict something. A payment hold is not one: Warsha
+ * holds no money (202609170006), so it is neither read nor shown.
+ */
 export type AccountRestrictions = {
   marketplaceRemoved: boolean;
   communicationRestricted: boolean;
   reviewRestricted: boolean;
-  paymentHold: boolean;
 };
 
 export type BookingCounts = {
@@ -131,7 +134,6 @@ function parseRestrictions(value: unknown): AccountRestrictions {
     marketplaceRemoved: flag(raw.marketplaceRemoved),
     communicationRestricted: flag(raw.communicationRestricted),
     reviewRestricted: flag(raw.reviewRestricted),
-    paymentHold: flag(raw.paymentHold),
   };
 }
 

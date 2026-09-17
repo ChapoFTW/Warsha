@@ -88,9 +88,31 @@
 > `202609170003`, so recorded enforcement changed nothing a Customer could see.
 > Since then `private.is_provider_publicly_discoverable` requires
 > `trust_state_allows(user, 'marketplace')`, which every discovery path and the
-> matcher inherit. The `communication`, `reviews`, `payments` and `withdrawals`
-> capabilities still have no callers; see TRS-02 in
-> `docs/product/product-truth-register.md`.
+> matcher inherit.
+>
+> **Amended again 2026-09-17 (`202609170006`).** Every restriction now restricts
+> what its name says, to the owner's canonical behaviour:
+>
+> | Restriction | Discovery, invitations | New requests, bookings, choosing a quote | Quotes, accepting work | Pre-booking conversation | Job conversation and contact | Moving a job forward | Reviews, replies, votes | Leaving a job |
+> |---|---|---|---|---|---|---|---|---|
+> | Hidden | no | yes | no | yes | yes | yes | yes | yes |
+> | Suspended | no | no | no | no | live jobs only | yes | no | yes |
+> | Removed / banned (staff ban, removal, or auth ban) | no | no | no | no | no | no | no | yes |
+> | Communication restriction | — | — | — | no | yes | — | — | — |
+> | Review restriction | — | — | — | — | — | — | no | — |
+>
+> *Leaving* is cancelling, declining or disputing, or a Customer confirming
+> the work is done. `private.account_restriction` names the level;
+> `private.account_may` answers each capability; row triggers on the tables
+> that record new activity enforce it whenever an end user is the actor, so
+> every writer is covered. Refusals are `WR001 account_restricted` (the actor)
+> and `WR002 counterparty_unavailable` (the other party, without saying why).
+> Historic jobs, quotes and reviews are untouched. `payment_hold` and
+> `withdrawal_hold` are refused for new actions and no longer reported, because
+> Warsha is cash-only and holds no money. `get_my_trust_status` now returns the
+> restriction level, the most recent appealable action and any appeal against
+> it, which is what `submit_trust_appeal` needs. Proof:
+> `supabase/tests/database/account-restrictions.test.sql`.
 
 ## Client architecture
 

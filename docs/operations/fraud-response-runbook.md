@@ -58,8 +58,8 @@ punished arbitrarily.
 
 Money movement stays with WPS-007 and WPS-015:
 
-- A payment or withdrawal hold under WPS-016 is a **trust restriction**, not a
-  ledger posting. It does not move money.
+- Warsha is cash-only. There is no payment or withdrawal hold to place: the
+  server refuses both (`202609170006`), because there is no money to hold.
 - Any actual financial recovery goes through the WPS-007 staff-reviewed case,
   which records `externalProviderDebit: false`.
 - **Never externally debit a worker after payout**, under any circumstance.
