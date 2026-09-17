@@ -194,7 +194,7 @@ export default function AddressesPage() {
     setEditorFailure(null);
   };
 
-  const useCurrent = async () => {
+  const locateCurrentPosition = async () => {
     if (busyId) return;
     setBusyId('location');
     setEditorFailure(null);
@@ -363,7 +363,7 @@ export default function AddressesPage() {
           <p className={styles.hint}>{words.addressLocationWhy}</p>
 
           <div className={styles.actions}>
-            <button type="button" className={styles.action} onClick={() => void useCurrent()} disabled={busyId !== null}>
+            <button type="button" className={styles.action} onClick={() => void locateCurrentPosition()} disabled={busyId !== null}>
               {busyId === 'location' ? words.loading : words.addressUseCurrent}
             </button>
           </div>
