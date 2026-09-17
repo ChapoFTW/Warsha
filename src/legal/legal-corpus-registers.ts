@@ -858,6 +858,15 @@ export const versionHistory: LegalDocument = {
   audience: 'public',
   sortOrder: 25,
   ...initial('First published version of the version history.', 'أول نسخة منشورة من سجل النسخ.'),
+  version: '1.1',
+  publishedAt: '2026-09-17',
+  effectiveAt: '2026-09-17',
+  supersedesVersion: '1.0',
+  changeClass: 'non_material',
+  changeSummary: {
+    en: 'Adds the version 1.1 entry.',
+    ar: 'بيضيف مدخل النسخة ١٫١.',
+  },
   en: {
     title: 'Version History',
     summary: 'Every version of every Warsha legal document, when it was published, and what changed.',
@@ -894,6 +903,13 @@ export const versionHistory: LegalDocument = {
           'First publication of the complete Warsha legal corpus: 26 documents covering the customer and worker agreements, privacy, verification, conduct, commerce, machine processing, the three registers, and the platform statements.',
           'No previous version exists, so every document is classed "initial" and every person is asked to accept the documents that apply to them for the first time.',
           'The current version of every document is listed in the legal centre in the application, with its publication date and its change class.',
+        ],
+      },
+      {
+        heading: 'Version 1.1 — 17 September 2026',
+        body: [
+          'Warsha stopped asking workers for a criminal-record certificate. The Worker Terms, the Privacy Policy, the Worker Verification Policy and the Trust and Safety Policy were published as version 1.1, each classed "material" because verification requirements and document processing changed.',
+          'A certificate sent under version 1.0 stays in private storage. These versions, like version 1.0, have not been through legal review.',
         ],
       },
     ],
@@ -935,6 +951,13 @@ export const versionHistory: LegalDocument = {
           'أول نشر للمجموعة القانونية الكاملة بتاعة ورشة: ٢٦ مستند بتغطّي اتفاقات العميل والصنايعي والخصوصية والتحقق والسلوك والتجارة والمعالجة الآلية والسجلات التلاتة وبيانات المنصة.',
           'مفيش نسخة سابقة، فكل مستند مصنّف «أولي» وكل شخص بيتطلب منه يوافق على المستندات اللي بتخصّه لأول مرة.',
           'النسخة الحالية لكل مستند مذكورة في المركز القانوني في التطبيق، بتاريخ نشرها وفئة تعديلها.',
+        ],
+      },
+      {
+        heading: 'النسخة ١٫١ — ١٧ سبتمبر ٢٠٢٦',
+        body: [
+          'ورشة بطّلت تطلب فيش وتشبيه من الصنايعية. شروط الصنايعي وسياسة الخصوصية وسياسة التحقق من الصنايعي وسياسة الثقة والأمان اتنشروا كنسخة ١٫١، وكل واحدة مصنّفة «جوهري» لأن متطلبات التحقق ومعالجة المستندات اتغيّرت.',
+          'الفيش اللي اتبعت تحت النسخة ١٫٠ بيفضل في تخزين خاص. النسخ دي، زي النسخة ١٫٠، ما عدّتش على مراجعة قانونية.',
         ],
       },
     ],

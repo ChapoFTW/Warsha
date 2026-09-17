@@ -89,10 +89,13 @@ select is((select count(*)::integer from (
 select is((select count(*)::integer from public.legal_document_versions
            where content_hash_en !~ '^[0-9a-f]{64}$' or content_hash_ar !~ '^[0-9a-f]{64}$'),
   0, 'every registered hash is a well-formed sha256');
-select is((select count(distinct content_hash_en)::integer from public.legal_document_versions), 26,
+select is((select count(distinct content_hash_en)::integer from public.legal_document_versions where status = 'published'), 26,
   'no two documents share an English hash');
-select is((select count(distinct content_hash_ar)::integer from public.legal_document_versions), 26,
+select is((select count(distinct content_hash_ar)::integer from public.legal_document_versions where status = 'published'), 26,
   'no two documents share an Arabic hash');
+select is((select count(distinct content_hash_en)::integer from public.legal_document_versions),
+  (select count(*)::integer from public.legal_document_versions),
+  'no two versions of anything share a hash either');
 select is((select count(*)::integer from public.legal_document_versions
            where content_hash_en = content_hash_ar),
   0, 'no document has identical English and Arabic text');
@@ -105,11 +108,22 @@ select is(encode(sha256(convert_to('abc','UTF8')),'hex'),
   'THE SERVER SHA-256 MATCHES THE CLIENT IMPLEMENTATION');
 
 select is((select count(*)::integer from public.legal_document_versions
-           where change_class <> 'initial'), 0,
+           where version = '1.0' and change_class <> 'initial'), 0,
   'version 1.0 of everything is an initial version');
 select is((select count(*)::integer from public.legal_document_versions
-           where supersedes_version is not null), 0,
+           where change_class = 'initial' and supersedes_version is not null), 0,
   'an initial version supersedes nothing');
+-- 202609170005: Warsha stopped asking workers for a criminal-record
+-- certificate, and the four documents that said otherwise, plus the version
+-- history, were republished.
+select is((select array_agg(document_key || ' ' || version || ' ' || change_class order by document_key)
+           from public.legal_document_versions where status = 'published' and version <> '1.0'),
+  array['privacy_policy 1.1 material','trust_safety_policy 1.1 material','version_history 1.1 non_material',
+        'worker_terms 1.1 material','worker_verification_policy 1.1 material'],
+  'the criminal-record republication is the only version after 1.0');
+select is((select count(*)::integer from public.legal_document_versions
+           where version = '1.1' and supersedes_version is distinct from '1.0'), 0,
+  'each 1.1 names the version it supersedes');
 select is((select count(*)::integer from public.legal_document_versions
            where effective_at < published_at), 0,
   'no version takes effect before it was published');
@@ -296,28 +310,28 @@ select is((select count(*)::integer
 -- Acceptance binds to exact words
 -- ---------------------------------------------------------------------------
 select throws_ok(
-  $$select public.accept_legal_document('worker_terms','1.0','en',
+  $$select public.accept_legal_document('worker_terms','1.1','en',
       '0000000000000000000000000000000000000000000000000000000000000000','onboarding')$$,
   '22023', null,
   'AN ACCEPTANCE OF TEXT THE CLIENT DID NOT DISPLAY IS REFUSED');
 
 select throws_ok(
   $$select public.accept_legal_document('worker_terms','9.9','en',
-      '58eba2506edf2ed2e47a02e996f281b64be318f417cfdcf2cb0da64df17a7687','onboarding')$$,
+      'c704b99146fb734f9e65ef5d8ad77a9376d669994d562f11ad159b3ef65f1011','onboarding')$$,
   '22023', null,
   'an acceptance of a version that does not exist is refused');
 
 -- The English hash accepted against the Arabic reading is refused: the language
 -- and the words have to agree or the record cannot say which text was read.
 select throws_ok(
-  $$select public.accept_legal_document('worker_terms','1.0','ar',
-      '58eba2506edf2ed2e47a02e996f281b64be318f417cfdcf2cb0da64df17a7687','onboarding')$$,
+  $$select public.accept_legal_document('worker_terms','1.1','ar',
+      'c704b99146fb734f9e65ef5d8ad77a9376d669994d562f11ad159b3ef65f1011','onboarding')$$,
   '22023', null,
   'THE ENGLISH HASH IS REFUSED FOR AN ARABIC ACCEPTANCE');
 
 select lives_ok(
-  $$select public.accept_legal_document('worker_terms','1.0','en',
-      '58eba2506edf2ed2e47a02e996f281b64be318f417cfdcf2cb0da64df17a7687','worker_onboarding')$$,
+  $$select public.accept_legal_document('worker_terms','1.1','en',
+      'c704b99146fb734f9e65ef5d8ad77a9376d669994d562f11ad159b3ef65f1011','worker_onboarding')$$,
   'the correct hash is accepted');
 
 select is((select count(*)::integer from public.legal_acceptances
@@ -347,7 +361,7 @@ select is((select count(*)::integer
 -- A decline is a decline
 -- ---------------------------------------------------------------------------
 select lives_ok(
-  $$select public.decline_legal_document('worker_verification_policy','1.0','en','Not yet')$$,
+  $$select public.decline_legal_document('worker_verification_policy','1.1','en','Not yet')$$,
   'a decline is accepted as a decline');
 
 select is((select decision from public.legal_acceptances
@@ -364,7 +378,7 @@ select is((select count(*)::integer
 -- The restriction list comes from the class. An initial version may restrict.
 select ok(
   (select jsonb_array_length(
-     public.decline_legal_document('privacy_policy','1.0','en',null) -> 'alwaysAvailable') = 5),
+     public.decline_legal_document('privacy_policy','1.1','en',null) -> 'alwaysAvailable') = 5),
   'the decline response always lists what keeps working');
 
 -- ---------------------------------------------------------------------------

@@ -25,6 +25,8 @@
 import type { LegalDocument } from './legal-types.ts';
 
 const PUBLISHED = '2026-08-06';
+/** Version 1.1: Warsha stopped asking workers for a criminal-record certificate. */
+const REVISED_CRIMINAL_RECORD = '2026-09-17';
 
 export const customerTerms: LegalDocument = {
   key: 'customer_terms',
@@ -298,18 +300,18 @@ export const customerTerms: LegalDocument = {
 
 export const workerTerms: LegalDocument = {
   key: 'worker_terms',
-  version: '1.0',
+  version: '1.1',
   category: 'agreement',
   audience: 'worker',
   authoritativeLanguage: 'en',
   requiresAcceptance: true,
-  publishedAt: PUBLISHED,
-  effectiveAt: PUBLISHED,
-  supersedesVersion: null,
-  changeClass: 'initial',
+  publishedAt: REVISED_CRIMINAL_RECORD,
+  effectiveAt: REVISED_CRIMINAL_RECORD,
+  supersedesVersion: '1.0',
+  changeClass: 'material',
   changeSummary: {
-    en: 'First published version of the Warsha worker agreement.',
-    ar: 'أول نسخة منشورة من اتفاق الصنايعي مع ورشة.',
+    en: 'Warsha no longer asks workers for a criminal-record certificate. The verification steps and the description of stored documents are updated to match.',
+    ar: 'ورشة مبقتش بتطلب فيش وتشبيه من الصنايعية. خطوات التحقق ووصف المستندات المتخزنة اتحدّثوا علشان يطابقوا ده.',
   },
   arabicIsSummary: false,
   sortOrder: 2,
@@ -340,12 +342,12 @@ export const workerTerms: LegalDocument = {
         body: [
           'Before you can take work you must complete verification. The Worker Verification Policy sets out exactly what is required, how each item is handled and who can see it. In summary, you must:',
           'The identity check exists so that a customer letting a stranger into their home knows Warsha established who that person is. It protects them, and it protects every honest worker on the platform from the ones who are not.',
+          'Warsha does not currently ask for a criminal-record certificate. The Worker Verification Policy explains why, and what would have to happen before that changed.',
         ],
         bullets: [
           'Verify your phone number.',
           'Provide the front and back of your Egyptian National ID.',
           'Confirm the identity fields — your legal name, date of birth and identity number — are correct. You confirm them; nothing is taken as correct without you saying so.',
-          'Obtain an official criminal-record certificate (فيش وتشبيه) yourself from the competent authority and upload it. Warsha does not obtain it for you and has no access to any government system.',
           'Complete your profile: a photograph, a description of your work, the trades you offer and the area you cover.',
           'Accept this agreement and the notice covering how your documents are processed.',
         ],
@@ -355,7 +357,7 @@ export const workerTerms: LegalDocument = {
         body: [
           'Once you have submitted your documents, confirmed your details and accepted this agreement, your account becomes provisionally active and you can start taking work. You do not wait for a member of staff.',
           'Your submission then enters a review queue, and a member of Warsha staff examines it afterwards. This is a deliberate choice: making every new worker wait days for a manual review costs honest people income for no safety benefit that the review could not deliver just as well a day later.',
-          'Provisional activation is not a finding that your documents are genuine, that your identity is confirmed, or that your record is clear. It means your submission is complete enough to begin. Your profile shows customers that your review is still in progress; Warsha will not describe you as fully verified until it is.',
+          'Provisional activation is not a finding that your documents are genuine or that your identity is confirmed. It means your submission is complete enough to begin. Your profile shows customers that your review is still in progress; Warsha will not describe you as fully verified until it is.',
           'After review, staff may confirm your verification, ask you to correct something, suspend your account while a question is resolved, or deactivate it. Any of those may happen after you have already worked, and section 9 explains what that means for money you have earned.',
           'No automated system makes any of those decisions. Text extraction from your documents is assistance for filling in a form, nothing more, and it is explained in the OCR Usage Policy.',
         ],
@@ -363,7 +365,7 @@ export const workerTerms: LegalDocument = {
       {
         heading: '5. Your documents',
         body: [
-          'Your National ID images and your criminal-record certificate are stored privately. They are never public, never carry a public link, and are never included in a data export.',
+          'Your National ID images, and any criminal-record certificate you sent under version 1.0 of this agreement, are stored privately. They are never public, never carry a public link, and are never included in a data export.',
           'Only staff holding the specific capability to review them can open them, and every single access is recorded with who opened it, when, and under which capability. That record is kept whether or not anything was found.',
           'Warsha holds your original document and a reduced copy used for ordinary review, so that most review work does not require opening the original at all.',
           'Your documents are not used to train any machine-learning model. That is a hard rule in this version of the platform, not a current preference: the AI Usage Policy sets out the governance that would have to be completed, and the consent that would have to be obtained, before it could ever change.',
@@ -491,12 +493,12 @@ export const workerTerms: LegalDocument = {
         body: [
           'قبل ما تقدر تاخد شغل لازم تكمّل التحقق. سياسة التحقق من الصنايعي بتحدّد بالظبط المطلوب إيه، وكل حاجة بتتعامل إزاي، ومين يقدر يشوفها. باختصار، لازم:',
           'التحقق من الهوية موجود علشان العميل اللي بيدخّل غريب بيته يعرف إن ورشة أثبتت الشخص ده مين. بيحميه هو، وبيحمي كل صنايعي أمين على المنصة من اللي مش أمين.',
+          'ورشة مش بتطلب فيش وتشبيه دلوقتي. سياسة التحقق من الصنايعي بتوضّح ليه، وإيه اللي لازم يحصل قبل ما ده يتغيّر.',
         ],
         bullets: [
           'تأكّد رقم تليفونك.',
           'تقدّم وش وضهر بطاقة الرقم القومي المصرية.',
           'تأكّد إن بيانات الهوية — اسمك القانوني وتاريخ ميلادك ورقم هويتك — صحيحة. إنت اللي بتأكّدها؛ مفيش حاجة بتتاخد على إنها صح من غير ما تقولها إنت.',
-          'تجيب فيش وتشبيه رسمي بنفسك من الجهة المختصة وترفعه. ورشة مش بتجيبه لك ومعندهاش أي وصول لأي نظام حكومي.',
           'تكمّل ملفك: صورة، ووصف لشغلك، والحرف اللي بتقدّمها، والمنطقة اللي بتغطيها.',
           'توافق على الاتفاق ده وعلى الإشعار الخاص بمعالجة مستنداتك.',
         ],
@@ -506,7 +508,7 @@ export const workerTerms: LegalDocument = {
         body: [
           'بمجرد ما تقدّم مستنداتك وتأكّد بياناتك وتوافق على الاتفاق ده، حسابك بيبقى مفعّل مبدئياً وتقدر تبدأ تاخد شغل. مش هتستنى حد من الفريق.',
           'بعدين طلبك بيدخل طابور مراجعة، وحد من فريق ورشة بيفحصه بعد كده. ده اختيار مقصود: إن كل صنايعي جديد يستنى أيام لمراجعة يدوية بيكلّف ناس أمينة دخلها من غير فايدة أمان ما كانتش المراجعة هتحققها كويس برضه بعد يوم.',
-          'التفعيل المبدئي مش إثبات إن مستنداتك سليمة، ولا إن هويتك اتأكّدت، ولا إن سجلك نضيف. معناه إن طلبك كامل بما يكفي للبداية. ملفك بيوضّح للعملاء إن مراجعتك لسه جارية؛ ورشة مش هتوصفك بإنك متحقق بالكامل قبل ما تخلص.',
+          'التفعيل المبدئي مش إثبات إن مستنداتك سليمة، ولا إن هويتك اتأكّدت. معناه إن طلبك كامل بما يكفي للبداية. ملفك بيوضّح للعملاء إن مراجعتك لسه جارية؛ ورشة مش هتوصفك بإنك متحقق بالكامل قبل ما تخلص.',
           'بعد المراجعة، الفريق ممكن يأكّد تحققك، أو يطلب منك تصحّح حاجة، أو يوقف حسابك لحد ما سؤال يتحل، أو يلغي تفعيله. أي واحدة من دول ممكن تحصل بعد ما تكون اشتغلت بالفعل، والبند ٩ بيشرح ده معناه إيه للفلوس اللي كسبتها.',
           'مفيش نظام آلي بياخد أي قرار من دول. استخراج النص من مستنداتك مساعدة في ملء استمارة وبس، وموضّح في سياسة استخدام التعرف الضوئي على الحروف.',
         ],
@@ -514,7 +516,7 @@ export const workerTerms: LegalDocument = {
       {
         heading: '٥. مستنداتك',
         body: [
-          'صور بطاقتك والفيش والتشبيه بتتخزن بشكل خاص. مش عامة أبداً، ومفيش ليها لينك عام أبداً، ومش بتتضمّن في أي تصدير بيانات أبداً.',
+          'صور بطاقتك، وأي فيش وتشبيه بعته تحت النسخة ١٫٠ من الاتفاق ده، بتتخزن بشكل خاص. مش عامة أبداً، ومفيش ليها لينك عام أبداً، ومش بتتضمّن في أي تصدير بيانات أبداً.',
           'الفريق اللي عنده الصلاحية المحدّدة لمراجعتها بس هو اللي يقدر يفتحها، وكل مرة وصول بتتسجّل بمين فتح وإمتى وتحت أنهي صلاحية. السجل ده بيتحفظ سواء اتلاقى حاجة أو لأ.',
           'ورشة بتحتفظ بالمستند الأصلي وبنسخة مصغّرة بتُستخدم في المراجعة العادية، علشان أغلب شغل المراجعة ما يحتاجش فتح الأصل خالص.',
           'مستنداتك مش بتُستخدم في تدريب أي نموذج تعلّم آلي. دي قاعدة صارمة في النسخة دي من المنصة، مش تفضيل حالي: سياسة استخدام الذكاء الاصطناعي بتحدّد الحوكمة اللي لازم تكتمل، والموافقة اللي لازم تتاخد، قبل ما ده يتغيّر أصلاً.',
@@ -619,18 +621,18 @@ export const workerTerms: LegalDocument = {
 
 export const privacyPolicy: LegalDocument = {
   key: 'privacy_policy',
-  version: '1.0',
+  version: '1.1',
   category: 'privacy',
   audience: 'all',
   authoritativeLanguage: 'en',
   requiresAcceptance: true,
-  publishedAt: PUBLISHED,
-  effectiveAt: PUBLISHED,
-  supersedesVersion: null,
-  changeClass: 'initial',
+  publishedAt: REVISED_CRIMINAL_RECORD,
+  effectiveAt: REVISED_CRIMINAL_RECORD,
+  supersedesVersion: '1.0',
+  changeClass: 'material',
   changeSummary: {
-    en: 'First published version of the Warsha privacy policy.',
-    ar: 'أول نسخة منشورة من سياسة الخصوصية بتاعة ورشة.',
+    en: 'Warsha no longer collects criminal-record certificates from workers. The description of what is collected, and of how certificates sent earlier are held, is updated.',
+    ar: 'ورشة مبقتش بتجمع فيش وتشبيه من الصنايعية. وصف اللي بيتجمع، وإزاي بيتعامل مع الفيش اللي اتبعت قبل كده، اتحدّث.',
   },
   arabicIsSummary: false,
   sortOrder: 3,
@@ -649,7 +651,7 @@ export const privacyPolicy: LegalDocument = {
       {
         heading: '2. What Warsha collects',
         body: [
-          'Account and identity. Your name, phone number, and email address if you provide one. Workers additionally provide National ID images, the identity fields printed on them, and an official criminal-record certificate.',
+          'Account and identity. Your name, phone number, and email address if you provide one. Workers additionally provide National ID images and the identity fields printed on them. Warsha does not currently collect criminal-record certificates; section 4 explains how any certificate sent before that is held.',
           'Location. The addresses you save, and the map pin you confirm for each. A pin is required before a real booking because an approximate address sends someone to the wrong building. Device location is optional; you can always place the pin by hand, and Warsha never collects location in the background or while the application is closed.',
           'Bookings and work. What you booked, from whom, when, for how much, what happened, and the messages exchanged about it.',
           'Payments. Amounts, methods, ledger entries, payouts and refunds. Warsha does not store your full card number.',
@@ -669,10 +671,10 @@ export const privacyPolicy: LegalDocument = {
         ],
       },
       {
-        heading: '4. Identity documents and criminal-record certificates',
+        heading: '4. Identity documents, and criminal-record certificates sent earlier',
         body: [
           'This is the most sensitive information Warsha holds, and it is handled differently from everything else.',
-          'You obtain your criminal-record certificate yourself from the competent Egyptian authority and upload it. Warsha has no integration with the Ministry of Interior, no access to any government system, and no ability to look your record up. It sees what you upload and nothing else.',
+          'Warsha does not currently ask for, accept or review a criminal-record certificate, and has decided not to until it has taken legal advice on whether and how it may. A certificate a worker sent under version 1.0 of this policy stays in private storage under the rules below. Warsha has no integration with the Ministry of Interior, no access to any government system, and no ability to look a record up.',
           'Documents are stored in private storage. There is no public link. They are never included in a data export, because a copy of your identity document sitting in your downloads folder is a copy outside anyone\'s control.',
           'Only staff holding the specific capability to review them can open them. Every access is recorded — who, when, under which capability — and that log is kept whether or not anything was found. Opening a certificate requires a stronger capability than opening an ID, and re-authentication.',
           'Offence detail from a certificate is never stored alongside your account record. It exists only in a separate reviewer assessment that no client application can read and that is never returned to any device.',
@@ -763,7 +765,7 @@ export const privacyPolicy: LegalDocument = {
       {
         heading: '٢. ورشة بتجمع إيه',
         body: [
-          'الحساب والهوية. اسمك ورقم تليفونك وإيميلك لو قدّمته. الصنايعية بيقدّموا كمان صور بطاقة الرقم القومي، وبيانات الهوية المطبوعة عليها، وفيش وتشبيه رسمي.',
+          'الحساب والهوية. اسمك ورقم تليفونك وإيميلك لو قدّمته. الصنايعية بيقدّموا كمان صور بطاقة الرقم القومي وبيانات الهوية المطبوعة عليها. ورشة مش بتجمع فيش وتشبيه دلوقتي؛ البند ٤ بيوضّح بيتعامل إزاي مع أي فيش اتبعت قبل كده.',
           'الموقع. العناوين اللي بتحفظها، ودبوس الخريطة اللي بتأكّده لكل واحد. الدبوس مطلوب قبل أي حجز حقيقي لأن العنوان التقريبي بيبعت حد للعمارة الغلط. موقع الجهاز اختياري؛ تقدر دايماً تحطّ الدبوس بإيدك، وورشة مش بتجمع الموقع في الخلفية ولا والتطبيق مقفول أبداً.',
           'الحجوزات والشغل. حجزت إيه، من مين، إمتى، بكام، حصل إيه، والرسايل المتبادلة بخصوصه.',
           'المدفوعات. المبالغ والطرق وقيود الدفتر والتحويلات والاستردادات. ورشة مش بتخزّن رقم كارتك كامل.',
@@ -783,10 +785,10 @@ export const privacyPolicy: LegalDocument = {
         ],
       },
       {
-        heading: '٤. مستندات الهوية والفيش والتشبيه',
+        heading: '٤. مستندات الهوية، والفيش والتشبيه اللي اتبعت قبل كده',
         body: [
           'دي أكتر معلومات حساسة ورشة بتحتفظ بيها، وبتتعامل بشكل مختلف عن أي حاجة تانية.',
-          'إنت بتجيب الفيش والتشبيه بنفسك من الجهة المصرية المختصة وبترفعه. ورشة مفيش عندها أي ربط مع وزارة الداخلية، ولا أي وصول لأي نظام حكومي، ولا أي قدرة تستعلم عن سجلك. بتشوف اللي بترفعه وبس.',
+          'ورشة مش بتطلب ولا بتقبل ولا بتراجع فيش وتشبيه دلوقتي، وقرّرت ما تعملش ده لحد ما تاخد استشارة قانونية عن إذا كان ينفع وإزاي. الفيش اللي صنايعي بعته تحت النسخة ١٫٠ من السياسة دي بيفضل في تخزين خاص بالقواعد اللي تحت. ورشة مفيش عندها أي ربط مع وزارة الداخلية، ولا أي وصول لأي نظام حكومي، ولا أي قدرة تستعلم عن سجل.',
           'المستندات بتتخزن في تخزين خاص. مفيش لينك عام. ومش بتتضمّن في تصدير بيانات أبداً، لأن نسخة من مستند هويتك قاعدة في مجلد التنزيلات نسخة بره سيطرة أي حد.',
           'الفريق اللي عنده الصلاحية المحدّدة للمراجعة بس هو اللي يقدر يفتحها. كل وصول بيتسجّل — مين وإمتى وتحت أنهي صلاحية — والسجل ده بيتحفظ سواء اتلاقى حاجة أو لأ. فتح فيش بيتطلب صلاحية أقوى من فتح بطاقة، وإعادة توثيق.',
           'تفاصيل المخالفات من الفيش مش بتتخزن جنب سجل حسابك أبداً. بتوجد بس في تقييم مراجع منفصل مفيش تطبيق عميل يقدر يقراه ومش بيترجّع لأي جهاز أبداً.',
@@ -866,18 +868,18 @@ export const privacyPolicy: LegalDocument = {
 
 export const workerVerificationPolicy: LegalDocument = {
   key: 'worker_verification_policy',
-  version: '1.0',
+  version: '1.1',
   category: 'privacy',
   audience: 'worker',
   authoritativeLanguage: 'en',
   requiresAcceptance: true,
-  publishedAt: PUBLISHED,
-  effectiveAt: PUBLISHED,
-  supersedesVersion: null,
-  changeClass: 'initial',
+  publishedAt: REVISED_CRIMINAL_RECORD,
+  effectiveAt: REVISED_CRIMINAL_RECORD,
+  supersedesVersion: '1.0',
+  changeClass: 'material',
   changeSummary: {
-    en: 'First published version of the worker verification policy.',
-    ar: 'أول نسخة منشورة من سياسة التحقق من الصنايعي.',
+    en: 'Warsha no longer asks workers for a criminal-record certificate, and no worker needs one to be activated. The requirements, the certificate section and eligibility are updated.',
+    ar: 'ورشة مبقتش بتطلب فيش وتشبيه من الصنايعية، ومفيش صنايعي محتاج واحد علشان يتفعّل. المتطلبات وبند الفيش والأهلية اتحدّثوا.',
   },
   arabicIsSummary: false,
   sortOrder: 4,
@@ -897,30 +899,31 @@ export const workerVerificationPolicy: LegalDocument = {
         heading: '2. What is required',
         body: [
           'Every item below is required before an account may take work.',
+          'Warsha does not currently ask for a criminal-record certificate. Section 3 explains why.',
         ],
         bullets: [
           'A verified phone number.',
           'The front and back of a valid Egyptian National ID.',
           'Your confirmation of the identity fields — legal name, date of birth, identity number, expiry date.',
-          'An official criminal-record certificate (فيش وتشبيه), obtained by you and uploaded by you.',
           'A profile photograph showing your face.',
           'Your trades and service area.',
           'Acceptance of the Worker Terms and of this policy.',
         ],
       },
       {
-        heading: '3. The criminal-record certificate',
+        heading: '3. Criminal-record certificates',
         body: [
-          'You obtain the certificate yourself, from the competent Egyptian authority, through the ordinary public process. Warsha plays no part in it.',
+          'Warsha does not currently ask for, accept or review a criminal-record certificate (فيش وتشبيه). Warsha has decided not to collect one until it has taken legal advice on whether and how it may, and that advice has not yet been obtained.',
+          'If Warsha decides to ask for a certificate in future, that will be a new version of this policy, published with a summary of the change, and it will say what is asked for, why, and what is decided with it.',
           'Warsha has no integration with the Ministry of Interior. It has no API, no privileged access and no ability to look up your record, confirm a certificate\'s authenticity with the issuer, or obtain one on your behalf. If any Warsha screen ever appears to suggest otherwise, this policy governs and that screen is wrong.',
-          'Warsha accepts a PDF, JPEG or PNG, captured or uploaded. The size limit is shown at the point of upload.',
-          'A certificate must be legible and current. If it is not, you will be asked for another; that request is not a finding about you.',
+          'A certificate you sent under version 1.0 of this policy stays in private storage under Section 7.',
         ],
       },
       {
         heading: '4. Eligibility',
         body: [
-          'Whether a record affects eligibility is decided under a written, versioned eligibility policy, reviewed by a person, against the version in force on the day of the decision.',
+          'Warsha does not currently ask for a criminal record, and no worker needs one to be activated.',
+          'If Warsha ever decides again that a record may affect eligibility, it will be decided under a written, versioned eligibility policy, reviewed by a person, against the version in force on the day of the decision.',
           'Warsha does not operate a rule that any offence within a fixed recent period automatically disqualifies a worker. Such a rule is easy to write and hard to defend, and it would end livelihoods on an arithmetic nobody had examined.',
           'The eligibility policy in force is recorded with its version and its review status. As at this version, no eligibility policy has been through legal review, and Warsha states that rather than implying an approval it has not obtained.',
           'No adverse eligibility decision is ever made automatically. A person makes it, a person confirms it, and the reason is recorded in a form that can be shown to you and examined on appeal.',
@@ -939,14 +942,14 @@ export const workerVerificationPolicy: LegalDocument = {
         heading: '6. Provisional activation',
         body: [
           'When your submission is complete you become provisionally active immediately and can take work. Staff review happens afterwards.',
-          'Provisional activation means your submission is complete. It is not a finding that your documents are genuine or your record is clear, and Warsha does not describe you to customers as fully verified until review is done.',
+          'Provisional activation means your submission is complete. It is not a finding that your documents are genuine, and Warsha does not describe you to customers as fully verified until review is done.',
           'Review may confirm your verification, ask for a correction, suspend your account, or deactivate it. Section 9 of the Worker Terms explains what each means for work you have already done and money you have already earned.',
         ],
       },
       {
         heading: '7. Who can see your documents',
         body: [
-          'Only staff holding the specific capability. Reviewing an identity document and opening a criminal-record certificate are separate capabilities, and the second is the more restricted of the two and requires re-authentication.',
+          'Only staff holding the specific capability. Reviewing an identity document and opening a criminal-record certificate sent under version 1.0 are separate capabilities, and the second is the more restricted of the two and requires re-authentication.',
           'Every access is logged with the reviewer, the time and the capability used, whether or not anything was found.',
           'A reviewer sees what they need for the decision in front of them. They do not see your unrelated account history, your messages, or your payment records.',
           'Offence detail is recorded only in a private reviewer assessment. It is never stored on your account record, never returned to any application, and never included in a notification.',
@@ -994,12 +997,14 @@ export const workerVerificationPolicy: LegalDocument = {
       },
       {
         heading: '٢. المطلوب إيه',
-        body: ['كل بند تحت مطلوب قبل ما أي حساب ياخد شغل.'],
+        body: [
+          'كل بند تحت مطلوب قبل ما أي حساب ياخد شغل.',
+          'ورشة مش بتطلب فيش وتشبيه دلوقتي. البند ٣ بيوضّح ليه.',
+        ],
         bullets: [
           'رقم تليفون متحقق منه.',
           'وش وضهر بطاقة رقم قومي مصرية سارية.',
           'تأكيدك لبيانات الهوية — الاسم القانوني وتاريخ الميلاد ورقم الهوية وتاريخ الانتهاء.',
-          'فيش وتشبيه رسمي، إنت اللي بتجيبه وإنت اللي بترفعه.',
           'صورة شخصية بتوضّح وشك.',
           'حرفك ومنطقة خدمتك.',
           'الموافقة على شروط الصنايعي وعلى السياسة دي.',
@@ -1008,16 +1013,17 @@ export const workerVerificationPolicy: LegalDocument = {
       {
         heading: '٣. الفيش والتشبيه',
         body: [
-          'إنت بتجيب الشهادة بنفسك، من الجهة المصرية المختصة، من خلال الإجراء العام العادي. ورشة مالهاش أي دور فيه.',
+          'ورشة مش بتطلب ولا بتقبل ولا بتراجع فيش وتشبيه دلوقتي. ورشة قرّرت ما تجمعوش لحد ما تاخد استشارة قانونية عن إذا كان ينفع وإزاي، والاستشارة دي لسه ما حصلتش.',
+          'لو ورشة قرّرت تطلب فيش في المستقبل، ده هيبقى نسخة جديدة من السياسة دي، بتتنشر بملخّص للتعديل، وهتقول المطلوب إيه وليه وبيتقرّر بيه إيه.',
           'ورشة مفيش عندها ربط مع وزارة الداخلية. مفيش واجهة برمجية ولا وصول متميّز ولا أي قدرة تستعلم عن سجلك أو تأكّد سلامة شهادة مع جهة إصدارها أو تجيب واحدة نيابةً عنك. لو أي شاشة في ورشة يوماً ما بدت بتوحي بغير كده، السياسة دي هي الحاكمة والشاشة دي غلط.',
-          'ورشة بتقبل PDF أو JPEG أو PNG، مصوّر أو مرفوع. حد الحجم بيتعرض وقت الرفع.',
-          'الشهادة لازم تكون واضحة وحديثة. لو مش كده، هيتطلب منك واحدة تانية؛ الطلب ده مش إثبات حاجة عنك.',
+          'الفيش اللي بعته تحت النسخة ١٫٠ من السياسة دي بيفضل في تخزين خاص تحت البند ٧.',
         ],
       },
       {
         heading: '٤. الأهلية',
         body: [
-          'إذا كان السجل بيأثّر على الأهلية بيتقرّر تحت سياسة أهلية مكتوبة ومُصدَرة بنسخ، بيراجعها شخص، مقابل النسخة السارية يوم القرار.',
+          'ورشة مش بتطلب سجل جنائي دلوقتي، ومفيش صنايعي محتاج واحد علشان يتفعّل.',
+          'لو ورشة قرّرت تاني إن السجل ممكن يأثّر على الأهلية، ده هيتقرّر تحت سياسة أهلية مكتوبة ومُصدَرة بنسخ، بيراجعها شخص، مقابل النسخة السارية يوم القرار.',
           'ورشة مش بتشغّل قاعدة إن أي مخالفة خلال مدة حديثة ثابتة بتسقط أهلية الصنايعي تلقائياً. القاعدة دي سهل تتكتب وصعب تتدافع عنها، وكانت هتنهي أرزاق بحسبة محدش فحصها.',
           'سياسة الأهلية السارية متسجّلة بنسختها وبحالة مراجعتها. لحد النسخة دي، مفيش سياسة أهلية عدّت مراجعة قانونية، وورشة بتقول كده بدل ما توحي بموافقة ما حصلتش عليها.',
           'مفيش قرار أهلية سلبي بيتاخد آلياً أبداً. شخص بياخده، وشخص بيأكّده، والسبب بيتسجّل بصيغة ممكن تتعرض عليك وتتفحص في الاستئناف.',
@@ -1036,14 +1042,14 @@ export const workerVerificationPolicy: LegalDocument = {
         heading: '٦. التفعيل المبدئي',
         body: [
           'لما طلبك يكتمل بتبقى مفعّل مبدئياً على طول وتقدر تاخد شغل. مراجعة الفريق بتحصل بعدين.',
-          'التفعيل المبدئي معناه إن طلبك كامل. مش إثبات إن مستنداتك سليمة ولا إن سجلك نضيف، وورشة مش بتوصفك للعملاء كمتحقق بالكامل قبل ما المراجعة تخلص.',
+          'التفعيل المبدئي معناه إن طلبك كامل. مش إثبات إن مستنداتك سليمة، وورشة مش بتوصفك للعملاء كمتحقق بالكامل قبل ما المراجعة تخلص.',
           'المراجعة ممكن تأكّد تحققك، أو تطلب تصحيح، أو توقف حسابك، أو تلغي تفعيله. البند ٩ من شروط الصنايعي بيشرح كل واحدة معناها إيه للشغل اللي عملته والفلوس اللي كسبتها.',
         ],
       },
       {
         heading: '٧. مين يقدر يشوف مستنداتك',
         body: [
-          'الفريق اللي عنده الصلاحية المحدّدة بس. مراجعة مستند هوية وفتح فيش وتشبيه صلاحيتين منفصلتين، والتانية أضيق وبتتطلب إعادة توثيق.',
+          'الفريق اللي عنده الصلاحية المحدّدة بس. مراجعة مستند هوية وفتح فيش وتشبيه اتبعت تحت النسخة ١٫٠ صلاحيتين منفصلتين، والتانية أضيق وبتتطلب إعادة توثيق.',
           'كل وصول بيتسجّل بالمراجع والوقت والصلاحية المستخدمة، سواء اتلاقى حاجة أو لأ.',
           'المراجع بيشوف اللي محتاجه للقرار اللي قدامه. مش بيشوف سجل حسابك غير المتعلق، ولا رسايلك، ولا سجلات دفعك.',
           'تفاصيل المخالفات بتتسجّل بس في تقييم مراجع خاص. مش بتتخزن على سجل حسابك أبداً، ولا بترجع لأي تطبيق، ولا بتتضمّن في إشعار.',

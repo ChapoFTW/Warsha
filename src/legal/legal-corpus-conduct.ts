@@ -501,10 +501,17 @@ export const trustSafetyPolicy: LegalDocument = {
   requiresAcceptance: false,
   arabicIsSummary: false,
   sortOrder: 9,
-  ...initial(
-    'First published version of the trust and safety policy.',
-    'أول نسخة منشورة من سياسة الثقة والأمان.',
-  ),
+  // Version 1.1: Warsha stopped asking workers for a criminal-record certificate.
+  version: '1.1',
+  publishedAt: '2026-09-17',
+  effectiveAt: '2026-09-17',
+  supersedesVersion: '1.0',
+  changeClass: 'material',
+  changeSummary: {
+    en: 'Warsha no longer collects criminal-record certificates from workers, and the description of the checks made before harm is updated to say so.',
+    ar: 'ورشة مبقتش بتجمع فيش وتشبيه من الصنايعية، ووصف الفحص اللي بيحصل قبل الضرر اتحدّث علشان يقول كده.',
+  },
+  authoritativeLanguage: 'en',
   en: {
     title: 'Trust and Safety Policy',
     summary: 'How Warsha prevents harm, what happens when you report it, and what Warsha will and will not do.',
@@ -512,7 +519,7 @@ export const trustSafetyPolicy: LegalDocument = {
       {
         heading: '1. What Warsha does before harm',
         body: [
-          'Every worker is identity-checked before taking work, and every worker submits an official criminal-record certificate. The Worker Verification Policy sets out exactly what that establishes and what it does not.',
+          'Every worker is identity-checked before taking work. Warsha does not currently collect criminal-record certificates. The Worker Verification Policy sets out exactly what verification establishes and what it does not.',
           'A customer\'s exact address is released to a worker only at the point in a booking where they need it.',
           'Messages stay on the platform so that a dispute or a report has evidence behind it.',
           'Warsha does not claim this prevents every harm. It reduces the ones that come from not knowing who someone is.',
@@ -568,7 +575,7 @@ export const trustSafetyPolicy: LegalDocument = {
       {
         heading: '١. ورشة بتعمل إيه قبل الضرر',
         body: [
-          'كل صنايعي بيتحقق من هويته قبل ما ياخد شغل، وكل صنايعي بيقدّم فيش وتشبيه رسمي. سياسة التحقق من الصنايعي بتحدّد بالظبط ده بيثبت إيه ومش بيثبت إيه.',
+          'كل صنايعي بيتحقق من هويته قبل ما ياخد شغل. ورشة مش بتجمع فيش وتشبيه دلوقتي. سياسة التحقق من الصنايعي بتحدّد بالظبط التحقق بيثبت إيه ومش بيثبت إيه.',
           'عنوان العميل بالظبط بيتاح للصنايعي بس في وقت الحجز اللي محتاجه فيه.',
           'الرسايل بتفضل على المنصة علشان أي نزاع أو بلاغ يكون وراه أدلة.',
           'ورشة مش بتدّعي إن ده بيمنع كل ضرر. بيقلّل الضرر اللي بييجي من عدم معرفة الشخص مين.',

@@ -251,13 +251,20 @@ for (const file of corpusFiles) {
 // ---------------------------------------------------------------------------
 // Chain of custody: corpus text -> registered hash
 // ---------------------------------------------------------------------------
+// Every migration that publishes a legal version is part of the register: the
+// 1.0 corpus in 202608090001, and 1.1 of the documents republished when Warsha
+// stopped asking for criminal records (202609170005).
+const legalRegister = [
+  migration,
+  sqlCodeOf('supabase', 'migrations', '202609170005_legal_documents_no_longer_require_criminal_records.sql'),
+].join('\n');
 let hashMismatches = 0;
 for (const document of legalCorpus) {
   const { en, ar } = hashesFor(document);
   const registered = new RegExp(
     `\\('${document.key}', '${document.version.replace('.', '\\.')}', '${en}', '${ar}'`,
   );
-  if (!registered.test(migration)) hashMismatches += 1;
+  if (!registered.test(legalRegister)) hashMismatches += 1;
 }
 check(hashMismatches === 0,
   `EVERY DOCUMENT HASH IN THE CORPUS MATCHES THE MIGRATION REGISTER (${hashMismatches} adrift)`);
@@ -288,7 +295,7 @@ check(
 // day its own text does not claim.
 for (const document of legalCorpus) {
   check(
-    migration.includes(`'${document.publishedAt}', '${document.effectiveAt}'`),
+    legalRegister.includes(`'${document.publishedAt}', '${document.effectiveAt}'`),
     `${document.key} publication dates appear in the register`,
   );
 }
@@ -598,8 +605,15 @@ check(/place and adjust the pin by hand/i.test(locationText),
 
 const verification = findDocument('worker_verification_policy')!;
 const verificationText = hashableParts(verification.en).join('\n');
-check(/obtain the certificate yourself/i.test(verificationText),
-  'MODEL A: THE WORKER OBTAINS THE CERTIFICATE THEMSELVES');
+// Model A described how a certificate would be obtained. Since version 1.1 the
+// policy says Warsha does not collect one at all, and it still says Warsha has
+// no government integration, which is the part of Model A that must not drift.
+check(/does not currently ask for, accept or review a criminal-record certificate/i.test(verificationText),
+  'THE VERIFICATION POLICY SAYS CRIMINAL RECORDS ARE NOT COLLECTED');
+check(/no integration with the Ministry of Interior/i.test(verificationText),
+  'MODEL A: WARSHA CLAIMS NO GOVERNMENT INTEGRATION');
+check(!/obtained by you and uploaded by you/i.test(verificationText),
+  'and no longer lists a certificate among the requirements');
 check(/no integration with the Ministry of Interior/i.test(verificationText),
   'the verification policy denies a ministry integration');
 check(/does not operate a rule that any offence within a fixed recent period/i
