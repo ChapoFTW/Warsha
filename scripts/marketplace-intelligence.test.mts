@@ -21,6 +21,12 @@ assert.equal(quoteSelectionOpen(request,now+119999),false,'selection remains clo
 assert.equal(quoteSelectionOpen(request,now+120000),true,'selection opens at two minutes');
 assert.equal(quoteSelectionOpen(request,now+600000),false,'selection closes at ten minutes');
 assert.equal(quoteSelectionOpen({...request,status:'selection_pending_confirmation'},now+180000),false,'selection locks after selection');
+// 202609170002 closes the window early once nobody invited is still deciding.
+// The server moves collectionNotBefore, so the client rule above needs no
+// change; Mock has to make the same move or it shows a wait the server would not.
+assert.equal(quoteSelectionOpen({...request,collectionNotBefore:'2026-07-31T12:00:30Z'},now+30000),true,'selection opens when the window was closed early');
+const mockMarketplace=readFileSync('src/marketplace-intelligence/mock-marketplace-repository.ts','utf8');
+assert.equal((mockMarketplace.match(/closeWindowIfAnswered\(state,/g)??[]).length,3,'Mock closes the window early at creation, quote and decline, as the server does');
 assert.equal(classifyMarketplaceEdit({descriptionClarification:'More detail'}),'minor');
 assert.equal(classifyMarketplaceEdit({notes:'Gate code'}),'minor');
 assert.equal(classifyMarketplaceEdit({requestedStartAt:'2026-08-01T10:00:00Z'}),'minor');
@@ -204,4 +210,4 @@ assert.match(server,/update private\.marketplace_jobs set state='cancelled'/,'ca
     'the web badge always carries its localized label, not colour alone');
 }
 
-console.log(`Marketplace Intelligence unit and lifecycle tests passed (${20+10+MARKETPLACE_REQUEST_STATUSES.length*3+16+45} assertions).`);
+console.log(`Marketplace Intelligence unit and lifecycle tests passed (${22+10+MARKETPLACE_REQUEST_STATUSES.length*3+16+45} assertions).`);
