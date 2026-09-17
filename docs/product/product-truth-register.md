@@ -143,7 +143,7 @@ now rather than with a guessed state.
 | OLD-01 | Provider feed bypassing the sanitized trust authority | Traced: every provider feed uses the discoverability gate, which ignored trust state | Became TRS-01 |
 | OLD-02 | Scheduled expiry worker | Traced: no process drains `marketplace_jobs` | Became MKT-05 |
 | OLD-03 | HEIC/HEIF | — | DEF-04 |
-| OLD-04 | Professional cold-starts on Customer Home | Not re-traced | OPEN — needs a device trace of `AuthGate` and `defaultModeFor` |
+| OLD-04 | Professional cold-starts on Customer Home | Source: `AuthGate` renders a neutral gate and gives the router no destination until auth, onboarding and provider state have settled for the same account (`routeAfterHydration`, `accountHydrationReady`); a settled Professional resolves to `/worker` | CODED — NOT CERTIFIED: not reproduced or disproved on a device with a Supabase Professional account |
 | OLD-05 | Duplicate verification journeys | Native: `provider-verification` is only a redirect to `/worker/verification`, kept for old links, and every native entry point uses `/worker/verification`. Web not checked | Native: one journey (source). Web: OPEN |
 | OLD-06 | Gates with no action | Not re-traced | OPEN |
 | OLD-07 | Android earnings crash | Earnings routes UNTESTED | OPEN — reproduce on device |
