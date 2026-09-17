@@ -577,6 +577,23 @@ reset role;
 -- ---------------------------------------------------------------------------
 -- Criminal-record certificate
 -- ---------------------------------------------------------------------------
+-- Warsha does not collect criminal records (202609170004): the owner's
+-- decision is not to require one until legal consultation has happened. So
+-- the default is proved first, and the capability — kept dormant for a
+-- future decision — is then exercised with the policy switched on inside
+-- this transaction only.
+select pg_temp.act_as('a2300000-0000-4000-8000-000000000001');
+set local role authenticated;
+select is((public.get_my_onboarding_state() ->> 'criminalRecordRequired'), 'false',
+  'criminal records are not collected by default');
+select throws_ok(
+  $$select public.submit_my_criminal_record(
+      'a2300000-0000-4000-8000-000000000001/cert.pdf','application/pdf',1000,null,
+      current_date - 1,'REF','WPS023 Worker')$$,
+  '55000', 'Criminal records are not currently collected',
+  'A VALID SUBMISSION IS REFUSED WHILE CRIMINAL RECORDS ARE NOT COLLECTED');
+reset role;
+update private.worker_vetting_policy set criminal_record_required = true where singleton;
 select pg_temp.act_as('a2300000-0000-4000-8000-000000000001');
 set local role authenticated;
 

@@ -56,6 +56,13 @@ export type OnboardingState = {
   documentProcessingAccepted: boolean;
   gates: Record<string, boolean>;
   outstandingGates: string[];
+  /**
+   * Whether Warsha collects criminal records at all. Server policy, false
+   * since 202609170004: the owner's decision is not to require one until
+   * legal consultation has happened. The journey is built from this, never
+   * from a constant, so reactivating it needs no client release.
+   */
+  criminalRecordRequired: boolean;
   /** The only permission fact in this payload. Server-computed. */
   workerCapabilityActive: boolean;
   certificateStatus: CertificateStatus | null;
@@ -276,6 +283,7 @@ export const emptyOnboardingState: OnboardingState = {
   documentProcessingAccepted: false,
   gates: {},
   outstandingGates: [],
+  criminalRecordRequired: false,
   workerCapabilityActive: false,
   certificateStatus: null,
   certificateSafeReason: null,

@@ -33,6 +33,9 @@ import { isValidDeclaredName } from './criminal-record-submission.ts';
  * regression suite runs it under `--experimental-strip-types`, where a runtime
  * import would need an extension the rest of the codebase does not use.
  */
+/** The server's policy, mirrored: Warsha does not collect criminal records. */
+export const MOCK_CRIMINAL_RECORD_REQUIRED = false;
+
 const blankState: OnboardingState = {
   roleSelected: false,
   intendedRole: null,
@@ -45,6 +48,7 @@ const blankState: OnboardingState = {
   documentProcessingAccepted: false,
   gates: {},
   outstandingGates: [],
+  criminalRecordRequired: MOCK_CRIMINAL_RECORD_REQUIRED,
   workerCapabilityActive: false,
   certificateStatus: null,
   certificateSafeReason: null,
@@ -68,7 +72,8 @@ const WORKER_GATES = [
   'worker_role_selected', 'legal_name_complete', 'profile_photo', 'professions_configured',
   'services_configured', 'service_area_configured', 'current_address_provided',
   'national_id_front_uploaded', 'national_id_back_uploaded', 'national_id_approved',
-  'identity_fields_confirmed', 'criminal_record_uploaded', 'criminal_record_approved',
+  'identity_fields_confirmed',
+  ...(MOCK_CRIMINAL_RECORD_REQUIRED ? ['criminal_record_uploaded', 'criminal_record_approved'] : []),
   'worker_agreement_accepted', 'document_processing_accepted',
   'identity_verification_approved', 'not_banned', 'no_blocking_trust_action',
   'provider_status_allowed', 'not_deactivated', 'no_deletion_pending',
@@ -272,6 +277,7 @@ export function mockSubmitCriminalRecord(
   // Mock mode enforces the same rule, or the field would appear optional to
   // anyone developing against it and become required only in Development.
   if (!isValidDeclaredName(input.declaredName)) throw new Error('Invalid declared name');
+  if (!MOCK_CRIMINAL_RECORD_REQUIRED) throw new Error('Criminal records are not currently collected');
   // The ordering rule the server enforces through its state machine: a
   // certificate cannot be submitted until an identity review asked for one.
   if (account.state.workerState !== 'criminal_record_required'
@@ -320,7 +326,7 @@ export function mockStaffAdvance(
   }
   if (to === 'criminal_record_required') account.state.gates.national_id_approved = true;
   if (to === 'approved') {
-    account.state.gates.criminal_record_approved = true;
+    if (MOCK_CRIMINAL_RECORD_REQUIRED) account.state.gates.criminal_record_approved = true;
     account.state.gates.identity_verification_approved = true;
     account.state.gates.provider_status_allowed = true;
   }

@@ -141,10 +141,13 @@ export default function WorkerVerificationJourney() {
           : !gates.identity_fields_confirmed
             || editableVerificationStatuses.includes(verification.status)
             || ['account_created', 'onboarding_incomplete', 'identity_required', 'correction_required'].includes(onboarding.state.workerState ?? '') ? 3
-            : !gates.criminal_record_uploaded ? 4 : 5;
-    setStep(params.step === 'certificate' && !gates.criminal_record_uploaded ? 4 : next);
+            // The certificate step exists only while Warsha collects criminal
+            // records. Otherwise identity is the last thing asked for.
+            : onboarding.state.criminalRecordRequired && !gates.criminal_record_uploaded ? 4 : 5;
+    setStep(params.step === 'certificate' && onboarding.state.criminalRecordRequired
+      && !gates.criminal_record_uploaded ? 4 : next);
     setHasSkillCertificate(verification.documents.some(document => document.type === 'skill_certificate'));
-  }, [documents, onboarding.state.gates, onboarding.state.workerState, params.step, verification]);
+  }, [documents, onboarding.state.criminalRecordRequired, onboarding.state.gates, onboarding.state.workerState, params.step, verification]);
 
   if (verificationState.loading || !onboarding.ready) {
     return <SafeAreaView style={styles.safe}><BrandLoadingState label={vt('verification')} /></SafeAreaView>;
@@ -294,7 +297,7 @@ export default function WorkerVerificationJourney() {
       if (!submitted) throw new Error('Identity lifecycle was not submitted');
       setNationalId('');
       onboarding.reload();
-      setStep(4);
+      setStep(onboarding.state.criminalRecordRequired ? 4 : 5);
     } catch {
       setMessage(vt('submitFailed'));
     } finally {
@@ -381,7 +384,7 @@ export default function WorkerVerificationJourney() {
       <ScrollView contentContainerStyle={[styles.page, isRTL && styles.rtl]} keyboardShouldPersistTaps="handled">
         <ScreenHeader title={vt('verification')} />
         <View style={styles.progressRow}>
-          {[0, 1, 2, 3, 4].map(index => <View key={index} style={[styles.progressDot, index <= step && styles.progressDotActive]} />)}
+          {(onboarding.state.criminalRecordRequired ? [0, 1, 2, 3, 4] : [0, 1, 2, 3]).map(index => <View key={index} style={[styles.progressDot, index <= step && styles.progressDotActive]} />)}
         </View>
         <StateBadge label={vt(statusCopy[verification.status])} tone={verification.status === 'approved' ? 'success' : 'neutral'} />
 
@@ -494,7 +497,7 @@ export default function WorkerVerificationJourney() {
           </JourneyStepCard>
         ) : null}
 
-        {step === 4 ? (
+        {step === 4 && onboarding.state.criminalRecordRequired ? (
           <JourneyStepCard title={ot.text('certificateTitle')} body={ot.text('certificateHowIntro')}>
             <AppText style={styles.note}>{ot.text('certificatePrivacy')}</AppText>
             <OnboardingFieldMeta label={ot.text('certificateUpload')} required privateField purpose={wt.text('certificatePurpose')} />

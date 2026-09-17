@@ -16,7 +16,7 @@ import {
   safeReasonValid,
   EVIDENCE_MIN,
   SAFE_REASON_MAX,
-  VETTING_DECISION_CAPABILITY,
+  vettingDecisionCapability,
   VETTING_DECISION_TARGET,
   VETTING_REASON_CODES,
   type DecisionRefusal,
@@ -41,7 +41,8 @@ import styles from './governed-actions.module.css';
  * things that mostly cannot happen.
  *
  * **Capability follows the decision, not the form.** Approving needs
- * `review_criminal_records`; activating needs `activate_worker`; rejecting and
+ * `review_worker_vetting`, or `review_criminal_records` while Warsha collects
+ * criminal records; activating needs `activate_worker`; rejecting and
  * suspending need `reject_worker_application`. Each is checked separately, and
  * the freshness dialogue is opened for the capability the chosen decision
  * actually requires.
@@ -77,11 +78,13 @@ const FAILURE_COPY: Record<DecisionRefusal, string> = {
 export function VettingDecisionPanel({
   userId,
   workerState,
+  criminalRecordRequired,
   locale,
   onDecided,
 }: {
   userId: string;
   workerState: string | null;
+  criminalRecordRequired: boolean;
   locale: Locale;
   onDecided: () => Promise<void>;
 }) {
@@ -103,7 +106,7 @@ export function VettingDecisionPanel({
   }, [words]);
   const reauth = usePendingReauth(onReauthRefused);
 
-  const available = decisionsFrom(workerState);
+  const available = decisionsFrom(workerState, criminalRecordRequired);
 
   if (available.length === 0) {
     return (
@@ -114,7 +117,7 @@ export function VettingDecisionPanel({
     );
   }
 
-  const capability = decision ? VETTING_DECISION_CAPABILITY[decision] : '';
+  const capability = decision ? vettingDecisionCapability(decision, criminalRecordRequired) : '';
   const need = decision ? reauthNeedFor(session, capability) : null;
   const adverse = decision ? isAdverse(decision) : false;
 
@@ -173,7 +176,7 @@ export function VettingDecisionPanel({
 
       <div className={styles.choices}>
         {available.map((candidate) => {
-          const candidateCapability = VETTING_DECISION_CAPABILITY[candidate];
+          const candidateCapability = vettingDecisionCapability(candidate, criminalRecordRequired);
           // Missing the capability disables the control rather than hiding it:
           // an operator should be able to see that a decision exists and that
           // somebody else has to make it.

@@ -20,7 +20,7 @@ import {
 import type { Booking, BookingStatus } from '../src/bookings/booking-types.ts';
 import { emptyOnboardingState } from '../src/onboarding/onboarding-types.ts';
 import { emptyProviderDraft } from '../src/providers/provider-types.ts';
-import { currentWorkerJourneyStep } from '../src/worker/worker-onboarding-policy.ts';
+import { currentWorkerJourneyStep, workerJourneyProgress, workerJourneyStepsFor } from '../src/worker/worker-onboarding-policy.ts';
 import {
   isSelectableProfession,
   isWithdrawnProfession,
@@ -199,8 +199,14 @@ check(currentWorkerJourneyStep(agreed) === 'basic_information', 'basic informati
 check(currentWorkerJourneyStep({ ...agreed, gates: { profile_photo: true } }) === 'trade', 'trade follows basic information without a biography');
 check(currentWorkerJourneyStep({ ...agreed, gates: { profile_photo: true, professions_configured: true, services_configured: true } }) === 'service_area', 'service area follows required professions and services');
 check(currentWorkerJourneyStep({ ...agreed, gates: { profile_photo: true, professions_configured: true, services_configured: true, service_area_configured: true, current_address_provided: true } }) === 'identity', 'identity follows the service area');
-check(currentWorkerJourneyStep({ ...agreed, gates: { profile_photo: true, professions_configured: true, services_configured: true, service_area_configured: true, current_address_provided: true, national_id_front_uploaded: true, national_id_back_uploaded: true, identity_fields_confirmed: true } }) === 'criminal_record', 'the certificate follows identity');
-check(currentWorkerJourneyStep({ ...agreed, gates: { profile_photo: true, professions_configured: true, services_configured: true, service_area_configured: true, current_address_provided: true, national_id_front_uploaded: true, national_id_back_uploaded: true, identity_fields_confirmed: true, criminal_record_uploaded: true } }) === 'review', 'review is the final journey step');
+// Warsha does not collect criminal records (202609170004): identity is the last
+// step a Professional takes, and the certificate step exists only if the server
+// says the policy requires one.
+check(currentWorkerJourneyStep({ ...agreed, gates: { profile_photo: true, professions_configured: true, services_configured: true, service_area_configured: true, current_address_provided: true, national_id_front_uploaded: true, national_id_back_uploaded: true, identity_fields_confirmed: true } }) === 'review', 'REVIEW FOLLOWS IDENTITY WHILE CRIMINAL RECORDS ARE NOT COLLECTED');
+check(!workerJourneyStepsFor(emptyOnboardingState).includes('criminal_record'), 'THE JOURNEY HAS NO CRIMINAL-RECORD STEP BY DEFAULT');
+check(workerJourneyProgress({ ...agreed, gates: { profile_photo: true, professions_configured: true, services_configured: true, service_area_configured: true, current_address_provided: true, national_id_front_uploaded: true, national_id_back_uploaded: true, identity_fields_confirmed: true } }).total === 6, 'and counts six steps, not seven');
+check(currentWorkerJourneyStep({ ...agreed, criminalRecordRequired: true, gates: { profile_photo: true, professions_configured: true, services_configured: true, service_area_configured: true, current_address_provided: true, national_id_front_uploaded: true, national_id_back_uploaded: true, identity_fields_confirmed: true } }) === 'criminal_record', 'the certificate follows identity when the policy requires one');
+check(currentWorkerJourneyStep({ ...agreed, criminalRecordRequired: true, gates: { ...({ profile_photo: true, professions_configured: true, services_configured: true, service_area_configured: true, current_address_provided: true, national_id_front_uploaded: true, national_id_back_uploaded: true, identity_fields_confirmed: true }), criminal_record_uploaded: true } }) === 'review', 'review is the final journey step');
 
 const onboardingScreen = read('app', 'onboarding', 'worker.tsx');
 const providerMode = read('app', 'provider-mode.tsx');
@@ -482,6 +488,12 @@ check(verificationScreen.match(/<OnboardingFieldMeta/g)?.length === 11, 'every i
 check(verificationScreen.includes('DocumentPicker.getDocumentAsync'), 'the certificate picker lives in the canonical flow');
 check(verificationScreen.includes('copyToCacheDirectory: true'), 'picked certificates remain readable by the File API');
 check(onboardingRepository.includes("from('worker-criminal-records')"), 'criminal records use the governed private storage bucket');
+// An older backend does not send the policy and always required a certificate.
+// Reading absent as "not collected" would hide a step that server waits for.
+check(onboardingRepository.includes('criminalRecordRequired: payload.criminalRecordRequired !== false'),
+  'an onboarding payload without the criminal-record policy is read as requiring one');
+check((onboardingRepository.match(/\.\.\.\(data as Partial<OnboardingState>\)/g) ?? []).length === 0,
+  'every server onboarding payload is read through the same policy default');
 // This assertion used to read:
 //
 //   check(onboardingRepository.includes('p_size_bytes: input.fileSizeBytes'),

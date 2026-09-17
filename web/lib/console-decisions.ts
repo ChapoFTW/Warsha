@@ -66,6 +66,18 @@ export const VETTING_DECISION_CAPABILITY: Readonly<Record<string, string>> = {
 
 export type VettingDecision = keyof typeof VETTING_DECISION_CAPABILITY;
 
+/**
+ * The capability a decision needs under the current vetting policy.
+ *
+ * Approval needs `review_criminal_records` only while Warsha collects criminal
+ * records; otherwise the ordinary `review_worker_vetting`
+ * (`staff_worker_vetting_decision`, since 202609170004).
+ */
+export function vettingDecisionCapability(decision: VettingDecision, criminalRecordRequired: boolean): string {
+  if (decision === 'approve' && !criminalRecordRequired) return 'review_worker_vetting';
+  return VETTING_DECISION_CAPABILITY[decision];
+}
+
 /** Decision → the state it moves the account to. Copied from the same `case`. */
 export const VETTING_DECISION_TARGET: Readonly<Record<string, string>> = {
   start_identity_review: 'identity_under_review',
@@ -89,9 +101,11 @@ export const VETTING_DECISION_TARGET: Readonly<Record<string, string>> = {
  */
 const STAFF_TRANSITIONS: Readonly<Record<string, readonly string[]>> = {
   identity_submitted: ['identity_under_review', 'correction_required', 'manual_review'],
-  identity_under_review: ['criminal_record_required', 'correction_required', 'manual_review', 'rejected'],
+  identity_under_review: ['criminal_record_required', 'correction_required', 'manual_review', 'rejected', 'approved'],
   criminal_record_submitted: ['criminal_record_under_review', 'correction_required', 'manual_review'],
   criminal_record_under_review: ['approved', 'correction_required', 'manual_review', 'rejected'],
+  provisionally_active: ['identity_under_review', 'criminal_record_under_review', 'correction_required',
+    'manual_review', 'approved', 'rejected', 'suspended'],
   manual_review: ['approved', 'correction_required', 'rejected'],
   appeal_pending: ['approved', 'rejected', 'correction_required', 'manual_review'],
   approved: ['active', 'suspended'],
@@ -107,10 +121,19 @@ const STAFF_TRANSITIONS: Readonly<Record<string, readonly string[]>> = {
  * `criminal_record_submitted`. The table above is the authority, so it falls
  * out correctly rather than needing a special case.
  */
-export function decisionsFrom(state: string | null | undefined): VettingDecision[] {
+export function decisionsFrom(
+  state: string | null | undefined,
+  criminalRecordRequired = true,
+): VettingDecision[] {
   const reachable = STAFF_TRANSITIONS[state ?? ''] ?? [];
   return (Object.keys(VETTING_DECISION_TARGET) as VettingDecision[])
-    .filter((decision) => reachable.includes(VETTING_DECISION_TARGET[decision]));
+    .filter((decision) => reachable.includes(VETTING_DECISION_TARGET[decision]))
+    // While criminal records are not collected there is no certificate to
+    // review; while they are, approval cannot skip that review. The server
+    // refuses both, so the console does not offer them.
+    .filter((decision) => criminalRecordRequired || decision !== 'start_certificate_review')
+    .filter((decision) => !criminalRecordRequired || decision !== 'approve'
+      || state !== 'identity_under_review');
 }
 
 /** `reject` and `suspend` require recorded evidence; nothing else does. */
@@ -325,6 +348,8 @@ export type VettingCaseDetail = {
     fieldsExtracted: number | null; requestedAt: string | null;
   }[];
   fieldsConfirmedByWorker: boolean;
+  /** Server policy. Absent from an older backend, which always required one. */
+  criminalRecordRequired: boolean;
 };
 
 function gatesOf(value: unknown): VettingGate[] {
@@ -343,6 +368,7 @@ export function parseVettingDetail(value: unknown): VettingCaseDetail | null {
   return {
     subjectRef: raw.subjectRef,
     workerState: typeof raw.workerState === 'string' ? raw.workerState : null,
+    criminalRecordRequired: raw.criminalRecordRequired !== false,
     capabilityTier: typeof raw.capabilityTier === 'string' ? raw.capabilityTier : 'none',
     gates: gatesOf(raw.gates),
     provisionalGates: gatesOf(raw.provisionalGates),

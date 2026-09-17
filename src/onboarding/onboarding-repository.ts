@@ -45,6 +45,21 @@ import {
  * capability checks that this file could not satisfy even if it tried.
  */
 
+/**
+ * The server's onboarding payload as client state. A backend from before
+ * 202609170004 does not say whether it collects criminal records, and it always
+ * did: absent means required, so the journey never hides a step that server
+ * still waits for.
+ */
+function serverOnboardingState(data: unknown): OnboardingState {
+  const payload = (data ?? {}) as Partial<OnboardingState>;
+  return {
+    ...emptyOnboardingState,
+    ...payload,
+    criminalRecordRequired: payload.criminalRecordRequired !== false,
+  };
+}
+
 function requireAccount(accountKey: string | null): string {
   if (!accountKey) throw new Error('An account is required');
   return accountKey;
@@ -55,7 +70,7 @@ export const onboardingRepository = {
     if (environment.dataMode === 'mock') return mockOnboardingState(requireAccount(accountKey));
     const { data, error } = await getSupabaseClient().rpc('get_my_onboarding_state');
     if (error) throw error;
-    return { ...emptyOnboardingState, ...(data as Partial<OnboardingState>) };
+    return serverOnboardingState(data);
   },
 
   async selectRole(accountKey: string | null, role: AccountRoleChoice): Promise<OnboardingState> {
@@ -67,7 +82,7 @@ export const onboardingRepository = {
     if (authData.user?.id !== expectedAccount) throw new Error('The active account changed.');
     const { data, error } = await client.rpc('select_my_account_role', { p_role: role });
     if (error) throw error;
-    return { ...emptyOnboardingState, ...(data as Partial<OnboardingState>) };
+    return serverOnboardingState(data);
   },
 
   async customerRecoveryEligible(accountKey: string | null): Promise<boolean> {
@@ -167,7 +182,7 @@ export const onboardingRepository = {
       p_document_processing: documentProcessing,
     });
     if (error) throw error;
-    return { ...emptyOnboardingState, ...(data as Partial<OnboardingState>) };
+    return serverOnboardingState(data);
   },
 
   async identityCandidates(accountKey: string | null): Promise<IdentityCandidate[]> {
@@ -223,7 +238,7 @@ export const onboardingRepository = {
     if (environment.dataMode === 'mock') return mockSubmitIdentity(requireAccount(accountKey));
     const { data, error } = await getSupabaseClient().rpc('submit_my_identity_for_review');
     if (error) throw error;
-    return { ...emptyOnboardingState, ...(data as Partial<OnboardingState>) };
+    return serverOnboardingState(data);
   },
 
   async submitCriminalRecord(
@@ -292,6 +307,6 @@ export const onboardingRepository = {
       p_statement: statement,
     });
     if (error) throw error;
-    return { ...emptyOnboardingState, ...(data as Partial<OnboardingState>) };
+    return serverOnboardingState(data);
   },
 };

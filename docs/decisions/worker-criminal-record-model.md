@@ -1,6 +1,32 @@
 # Decision — worker criminal-record model
 
-Authority: WPS-023. Status: **LOCKED (Model A)**. Legal review: **not performed**.
+Authority: WPS-023. Status: **SUSPENDED — not collected** (owner decision,
+2026-09-17; see *Current state* below). Legal review: **not performed**.
+
+## Current state (2026-09-17)
+
+The owner decided that Warsha does **not** ask for a criminal-record
+certificate until legal consultation has actually happened. Model A below is
+kept as the design that would apply if collection is switched back on; it is
+not live.
+
+- `private.worker_vetting_policy.criminal_record_required` is `false`
+  (`202609170004`). Onboarding does not show the step, activation and
+  provisional activation do not wait for it, new submissions and uploads are
+  refused by the server, and staff are not offered a certificate review.
+- The upload, review and access-audit machinery is preserved, dormant. Turning
+  the policy on restores every gate; that needs a new owner decision and the
+  legal documents republished again.
+- Any certificate sent before this change stays where it was, private, under
+  the same access controls and audit. Nothing was deleted or altered.
+- The legal documents that stated the requirement were republished as
+  version 1.1 (`202609170005`). No legal review of that wording took place.
+- The declaration *"I confirm this is my own criminal record"* is not reachable
+  while collection is off, so no attestation is recorded.
+
+Model C's rejection below is the reasoning of WPS-023, not the current
+position: the current position is that no criminal-record check runs until the
+legal questions (Q-01, Q-05) are answered by someone qualified to answer them.
 
 > This document records a product decision. It is **not legal advice**, claims
 > **no legal compliance or approval**, and invents **no statutory requirement**.

@@ -216,6 +216,7 @@ export function WorkerCase({
       <VettingDecisionPanel
         userId={userId}
         workerState={detail.workerState}
+        criminalRecordRequired={detail.criminalRecordRequired}
         locale={locale}
         onDecided={reload}
       />

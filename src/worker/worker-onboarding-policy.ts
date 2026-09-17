@@ -19,6 +19,16 @@ export const workerJourneySteps: WorkerJourneyStep[] = [
   'review',
 ];
 
+/**
+ * The steps this Professional is actually asked for. The criminal-record step
+ * exists only while the server says Warsha collects criminal records.
+ */
+export function workerJourneyStepsFor(state: Pick<OnboardingState, 'criminalRecordRequired'>): WorkerJourneyStep[] {
+  return state.criminalRecordRequired
+    ? workerJourneySteps
+    : workerJourneySteps.filter(step => step !== 'criminal_record');
+}
+
 function gate(state: OnboardingState, key: string): boolean {
   return state.gates[key] === true;
 }
@@ -36,12 +46,13 @@ export function currentWorkerJourneyStep(state: OnboardingState): WorkerJourneyS
     || !gate(state, 'national_id_back_uploaded')
     || !gate(state, 'identity_fields_confirmed')
   ) return 'identity';
-  if (!gate(state, 'criminal_record_uploaded')) return 'criminal_record';
+  if (state.criminalRecordRequired && !gate(state, 'criminal_record_uploaded')) return 'criminal_record';
   return 'review';
 }
 
 export function workerJourneyProgress(state: OnboardingState) {
   const step = currentWorkerJourneyStep(state);
-  const index = workerJourneySteps.indexOf(step);
-  return { step, current: index + 1, total: workerJourneySteps.length };
+  const steps = workerJourneyStepsFor(state);
+  const index = steps.indexOf(step);
+  return { step, current: index + 1, total: steps.length };
 }
