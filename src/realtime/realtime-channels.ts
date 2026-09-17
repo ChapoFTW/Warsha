@@ -229,3 +229,22 @@ export const realtimeChannels = {
 } as const;
 
 export type RealtimeChannelName = keyof typeof realtimeChannels;
+
+/**
+ * The topic a single subscription opens: the spec's name and a suffix of its own.
+ *
+ * `supabase.channel(topic)` returns the channel already registered under that
+ * topic. Two mounted surfaces watching the same spec — the web request list and
+ * the request detail open beside it — therefore got one shared channel, and the
+ * second's bindings threw ("cannot add `postgres_changes` callbacks ... after
+ * `subscribe()`"), taking the detail down; and whichever unmounted first removed
+ * the other's subscription. What is watched is the spec's bindings and filters,
+ * unchanged; only the topic's name differs.
+ */
+export function realtimeSubscriptionTopic(name: string): string {
+  const cryptoRef = (globalThis as { crypto?: { randomUUID?: () => string } }).crypto;
+  const suffix = typeof cryptoRef?.randomUUID === 'function'
+    ? cryptoRef.randomUUID()
+    : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+  return `${name}:${suffix}`;
+}

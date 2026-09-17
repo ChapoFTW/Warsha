@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react';
 
 import { supabase } from './supabase';
-import type { RealtimeChannelSpec } from '@/src/realtime/realtime-channels';
+import { realtimeSubscriptionTopic, type RealtimeChannelSpec } from '@/src/realtime/realtime-channels';
 
 /**
  * Keeps a web surface current without anybody pressing reload.
@@ -81,7 +81,8 @@ export function useWarshaRealtime(
     };
 
     const client = supabase();
-    let channel = client.channel(spec.name);
+    // One channel per mount; see `realtimeSubscriptionTopic`.
+    let channel = client.channel(realtimeSubscriptionTopic(spec.name));
     for (const binding of spec.bindings) {
       channel = channel.on(
         'postgres_changes',

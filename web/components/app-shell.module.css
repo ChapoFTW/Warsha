@@ -4,6 +4,12 @@
   /* header, content, footer — the footer is a third row now, so the content
      row keeps the free space and the footer stays at the bottom. */
   grid-template-rows: auto 1fr auto;
+  /* One column that may be narrower than its content. Without it the column
+     is as wide as the widest row's min-content, and in Arabic at 320px that
+     was 329px: header, page and footer all 9px wider than the screen, and
+     every signed-in page scrolled sideways. Each row now scrolls or wraps
+     inside itself, as the narrow-screen rules below already intend. */
+  grid-template-columns: minmax(0, 1fr);
   background: var(--canvas);
 }
 

@@ -19,7 +19,7 @@ import assert from 'node:assert/strict';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { realtimeChannels } from '../src/realtime/realtime-channels.ts';
+import { realtimeChannels, realtimeSubscriptionTopic } from '../src/realtime/realtime-channels.ts';
 
 let checks = 0;
 function check(condition: unknown, message: string) {
@@ -191,5 +191,20 @@ for (const [path, channel, story] of liveSurfaces) {
   check(/useWarshaRealtime/.test(source), `${story} — the page subscribes`);
   check(source.includes(`realtimeChannels.${channel}`), `and to the right channel (${channel})`);
 }
+
+// ---------------------------------------------------------------------------
+// Every subscription owns its channel
+// ---------------------------------------------------------------------------
+// supabase-js hands back the existing channel for a topic already in use. With
+// the spec name as the topic, the web request detail threw on open because the
+// list beside it had subscribed first.
+check(/client\.channel\(realtimeSubscriptionTopic\(name\)\)/.test(nativeTransport),
+  'NATIVE OPENS A CHANNEL OF ITS OWN FOR EACH SUBSCRIPTION');
+check(/client\.channel\(realtimeSubscriptionTopic\(spec\.name\)\)/.test(webTransport),
+  'WEB OPENS A CHANNEL OF ITS OWN FOR EACH MOUNT');
+const topicA = realtimeSubscriptionTopic('marketplace-requests:user');
+const topicB = realtimeSubscriptionTopic('marketplace-requests:user');
+check(topicA !== topicB && topicA.startsWith('marketplace-requests:user:') && topicB.startsWith('marketplace-requests:user:'),
+  'two subscriptions to the same spec get two topics, both named for it');
 
 console.log(`Realtime coverage: ${checks} checks passed.`);

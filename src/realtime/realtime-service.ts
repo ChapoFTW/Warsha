@@ -3,7 +3,7 @@ import type { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/
 import { environment } from '@/src/config/environment';
 import { getSupabaseClient } from '@/src/lib/supabase';
 
-import { realtimeChannels, type RealtimeBinding, type RealtimeTable } from './realtime-channels';
+import { realtimeChannels, realtimeSubscriptionTopic, type RealtimeBinding, type RealtimeTable } from './realtime-channels';
 
 export type { RealtimeTable } from './realtime-channels';
 export type RealtimeChange = { table: RealtimeTable; event: 'INSERT' | 'UPDATE' | 'DELETE'; id?: string; bookingId?: string };
@@ -43,7 +43,8 @@ function subscribeChannel(
 ): Unsubscribe {
   if (environment.dataMode === 'mock') return mockSubscribe(listener);
   const client = getSupabaseClient();
-  let channel: RealtimeChannel = client.channel(name);
+  // A channel of its own, never one another subscriber already opened.
+  let channel: RealtimeChannel = client.channel(realtimeSubscriptionTopic(name));
   for (const binding of bindings) {
     channel = channel.on('postgres_changes', { event: '*', schema: 'public', table: binding.table, ...(binding.filter ? { filter: binding.filter } : {}), select: ['id'] }, (payload) => {
       listener({ table: binding.table, event: payload.eventType, id: rowId(payload) });

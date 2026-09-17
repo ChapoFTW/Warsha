@@ -137,6 +137,11 @@ check(wideNav && narrowNav,
   'the primary row has one wide arrangement and one narrow arrangement');
 check(/\.nav \{\s*display: none;/.test(shellCss),
   'and is hidden by default so the two arrangements cannot both apply');
+// The shell is a grid. Without a column that may shrink, the column took the
+// widest row's min-content: 329px for Arabic at 320px, rendered 2026-09-17, so
+// every signed-in page scrolled sideways.
+check(/\.shell \{[^}]*grid-template-columns: minmax\(0, 1fr\);/.test(shellCss),
+  'THE SHELL COLUMN CAN BE NARROWER THAN ITS CONTENT, SO NO SIGNED-IN PAGE SCROLLS SIDEWAYS');
 check(/inset-inline-end/.test(shellCss),
   'THE ACCOUNT PANEL IS ANCHORED LOGICALLY, SO IT OPENS INWARD IN ARABIC TOO');
 
