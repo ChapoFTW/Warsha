@@ -105,7 +105,7 @@ export function DiscoveryResultCard({ provider }: { provider: DiscoveryProviderC
               name={provider.isAvailable ? 'circle' : 'radio-button-unchecked'}
               size={10}
               color={provider.isAvailable ? colors.successText : colors.textMuted} />
-            <AppText style={styles.muted}>
+            <AppText style={[styles.muted, styles.shrink]}>
               {provider.isAvailable ? dt.text('availableNow') : provider.responseTimeLabel ?? dt.text('unavailableNow')}
             </AppText>
           </View>
@@ -165,7 +165,13 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   inline: { flexDirection: 'row', alignItems: 'center', gap: 4, flexShrink: 1 },
   rating: { ...typography.bodySmall, fontWeight: typography.semibold },
   muted: { ...typography.caption, letterSpacing: 0, color: colors.textMuted },
-  bottom: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 3, gap: spacing.sm },
+  // The same rule as `metrics`, one row down. A response-time label such as
+  // "Usually replies in 20 minutes" wrapped inside its group but the text kept
+  // its unwrapped width, so it was drawn 16px into the price beside it. The
+  // label now shrinks with its group, and the row takes a second line before
+  // anything overlaps.
+  bottom: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 3, gap: spacing.sm, flexWrap: 'wrap' },
+  shrink: { flexShrink: 1 },
   price: { ...typography.bodySmall, fontWeight: typography.bold },
   favourite: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
 });

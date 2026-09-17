@@ -568,6 +568,11 @@ has(resultCard, /accessibilityActions=\{\[\{ name: 'favourite'/,
 has(resultCard, /noReviewsYet/, 'no reviews is stated rather than shown as a zero');
 has(resultCard, /radio-button-unchecked/, 'unavailability carries a distinct shape');
 lacks(codeOf(resultCard), /opacity: 0\.[0-4]/, 'inactive content is not dimmed by default');
+// Both text rows of the card wrap rather than collide. The footer did not: a
+// response-time label was drawn 16px into the price on a 411dp screen.
+has(resultCard, /metrics: \{[^}]*flexWrap: 'wrap'/, 'THE METRICS ROW WRAPS RATHER THAN COLLIDES');
+has(resultCard, /bottom: \{[^}]*flexWrap: 'wrap'/, 'THE AVAILABILITY AND PRICE ROW WRAPS RATHER THAN COLLIDES');
+has(resultCard, /style=\{\[styles\.muted, styles\.shrink\]\}/, 'and its label shrinks with its group instead of overflowing it');
 
 // ---------------------------------------------------------------------------
 // Personalization and privacy boundaries
