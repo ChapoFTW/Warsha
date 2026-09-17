@@ -84,6 +84,14 @@
 | `record_trust_audit(...)` | Appends an immutable audit row |
 | `prevent_trust_report_mutation()` / `prevent_trust_enforcement_mutation()` / `prevent_trust_audit_mutation()` | Immutability triggers |
 
+> **Amended 2026-09-17.** `trust_state_allows` had no callers until
+> `202609170003`, so recorded enforcement changed nothing a Customer could see.
+> Since then `private.is_provider_publicly_discoverable` requires
+> `trust_state_allows(user, 'marketplace')`, which every discovery path and the
+> matcher inherit. The `communication`, `reviews`, `payments` and `withdrawals`
+> capabilities still have no callers; see TRS-02 in
+> `docs/product/product-truth-register.md`.
+
 ## Client architecture
 
 | Module | Responsibility |
