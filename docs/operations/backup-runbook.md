@@ -135,7 +135,9 @@ deployment record and, for CI-driven deployment, in the environment's
 
 ## What is not automated
 
-No scheduler runs anywhere in Warsha. There is no automated backup verification,
+No scheduler runs any backup work. The one scheduled job in Warsha is the
+marketplace job drain (`warsha-marketplace-jobs`, pg_cron, from `202609170001`),
+which has nothing to do with backups. There is no automated backup verification,
 no automated drill, and no alert if a backup fails. All three are manual and
 owned by the Security Administrator, and that is a known weakness recorded here
 rather than papered over.

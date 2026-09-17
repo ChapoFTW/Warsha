@@ -485,7 +485,15 @@ match(wps014, /alter column push_enabled set default false/,
 const allMigrations = readdirSync(join(root, 'supabase', 'migrations'))
   .filter((f) => f.endsWith('.sql'))
   .map((f) => sqlComments(read(join('supabase', 'migrations', f)))).join('\n');
-notMatch(allMigrations, /cron\.schedule/,
-  'NO CRON SCHEDULE EXISTS, so the dispatcher runs only when invoked');
+// 202609170001 added the first schedule anywhere: the marketplace job drain.
+// This keeps the push guarantee exact rather than incidental. Every schedule
+// must be that drain, so a new one fails here until someone decides what it
+// is, and none may touch push dispatch.
+const schedules = [...allMigrations.matchAll(/cron\.schedule\(([\s\S]*?)\);/g)].map((m) => m[1]);
+match(String(schedules.length), /^1$/, 'exactly one cron schedule exists');
+match(schedules[0] ?? '', /'warsha-marketplace-jobs'[\s\S]*private\.drain_marketplace_jobs\(/,
+  'and it is the marketplace job drain');
+notMatch(schedules.join('\n'), /push|notification|dispatch/i,
+  'NO CRON SCHEDULE DISPATCHES PUSH, so the dispatcher runs only when invoked');
 
 console.log(`Push delivery: ${checks} checks passed.`);

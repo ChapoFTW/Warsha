@@ -97,7 +97,8 @@ It provides one, by construction rather than by a flag:
 - **The device-token table is the audience list.** After Phase A, it will
   contain exactly one row: the synthetic QA device. Nothing else can be
   reached, because nothing else is registered.
-- **Dispatch is entirely manual.** There is no `pg_cron` schedule, no scheduled
+- **Dispatch is entirely manual.** No `pg_cron` schedule calls it (the only
+  schedule, `warsha-marketplace-jobs`, drains marketplace jobs), no scheduled
   Edge Function invocation, and no workflow that invokes `push-dispatch`. The
   dispatcher runs when it is explicitly invoked and not otherwise.
 - **`notification_configuration.scheduler_enabled` is inert.** Nothing anywhere
