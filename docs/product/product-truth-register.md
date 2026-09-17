@@ -156,7 +156,7 @@ now rather than with a guessed state.
 | --- | --- | --- | --- |
 | FIX-01 | Matching proven only with hand-inserted anchors | SUPERSEDED by `marketplace-matching-anchor.test.sql` | MKT-01 |
 | FIX-02 | "Trusted worker leases due jobs" leased by hand | SUPERSEDED by `marketplace-job-drain.test.sql` | MKT-05 |
-| FIX-03 | `marketplace-intelligence.test.sql` still seeds anchors with source `operations`, a state nothing writes | OPEN (P3) | Convert to the work-location writer |
+| FIX-03 | `marketplace-intelligence.test.sql` seeded anchors with source `operations`, a state nothing writes | SUPERSEDED — its anchors now come from `confirm_my_work_location` | 97 assertions unchanged and passing |
 | FIX-04 | Seed and suites wrote service-area coordinates "so distance is testable" | SUPERSEDED — removed, and the column now refuses values | `202609160001` §9 |
 | FIX-05 | Provider approval, verification and staff grants are inserted as fixtures | Accepted | These are staff state the suites are not about; each suite says so |
 

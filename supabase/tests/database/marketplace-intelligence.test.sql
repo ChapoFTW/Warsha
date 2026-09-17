@@ -66,10 +66,23 @@ insert into storage.objects(bucket_id,name) values
 ('profile-images','92000000-0000-0000-0000-000000000002/avatar/profile.jpg'),
 ('profile-images','92000000-0000-0000-0000-000000000003/avatar/profile.jpg'),
 ('profile-images','92000000-0000-0000-0000-000000000004/avatar/profile.jpg');
-insert into private.worker_matching_locations(provider_id,latitude,longitude,source,verification_state) values
-('92000000-0000-0000-0001-000000000002',30.0500,31.2300,'operations','verified'),
-('92000000-0000-0000-0001-000000000003',30.0600,31.2400,'operations','verified'),
-('92000000-0000-0000-0001-000000000004',30.0400,31.2200,'operations','verified');
+-- Anchors come from the work-location step, as in the product: an address the
+-- Professional owns, confirmed through confirm_my_work_location. They were
+-- inserted here with source 'operations', a state nothing writes.
+create function pg_temp.work_location(p_user uuid, p_address uuid, p_latitude double precision, p_longitude double precision)
+returns void language plpgsql as $fn$
+begin
+  perform set_config('request.jwt.claim.sub', p_user::text, true);
+  insert into public.addresses(id,customer_id,label,address_line,street,governorate,district,is_default)
+  values(p_address,p_user,'Work location','Pinned work location','Pinned work location','Cairo','Zamalek',false);
+  perform public.confirm_my_work_location(p_address,p_latitude,p_longitude,'manual_pin');
+end $fn$;
+set local role authenticated;
+select pg_temp.work_location('92000000-0000-0000-0000-000000000002','92000000-0000-0000-0003-000000000002',30.0500,31.2300);
+select pg_temp.work_location('92000000-0000-0000-0000-000000000003','92000000-0000-0000-0003-000000000003',30.0600,31.2400);
+select pg_temp.work_location('92000000-0000-0000-0000-000000000004','92000000-0000-0000-0003-000000000004',30.0400,31.2200);
+reset role;
+select set_config('request.jwt.claim.sub','',true);
 insert into public.provider_emergency_categories(provider_id,category_id,enabled) values
 ('92000000-0000-0000-0001-000000000002','plumbing',true),
 ('92000000-0000-0000-0001-000000000003','plumbing',true),
