@@ -13,6 +13,8 @@ import { environment } from '@/src/config/environment';
 import { useLocalization } from '@/src/i18n/localization';
 import { getSupabaseClient } from '@/src/lib/supabase';
 import { realtimeService } from '@/src/realtime/realtime-service';
+import { isAccountRestrictedError } from '@/src/account-standing/account-restriction';
+import { trustText } from '@/src/account-standing/trust-translations';
 
 import { BrandButton } from './BrandUI';
 import { AppText } from './Typography';
@@ -46,7 +48,7 @@ export function RequestConversation({
 }) {
   const colors = useThemeColors();
   const styles = useThemedStyles(makeStyles);
-  const { t, isRTL } = useLocalization();
+  const { t, isRTL, language } = useLocalization();
   const [conversation, setConversation] = useState<Conversation | null>(null);
   const [pending, setPending] = useState<{ id: string; body: string }[]>([]);
   const [draft, setDraft] = useState('');
@@ -98,11 +100,14 @@ export function RequestConversation({
     if (error) {
       setPending((current) => current.filter((item) => item.id !== clientId));
       setDraft(body);
-      setFailure(isRequestConversationClosed(error) ? t('messageClosed') : t('messageFailed'));
+      setFailure(isRequestConversationClosed(error) ? t('messageClosed')
+        // 202609170006: a restricted account is told why the message did not go.
+        : isAccountRestrictedError(error) ? trustText(language, 'restrictedBody')
+          : t('messageFailed'));
     }
     await load();
     setBusy(false);
-  }, [busy, draft, load, providerId, requestId, t]);
+  }, [busy, draft, language, load, providerId, requestId, t]);
 
   if (loadFailed) {
     return <AppText accessibilityRole="alert" style={styles.error}>{t('messageLoadFailed')}</AppText>;

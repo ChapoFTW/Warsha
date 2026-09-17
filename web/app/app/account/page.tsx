@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 
 import { PreferenceFooter } from '@/components/preference-controls';
+import { AccountStanding } from '@/components/account-standing';
 import { AppShell } from '@/components/app-shell';
 import { useSession } from '@/components/session-provider';
 import { appCopy } from '@/lib/app-copy';
@@ -64,6 +65,9 @@ export default function AccountPage() {
     <AppShell navigation={customerNavigation(words)} mode={words.modeCustomer}>
       <div className={styles.head}><h1 className={styles.title}>{words.accountTitle}</h1></div>
       <p className={styles.lead}>{words.accountLead}</p>
+
+      {/* Nothing renders for an account in good standing. */}
+      <AccountStanding words={words} locale={locale} />
 
       <form className={styles.panel} onSubmit={save}>
         <h2 className={styles.sectionTitle}>{words.accountProfile}</h2>

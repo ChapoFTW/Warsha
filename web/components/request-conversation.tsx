@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { supabase } from '@/lib/supabase';
+import { isAccountRestrictedError } from '@/src/account-standing/account-restriction';
 import { useWarshaRealtime } from '@/lib/use-warsha-realtime';
 import {
   isRequestConversationClosed,
@@ -102,7 +103,10 @@ export function RequestConversationPanel({
       // The text goes back in the box. A failed send that also swallows what
       // somebody wrote asks them to type it twice.
       setDraft(body);
-      setFailure(isRequestConversationClosed(error) ? words.messageClosed : words.messageFailed);
+      setFailure(isRequestConversationClosed(error) ? words.messageClosed
+        // 202609170006: a restricted account is refused, and is told so.
+        : isAccountRestrictedError(error) ? (words.messageRestricted ?? words.messageFailed)
+          : words.messageFailed);
       if (isRequestConversationClosed(error)) await load();
     } else {
       await load();

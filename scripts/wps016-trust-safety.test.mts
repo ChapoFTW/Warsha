@@ -3,6 +3,11 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import {
+  accountHasRestriction, appealStatementIsValid, isAccountRestrictedError, isCounterpartyUnavailableError,
+  parseAccountTrustStatus,
+} from '../src/account-standing/account-restriction.ts';
+
 
 const root = process.cwd(); let checks = 0;
 const read = (path: string) => readFileSync(join(root, path), 'utf8');
@@ -54,7 +59,7 @@ match(wps, /source_report_id/, 'unified reports link to existing domain reports'
 // ---------------------------------------------------------------------------
 // The client mirror of these rules is gone.
 //
-// `src/trust/trust-safety-types.ts` re-stated the category list, the terminal
+// `src/account-standing/trust-safety-types.ts` re-stated the category list, the terminal
 // actions, the ban precondition and the restriction logic in TypeScript, for a
 // moderation client that never shipped a screen. Every rule it mirrored is
 // asserted here against the migration that enforces it, which is where the
@@ -232,5 +237,74 @@ match(packageJson, /test:wps016/, 'the regression suite is registered');
 ok(trustRunbook.length > 500 && fraudRunbook.length > 500
   && enforcementRunbook.length > 500 && appealsRunbook.length > 500,
   'all four operational runbooks are substantive');
+
+// ---------------------------------------------------------------------------
+// A restricted person is told, and can appeal (202609170006)
+// ---------------------------------------------------------------------------
+const restrictionModule = readFileSync('src/account-standing/account-restriction.ts', 'utf8');
+ok(!/from 'react|from 'react-native|@\/lib\//.test(restrictionModule),
+  'the restriction reader is plain TypeScript both platforms import');
+ok(isAccountRestrictedError({ code: 'WR001', message: 'account_restricted' })
+  && isAccountRestrictedError({ message: 'account_restricted' })
+  && !isAccountRestrictedError({ code: '42501', message: 'permission denied' }),
+  'A RESTRICTION IS RECOGNISED BY ITS OWN CODE, NOT CONFUSED WITH ANY PERMISSION FAILURE');
+ok(isCounterpartyUnavailableError({ code: 'WR002' }) && !isCounterpartyUnavailableError({ code: 'WR001' }),
+  'and the other person being unavailable is a different refusal');
+const suspended = parseAccountTrustStatus({ trustLevel: 'suspended', restriction: 'suspended', restrictions: {},
+  publicReason: 'Repeated complaints', restrictionExpiresAt: null,
+  appealableAction: { id: 'action-1', actionType: 'suspension' }, appeal: null, canAppeal: true });
+ok(suspended?.restriction === 'suspended' && suspended.canAppeal && suspended.appealableActionId === 'action-1'
+  && accountHasRestriction(suspended),
+  'a suspension is read with the action the appeal needs');
+const good = parseAccountTrustStatus({ trustLevel: 'good_standing', restriction: 'none', restrictions: {},
+  canAppeal: false, publicReason: null, restrictionExpiresAt: null, appealableAction: null, appeal: null });
+ok(good !== null && !accountHasRestriction(good), 'an account in good standing has nothing to be told');
+ok(parseAccountTrustStatus({}) === null, 'AN UNREADABLE STATUS IS NOT "NO RESTRICTION"');
+ok(parseAccountTrustStatus({ trustLevel: 'banned', restriction: 'removed', canAppeal: true, appealableAction: null })?.canAppeal === false,
+  'no appeal is offered without the action it would be against');
+ok(!appealStatementIsValid('too short') && appealStatementIsValid('I was not told what the complaint was.'),
+  'the appeal statement follows the server bound');
+
+const standing = readFileSync('web/components/account-standing.tsx', 'utf8');
+match(standing, /rpc\('get_my_trust_status'\)/, 'web reads the status the server gives');
+match(standing, /rpc\('submit_trust_appeal', \{\s*p_enforcement_action_id: status\.appealableActionId/,
+  'WEB APPEALS AGAINST THE ACTION THE STATUS NAMES');
+match(standing, /if \(!status \|\| !accountHasRestriction\(status\)\) return null;/,
+  'and shows nothing to an account in good standing');
+for (const page of ['web/app/app/account/page.tsx', 'web/app/app/worker/profile/page.tsx']) {
+  match(readFileSync(page, 'utf8'), /<AccountStanding words=\{[a-zA-Z]+\} locale=\{locale\} \/>/,
+    `${page} carries the account status`);
+}
+const webCustomer = readFileSync('web/lib/customer.ts', 'utf8');
+match(webCustomer, /if \(\/account_restricted\/\.test\(text\)\) return 'account_restricted';/,
+  'a restricted Customer on the web is told so');
+for (const file of ['web/app/app/worker/jobs/page.tsx', 'web/app/app/worker/opportunities/page.tsx', 'web/components/request-conversation.tsx']) {
+  match(readFileSync(file, 'utf8'), /isAccountRestrictedError\(/, `${file} tells a restricted Professional why an action was refused`);
+}
+
+const nativeStatus = readFileSync('app/account-status.tsx', 'utf8');
+match(nativeStatus, /trustRepository\.status\(\)/, 'native reads the same status');
+match(nativeStatus, /trustRepository\.appeal\(status\.appealableActionId, statement\)/,
+  'NATIVE APPEALS AGAINST THE ACTION THE STATUS NAMES');
+const nativeTrustRepository = readFileSync('src/account-standing/trust-repository.ts', 'utf8');
+match(nativeTrustRepository, /rpc\('get_my_trust_status'\)/, 'through get_my_trust_status');
+match(nativeTrustRepository, /environment\.dataMode === 'mock'\) return GOOD_STANDING/,
+  'and Mock, which enforces nothing, claims no restriction');
+match(readFileSync('app/(tabs)/profile.tsx', 'utf8'), /router\.push\('\/account-status'\)/, 'the Customer profile reaches it');
+match(readFileSync('app/worker/settings.tsx', 'utf8'), /router\.push\('\/account-status'\)/, 'Professional settings reach it');
+for (const file of ['app/marketplace-request/new.tsx', 'app/marketplace-request/[id].tsx', 'app/worker-quote/[id].tsx',
+  'app/provider-job/[id].tsx', 'app/conversation/[bookingId].tsx', 'app/booking/new/[providerId].tsx']) {
+  match(readFileSync(file, 'utf8'), /explainRestriction\(reason, ?language\)/, `${file} says a refusal was a restriction`);
+}
+for (const file of ['components/warsha/RequestConversation.tsx', 'components/warsha/BookingReviewCard.tsx']) {
+  match(readFileSync(file, 'utf8'), /isAccountRestrictedError\((error|reason)\) \? trustText\(language, 'restrictedBody'\)/,
+    `${file} says a refusal was a restriction`);
+}
+const trustCopySource = readFileSync('src/account-standing/trust-translations.ts', 'utf8');
+const webCopySource = readFileSync('web/lib/app-copy.ts', 'utf8');
+for (const sentence of ['Your account is suspended. You cannot post requests, book, quote, accept new work, start conversations or write reviews.',
+  'حسابك موقوف. مش هتقدر تطلب أو تحجز أو تبعت عرض سعر أو تقبل شغل جديد أو تبدأ محادثة أو تكتب تقييم.']) {
+  ok(trustCopySource.includes(sentence) && webCopySource.includes(sentence), 'native and web say the same thing about a suspension');
+}
 
 console.log(`WPS-016 trust and safety contracts: ${checks} checks passed.`);

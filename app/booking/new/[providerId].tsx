@@ -33,6 +33,7 @@ import {
 import type { Service } from "@/src/data/marketplace-types";
 import { useMarketplaceData } from "@/src/data/marketplace-context";
 import { useLocalization } from "@/src/i18n/localization";
+import { explainRestriction } from "@/src/account-standing/explain-restriction";
 import { useAddressFormText, useAddressLocationPickerCopy } from "@/src/i18n/address-form-copy";
 import type { TranslationKey } from "@/src/i18n/translations";
 import { catalogueServiceLabel } from "@/src/services/specific-services";
@@ -291,8 +292,8 @@ export default function NewBookingScreen() {
         pathname: "/booking/success/[id]",
         params: { id: booking.id },
       });
-    } catch {
-      Alert.alert(t("createBookingError"), t("genericTryAgain"));
+    } catch (reason) {
+      if (!explainRestriction(reason, language)) Alert.alert(t("createBookingError"), t("genericTryAgain"));
     }
   };
   return (

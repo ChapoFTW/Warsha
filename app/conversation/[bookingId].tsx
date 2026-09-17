@@ -45,6 +45,7 @@ import {
   type MessageDraft,
 } from '@/src/chat/chat-types';
 import { useLocalization } from '@/src/i18n/localization';
+import { explainRestriction } from '@/src/account-standing/explain-restriction';
 import { trailingInset } from '@/src/i18n/direction';
 import { useMarketplaceData } from '@/src/data/marketplace-context';
 import type { SupportedLanguage } from '@/src/i18n/language-preference';
@@ -258,10 +259,13 @@ export default function ConversationScreen() {
       setDraft('');
       setFailedDraft(null);
       void load(0, true);
-    } catch {
+    } catch (reason) {
       if (mounted.current) {
         setFailedDraft(message);
-        Alert.alert(ct('title'), message.kind === 'image' || message.kind === 'file' ? ct('imageLoadError') : ct('offline'));
+        // A restricted account is told why, not that it is offline.
+        if (!explainRestriction(reason, language)) {
+          Alert.alert(ct('title'), message.kind === 'image' || message.kind === 'file' ? ct('imageLoadError') : ct('offline'));
+        }
       }
     } finally {
       if (mounted.current) {
@@ -269,7 +273,7 @@ export default function ConversationScreen() {
         setUploading(false);
       }
     }
-  }, [accountKey, booking, ct, load, sending, writable]);
+  }, [accountKey, booking, ct, language, load, sending, writable]);
 
   const sendText = () => {
     const body = draft.trim();

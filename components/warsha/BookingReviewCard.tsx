@@ -11,6 +11,8 @@ import { radii, spacing, typography, type ThemeColors } from '@/constants/theme'
 import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
 import { useLocalization } from '@/src/i18n/localization';
 import { realtimeService } from '@/src/realtime/realtime-service';
+import { isAccountRestrictedError } from '@/src/account-standing/account-restriction';
+import { trustText } from '@/src/account-standing/trust-translations';
 import { useReviews } from '@/src/reviews/review-context';
 import { useReviewText } from '@/src/reviews/review-translations';
 import { emptyDimensions } from '@/src/reviews/review-types';
@@ -80,7 +82,11 @@ export function BookingReviewCard({ bookingId, providerId, completed }: { bookin
     setError('');
     const input = { bookingId, providerId, rating, dimensions, comment, isAnonymous: anonymous, attachments, previousAttachmentPaths: review?.attachments.flatMap(item => item.storagePath ? [item.storagePath] : []) };
     try { const saved = review ? await reviews.edit(review.id, input) : await reviews.submit(input); setReview(saved); setEditing(false); load(); }
-    catch (reason) { setError(reason instanceof Error ? reason.message : rt('reviewError')); }
+    catch (reason) {
+      // A review-restricted, suspended or removed account is refused (202609170006) and told so.
+      setError(isAccountRestrictedError(reason) ? trustText(language, 'restrictedBody')
+        : reason instanceof Error ? reason.message : rt('reviewError'));
+    }
   };
 
   return (

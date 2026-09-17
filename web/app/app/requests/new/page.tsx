@@ -79,6 +79,8 @@ const FAILURE_COPY: Record<CustomerFailure, string> = {
   expired: 'requestExpired',
   not_found: 'requestNotFound',
   unconfirmed_location: 'requestLocationUnconfirmed',
+  account_restricted: 'requestAccountRestricted',
+  counterparty_unavailable: 'requestCounterpartyUnavailable',
   failed: 'requestFailed',
 };
 

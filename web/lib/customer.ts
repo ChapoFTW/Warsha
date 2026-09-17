@@ -486,12 +486,17 @@ export type CustomerFailure =
   | 'expired'
   | 'not_found'
   | 'unconfirmed_location'
+  | 'account_restricted'
+  | 'counterparty_unavailable'
   | 'failed';
 
 /** Named from the `raise exception` lines in the marketplace functions. */
 export function classifyCustomerError(message: string | undefined): CustomerFailure {
   const text = message ?? '';
   if (/verified request location required/i.test(text)) return 'unconfirmed_location';
+  // 202609170006. The tokens, not prose: they are what the server raises.
+  if (/account_restricted/.test(text)) return 'account_restricted';
+  if (/counterparty_unavailable/.test(text)) return 'counterparty_unavailable';
   if (/too many marketplace requests|rate limit/i.test(text)) return 'rate_limited';
   if (/service unavailable|marketplace is not|not ready/i.test(text)) return 'unavailable';
   if (/choose a future time|valid flexible window/i.test(text)) return 'future_time';

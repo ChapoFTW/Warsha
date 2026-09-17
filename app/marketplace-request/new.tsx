@@ -20,6 +20,7 @@ import { useMarketplaceData } from '@/src/data/marketplace-context';
 import { useDraftState } from '@/src/drafts/draft-context';
 import { useLocalization } from '@/src/i18n/localization';
 import { useMarketplaceIntelligence } from '@/src/marketplace-intelligence/marketplace-context';
+import { explainRestriction } from '@/src/account-standing/explain-restriction';
 import { marketplaceRepository } from '@/src/marketplace-intelligence/marketplace-repository';
 import { useMarketplaceText } from '@/src/marketplace-intelligence/marketplace-translations';
 import { catalogueServiceLabel, specificServicePickerCopy } from '@/src/services/specific-services';
@@ -79,7 +80,7 @@ export default function NewMarketplaceRequest(){
     Alert.alert(mt('emergencySurcharge'),`${(preview.surchargeMinor/100).toFixed(2)} ${preview.currency}
 
 ${mt('emergencySurchargeCeiling')}`,[{text:mt('back'),style:'cancel'},{text:mt('approveSurcharge'),onPress:()=>void submit(preview.approvalToken)}]);return}const id=await market.create(input);resetDraft('submitted');router.replace({pathname:'/marketplace-request/[id]',params:{id}})}catch(reason){if(isUnconfirmedLocationError(reason)){// The address changed since this form read it. Read it again, so the confirmation appears.
-    void reloadAddresses();Alert.alert(addressText('requestLocationRequired'))}else if(reason instanceof Object&&'message' in reason&&String((reason as {message:unknown}).message).includes('Emergency service unavailable'))Alert.alert(mt('emergencyUnavailableHere'));else Alert.alert(mt('error'))}finally{setSaving(false)}};
+    void reloadAddresses();Alert.alert(addressText('requestLocationRequired'))}else if(reason instanceof Object&&'message' in reason&&String((reason as {message:unknown}).message).includes('Emergency service unavailable'))Alert.alert(mt('emergencyUnavailableHere'));else if(!explainRestriction(reason,language))Alert.alert(mt('error'))}finally{setSaving(false)}};
   if(market.loading)return <Center><ActivityIndicator color={colors.white}/></Center>;
   if(!market.capabilities?.enabled)return <SafeAreaView style={styles.safe}><ScreenHeader title={mt('newRequest')}/><Center><MaterialIcons name="lock-outline" size={38} color={colors.textMuted}/><AppText style={styles.centerText}>{mt('unavailable')}</AppText></Center></SafeAreaView>;
   return <SafeAreaView style={styles.safe}><ScreenHeader title={provider?mt('requestQuote'):mt('getQuotes')}/><ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">

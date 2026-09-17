@@ -24,6 +24,7 @@ import { useProviderFoundation } from '@/src/providers/provider-context';
 import { supabaseCustomerProfileRepository } from '@/src/repositories/supabase-user-repositories';
 import { useDiscoveryText } from '@/src/discovery/discovery-translations';
 import { useSupportText } from '@/src/support/support-translations';
+import { useTrustText } from '@/src/account-standing/trust-translations';
 
 /**
  * WPS-024 correction. This screen carried a second authentication path —
@@ -44,6 +45,7 @@ export default function Profile() {
   const at = useAuthText();
   const pt = useProviderText();
   const st = useSupportText();
+  const tt = useTrustText();
   const dt = useDiscoveryText();
   const gt = useGrowthText();
   const pvt = usePrivacyText();
@@ -227,6 +229,8 @@ export default function Profile() {
     <Pressable accessibilityRole="button" accessibilityLabel={dt.text('settingsLanguageAppearance')} onPress={() => router.push('/appearance')} style={styles.button}><AppText>{dt.text('settingsLanguageAppearance')}</AppText></Pressable>
     <Pressable accessibilityRole="button" accessibilityLabel={st.text('helpCenter')} onPress={() => router.push('/help')} style={styles.button}><AppText>{st.text('helpCenter')}</AppText></Pressable>
     <Pressable accessibilityRole="button" accessibilityLabel={st.text('myCases')} onPress={() => router.push('/support')} style={styles.button}><AppText>{st.text('myCases')}</AppText></Pressable>
+    {/* Whatever restriction applies, the account keeps its status and the way to appeal (202609170006). */}
+    <Pressable accessibilityRole="button" accessibilityLabel={tt('title')} onPress={() => router.push('/account-status')} style={styles.button}><AppText>{tt('title')}</AppText></Pressable>
     {/* Privacy sits in the ordinary settings list, above sign out. Burying it
         under a submenu is the standard way to make deletion hard to find. */}
     <Pressable accessibilityRole="button" accessibilityLabel={pvt.text('privacyTitle')} onPress={() => router.push('/privacy')} style={styles.button}><AppText>{pvt.text('privacyTitle')}</AppText></Pressable>

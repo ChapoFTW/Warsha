@@ -12,6 +12,7 @@ import { WorkerOfferCapacityNotice } from '@/components/warsha/WorkerOfferCapaci
 import { radii, spacing, typography, type ThemeColors } from '@/constants/theme';
 import { useThemeColors, useThemedStyles } from '@/src/appearance/appearance-context';
 import { useLocalization } from '@/src/i18n/localization';
+import { explainRestriction } from '@/src/account-standing/explain-restriction';
 import { useMarketplaceIntelligence } from '@/src/marketplace-intelligence/marketplace-context';
 import { marketplaceRepository } from '@/src/marketplace-intelligence/marketplace-repository';
 import {
@@ -71,6 +72,8 @@ export default function WorkerQuoteDetail() {
       else await market.submitQuote(invitation.id, terms());
       router.back();
     } catch (reason) {
+      // An account restriction (202609170006) is said as one, before anything else.
+      if (explainRestriction(reason, language)) return;
       /*
        * The limit gets its own sentence, and the count is refreshed before it
        * is shown. A worker refused for capacity while the screen still says
@@ -126,7 +129,7 @@ export default function WorkerQuoteDetail() {
             disabled={!actionable || saving} onPress={async () => {
             setSaving(true);
             try { await market.acceptEmergency(invitation.id); router.back(); }
-            catch { Alert.alert(mt('error')); }
+            catch (reason) { if (!explainRestriction(reason, language)) Alert.alert(mt('error')); }
             finally { setSaving(false); }
           }} style={[styles.primary, !actionable && styles.disabled]}>
             {saving ? <ActivityIndicator color={colors.background} /> : <AppText style={styles.primaryText}>{mt('emergencyAccept')}</AppText>}

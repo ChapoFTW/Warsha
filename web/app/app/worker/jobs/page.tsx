@@ -22,6 +22,7 @@ import {
 } from '@/lib/worker';
 import { workerCopy, type WorkerWords } from '@/lib/worker-copy';
 import { cataloguedServiceReferenceLabel } from '@/src/services/specific-services';
+import { isAccountRestrictedError } from '@/src/account-standing/account-restriction';
 import { bookingLifecycleSemantic } from '@/src/lifecycle/lifecycle-presentation';
 
 import styles from '@/components/product-surface.module.css';
@@ -111,6 +112,7 @@ function WorkerJobDetail({ booking, locale, appWords, words, onClose, onChanged 
 }) {
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [restricted, setRestricted] = useState(false);
   const [reason, setReason] = useState('');
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
@@ -122,9 +124,13 @@ function WorkerJobDetail({ booking, locale, appWords, words, onClose, onChanged 
     if (busy) return;
     setBusy(true);
     setFailed(false);
+    setRestricted(false);
     const result = await operation();
-    if (result.error) setFailed(true);
-    else await onChanged();
+    if (result.error) {
+      // 202609170006: the server refuses a restricted account; say that, not "failed".
+      if (isAccountRestrictedError(result.error)) setRestricted(true);
+      else setFailed(true);
+    } else await onChanged();
     setBusy(false);
   };
 
@@ -223,6 +229,7 @@ function WorkerJobDetail({ booking, locale, appWords, words, onClose, onChanged 
         )}
       </div>
       {failed ? <p className={styles.error} role="alert">{words.workerJobActionFailed}</p> : null}
+      {restricted ? <p className={styles.error} role="alert">{words.workerAccountRestricted}</p> : null}
     </section>
   );
 }

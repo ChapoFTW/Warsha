@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Route } from 'next';
 
+import { AccountStanding } from '@/components/account-standing';
 import { AppShell } from '@/components/app-shell';
 import { WorkerProfileEditor } from '@/components/worker-profile-editor';
 import { useSession } from '@/components/session-provider';
@@ -48,6 +49,10 @@ export default function WorkerProfilePage() {
     <AppShell navigation={workerNavigation(appWords)} mode={appWords.modeWorker}>
       <div className={styles.head}><h1 className={styles.title}>{words.workerProfileTitle}</h1></div>
       <p className={styles.lead}>{words.workerProfileLead}</p>
+
+      {/* A hidden, suspended or removed Professional learns it here, with the
+          way to appeal. Nothing renders in good standing. */}
+      <AccountStanding words={appWords} locale={locale} />
 
       <section className={styles.panel}>
         <h2 className={styles.sectionTitle}>{words.workerAvailability}</h2>

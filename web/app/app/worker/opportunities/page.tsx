@@ -35,6 +35,7 @@ import {
 } from '@/src/lifecycle/lifecycle-presentation';
 
 import { RequestConversationPanel } from '@/components/request-conversation';
+import { isAccountRestrictedError } from '@/src/account-standing/account-restriction';
 
 import styles from '@/components/product-surface.module.css';
 
@@ -224,6 +225,7 @@ function OpportunityDetail({
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [restricted, setRestricted] = useState(false);
   const [limitReached, setLimitReached] = useState(false);
   const [done, setDone] = useState(false);
   const workLabel = requestWorkLabel(invitation, services, locale);
@@ -287,6 +289,7 @@ function OpportunityDetail({
     if (busy) return;
     setBusy(true);
     setFailed(false);
+    setRestricted(false);
     setLimitReached(false);
     setDone(false);
     const result = await operation();
@@ -300,6 +303,9 @@ function OpportunityDetail({
         // Refresh the count before the message lands, so the notice above the
         // form is not still claiming room while the form says there is none.
         await onChanged();
+      } else if (isAccountRestrictedError(result.error)) {
+        // 202609170006: a restricted account is told so, not that it failed.
+        setRestricted(true);
       } else {
         setFailed(true);
       }
@@ -431,6 +437,7 @@ function OpportunityDetail({
         </p>
       ) : null}
       {failed ? <p className={styles.error} role="alert">{words.opportunityActionFailed}</p> : null}
+      {restricted ? <p className={styles.error} role="alert">{words.workerAccountRestricted}</p> : null}
       {done ? <p className={styles.ok} role="status">{words.opportunityActionDone}</p> : null}
     </section>
   );
