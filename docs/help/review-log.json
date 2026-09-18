@@ -426,6 +426,27 @@
         }
       ],
       "reason": "Reviews reached the web (the Customer's review of a completed job under My jobs, with photos and editing; the Professional's one reply on their job), both surfaces now read one review copy (French corrected where it said different things), and the phone's review edit, which had never reached the server, was fixed. customer-requests-quotes-jobs and worker-opportunities-jobs said nothing about reviews; each gained a paragraph in English, Arabic and French stating what is true on both surfaces: the scores, words, photos and anonymity; a limited, shown edit window; one unchangeable reply; reporting from the app; and that only visible reviews count. admin-reported-reviews was read against the same change and nothing in it became untrue."
+    },
+    {
+      "date": "2026-09-18",
+      "articles": [
+        {
+          "id": "customer-requests-quotes-jobs",
+          "locale": "en",
+          "digest": "6bc26f4d0d7d4afa"
+        },
+        {
+          "id": "customer-requests-quotes-jobs",
+          "locale": "ar",
+          "digest": "c4c8ccb08286163e"
+        },
+        {
+          "id": "customer-requests-quotes-jobs",
+          "locale": "fr",
+          "digest": "6d0d5ac08d0556be"
+        }
+      ],
+      "reason": "A Professional's reviews can now be read, voted helpful and reported on the website, from their card on the discover page (the web's Find help / دوّر على صنايعي / Découvrir), through get_provider_reputation_summary, vote_review_helpfulness and report_review. customer-requests-quotes-jobs said reporting was in the app only, which became untrue; the paragraph now says where reviews are read and reported on each surface, naming the page as the reader sees it in English, Arabic and French."
     }
   ]
 }

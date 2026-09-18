@@ -24,7 +24,7 @@ const DIMENSIONS: (keyof ReviewDimensions)[] = ['professionalism', 'quality', 'p
  * requires, words, whether to be shown only as "Customer", and up to four
  * photos. The web could not leave a review at all before this.
  */
-export function BookingReview({ bookingId, locale }: { bookingId: string; locale: Locale }) {
+export function JobReview({ bookingId, locale }: { bookingId: string; locale: Locale }) {
   const rt = (key: ReviewCopyKey) => reviewText(locale, key);
   const accountId = useSession().session?.user.id ?? null;
   const [review, setReview] = useState<BookingReview | null | undefined>(undefined);

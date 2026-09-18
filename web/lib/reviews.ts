@@ -2,6 +2,7 @@ import { supabase } from '@/lib/supabase';
 import {
   editReviewArgs,
   mapReview,
+  mapSummary,
   REVIEW_IMAGE_TYPES,
   REVIEW_MAX_IMAGE_BYTES,
   REVIEW_MAX_IMAGES,
@@ -9,7 +10,9 @@ import {
   submitReviewArgs,
   type Raw,
 } from '@/src/reviews/review-mapping';
-import type { BookingReview, ReviewDimensions, ProviderReply } from '@/src/reviews/review-types';
+import type {
+  BookingReview, ProviderReply, RatingSummary, ReviewDimensions, ReviewReportReason, ReviewSort, ReviewVote,
+} from '@/src/reviews/review-types';
 import { signedUrlSeconds } from '@/src/storage/signed-url-policy';
 
 /**
@@ -25,15 +28,20 @@ import { signedUrlSeconds } from '@/src/storage/signed-url-policy';
 
 const BUCKET = 'review-attachments';
 
-async function withPhotoUrls(row: Raw): Promise<BookingReview> {
-  const refs = Array.isArray(row.image_refs) ? row.image_refs.map(String) : [];
-  if (!refs.length) return mapReview(row, new Map(), true);
+async function signed(refs: string[]): Promise<Map<string, string>> {
+  if (!refs.length) return new Map();
   const { data, error } = await supabase().storage.from(BUCKET)
     .createSignedUrls(refs, signedUrlSeconds('review-attachments'));
   // A photo that cannot be signed is shown as unavailable, not as a failure of
   // the whole review.
-  const urls = new Map(refs.map((path, index) => [path, error ? '' : data?.[index]?.signedUrl ?? '']));
-  return mapReview(row, urls, true);
+  return new Map(refs.map((path, index) => [path, error ? '' : data?.[index]?.signedUrl ?? '']));
+}
+
+const photoRefs = (row: Raw) => Array.isArray(row.image_refs) ? row.image_refs.map(String) : [];
+
+/** A participant's view: the storage paths come back so an edit can keep them. */
+async function withPhotoUrls(row: Raw): Promise<BookingReview> {
+  return mapReview(row, await signed(photoRefs(row)), true);
 }
 
 /** The review on this booking, for its Customer or its Professional; null if none. */
@@ -123,4 +131,29 @@ export async function replyToReview(reviewId: string, body: string): Promise<Pro
   if (error) throw error;
   const row = data as Raw;
   return { id: String(row.id), body: String(row.body), createdAt: String(row.created_at) };
+}
+
+/**
+ * A Professional's public reputation and reviews, as `get_provider_reputation_summary`
+ * computes them — the same summary the phone shows on a Professional's profile.
+ * Storage paths are not exposed here; a reader only needs the signed photo.
+ */
+export async function loadReputation(providerId: string, sort: ReviewSort): Promise<RatingSummary> {
+  const { data, error } = await supabase().rpc('get_provider_reputation_summary',
+    { p_provider_id: providerId, p_sort: sort, p_limit: 20, p_offset: 0 });
+  if (error) throw error;
+  const row = (data ?? {}) as Raw;
+  const rows = Array.isArray(row.reviews) ? row.reviews as Raw[] : [];
+  const urls = await signed(rows.flatMap(photoRefs));
+  return mapSummary(row, rows.map((item) => mapReview(item, urls, false)), sort);
+}
+
+export async function voteOnReview(reviewId: string, vote: ReviewVote): Promise<void> {
+  const { error } = await supabase().rpc('vote_review_helpfulness', { p_review_id: reviewId, p_vote: vote });
+  if (error) throw error;
+}
+
+export async function reportReview(reviewId: string, reason: ReviewReportReason, details: string): Promise<void> {
+  const { error } = await supabase().rpc('report_review', { p_review_id: reviewId, p_reason: reason, p_details: details.trim() });
+  if (error) throw error;
 }

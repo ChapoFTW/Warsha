@@ -673,3 +673,11 @@ button.card:hover .categoryIcon { background: var(--surface); }
 .checkRow { display: flex; align-items: center; gap: var(--space-sm); min-height: 44px; cursor: pointer; }
 .reviewThumb { display: block; width: 88px; height: 88px; object-fit: cover; border-radius: var(--radius-sm); }
 .reviewReply { border-inline-start: 3px solid var(--border-strong); padding-inline-start: var(--space-md); margin-block: var(--space-sm); }
+
+/* How a Professional's scores are spread, drawn from the tokens: Warsha has no
+   green "good", so a bar is ink on the border colour, as on the phone. */
+.distribution { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-xs); max-width: 420px; }
+.distributionRow { display: grid; grid-template-columns: 3.5em minmax(0, 1fr) 3em; align-items: center; gap: var(--space-sm); }
+.distributionTrack { display: block; block-size: 8px; border-radius: 999px; background: var(--border); overflow: hidden; }
+.distributionFill { display: block; block-size: 100%; background: var(--text-primary); }
+

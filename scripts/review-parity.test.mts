@@ -128,7 +128,30 @@ check(/review\.reply \?/.test(replyCard) && /immutableReply/.test(replyCard),
 
 const jobs = read('web', 'app', 'app', 'jobs', 'page.tsx');
 const workerJobs = read('web', 'app', 'app', 'worker', 'jobs', 'page.tsx');
-check(/booking\.status === 'completed' \? <BookingReview /.test(jobs), 'a completed job offers its review on the web');
+check(/booking\.status === 'completed' \? <JobReview /.test(jobs), 'a completed job offers its review on the web');
 check(/booking\.status === 'completed' \? <ReviewReply /.test(workerJobs), 'and the Professional sees it and can answer');
+
+// --- And anyone can read a Professional's reviews on the web -----------------
+for (const rpc of ['get_provider_reputation_summary', 'vote_review_helpfulness', 'report_review']) {
+  check(webReviews.includes(`rpc('${rpc}'`), `the web calls ${rpc}`);
+}
+check(/mapSummary\(row, rows\.map\(\(item\) => mapReview\(item, urls, false\)\), sort\)/.test(webReviews),
+  'the public summary is read by the shared reader, without storage paths');
+const publicReviews = read('web', 'components', 'provider-reviews.tsx');
+check(!/reduce\(|\.sort\(/.test(publicReviews),
+  'THE WEB AVERAGES, COUNTS AND ORDERS NOTHING ITSELF; EVERY FIGURE AND THE SORT ARE THE SERVER’S');
+for (const key of ['averageRating', 'completedJobs', 'responseRate', 'completionRate', 'repeatCustomers', 'yearsOnPlatform',
+  'ratingBreakdown', 'ratingDistribution', 'confidence', 'confidenceHelp', 'helpful', 'notHelpful', 'report', 'sendReport', 'reportSent']) {
+  check(publicReviews.includes(`rt('${key}')`), `the web shows ${key}, as the phone does`);
+}
+check(['spam', 'abuse', 'fakeReview', 'offensiveContent'].every((key) => publicReviews.includes(`'${key}'`)),
+  'a review can be reported for each reason the server accepts');
+check(/aria-pressed=\{review\.myVote === 'helpful'\}/.test(publicReviews), 'the reader’s own vote is shown as theirs');
+const surfaceCss = read('web', 'components', 'product-surface.module.css');
+check(/\.distributionFill \{[^}]*background: var\(--text-primary\)/.test(surfaceCss) && !/<meter/.test(publicReviews),
+  'the distribution is drawn from the tokens, not the browser’s green meter');
+const discover = read('web', 'app', 'app', 'discover', 'page.tsx');
+check(/aria-expanded=\{reviewsOf === provider\.id\}/.test(discover) && /<ProviderReviews providerId=\{opened\.id\}/.test(discover),
+  'A PROFESSIONAL’S CARD OPENS THEIR REVIEWS ON THE WEB');
 
 console.log(`Review parity: ${checks} checks passed.`);

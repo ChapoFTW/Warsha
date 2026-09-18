@@ -297,7 +297,7 @@
       "locale": "en",
       "title": "Requests, quotes, and jobs",
       "summary": "Understand what happens from posting a request to completing or cancelling a job.",
-      "version": 10,
+      "version": 11,
       "lastReviewedDate": "2026-09-18",
       "features": [
         "marketplace",
@@ -327,7 +327,7 @@
       "locale": "ar",
       "title": "الطلبات والعروض والشغل",
       "summary": "افهم اللي بيحصل من نشر الطلب لحد اكتمال الشغل أو إلغائه.",
-      "version": 9,
+      "version": 10,
       "lastReviewedDate": "2026-09-18",
       "features": [
         "marketplace",
@@ -1259,7 +1259,7 @@
       "locale": "fr",
       "title": "Demandes, devis et interventions",
       "summary": "Comprenez le parcours d’une demande jusqu’à la fin ou l’annulation de l’intervention.",
-      "version": 9,
+      "version": 10,
       "lastReviewedDate": "2026-09-18",
       "features": [
         "marketplace",

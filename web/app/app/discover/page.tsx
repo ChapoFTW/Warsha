@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { AppShell } from '@/components/app-shell';
+import { ProviderReviews } from '@/components/provider-reviews';
 import { customerNavigation } from '@/lib/nav';
 import { appCopy } from '@/lib/app-copy';
 import {
@@ -22,6 +23,7 @@ import { matchServiceCategories } from '@/src/services/service-search-aliases';
 import { WarshaIcon } from '@/components/warsha-icon';
 import { categoryIconName } from '@/src/brand/warsha-icons';
 import { serviceCategoryDescription, serviceCategoryLabel } from '@/src/i18n/service-labels';
+import { reviewText } from '@/src/reviews/review-copy';
 
 import type { Route } from 'next';
 import styles from '@/components/product-surface.module.css';
@@ -281,8 +283,15 @@ function ProviderCards({
   empty: string;
   words: Record<string, string>;
 }) {
+  // The reviews of one Professional at a time, opened from their card: the
+  // phone shows them on a Professional's profile, and the web had no way to
+  // read them at all.
+  const locale = useAppLocale();
+  const [reviewsOf, setReviewsOf] = useState<string | null>(null);
+  const opened = providers.find((provider) => provider.id === reviewsOf) ?? null;
   if (providers.length === 0) return <p className={styles.muted}>{empty}</p>;
   return (
+    <>
     <div className={styles.grid}>
       {providers.map((provider) => (
         <div key={provider.id} className={styles.card}>
@@ -323,8 +332,20 @@ function ProviderCards({
               {words.discoverAskWorker}
             </Link>
           ) : null}
+          <button type="button" className={styles.secondary} aria-expanded={reviewsOf === provider.id}
+            aria-controls={`reviews-${provider.id}`}
+            onClick={() => setReviewsOf(reviewsOf === provider.id ? null : provider.id)}>
+            {reviewText(locale, 'reviews')}
+          </button>
         </div>
       ))}
     </div>
+    {opened ? (
+      <section id={`reviews-${opened.id}`} className={styles.subpanel} aria-label={`${reviewText(locale, 'reviews')}: ${opened.displayName}`}>
+        <h3 className={styles.sectionTitle}>{opened.displayName} · {reviewText(locale, 'reputation')}</h3>
+        <ProviderReviews providerId={opened.id} locale={locale} />
+      </section>
+    ) : null}
+    </>
   );
 }
