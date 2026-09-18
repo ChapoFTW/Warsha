@@ -183,6 +183,20 @@ check(!/confirm_selected_quote/.test(strip(requests)),
   'THE CUSTOMER NEVER CALLS THE WORKER-ONLY QUOTE CONFIRMATION RPC');
 check(/selection_pending_confirmation/.test(requests),
   'the selected quote is shown as waiting for its worker rather than falsely booked');
+const workerEditor = readWeb('components', 'worker-profile-editor.tsx');
+check(/setDraft\(\{ \.\.\.draft, areas: \[\.\.\.draft\.areas,/.test(workerEditor)
+  && /draft\.areas\.filter\(\(item\) => !sameArea\(item, area\)\)/.test(workerEditor),
+  'THE WEB PROFILE EDITOR KEEPS EVERY SERVICE AREA, AND CAN REMOVE ONE');
+check(/draft\.areas\.length > 0[\s\S]{0,40}&& draft\.areas\.every/.test(workerEditor),
+  'and saves only when every area it holds is complete');
+check(/const place = egyptPlaceNames\(area\.governorate, area\.district, locale\);[\s\S]{0,900}\{place\.governorate\} · \{place\.district\}/.test(workerEditor),
+  'AN ADDED AREA IS NAMED IN THE READER’S LANGUAGE ON WEB TOO, NOT AS STORED');
+check(/<button type="button" className=\{styles\.compact\}[\s\S]{0,300}areas: draft\.areas\.filter\(\(item\) => !sameArea\(item, area\)\)[\s\S]{0,80}\{place\.governorate\} · \{place\.district\}/.test(workerEditor)
+  && !/chipRemove/.test(workerEditor),
+  'and the whole chip is the control that removes it, at the compact control height, as on the phone');
+check((workerEditor.match(/<label className=\{`\$\{styles\.field\} \$\{styles\.span6\}`\}>/g) ?? []).length === 2,
+  'the governorate and area fields each span half the form grid, not one twelfth of it');
+
 check(/confirm_my_service_address/.test(addresses),
   'new or relocated addresses are confirmed through the governed pin authority');
 check(/location-proxy/.test(location) && /get_location_capability/.test(location),

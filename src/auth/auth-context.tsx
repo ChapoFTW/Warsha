@@ -6,6 +6,7 @@ import { createContext, PropsWithChildren, useContext, useEffect, useMemo, useRe
 import { environment } from '@/src/config/environment';
 import { getSupabaseClient } from '@/src/lib/supabase';
 import { legalRepository } from '@/src/legal/legal-repository';
+import { providerRepository } from '@/src/providers/provider-repository';
 import {
   isCurrentSignupLegalManifest,
   type SignupLegalAcceptance,
@@ -366,6 +367,12 @@ export function AuthProvider({ children }: PropsWithChildren) {
             'sign_up',
           );
         }
+        // The server makes a Professional's profile when their account is
+        // created (`private.handle_new_user`), under the name they registered.
+        // Mock did not, so the first thing a new Mock Professional did —
+        // adding their photo — failed with "Provider profile not found" and
+        // onboarding could not pass step 2.
+        if (role === 'provider') await providerRepository.activate('mock-user', name.trim());
         return {
           needsEmailConfirmation: false,
           accountId: 'mock-user',

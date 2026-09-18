@@ -324,6 +324,57 @@
         }
       ],
       "reason": "Account deletion requests are now carried out (202609170009): an elapsed waiting period is judged against the blockers and an approved request is anonymized, erasure empties an address of the precise place, and sign-in is revoked. Both articles were read against that change. Neither describes deletion: what a request and a quote are, and the Professional opportunity and job lifecycle, are unchanged by it. The deletion behaviour is documented in customer-account-security and worker-getting-started, updated the same day. The impact rule matched because the migration filename carries the word request."
+    },
+    {
+      "date": "2026-09-18",
+      "articles": [
+        {
+          "id": "worker-onboarding-verification",
+          "locale": "en",
+          "digest": "b352d17942b97d62"
+        },
+        {
+          "id": "worker-onboarding-verification",
+          "locale": "ar",
+          "digest": "b9b7fe607c3f5691"
+        },
+        {
+          "id": "worker-onboarding-verification",
+          "locale": "fr",
+          "digest": "bb2cb347a83878fe"
+        },
+        {
+          "id": "worker-getting-started",
+          "locale": "en",
+          "digest": "2d48253fddfd48d4"
+        },
+        {
+          "id": "worker-getting-started",
+          "locale": "ar",
+          "digest": "63f33c17721567fd"
+        },
+        {
+          "id": "worker-getting-started",
+          "locale": "fr",
+          "digest": "f2b976b1a452aee4"
+        },
+        {
+          "id": "customer-addresses-location",
+          "locale": "en",
+          "digest": "097209b234e4b791"
+        },
+        {
+          "id": "customer-addresses-location",
+          "locale": "ar",
+          "digest": "6acf692336f014a8"
+        },
+        {
+          "id": "customer-addresses-location",
+          "locale": "fr",
+          "digest": "d757d71d7f2ecf1a"
+        }
+      ],
+      "reason": "A Professional may now cover more than one district: the native onboarding and profile editors and the web profile editor add, list and remove service areas and refuse a repeat, while the work location stays one place; place names in those editors are shown in the reader's language from the official list (egyptPlaceNames), and Mock signup now creates the Professional profile as the server does. All three articles were read in English, Arabic and French against that change. worker-onboarding-verification described a single governorate and district, which became untrue; its service-area paragraph now says to add every district worked in, that a request from a district not added does not reach the Professional, that one can be removed, and that the work location stays one place (en/ar 10, fr 9). worker-getting-started already says to set service areas, in the plural, and nothing in it became untrue. customer-addresses-location says governorate and area come from the official list, which still holds; showing a stored name in the reader's language makes no statement in it untrue."
     }
   ]
 }

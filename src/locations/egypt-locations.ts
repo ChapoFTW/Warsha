@@ -53,3 +53,23 @@ export function egyptAreaForStoredValue(governorateId: string, value: string): E
     ?.areas.find(area => area.id === value || area.en === value);
   return item ? { id: item.id, en: item.en, ar: item.ar, fr: item.en } : null;
 }
+
+/**
+ * A stored governorate and district, named in the reader's language.
+ *
+ * The selectors store the dataset's English name, so showing the stored value
+ * gives an Arabic reader "Cairo · Abdin". A value the dataset does not know —
+ * an older free-text address — is shown as it was typed rather than dropped.
+ */
+export function egyptPlaceNames(
+  governorate: string,
+  district: string | null | undefined,
+  language: Language,
+): { governorate: string; district: string } {
+  const governorateOption = egyptGovernorateForStoredValue(governorate);
+  const areaOption = governorateOption && district ? egyptAreaForStoredValue(governorateOption.id, district) : null;
+  return {
+    governorate: governorateOption?.[language] ?? governorate,
+    district: areaOption?.[language] ?? district ?? '',
+  };
+}

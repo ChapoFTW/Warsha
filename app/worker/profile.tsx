@@ -4,7 +4,7 @@ import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BrandButton, BrandCard, BrandLoadingState, BrandTextField, EmptyState } from '@/components/warsha/BrandUI';
-import { EgyptLocationSelector } from '@/components/warsha/EgyptLocationSelector';
+import { ServiceAreaEditor } from '@/components/warsha/ServiceAreaEditor';
 import { OfferedServicesSection } from '@/components/warsha/OfferedServicesSection';
 import { ProfessionSelector } from '@/components/warsha/ProfessionSelector';
 import { ScreenHeader } from '@/components/warsha/ScreenHeader';
@@ -34,7 +34,7 @@ import {
   withProfessionServices,
   withTradeSelection,
 } from '@/src/providers/worker-trade-selection';
-import { MARKETPLACE_MANAGED_RADIUS_KM, type ProviderDraft, type ProviderMediaInput } from '@/src/providers/provider-types';
+import { MARKETPLACE_MANAGED_RADIUS_KM, type ProviderAreaInput, type ProviderDraft, type ProviderMediaInput } from '@/src/providers/provider-types';
 import { useWorkerText } from '@/src/worker/worker-copy';
 import type { CatalogueServiceRow } from '@/src/services/specific-services';
 
@@ -117,11 +117,11 @@ export default function WorkerProfileScreen() {
     }
   };
 
-  const updateArea = (area: { governorate: string; district: string }) => {
+  const updateAreas = (areas: ProviderAreaInput[]) => {
     setDraft(current => current ? {
       ...current,
       serviceRadiusKm: MARKETPLACE_MANAGED_RADIUS_KM,
-      areas: [{ ...area, radiusKm: MARKETPLACE_MANAGED_RADIUS_KM }],
+      areas,
     } : current);
   };
 
@@ -181,11 +181,8 @@ export default function WorkerProfileScreen() {
 
         <BrandCard style={styles.card}>
           <AppText style={styles.title}>{wt.text('areaTitle')}</AppText>
-          <EgyptLocationSelector
-            governorate={draft.areas[0]?.governorate ?? ''}
-            district={draft.areas[0]?.district ?? ''}
-            onChange={updateArea}
-          />
+          <AppText style={styles.muted}>{wt.text('areaMultipleHelp')}</AppText>
+          <ServiceAreaEditor areas={draft.areas} onChange={updateAreas} />
         </BrandCard>
 
         <BrandCard style={styles.card}>

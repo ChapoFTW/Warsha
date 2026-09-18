@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 import {
-  egyptAreaForStoredValue, egyptGovernorateForStoredValue,
+  egyptAreaForStoredValue, egyptGovernorateForStoredValue, egyptPlaceNames,
   listEgyptAreas, listEgyptGovernorates,
 } from '../src/locations/egypt-locations.ts';
 
@@ -105,6 +105,22 @@ check(egyptGovernorateForStoredValue(cairo!.id)?.id === cairo!.id,
   'and the canonical id resolves too');
 equal(egyptGovernorateForStoredValue('Nowhere'), null,
   'an unrecognised stored value is not silently mapped onto a real governorate');
+
+// A stored English name is shown in the reader's language.
+const abdin = egyptAreaForStoredValue(cairo!.id, 'Abdin');
+check(abdin, 'Abdin is an area of Cairo in the taxonomy');
+equal(egyptPlaceNames('Cairo', 'Abdin', 'ar'), { governorate: cairo!.ar, district: abdin!.ar },
+  'A STORED "Cairo" / "Abdin" IS NAMED IN ARABIC FOR AN ARABIC READER');
+equal(egyptPlaceNames('Cairo', 'Abdin', 'en'), { governorate: 'Cairo', district: 'Abdin' },
+  'and in English for an English one');
+equal(egyptPlaceNames('Cairo', 'Abdin', 'fr'), { governorate: 'Cairo', district: 'Abdin' },
+  'and French uses the Latin transliteration, as the pickers do');
+equal(egyptPlaceNames('Nowhere', 'Somewhere', 'ar'), { governorate: 'Nowhere', district: 'Somewhere' },
+  'a value the dataset does not know is shown as typed, not dropped');
+equal(egyptPlaceNames('Cairo', 'Not an area', 'ar'), { governorate: cairo!.ar, district: 'Not an area' },
+  'and an unknown district keeps its typed name under a known governorate');
+equal(egyptPlaceNames('Cairo', null, 'ar'), { governorate: cairo!.ar, district: '' },
+  'a governorate without a district names only the governorate');
 
 // What is written stays the English canonical name, matching mobile.
 check(/governorate: next \? next\.en : ''/.test(page),

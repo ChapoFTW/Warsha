@@ -476,6 +476,41 @@ check(liveLocation.deviceLocationAvailable && liveLocation.interactiveMapAvailab
   'a configured live provider enables all three worker location paths');
 check(!liveLocation.providerUnavailable, 'configured Maps never resolves the unavailable presentation');
 
+// The server makes the Professional profile when a worker account is created
+// (private.handle_new_user). Mock did not, so a new Mock Professional's first
+// action, adding a photo, failed and onboarding stopped at step 2 (UX-11).
+// The server makes the Professional profile at account creation
+// (`private.handle_new_user`). Mock signup now does the same; without it the
+// first Mock photo failed and onboarding could not pass step 2. It lives in the
+// Mock signup, which stands in for the server, and not in the onboarding
+// repository, which carries no activation verb (wps023).
+const authContextSourceForMock = read('src', 'auth', 'auth-context.tsx');
+check(/if \(environment\.dataMode === 'mock'\) \{[\s\S]{0,900}if \(role === 'provider'\) await providerRepository\.activate\('mock-user', name\.trim\(\)\);[\s\S]{0,120}accountId: 'mock-user'/
+  .test(authContextSourceForMock),
+  'MOCK SIGNUP CREATES THE PROFESSIONAL PROFILE, UNDER THE REGISTERED NAME, AS THE SERVER DOES');
+
+// A Professional may cover more than one district (owner, 2026-09-17). The
+// editors sent areas[0] and dropped the rest, so somebody working across three
+// districts could declare one, and only that one reached them.
+const areaEditor = read('components', 'warsha', 'ServiceAreaEditor.tsx');
+check(/onChange\(\[\.\.\.areas, \{ \.\.\.pending, radiusKm: MARKETPLACE_MANAGED_RADIUS_KM \}\]\)/.test(areaEditor),
+  'THE AREA EDITOR ADDS AN AREA TO THE LIST RATHER THAN REPLACING IT');
+check(/areas\.filter\(item => !same\(item, area\)\)/.test(areaEditor), 'and can remove one');
+check(/const duplicate = areas\.some\(area => same\(area, pending\)\)/.test(areaEditor),
+  'and refuses a repeat, which the server refuses too');
+check(/egyptPlaceNames\(area\.governorate, area\.district, language\)/.test(areaEditor),
+  'AN ADDED AREA IS NAMED IN THE READER’S LANGUAGE, NOT AS STORED');
+check(/<PressableSurface[\s\S]{0,120}accessibilityRole="button"[\s\S]{0,160}onPress=\{\(\) => onChange\(areas\.filter/.test(areaEditor)
+  && /chip: \{\s*minHeight: 48/.test(areaEditor),
+  'and the whole 48dp chip removes it, as a chosen trade is removed');
+check(/name="close" size=\{18\} color=\{colors\.textSecondary\}/.test(areaEditor),
+  'with the cross drawn in the theme colour, so it shows in dark mode');
+for (const screen of [['app', 'onboarding', 'worker.tsx'], ['app', 'worker', 'profile.tsx']]) {
+  const source = read(...screen);
+  check(/<ServiceAreaEditor/.test(source), `${screen.join('/')} uses the shared area editor`);
+  check(!/areas: \[\{ \.\.\.area, radiusKm/.test(source), `and no longer keeps only the first area`);
+}
+
 const verificationScreen = read('app', 'worker', 'verification.tsx');
 const onboardingRepository = read('src', 'onboarding', 'onboarding-repository.ts');
 check(verificationScreen.includes('<DocumentCamera'), 'the canonical verification flow uses the governed document camera');

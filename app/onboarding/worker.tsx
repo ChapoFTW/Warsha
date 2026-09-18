@@ -4,7 +4,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BrandButton, BrandLoadingState, BrandTextField, StateBadge } from '@/components/warsha/BrandUI';
-import { EgyptLocationSelector } from '@/components/warsha/EgyptLocationSelector';
+import { ServiceAreaEditor } from '@/components/warsha/ServiceAreaEditor';
 import { OfferedServicesSection } from '@/components/warsha/OfferedServicesSection';
 import { OnboardingFieldMeta } from '@/components/warsha/OnboardingFieldMeta';
 import { JourneyStepCard } from '@/components/warsha/JourneyStepCard';
@@ -38,6 +38,7 @@ import {
 import {
   emptyProviderDraft,
   MARKETPLACE_MANAGED_RADIUS_KM,
+  type ProviderAreaInput,
   type ProviderDraft,
   type ProviderMediaInput,
 } from '@/src/providers/provider-types';
@@ -283,15 +284,17 @@ export default function WorkerOnboarding() {
   };
 
   const saveArea = async () => {
-    const area = draft.areas[0];
-    if (!area?.governorate.trim() || !area.district.trim()) {
+    // One area is the minimum the server's completeness gate accepts; more is
+    // the Professional's choice (202609170009 era decision: areas decide
+    // eligibility, the work location stays one place).
+    if (draft.areas.length === 0) {
       setMessage(wt.text('requiredFields'));
       return;
     }
     const next = {
       ...draft,
       serviceRadiusKm: MARKETPLACE_MANAGED_RADIUS_KM,
-      areas: [{ ...area, radiusKm: MARKETPLACE_MANAGED_RADIUS_KM }],
+      areas: draft.areas.map(area => ({ ...area, radiusKm: MARKETPLACE_MANAGED_RADIUS_KM })),
     };
     const saved = await saveDraft(next);
     if (saved && !state.gates.current_address_provided) {
@@ -412,16 +415,11 @@ export default function WorkerOnboarding() {
                 could touch to the bottom edge of a 320dp screen. The reasons
                 are passed in as each field's helper instead, which is where
                 they were always meant to be read. */}
-            <EgyptLocationSelector
+            <AppText style={styles.note}>{wt.text('areaMultipleHelp')}</AppText>
+            <ServiceAreaEditor
               required
-              governoratePurpose={wt.text('governoratePurpose')}
-              districtPurpose={wt.text('districtPurpose')}
-              governorate={draft.areas[0]?.governorate ?? ''}
-              district={draft.areas[0]?.district ?? ''}
-              onChange={area => setDraft(current => ({
-                ...current,
-                areas: [{ ...area, radiusKm: MARKETPLACE_MANAGED_RADIUS_KM }],
-              }))}
+              areas={draft.areas}
+              onChange={(areas: ProviderAreaInput[]) => setDraft(current => ({ ...current, areas }))}
             />
             {!state.gates.current_address_provided
               ? <OnboardingFieldMeta label={wt.text('addAddress')} required privateField purpose={wt.text('currentAddressPurpose')} />

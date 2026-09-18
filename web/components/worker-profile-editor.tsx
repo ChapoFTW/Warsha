@@ -39,6 +39,7 @@ import { professionIconName } from '@/src/brand/warsha-icons.ts';
 import { catalogueServiceLabel } from '@/src/services/specific-services.ts';
 import {
   egyptGovernorateForStoredValue,
+  egyptPlaceNames,
   listEgyptAreas,
   listEgyptGovernorates,
 } from '@/src/locations/egypt-locations.ts';
@@ -157,9 +158,29 @@ export function WorkerProfileEditor({
   const selected = useMemo(() => draft ? selectedProfessionKeys(draft) : [], [draft]);
   const professionOptions = listProfessions(locale);
   const governorates = listEgyptGovernorates(locale);
-  const governorate = draft?.areas[0]?.governorate ?? '';
-  const governorateOption = egyptGovernorateForStoredValue(governorate);
+  /**
+   * The area being added, not the first one already saved.
+   *
+   * A Professional may cover more than one district (owner, 2026-09-17), and
+   * `save_provider_foundation` has always taken a list. This editor sent
+   * `areas[0]` and dropped the rest, so somebody who works across three
+   * districts could declare one.
+   */
+  const [pendingArea, setPendingArea] = useState<{ governorate: string; district: string }>(
+    { governorate: '', district: '' });
+  const governorateOption = egyptGovernorateForStoredValue(pendingArea.governorate);
   const areas = governorateOption ? listEgyptAreas(governorateOption.id, locale) : [];
+  const sameArea = (a: { governorate: string; district: string }, b: { governorate: string; district: string }) =>
+    a.governorate.trim().toLowerCase() === b.governorate.trim().toLowerCase()
+    && (a.district ?? '').trim().toLowerCase() === (b.district ?? '').trim().toLowerCase();
+  const duplicateArea = Boolean(draft?.areas.some((area) => sameArea(area, pendingArea)));
+  const pendingComplete = pendingArea.governorate.trim().length > 0 && pendingArea.district.trim().length > 0;
+  const addArea = () => {
+    if (!draft || !pendingComplete || duplicateArea) return;
+    setDraft({ ...draft, areas: [...draft.areas,
+      { ...pendingArea, radiusKm: MARKETPLACE_MANAGED_RADIUS_KM }] });
+    setPendingArea({ governorate: '', district: '' });
+  };
 
   /**
    * Record the unsaved trade selection against the server state it was made
@@ -230,8 +251,9 @@ export function WorkerProfileEditor({
     const years = Number(draft.experienceYears);
     const basicValid = draft.displayName.trim().length >= 2 && years >= 0 && years <= 80;
     const tradeProblem = tradeSelectionProblem(draft);
-    const area = draft.areas[0];
-    const areaValid = Boolean(area?.governorate.trim() && area?.district.trim());
+    // One area at least; more is the Professional's choice.
+    const areaValid = draft.areas.length > 0
+      && draft.areas.every((area) => area.governorate.trim() && area.district.trim());
     if ((section === 'trade' || section === 'all') && tradeProblem) {
       // Saying which half is missing, rather than refusing in silence as this
       // form used to: an unexplained disabled save is the same defect as an
@@ -467,33 +489,56 @@ export function WorkerProfileEditor({
       ) : null}
 
       {showArea ? (
-        <div className={styles.formGrid}>
-          <label className={styles.field}>
-            <span className={styles.label}>{words.workerGovernorate}</span>
-            <select className={styles.select} value={governorateOption?.id ?? ''} disabled={busy}
-              onChange={(event) => {
-                const selectedGovernorate = listEgyptGovernorates('en').find((item) => item.id === event.target.value);
-                setDraft({ ...draft, areas: selectedGovernorate
-                  ? [{ governorate: selectedGovernorate.en, district: '', radiusKm: MARKETPLACE_MANAGED_RADIUS_KM }]
-                  : [] });
-              }}>
-              <option value="">—</option>
-              {governorates.map((item) => <option key={item.id} value={item.id}>{item[locale]}</option>)}
-            </select>
-          </label>
-          <label className={styles.field}>
-            <span className={styles.label}>{words.workerArea}</span>
-            <select className={styles.select} value={draft.areas[0]?.district ?? ''} disabled={busy || !governorateOption}
-              onChange={(event) => setDraft({ ...draft, areas: [{
-                governorate,
-                district: event.target.value,
-                radiusKm: MARKETPLACE_MANAGED_RADIUS_KM,
-              }] })}>
-              <option value="">—</option>
-              {areas.map((item) => <option key={item.id} value={item.en}>{item[locale]}</option>)}
-            </select>
-          </label>
-        </div>
+        <>
+          <p className={styles.note}>{words.workerAreaMultipleHelp}</p>
+          {draft.areas.length > 0 ? (
+            <ul className={styles.chips}>
+              {draft.areas.map((area) => {
+                const place = egyptPlaceNames(area.governorate, area.district, locale);
+                return (
+                  <li key={`${area.governorate}/${area.district}`}>
+                    {/* The whole chip removes the area, as on the phone: a
+                        small cross inside a caption-sized label is a target
+                        nobody should have to aim for. */}
+                    <button type="button" className={styles.compact} disabled={busy}
+                      aria-label={`${words.workerAreaRemove} ${place.governorate} ${place.district}`}
+                      onClick={() => setDraft({ ...draft,
+                        areas: draft.areas.filter((item) => !sameArea(item, area)) })}>
+                      {place.governorate} · {place.district}
+                      <span aria-hidden="true" className={styles.chipCross}>×</span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : <p className={styles.note}>{words.workerAreaNone}</p>}
+          {/* Each field spans half the grid, as the address form's taxonomy
+              pair does; without a span each took one twelfth of it. */}
+          <div className={styles.formGrid}>
+            <label className={`${styles.field} ${styles.span6}`}>
+              <span className={styles.label}>{words.workerGovernorate}</span>
+              <select className={styles.select} value={governorateOption?.id ?? ''} disabled={busy}
+                onChange={(event) => {
+                  const selectedGovernorate = listEgyptGovernorates('en').find((item) => item.id === event.target.value);
+                  setPendingArea({ governorate: selectedGovernorate?.en ?? '', district: '' });
+                }}>
+                <option value="">—</option>
+                {governorates.map((item) => <option key={item.id} value={item.id}>{item[locale]}</option>)}
+              </select>
+            </label>
+            <label className={`${styles.field} ${styles.span6}`}>
+              <span className={styles.label}>{words.workerArea}</span>
+              <select className={styles.select} value={pendingArea.district} disabled={busy || !governorateOption}
+                onChange={(event) => setPendingArea({ ...pendingArea, district: event.target.value })}>
+                <option value="">—</option>
+                {areas.map((item) => <option key={item.id} value={item.en}>{item[locale]}</option>)}
+              </select>
+            </label>
+          </div>
+          {duplicateArea ? <p className={styles.note} role="status">{words.workerAreaAlreadyAdded}</p> : null}
+          <button type="button" className={styles.secondary} disabled={busy || !pendingComplete || duplicateArea}
+            onClick={addArea}>{words.workerAreaAdd}</button>
+        </>
       ) : null}
 
       {problem ? <p className={styles.error} role="alert">{problemMessage(problem)}</p> : null}

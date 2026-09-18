@@ -122,6 +122,10 @@ button.card:active {
   border: 1px solid var(--border); color: var(--text-secondary); white-space: nowrap;
 }
 
+/* The cross on a chosen service area. The chip itself is the control (a
+   `.compact` button); the cross only says what pressing it does. */
+.chipCross { margin-inline-start: var(--space-xs); color: var(--text-secondary); }
+
 /* Most chips are labels. The ones that are controls say so by being one, and
    those get the same press the rest of the product gives. */
 button.chip:hover,
