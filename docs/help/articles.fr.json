@@ -464,6 +464,34 @@
       "body": "Ouvrez un incident opérationnel lorsqu’une panne réelle nécessite un responsable et une chronologie. Indiquez les systèmes touchés et un résumé factuel. Un interrupteur d’arrêt bloque une capacité risquée ; il ne remplace pas le diagnostic.\n\nL’activation d’un fournisseur passe par le registre, la liaison d’environnement, l’examen confidentialité ou sous-traitant si nécessaire, les contrôles de santé, le drapeau de fonctionnalité et l’interrupteur d’arrêt. Ne modifiez jamais directement une table pour activer un bouton. Les approbations juridiques restent humaines. Le double contrôle n’est plus exigé par Warsha : un opérateur autorisé suffit, avec un second facteur, une connexion récente, un motif et une trace d’audit.\n\nPour récupérer un compte, authentifiez l’identité, inventoriez les dépendances et préférez un RPC gouverné existant. Ne supprimez pas un compte qui possède un historique conservé."
     },
     {
+      "id": "admin-reported-reviews",
+      "audience": "admin",
+      "locale": "fr",
+      "title": "Avis signalés",
+      "summary": "Examiner un avis signalé, décider s’il reste sur le profil du professionnel et clore le signalement — chaque étape délibérément, chacune avec un motif.",
+      "version": 1,
+      "lastReviewedDate": "2026-09-18",
+      "features": [
+        "reviews",
+        "moderation"
+      ],
+      "routes": [
+        "/admin/reviews"
+      ],
+      "capabilities": [
+        "moderate_reviews"
+      ],
+      "keywords": [
+        "avis",
+        "signalement",
+        "masquer",
+        "rétablir",
+        "modération",
+        "note"
+      ],
+      "body": "Les clients et les professionnels peuvent signaler un avis depuis l’application comme contenu indésirable, abus, faux avis ou contenu offensant. La page Avis signalés les présente du plus ancien au plus récent, parce que l’ordre est le tri. Il vous faut la capacité moderate_reviews.\n\nUn signalement et un avis sont deux choses, et la page les garde séparées. « Commencer l’examen », « Clore comme résolu » et « Rejeter le signalement » font avancer le signalement ; « Masquer l’avis » et « Rétablir l’avis » décident de l’avis. Clore un signalement ne masque pas l’avis, et masquer un avis ne clôt pas le signalement : faites chacun délibérément.\n\nMasquer un avis le retire immédiatement du profil du professionnel et de sa note ; le rétablir l’y remet. Masquer et rétablir exigent un motif écrit, conservé dans le journal d’audit. L’auteur du signalement est prévenu quand son signalement est clos ; le client qui a écrit l’avis et le professionnel sont prévenus quand l’avis est masqué ou rétabli. Aucun d’eux ne voit votre texte.\n\nLa page montre ce que dit l’avis et ce qu’a ajouté l’auteur du signalement. Elle ne montre ni qui a écrit l’avis, ni qui l’a signalé, ni sur quel profil il figure : savoir si un avis enfreint les règles est une question sur ce qu’il dit. Rien ici ne supprime un avis ; un avis masqué et chaque décision à son sujet restent enregistrés."
+    },
+    {
       "id": "warsha-glossary",
       "audience": "all",
       "locale": "fr",

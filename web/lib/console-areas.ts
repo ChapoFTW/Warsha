@@ -23,6 +23,9 @@ export const CONSOLE_AREAS: readonly ConsoleArea[] = [
   { key: 'dashboard', href: '/', capability: '' },
   { key: 'users', href: '/users', capability: 'safe_search' },
   { key: 'verification', href: '/verification', capability: 'review_worker_vetting' },
+  // `moderate_review` and `review_report_transition` both demand this through
+  // `require_domain_staff_write`, and the reports queue is keyed to it.
+  { key: 'reviews', href: '/reviews', capability: 'moderate_reviews' },
   { key: 'analytics', href: '/analytics', capability: 'view_analytics' },
   { key: 'staff', href: '/staff', capability: 'manage_staff_roles' },
   // Environment binding is the tool that needs this door; release verification

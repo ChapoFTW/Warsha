@@ -1,0 +1,9 @@
+/* A report's facts, stacked: a review's text is a paragraph, not a value to
+   right-align beside its label the way the provider register's facts are. */
+.facts { margin: 0 0 var(--space-lg); display: grid; gap: var(--space-field-gap); max-width: 76ch; }
+.facts div { display: grid; gap: var(--space-field-help); }
+.facts dd { margin: 0; color: var(--text-primary); overflow-wrap: anywhere; }
+
+/* Where the report stands and how long it has waited, set apart from the
+   facts below it. */
+.status { margin: 0 0 var(--space-lg); display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-sm); }

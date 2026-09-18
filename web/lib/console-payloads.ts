@@ -220,3 +220,66 @@ export function parseGrantCandidate(value: unknown): GrantCandidate | null {
     isSelf: raw.isSelf === true,
   };
 }
+
+/**
+ * A reported review, as the moderation page reads it.
+ *
+ * Read from `review_reports` with its review embedded, under the staff read
+ * policies of WPS-011 (`private.is_staff()`); the actions go through
+ * `review_report_transition` and `moderate_review`, which demand
+ * `moderate_reviews`. Who reported it, who wrote it and whose profile it is on
+ * are not selected: whether a review breaks the rules is a question about what
+ * it says, and a moderator who never sees the people cannot be swayed by them.
+ */
+export type ReviewReportReason = 'spam' | 'abuse' | 'fake_review' | 'offensive_content';
+export type ReviewReportStatus = 'submitted' | 'in_review' | 'resolved' | 'dismissed';
+export type ReviewVisibility = 'visible' | 'hidden' | 'flagged';
+
+export type ReportedReview = {
+  reportId: string;
+  reason: ReviewReportReason;
+  details: string;
+  status: ReviewReportStatus;
+  reportedAt: string;
+  resolutionNote: string | null;
+  review: {
+    id: string;
+    rating: number;
+    comment: string;
+    visibility: ReviewVisibility;
+  } | null;
+};
+
+const REPORT_REASONS: readonly ReviewReportReason[] = ['spam', 'abuse', 'fake_review', 'offensive_content'];
+const REPORT_STATUSES: readonly ReviewReportStatus[] = ['submitted', 'in_review', 'resolved', 'dismissed'];
+const VISIBILITIES: readonly ReviewVisibility[] = ['visible', 'hidden', 'flagged'];
+
+export function parseReportedReviews(value: unknown): ReportedReview[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((row): ReportedReview[] => {
+    const raw = (row ?? {}) as Record<string, unknown>;
+    const reason = raw.reason as ReviewReportReason;
+    const status = raw.status as ReviewReportStatus;
+    if (typeof raw.id !== 'string' || !REPORT_REASONS.includes(reason) || !REPORT_STATUSES.includes(status)) {
+      return [];
+    }
+    const review = (raw.review ?? null) as Record<string, unknown> | null;
+    const visibility = review?.moderation_status as ReviewVisibility;
+    return [{
+      reportId: raw.id,
+      reason,
+      details: typeof raw.details === 'string' ? raw.details : '',
+      status,
+      reportedAt: typeof raw.created_at === 'string' ? raw.created_at : '',
+      resolutionNote: typeof raw.resolution_note === 'string' ? raw.resolution_note : null,
+      review: review && typeof review.id === 'string' && VISIBILITIES.includes(visibility)
+        ? {
+          id: review.id,
+          rating: Number(review.rating),
+          comment: typeof review.comment === 'string' ? review.comment : '',
+          visibility,
+        }
+        : null,
+    }];
+  });
+}

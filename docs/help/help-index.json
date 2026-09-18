@@ -13,6 +13,7 @@
     "admin-audit-analytics",
     "admin-getting-started",
     "admin-recovery",
+    "admin-reported-reviews",
     "admin-staff-security",
     "admin-users-roles",
     "admin-verification-enforcement",
@@ -162,6 +163,12 @@
     ],
     "provider_governance": [
       "admin-recovery"
+    ],
+    "reviews": [
+      "admin-reported-reviews"
+    ],
+    "moderation": [
+      "admin-reported-reviews"
     ],
     "glossary": [
       "warsha-glossary"
@@ -1081,6 +1088,60 @@
       ]
     },
     {
+      "id": "admin-reported-reviews",
+      "audience": "admin",
+      "locale": "en",
+      "title": "Reported reviews",
+      "summary": "Look at a reported review, decide whether it stays on the Professional’s profile, and close the report — each on purpose, each with a reason.",
+      "version": 1,
+      "lastReviewedDate": "2026-09-18",
+      "features": [
+        "reviews",
+        "moderation"
+      ],
+      "routes": [
+        "/admin/reviews"
+      ],
+      "capabilities": [
+        "moderate_reviews"
+      ],
+      "keywords": [
+        "review",
+        "report",
+        "hide",
+        "restore",
+        "moderation",
+        "rating"
+      ]
+    },
+    {
+      "id": "admin-reported-reviews",
+      "audience": "admin",
+      "locale": "ar",
+      "title": "التقييمات المتبلّغ عنها",
+      "summary": "بص على تقييم اتبلّغ عنه، وقرّر يفضل على صفحة الصنايعي ولا لأ، واقفل البلاغ — كل خطوة بقصد، وكل خطوة بسبب.",
+      "version": 1,
+      "lastReviewedDate": "2026-09-18",
+      "features": [
+        "reviews",
+        "moderation"
+      ],
+      "routes": [
+        "/admin/reviews"
+      ],
+      "capabilities": [
+        "moderate_reviews"
+      ],
+      "keywords": [
+        "تقييم",
+        "بلاغ",
+        "إخفاء",
+        "استرجاع",
+        "إشراف",
+        "تقييم الصنايعي"
+      ]
+    },
+    {
       "id": "warsha-glossary",
       "audience": "all",
       "locale": "en",
@@ -1579,6 +1640,33 @@
         "fonctionnalité",
         "arrêt",
         "urgence"
+      ]
+    },
+    {
+      "id": "admin-reported-reviews",
+      "audience": "admin",
+      "locale": "fr",
+      "title": "Avis signalés",
+      "summary": "Examiner un avis signalé, décider s’il reste sur le profil du professionnel et clore le signalement — chaque étape délibérément, chacune avec un motif.",
+      "version": 1,
+      "lastReviewedDate": "2026-09-18",
+      "features": [
+        "reviews",
+        "moderation"
+      ],
+      "routes": [
+        "/admin/reviews"
+      ],
+      "capabilities": [
+        "moderate_reviews"
+      ],
+      "keywords": [
+        "avis",
+        "signalement",
+        "masquer",
+        "rétablir",
+        "modération",
+        "note"
       ]
     },
     {

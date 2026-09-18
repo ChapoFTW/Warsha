@@ -944,6 +944,62 @@
       "body": "افتح حادث تشغيلي لما عطل حقيقي محتاج مسؤول وتاريخ متابعة. سجل الأنظمة المتأثرة وملخص واقعي. مفتاح الإيقاف بيوقف صلاحية فيها خطر؛ مش بديل عن تشخيص السبب وإصلاحه.\n\nتفعيل المزود بيمشي من سجل المزود وربط البيئة ومراجعة الخصوصية أو المقاول الفرعي لما تكون مطلوبة وفحص الصحة وعلم الميزة ومفتاح الإيقاف. ما تعملش تعديل جدول مباشر عشان تفتح زر مقفول. موافقة القانون أو التحكم المزدوج لازم تفضل بشرية.\n\nفي استرجاع الحساب، اتأكد من الهوية واعمل حصر لكل الاعتماديات واستخدم خدمة ذاتية أو RPC منظم موجود. ما تحذفش وتعمل حساب من جديد لو مالك لتاريخ محفوظ في السجل أو الموظفين أو الحجوزات أو الشغل أو الدعم أو الدفتر. ما تستخدمش مفتاح الخدمة كحل للتطبيق."
     },
     {
+      "id": "admin-reported-reviews",
+      "audience": "admin",
+      "locale": "en",
+      "title": "Reported reviews",
+      "summary": "Look at a reported review, decide whether it stays on the Professional’s profile, and close the report — each on purpose, each with a reason.",
+      "version": 1,
+      "lastReviewedDate": "2026-09-18",
+      "features": [
+        "reviews",
+        "moderation"
+      ],
+      "routes": [
+        "/admin/reviews"
+      ],
+      "capabilities": [
+        "moderate_reviews"
+      ],
+      "keywords": [
+        "review",
+        "report",
+        "hide",
+        "restore",
+        "moderation",
+        "rating"
+      ],
+      "body": "Customers and Professionals can report a review from the app as spam, abuse, a fake review or offensive content. Reported reviews lists them oldest first, because the order is the triage. You need the moderate_reviews capability.\n\nA report and a review are two things, and the page keeps them apart. Start reviewing, Close as resolved and Dismiss report move the report; Hide review and Restore review decide the review. Closing a report does not hide the review, and hiding a review does not close the report: do each on purpose.\n\nHiding a review takes it off the Professional’s profile and out of their rating straight away; restoring it puts it back. Hiding and restoring need a written reason, which is kept in the audit record. The reporter is told when their report is closed, and the Customer who wrote the review and the Professional are told when it is hidden or restored. None of them sees your text.\n\nThe page shows what the review says and what the reporter added. It does not show who wrote the review, who reported it, or whose profile it is on: whether a review breaks the rules is a question about what it says. Nothing here deletes a review; a hidden review and every decision about it stay on record."
+    },
+    {
+      "id": "admin-reported-reviews",
+      "audience": "admin",
+      "locale": "ar",
+      "title": "التقييمات المتبلّغ عنها",
+      "summary": "بص على تقييم اتبلّغ عنه، وقرّر يفضل على صفحة الصنايعي ولا لأ، واقفل البلاغ — كل خطوة بقصد، وكل خطوة بسبب.",
+      "version": 1,
+      "lastReviewedDate": "2026-09-18",
+      "features": [
+        "reviews",
+        "moderation"
+      ],
+      "routes": [
+        "/admin/reviews"
+      ],
+      "capabilities": [
+        "moderate_reviews"
+      ],
+      "keywords": [
+        "تقييم",
+        "بلاغ",
+        "إخفاء",
+        "استرجاع",
+        "إشراف",
+        "تقييم الصنايعي"
+      ],
+      "body": "العملاء والصنايعية يقدروا يبلّغوا عن تقييم من التطبيق على إنه سبام أو إساءة أو تقييم مزيّف أو محتوى مسيء. صفحة التقييمات المتبلّغ عنها بتعرضهم من الأقدم للأحدث، لأن الترتيب هو الأولوية. محتاج صلاحية moderate_reviews.\n\nالبلاغ حاجة والتقييم حاجة تانية، والصفحة بتفصل بينهم. «ابدأ المراجعة» و«اقفله كمحلول» و«ارفض البلاغ» بيحرّكوا البلاغ؛ و«اخفِ التقييم» و«رجّع التقييم» بيقرّروا في التقييم نفسه. قفل البلاغ مش بيخفي التقييم، وإخفاء التقييم مش بيقفل البلاغ: اعمل كل واحدة بقصد.\n\nإخفاء التقييم بيشيله من صفحة الصنايعي ومن تقييمه على طول، واسترجاعه بيرجّعه. الإخفاء والاسترجاع محتاجين سبب مكتوب، وبيتحفظ في سجل المراجعة. اللي بلّغ بيتقاله لما البلاغ يتقفل، والعميل اللي كتب التقييم والصنايعي بيتقالهم لما التقييم يتخفى أو يرجع. ولا واحد فيهم بيشوف الكلام اللي كتبته.\n\nالصفحة بتعرض التقييم بيقول إيه والمبلّغ ضاف إيه. مش بتعرض مين كتب التقييم، ولا مين بلّغ، ولا على صفحة مين: هل التقييم بيخالف القواعد ولا لأ ده سؤال عن اللي مكتوب فيه. مفيش حاجة هنا بتمسح تقييم؛ التقييم المخفي وكل قرار اتاخد فيه بيفضلوا متسجّلين."
+    },
+    {
       "id": "warsha-glossary",
       "audience": "all",
       "locale": "en",

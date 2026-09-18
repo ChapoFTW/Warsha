@@ -15,7 +15,7 @@ const required = ['id', 'audience', 'locale', 'title', 'summary', 'version', 'la
 const secretPatterns = [/-----BEGIN .*PRIVATE KEY-----/i, /\bAIza[A-Za-z0-9_-]{20,}\b/, /\b(?:service_role|refresh_token|access_token)\s*[:=]/i, /\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\b/];
 const knownRoutes = new Set([
   '/account','/addresses','/admin','/admin/analytics','/admin/audit','/admin/help',
-  '/admin/staff','/admin/users','/admin/verification','/create-account','/discover',
+  '/admin/reviews','/admin/staff','/admin/users','/admin/verification','/create-account','/discover',
   '/forgot-password','/help','/jobs','/legal','/notifications','/onboarding/address',
   '/privacy','/requests','/requests/new','/sign-in','/support','/worker',
   '/worker/earnings','/worker/jobs','/worker/onboarding','/worker/opportunities',

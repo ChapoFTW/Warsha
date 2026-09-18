@@ -1,6 +1,6 @@
 'use client';
 
-import type { Locale } from '@/lib/preferences';
+import { intlLocale, type Locale } from '@/lib/preferences';
 
 import styles from './console-table.module.css';
 
@@ -66,7 +66,7 @@ export function Timestamp({
   if (!value) return <span className={styles.muted}>—</span>;
   const at = new Date(value);
   if (Number.isNaN(at.getTime())) return <span className={styles.mono}>{value}</span>;
-  const formatted = new Intl.DateTimeFormat(locale === 'ar' ? 'ar-EG' : 'en-GB', {
+  const formatted = new Intl.DateTimeFormat(intlLocale(locale), {
     dateStyle: 'medium',
     timeStyle: 'short',
     timeZone: timeZone || undefined,
@@ -79,14 +79,15 @@ export function Timestamp({
  *
  * A vetting queue is read to answer "what has waited too long", so days and
  * hours are the useful resolution. `Intl.RelativeTimeFormat` keeps this correct
- * in Arabic, where the plural rules are not English's.
+ * in Arabic, where the plural rules are not English's — and in French, which
+ * was being formatted in English because only Arabic was mapped here.
  */
 export function Waiting({ since, locale }: { since: string | null; locale: Locale }) {
   if (!since) return <span className={styles.muted}>—</span>;
   const at = new Date(since);
   if (Number.isNaN(at.getTime())) return <span className={styles.muted}>—</span>;
   const seconds = (Date.now() - at.getTime()) / 1000;
-  const format = new Intl.RelativeTimeFormat(locale === 'ar' ? 'ar-EG' : 'en-GB', {
+  const format = new Intl.RelativeTimeFormat(intlLocale(locale), {
     numeric: 'auto',
   });
   const [amount, unit]: [number, Intl.RelativeTimeFormatUnit] =

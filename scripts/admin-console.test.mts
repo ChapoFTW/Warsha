@@ -4,6 +4,7 @@ import { join } from 'node:path';
 
 import { appCopy } from '../web/lib/app-copy.ts';
 import { CONSOLE_AREAS, mayEnter, visibleAreas } from '../web/lib/console-areas.ts';
+import { intlLocale } from '../web/lib/preferences.ts';
 import {
   auditDetail, AUDIT_MAX_RANGE_DAYS, AUDIT_SOURCES,
   parseAuditPayload, parseRoleDirectory, parseSafeSearch, parseVettingQueue,
@@ -58,6 +59,7 @@ const CAPABILITY_OF: Record<string, string> = {
   audit: 'view_audit_logs',
   platform: 'manage_feature_flags',
   providers: 'review_legal_governance',
+  reviews: 'moderate_reviews',
 };
 for (const [key, capability] of Object.entries(CAPABILITY_OF)) {
   const area = CONSOLE_AREAS.find((candidate) => candidate.key === key);
@@ -499,7 +501,13 @@ for (const source of [bits, tableCss, dialogCss]) {
 check(/dir="ltr"/.test(bits), 'identifiers are explicitly left-to-right');
 check(/Intl\.DateTimeFormat/.test(bits) && /timeZone/.test(bits),
   'timestamps are rendered in the console timezone rather than the reader\'s');
-check(/ar-EG/.test(bits), 'and in Egyptian Arabic when the console is in Arabic');
+// Through the product's one Intl authority, so French is French: the
+// component used to map only Arabic and format French in English.
+check((bits.match(/new Intl\.(?:DateTimeFormat|RelativeTimeFormat)\(intlLocale\(locale\)/g) ?? []).length === 2
+  && !/'en-GB'/.test(bits),
+  'TIMES AND WAITS ARE FORMATTED THROUGH intlLocale, NOT A LOCAL MAP THAT FORGOT FRENCH');
+check(intlLocale('ar') === 'ar-EG' && intlLocale('fr') === 'fr-EG' && intlLocale('en') === 'en-EG',
+  'and that authority gives Egyptian Arabic, French and English');
 
 // --- One account, opened from a lookup -------------------------------------
 //
@@ -1964,5 +1972,42 @@ check(/setDone\(/.test(providersSource) && /role="status">\{done\}/.test(provide
 for (const key of ['reauthAnotherPending', 'reauthAlreadyRetried', 'reauthPendingExpired']) {
   check(inBoth(key), `the console explains "${key}" in both languages`);
 }
+
+// --- Reported reviews: somebody can act on a report --------------------------
+// Reports could be filed from the app, and the server had the workflow, the
+// hide/restore decision and the audit — but no page called any of it.
+for (const rpc of ['moderate_review', 'review_report_transition']) {
+  const at = migrations.lastIndexOf(`create or replace function public.${rpc}(`);
+  check(at >= 0 && migrations.slice(at, at + 500).includes("require_domain_staff_write('moderate_reviews')"),
+    `${rpc} REALLY DOES REQUIRE moderate_reviews IN THE DATABASE`);
+}
+check(/queue_key[\s\S]{0,40}'review_moderation'[\s\S]{0,200}'moderate_reviews'|'review_moderation'[^\n]*'moderate_reviews'/.test(migrations),
+  'and the review moderation queue is keyed to the same capability');
+const reviewsPage = strip(readWeb('app', 'admin', 'reviews', 'page.tsx'));
+check(/hasCapability\(session, 'moderate_reviews'\)/.test(reviewsPage),
+  'the reported-reviews page is gated on the capability its RPCs demand');
+check(/rpc\('review_report_transition'/.test(reviewsPage) && /rpc\('moderate_review'/.test(reviewsPage),
+  'IT ACTS THROUGH THE EXISTING REPORT WORKFLOW AND MODERATION RPCS');
+check(!/service_role|serviceRole|\.update\(|\.insert\(|\.delete\(|\.upsert\(/.test(reviewsPage),
+  'and never writes a table directly or reaches for a service role');
+check(/runGovernedAction\(inFlight/.test(reviewsPage)
+  && /reauth\.remember\(pending, 'moderate_reviews'/.test(reviewsPage),
+  'every action is a governed action: latched, announced, and held for re-authentication');
+check(!/reporter_id|customer_id|reviewer_name|provider_profiles/.test(reviewsPage),
+  'WHO REPORTED THE REVIEW, WHO WROTE IT AND WHOSE PROFILE IT IS ON ARE NOT READ');
+check(/if \(!noteFor\(report\.reportId\)\) \{[\s\S]{0,120}reviewsNoteRequired/.test(reviewsPage),
+  'hiding or restoring asks for the reason the server will demand');
+for (const key of ['console_reviews', 'reviewsTitle', 'reviewsLead', 'reviewsRefused', 'reviewsNoteHelp',
+  'reviewsHide', 'reviewsRestore', 'reviewsResolve', 'reviewsDismiss', 'reviewsStart',
+  'reviewsReason_spam', 'reviewsReason_abuse', 'reviewsReason_fake_review', 'reviewsReason_offensive_content',
+  'reviewsStatus_submitted', 'reviewsStatus_in_review', 'reviewsStatus_resolved', 'reviewsStatus_dismissed',
+  'reviewsVisibility_visible', 'reviewsVisibility_hidden', 'reviewsVisibility_flagged']) {
+  check(inBoth(key), `the reported-reviews page says "${key}" in both languages`);
+}
+const trustReviewer = parseStaffSession({ isStaff: true, platformReady: true, capabilities: ['moderate_reviews'] });
+check(visibleAreas(trustReviewer).some((area) => area.key === 'reviews') && mayEnter(trustReviewer, '/reviews'),
+  'a staff member who may moderate reviews is offered the page');
+check(!mayEnter(parseStaffSession({ isStaff: true, platformReady: true, capabilities: ['safe_search'] }), '/reviews'),
+  'and one who may not is not');
 
 console.log(`Admin console: ${checks} checks passed.`);
