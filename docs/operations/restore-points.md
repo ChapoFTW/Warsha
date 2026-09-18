@@ -66,9 +66,12 @@ A restore onto Production is an incident action and follows
 
 | Reference | Environment | Taken | Remote head | Tables / rows | Restore check | Used for |
 | --- | --- | --- | --- | --- | --- | --- |
+| `logical:production:ekgwzljpcxpxnklzxuvj:2026-09-18T09-13-12-350Z:42d1e9dc95c50bc3` | Production (`ekgwzljpcxpxnklzxuvj`) | 2026-09-18 09:18 UTC | `202609090002` | 273 / 1,833 | All 273 tables restored with the dumped row count onto local Supabase at the same head and service versions (auth v2.197.0, storage v1.73.1); both files decrypt with a verified tag | Production deployment of 11 migrations (`202609160001` … `202609180001`), through the guarded workflow |
 | `logical:development:lrhipbcapzfxuwixfoog:2026-09-18T08-56-09-142Z:5135b4560202bfa7` | Development (`warsha-development`) | 2026-09-18 09:00 UTC | `202609070001` | 273 / 5,360 | All 273 tables restored with the dumped row count onto local Supabase at the same head (auth v2.197.0, storage v1.73.1); both files decrypt with a verified tag | Development deployment of 13 migrations, 2026-09-18 |
 
-Ciphertext SHA-256 for that restore point: `schema.sql.enc`
+Ciphertext SHA-256 — Production: `schema.sql.enc`
+`3f031610b584c2d61a37fb26637598bb6f745fc5bbc6b3fe9766f4f43cd6b530`, `data.sql.enc`
+`42d1e9dc95c50bc3ddb9e18752e6a1423033e77697f8a38c0ab5d0c269bbde4d`. Development: `schema.sql.enc`
 `e5e6a38b4035f1cc0a4c812b7d82205378c3aaddb8732561766fd0b3da0da8f4`,
 `data.sql.enc` `5135b4560202bfa785cf377885572977c2093bd963f665ffd62b7a2f93e491c9`.
 
@@ -82,3 +85,14 @@ versions.
 | Date | Migrations | Restore point | Verification |
 | --- | --- | --- | --- |
 | 2026-09-18 | 13: `202609090001` … `202609180001` (dry run matched exactly; CI green on `1b1c030`) | Above | Ledger: local and remote agree at 126, head `202609180001`. Schema: `supabase db diff --linked` against the migrations — every function body identical (one signature printed with its schema), no table or policy difference; Development lacks the local stack's default `pg_net` extension and the original `provider_profiles_user_id_key` constraint, whose uniqueness `provider_profiles_user_id_unique` (202607200006) already enforces. **`verify_platform_release()` was not run**: it needs a staff session on Development, and none is available to the automation |
+
+## Production deployments
+
+The Production restore point was taken with the CLI linked to Production for
+reading only (dump, migration list, dry run), after which it was linked back to
+Development. The local dry run listed exactly the 11 pending migrations. The
+apply runs only through `.github/workflows/deploy-database.yml` in the
+`Production` environment, which requires the owner's review, with
+`PRE_MIGRATION_BACKUP_REF` set to the reference above. A restore point is a
+point in time: rows written between it and the apply are not in it.
+
