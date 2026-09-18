@@ -40,6 +40,7 @@
     "test:wps010": "node --no-warnings --experimental-strip-types scripts/wps010-worker-profile.test.mts",
     "test:wps011": "node --no-warnings --experimental-strip-types scripts/wps011-reviews-reputation.test.mts",
     "test:review-parity": "node --no-warnings --experimental-strip-types scripts/review-parity.test.mts",
+    "test:restore-point": "node --no-warnings --experimental-strip-types scripts/restore-point.test.mts",
     "test:wps012": "node --no-warnings --experimental-strip-types scripts/wps012-job-operations.test.mts",
     "test:wps013": "node --no-warnings --experimental-strip-types scripts/wps013-disputes-resolution.test.mts",
     "test:wps014": "node --no-warnings --experimental-strip-types scripts/wps014-notifications-engagement.test.mts",
