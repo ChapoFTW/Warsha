@@ -7,6 +7,7 @@ import {
 } from '@/src/utils/warsha-time';
 
 import { AppShell } from '@/components/app-shell';
+import { BookingReview } from '@/components/booking-review';
 import { LifecycleBadge } from '@/components/lifecycle-badge';
 import { appCopy } from '@/lib/app-copy';
 import { CallCounterparty } from '@/components/call-counterparty';
@@ -169,6 +170,10 @@ function JobDetail({
         <CallCounterparty bookingId={booking.id} counterpartyRole="worker"
           locale={locale} bookingStatus={booking.status} />
       </div>
+
+      {/* A finished job is reviewed here, as on the phone. The server decides
+          who may review what; this only offers it where it can succeed. */}
+      {booking.status === 'completed' ? <BookingReview bookingId={booking.id} locale={locale} /> : null}
 
       {booking.status === 'rescheduling_requested' ? (
         <div className={styles.subpanel}>

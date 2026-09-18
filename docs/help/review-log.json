@@ -375,6 +375,57 @@
         }
       ],
       "reason": "A Professional may now cover more than one district: the native onboarding and profile editors and the web profile editor add, list and remove service areas and refuse a repeat, while the work location stays one place; place names in those editors are shown in the reader's language from the official list (egyptPlaceNames), and Mock signup now creates the Professional profile as the server does. All three articles were read in English, Arabic and French against that change. worker-onboarding-verification described a single governorate and district, which became untrue; its service-area paragraph now says to add every district worked in, that a request from a district not added does not reach the Professional, that one can be removed, and that the work location stays one place (en/ar 10, fr 9). worker-getting-started already says to set service areas, in the plural, and nothing in it became untrue. customer-addresses-location says governorate and area come from the official list, which still holds; showing a stored name in the reader's language makes no statement in it untrue."
+    },
+    {
+      "date": "2026-09-18",
+      "articles": [
+        {
+          "id": "customer-requests-quotes-jobs",
+          "locale": "en",
+          "digest": "cd5e56f6de8d55c5"
+        },
+        {
+          "id": "customer-requests-quotes-jobs",
+          "locale": "ar",
+          "digest": "98a14094ea670961"
+        },
+        {
+          "id": "customer-requests-quotes-jobs",
+          "locale": "fr",
+          "digest": "ce75e0ae02876a4a"
+        },
+        {
+          "id": "worker-opportunities-jobs",
+          "locale": "en",
+          "digest": "b762bdd056f6732c"
+        },
+        {
+          "id": "worker-opportunities-jobs",
+          "locale": "ar",
+          "digest": "e2225b0f9f359d69"
+        },
+        {
+          "id": "worker-opportunities-jobs",
+          "locale": "fr",
+          "digest": "cbabec6d013b6cc0"
+        },
+        {
+          "id": "admin-reported-reviews",
+          "locale": "en",
+          "digest": "921f626500734667"
+        },
+        {
+          "id": "admin-reported-reviews",
+          "locale": "ar",
+          "digest": "467efec74671b4c8"
+        },
+        {
+          "id": "admin-reported-reviews",
+          "locale": "fr",
+          "digest": "ed652a98441090d0"
+        }
+      ],
+      "reason": "Reviews reached the web (the Customer's review of a completed job under My jobs, with photos and editing; the Professional's one reply on their job), both surfaces now read one review copy (French corrected where it said different things), and the phone's review edit, which had never reached the server, was fixed. customer-requests-quotes-jobs and worker-opportunities-jobs said nothing about reviews; each gained a paragraph in English, Arabic and French stating what is true on both surfaces: the scores, words, photos and anonymity; a limited, shown edit window; one unchangeable reply; reporting from the app; and that only visible reviews count. admin-reported-reviews was read against the same change and nothing in it became untrue."
     }
   ]
 }

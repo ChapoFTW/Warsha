@@ -30,6 +30,7 @@ import { realtimeChannels } from '@/src/realtime/realtime-channels';
 import { useWarshaRealtime } from '@/lib/use-warsha-realtime';
 import { useSession } from '@/components/session-provider';
 import { CallCounterparty } from '@/components/call-counterparty';
+import { ReviewReply } from '@/components/review-reply';
 
 /** Provider-owned booking list and the exact lifecycle transitions the RPCs permit. */
 export default function WorkerJobsPage() {
@@ -155,6 +156,9 @@ function WorkerJobDetail({ booking, locale, appWords, words, onClose, onChanged 
         <CallCounterparty bookingId={booking.id} counterpartyRole="customer"
           locale={locale} bookingStatus={booking.status} />
       </div>
+
+      {/* The Customer's review of this job, and the one reply the phone offers. */}
+      {booking.status === 'completed' ? <ReviewReply bookingId={booking.id} locale={locale} /> : null}
 
       {booking.status === 'pending_provider_approval' ? (
         <div className={styles.subpanel}>

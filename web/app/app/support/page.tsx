@@ -26,6 +26,7 @@ import { supabase } from '@/lib/supabase';
 import { useAppLocale } from '@/lib/use-app-locale';
 
 import styles from './support.module.css';
+import surface from '@/components/product-surface.module.css';
 
 /**
  * Support: a conversation, not a form that swallows things.
@@ -429,14 +430,14 @@ function Satisfaction({
 
   return (
     <form className={styles.reply} onSubmit={send}>
-      <fieldset className={styles.scoreSet}>
+      <fieldset className={surface.scoreSet}>
         <legend className={styles.label}>{words.supportRateLabel}</legend>
-        <div className={styles.scoreRow}>
+        <div className={surface.scoreRow}>
           {[1, 2, 3, 4, 5].map((value) => (
             <button
               key={value}
               type="button"
-              className={score === value ? `${styles.score} ${styles.scoreOn}` : styles.score}
+              className={score === value ? `${surface.score} ${surface.scoreOn}` : surface.score}
               onClick={() => setScore(value)}
               aria-pressed={score === value}
               disabled={busy}

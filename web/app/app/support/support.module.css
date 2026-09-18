@@ -142,17 +142,5 @@
   font-size: 13.5px; color: var(--text-secondary);
 }
 
-.scoreSet { border: 0; padding: 0; margin: 0 0 16px; }
-
-.scoreRow { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
-
-.score {
-  appearance: none; font: inherit; font-size: var(--control-font-md); font-weight: 700;
-  color: var(--text-secondary); background: var(--canvas);
-  border: 1px solid var(--border); border-radius: var(--radius-sm);
-  min-width: 46px; min-height: var(--control-h-md); cursor: pointer;
-}
-
-.scoreOn { color: var(--brand-ink); background: var(--brand); border-color: var(--brand); }
-
-.score:disabled { opacity: 0.5; cursor: not-allowed; }
+/* The 1-to-5 score control lives in product-surface.module.css, shared with
+   the review form. */

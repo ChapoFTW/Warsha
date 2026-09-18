@@ -22,6 +22,7 @@ export const DETERMINISTIC_TEST_SCRIPTS = [
   'test:wps009',
   'test:wps010',
   'test:wps011',
+  'test:review-parity',
   'test:wps012',
   'test:wps013',
   'test:wps014',

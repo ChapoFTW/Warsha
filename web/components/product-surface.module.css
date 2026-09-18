@@ -647,3 +647,29 @@ button.card:hover .categoryIcon { background: var(--surface); }
 /* A field label with the chosen category's mark beside it. */
 .labelRow { display: flex; align-items: center; gap: 8px; }
 .inlineIcon { display: inline-flex; color: var(--text-secondary); }
+
+/* A score from 1 to 5: the support satisfaction score and every rating on a
+   review. Pressed buttons in a fieldset, so each value is a 44px-plus target
+   and says whether it is the chosen one. */
+.scoreSet { border: 0; padding: 0; margin: 0 0 16px; }
+
+.scoreRow { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+
+.score {
+  appearance: none; font: inherit; font-size: var(--control-font-md); font-weight: 700;
+  color: var(--text-secondary); background: var(--canvas);
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  min-width: 46px; min-height: var(--control-h-md); cursor: pointer;
+}
+
+.scoreOn { color: var(--brand-ink); background: var(--brand); border-color: var(--brand); }
+
+.score:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* A review: the form stacks its scores, words and photos; a photo is shown
+   square and small; a Professional's reply sits under the review it answers,
+   marked on the reading edge the way the console marks what follows. */
+.reviewForm { display: grid; gap: var(--space-md); max-width: 640px; }
+.checkRow { display: flex; align-items: center; gap: var(--space-sm); min-height: 44px; cursor: pointer; }
+.reviewThumb { display: block; width: 88px; height: 88px; object-fit: cover; border-radius: var(--radius-sm); }
+.reviewReply { border-inline-start: 3px solid var(--border-strong); padding-inline-start: var(--space-md); margin-block: var(--space-sm); }

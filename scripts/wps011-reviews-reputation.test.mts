@@ -15,7 +15,10 @@ const types = read('src/reviews/review-types.ts');
 const bookingUi = read('components/warsha/BookingReviewCard.tsx');
 const profileUi = read('components/warsha/ProviderReviewSummary.tsx');
 const replyUi = read('components/warsha/ProviderReviewReply.tsx');
-const translations = read('src/reviews/review-translations.ts');
+// The copy moved to a platform-free module the web reads too; the phone's hook
+// only wraps it.
+const translations = read('src/reviews/review-copy.ts');
+match(read('src/reviews/review-translations.ts'), /reviewText\(language, key\)/, 'the phone reads the shared review copy');
 const supabaseAdapter = read('src/data/adapters/supabase-adapter.ts');
 
 for (const field of ['professionalism_rating','quality_rating','punctuality_rating','communication_rating','value_rating','edit_deadline_at','revision']) match(migration, new RegExp(field), `${field} is migrated`);

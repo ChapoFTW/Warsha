@@ -12,6 +12,7 @@ import { emitMockRealtime } from '@/src/realtime/realtime-service';
 import { getMockDisputePublicationHoldId } from '@/src/disputes/mock-dispute-state';
 
 import { emptyDimensions } from './review-types';
+import { editReviewArgs, mapReview, mapSummary, reviewAttachmentPath, submitReviewArgs, type Raw } from './review-mapping';
 import type { BookingReview, RatingSummary, ReputationBadges, ReviewInput, ReviewReport, ReviewReportReason, ReviewSort, ReviewVote } from './review-types';
 
 type StoredReview = BookingReview & {
@@ -125,7 +126,6 @@ function mockSummary(state: MockState, providerId: string, sort: ReviewSort, acc
   return { ...summary, completedJobs, completionRate, completionSample: completedJobs, yearsOnPlatform, badges, confidence: { score: confidence, policyVersion: 'wps011-v1', evidenceSufficient: summary.count >= 5 } };
 }
 
-type Raw = Record<string, unknown>;
 async function hydrateReviewImages(rows: Raw[], exposePaths: boolean) {
   const refs = rows.flatMap(row => Array.isArray(row.image_refs) ? row.image_refs.map(String) : []);
   if (!refs.length) return rows.map(row => mapReview(row, new Map(), exposePaths));
@@ -133,30 +133,6 @@ async function hydrateReviewImages(rows: Raw[], exposePaths: boolean) {
   if (error) throw error;
   const urls = new Map(refs.map((path, index) => [path, data?.[index]?.signedUrl ?? '']));
   return rows.map(row => mapReview(row, urls, exposePaths));
-}
-function mapReview(row: Raw, urls = new Map<string, string>(), exposePaths = false): BookingReview {
-  const refs = Array.isArray(row.image_refs) ? row.image_refs.map(String) : [];
-  const replies = Array.isArray(row.review_responses) ? row.review_responses as Raw[] : [];
-  const reply = replies[0];
-  return {
-    id: String(row.id), bookingId: String(row.booking_id ?? ''), providerId: String(row.provider_id), reviewerName: String(row.reviewer_name ?? 'Customer'), rating: Number(row.rating),
-    dimensions: { professionalism: Number(row.professionalism_rating ?? row.rating), quality: Number(row.quality_rating ?? row.rating), punctuality: Number(row.punctuality_rating ?? row.rating), communication: Number(row.communication_rating ?? row.rating), value: Number(row.value_rating ?? row.rating) },
-    comment: String(row.comment ?? ''), isAnonymous: Boolean(row.is_anonymous), createdAt: String(row.created_at), editedAt: row.edited_at ? String(row.edited_at) : undefined,
-    editDeadlineAt: row.edit_deadline_at ? String(row.edit_deadline_at) : undefined, canEdit: Boolean(row.can_edit),
-    attachments: refs.map((path, index) => ({ id: `${row.id}-${index}`, url: urls.get(path) ?? '', ...(exposePaths ? { storagePath: path } : {}) })),
-    reply: reply ? { id: String(reply.id), body: String(reply.body), createdAt: String(reply.created_at) } : undefined,
-    helpfulCount: Number(row.helpful_count ?? 0), notHelpfulCount: Number(row.not_helpful_count ?? 0), myVote: row.my_vote === 'helpful' || row.my_vote === 'not_helpful' ? row.my_vote : undefined,
-  };
-}
-function mapSummary(row: Raw, reviews: BookingReview[], sort: ReviewSort): RatingSummary {
-  const distribution = row.distribution as Raw ?? {}; const dimensions = row.dimensions as Raw ?? {}; const badges = row.badges as Raw ?? {}; const confidence = row.confidence as Raw ?? {};
-  return {
-    average: Number(row.average ?? 0), count: Number(row.count ?? 0), distribution: { 1: Number(distribution['1'] ?? 0), 2: Number(distribution['2'] ?? 0), 3: Number(distribution['3'] ?? 0), 4: Number(distribution['4'] ?? 0), 5: Number(distribution['5'] ?? 0) },
-    dimensions: { professionalism: Number(dimensions.professionalism ?? 0), quality: Number(dimensions.quality ?? 0), punctuality: Number(dimensions.punctuality ?? 0), communication: Number(dimensions.communication ?? 0), value: Number(dimensions.value ?? 0) }, reviews,
-    completedJobs: Number(row.completed_jobs ?? 0), responseRate: row.response_rate === null || row.response_rate === undefined ? undefined : Number(row.response_rate), responseSample: Number(row.response_sample ?? 0), completionRate: row.completion_rate === null || row.completion_rate === undefined ? undefined : Number(row.completion_rate), completionSample: Number(row.completion_sample ?? 0), repeatCustomerPercentage: row.repeat_customer_percentage === null || row.repeat_customer_percentage === undefined ? undefined : Number(row.repeat_customer_percentage), repeatCustomerSample: Number(row.repeat_customer_sample ?? 0), yearsOnPlatform: Number(row.years_on_platform ?? 0),
-    badges: { identityVerified: Boolean(badges.identityVerified), skillCertificateVerified: Boolean(badges.skillCertificateVerified), professionalCertificateVerified: Boolean(badges.professionalCertificateVerified), topRated: Boolean(badges.topRated), fastResponder: Boolean(badges.fastResponder), experienced: Boolean(badges.experienced) },
-    confidence: { score: Number(confidence.score ?? 0), policyVersion: String(confidence.policy_version ?? 'wps011-v1'), evidenceSufficient: Boolean(confidence.evidence_sufficient) }, sort,
-  };
 }
 function uniqueBookingIds(ids: string[]) { return [...new Set(ids.filter(Boolean))]; }
 
@@ -192,9 +168,8 @@ async function uploadAttachments(input: ReviewInput) {
       if (attachment.storagePath) { paths.push(attachment.storagePath); continue; }
       const file = new File(attachment.url); const mime = attachment.mimeType || file.type;
       if (!file.exists || !mime || !['image/jpeg', 'image/png', 'image/webp'].includes(mime) || file.size > 5 * 1024 * 1024) throw new Error('Invalid review image');
-      const extension = mime === 'image/png' ? 'png' : mime === 'image/webp' ? 'webp' : 'jpg';
-      const hash = (file.md5 ?? attachment.contentHash ?? `${Date.now().toString(16)}${index.toString(16).padStart(8, '0')}`).toLowerCase().replace(/[^a-f0-9]/g, '').padEnd(32, '0').slice(0, 64);
-      const path = `${user.id}/${input.bookingId}/review/${hash}.${extension}`;
+      const hash = file.md5 ?? attachment.contentHash ?? `${Date.now().toString(16)}${index.toString(16).padStart(8, '0')}`;
+      const path = reviewAttachmentPath(user.id, input.bookingId, hash, mime);
       const { error } = await client.storage.from('review-attachments').upload(path, await file.arrayBuffer(), { contentType: mime, upsert: false });
       if (error && !error.message.toLowerCase().includes('duplicate')) throw error;
       if (!error) uploaded.push(path); paths.push(path);
@@ -202,14 +177,13 @@ async function uploadAttachments(input: ReviewInput) {
     return { paths, uploaded };
   } catch (error) { if (uploaded.length) await client.storage.from('review-attachments').remove(uploaded); throw error; }
 }
-const ratingArgs = (input: ReviewInput) => ({ p_booking_id: input.bookingId, p_rating: input.rating, p_professionalism: input.dimensions.professionalism, p_quality: input.dimensions.quality, p_punctuality: input.dimensions.punctuality, p_communication: input.dimensions.communication, p_value: input.dimensions.value, p_comment: input.comment.trim(), p_is_anonymous: input.isAnonymous });
 
 const supabase = {
   async reviewedBookingIds(_accountId: string, bookingIds: string[]) { const ids = uniqueBookingIds(bookingIds); if (!ids.length) return []; const { data, error } = await getSupabaseClient().from('reviews').select('booking_id').in('booking_id', ids); if (error) throw error; return [...new Set((data ?? []).map(row => String(row.booking_id)))]; },
   async summary(_accountId: string, providerId: string, sort: ReviewSort) { const { data, error } = await getSupabaseClient().rpc('get_provider_reputation_summary', { p_provider_id: providerId, p_sort: sort, p_limit: 20, p_offset: 0 }); if (error) throw error; const row = (data ?? {}) as Raw; const reviews = await hydrateReviewImages(Array.isArray(row.reviews) ? row.reviews as Raw[] : [], false); return mapSummary(row, reviews, sort); },
   async byBooking(_accountId: string, bookingId: string) { const { data, error } = await getSupabaseClient().rpc('get_booking_review_v2', { p_booking_id: bookingId }); if (error) throw error; if (!data) return undefined; return (await hydrateReviewImages([data as Raw], true))[0]; },
-  async submit(_accountId: string, input: ReviewInput) { const staged = await uploadAttachments(input); try { const { data, error } = await getSupabaseClient().rpc('submit_booking_review_v2', { ...ratingArgs(input), p_attachment_paths: staged.paths }); if (error) throw error; return (await hydrateReviewImages([data as Raw], true))[0]; } catch (error) { if (staged.uploaded.length) await getSupabaseClient().storage.from('review-attachments').remove(staged.uploaded); throw error; } },
-  async edit(_accountId: string, reviewId: string, input: ReviewInput) { const previous = input.previousAttachmentPaths ?? []; const staged = await uploadAttachments(input); try { const { data, error } = await getSupabaseClient().rpc('edit_booking_review', { p_review_id: reviewId, ...ratingArgs(input), p_attachment_paths: staged.paths }); if (error) throw error; const removed = previous.filter(path => !staged.paths.includes(path)); if (removed.length) await getSupabaseClient().storage.from('review-attachments').remove(removed); return (await hydrateReviewImages([data as Raw], true))[0]; } catch (error) { if (staged.uploaded.length) await getSupabaseClient().storage.from('review-attachments').remove(staged.uploaded); throw error; } },
+  async submit(_accountId: string, input: ReviewInput) { const staged = await uploadAttachments(input); try { const { data, error } = await getSupabaseClient().rpc('submit_booking_review_v2', submitReviewArgs(input, staged.paths)); if (error) throw error; return (await hydrateReviewImages([data as Raw], true))[0]; } catch (error) { if (staged.uploaded.length) await getSupabaseClient().storage.from('review-attachments').remove(staged.uploaded); throw error; } },
+  async edit(_accountId: string, reviewId: string, input: ReviewInput) { const previous = input.previousAttachmentPaths ?? []; const staged = await uploadAttachments(input); try { const { data, error } = await getSupabaseClient().rpc('edit_booking_review', editReviewArgs(reviewId, input, staged.paths)); if (error) throw error; const removed = previous.filter(path => !staged.paths.includes(path)); if (removed.length) await getSupabaseClient().storage.from('review-attachments').remove(removed); return (await hydrateReviewImages([data as Raw], true))[0]; } catch (error) { if (staged.uploaded.length) await getSupabaseClient().storage.from('review-attachments').remove(staged.uploaded); throw error; } },
   async reply(_accountId: string, reviewId: string, body: string) { const { data, error } = await getSupabaseClient().rpc('reply_to_booking_review', { p_review_id: reviewId, p_body: body.trim() }); if (error) throw error; const row = data as Raw; return { id: String(row.id), body: String(row.body), createdAt: String(row.created_at) }; },
   async vote(_accountId: string, reviewId: string, vote: ReviewVote) { const { error } = await getSupabaseClient().rpc('vote_review_helpfulness', { p_review_id: reviewId, p_vote: vote }); if (error) throw error; },
   async report(_accountId: string, reviewId: string, reason: ReviewReportReason, details: string) { const { data, error } = await getSupabaseClient().rpc('report_review', { p_review_id: reviewId, p_reason: reason, p_details: details.trim() }); if (error) throw error; const row = data as Raw; return { id: String(row.id), reviewId: String(row.review_id), reason: String(row.reason) as ReviewReportReason, status: String(row.status) as ReviewReport['status'], createdAt: String(row.created_at) }; },
